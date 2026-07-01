@@ -172,40 +172,40 @@ export const Inventory: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>SKU Code</th>
+                    <th className="text-nowrap">SKU Code</th>
                     <th>Product Name</th>
                     <th>Category</th>
-                    <th style={{ textAlign: 'center' }}>Stock Qty</th>
-                    <th style={{ textAlign: 'center' }}>Min Stock</th>
-                    <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
-                    <th style={{ textAlign: 'right' }}>Retail Rate (₹)</th>
-                    <th style={{ textAlign: 'center' }}>GST Rate</th>
-                    <th>Status</th>
+                    <th className="text-nowrap">Stock Qty</th>
+                    <th className="text-nowrap">Min Stock</th>
+                    <th className="text-nowrap">Cost Price (₹)</th>
+                    <th className="text-nowrap">Retail Rate (₹)</th>
+                    <th className="text-nowrap">GST Rate</th>
+                    <th className="text-nowrap">Status</th>
                     <th style={{ textAlign: 'center' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedProducts.map((p) => (
                     <tr key={p.id}>
-                      <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{p.sku}</td>
+                      <td className="text-nowrap" style={{ fontWeight: 600, fontFamily: 'monospace' }}>{p.sku}</td>
                       <td style={{ fontWeight: 600 }}>{p.name}</td>
                       <td>{p.category}</td>
                       <td
+                        className="text-nowrap"
                         style={{
-                          textAlign: 'center',
                           fontWeight: 700,
                           color: p.stock === 0 ? 'var(--color-danger)' : p.stock <= p.minStock ? 'var(--color-warning-dark)' : 'inherit',
                         }}
                       >
                         {p.stock}
                       </td>
-                      <td style={{ textAlign: 'center', color: 'var(--text-secondary)' }}>
+                      <td className="text-nowrap" style={{ color: 'var(--text-secondary)' }}>
                         {p.minStock}
                       </td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(p.purchasePrice).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(p.sellingPrice).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'center' }}>{p.gstRate}%</td>
-                      <td>{getStockStatusBadge(p)}</td>
+                      <td className="text-nowrap">{formatINR(p.purchasePrice).replace('₹', '')}</td>
+                      <td className="text-nowrap" style={{ fontWeight: 600 }}>{formatINR(p.sellingPrice).replace('₹', '')}</td>
+                      <td className="text-nowrap">{p.gstRate}%</td>
+                      <td className="text-nowrap">{getStockStatusBadge(p)}</td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
                           <button

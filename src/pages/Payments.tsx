@@ -264,35 +264,35 @@ export const Payments: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Receipt Date</th>
-                    <th>ID Code</th>
+                    <th className="text-nowrap">Receipt Date</th>
+                    <th className="text-nowrap">ID Code</th>
                     <th>{activeTab === 'CustomerReceipt' ? 'Customer' : 'Supplier'} Name</th>
-                    <th style={{ textAlign: 'right' }}>Amount Paid (₹)</th>
-                    <th>Payment Method</th>
-                    <th>Reference / Document No</th>
+                    <th className="text-nowrap">Amount Paid (₹)</th>
+                    <th className="text-nowrap">Payment Method</th>
+                    <th className="text-nowrap">Reference / Document No</th>
                     <th>Remarks / Notes</th>
-                    <th style={{ textAlign: 'center' }}>Actions</th>
+                    <th className="text-nowrap" style={{ textAlign: 'center' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedPayments.map((pay) => (
                     <tr key={pay.id}>
-                      <td>{formatDate(pay.date)}</td>
-                      <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{pay.id}</td>
+                      <td className="text-nowrap">{formatDate(pay.date)}</td>
+                      <td className="text-nowrap" style={{ fontWeight: 600, fontFamily: 'monospace' }}>{pay.id}</td>
                       <td style={{ fontWeight: 600 }}>{pay.contactName}</td>
                       <td
+                        className="text-nowrap"
                         style={{
-                          textAlign: 'right',
                           fontWeight: 700,
                           color: pay.type === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--color-danger-dark)',
                         }}
                       >
                         {formatINR(pay.amount)}
                       </td>
-                      <td>
+                      <td className="text-nowrap">
                         <span className="badge badge-info">{pay.paymentMethod}</span>
                       </td>
-                      <td style={{ fontFamily: 'monospace', fontSize: '13px' }}>
+                      <td className="text-nowrap" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
                         {pay.referenceNumber || '—'}
                       </td>
                       <td style={{ fontStyle: 'italic', fontSize: '13px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

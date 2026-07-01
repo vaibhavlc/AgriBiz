@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { formatINR, formatDate } from '../utils/dummyData';
+import type { Invoice } from '../types';
 import {
   Plus,
   Search,
@@ -14,6 +15,10 @@ import {
   Calendar,
   Percent,
   Share2,
+  Edit2,
+  AlertTriangle,
+  MoreVertical,
+  ArrowUpDown,
 } from 'lucide-react';
 
 interface InvoiceItemLocal {
@@ -29,6 +34,7 @@ export const Sales: React.FC = () => {
     customers,
     products,
     addInvoice,
+    editInvoice,
     deleteInvoice,
     searchQuery,
     setSearchQuery,
@@ -38,7 +44,13 @@ export const Sales: React.FC = () => {
     setIsCreatingInvoice,
     showToast,
     settings,
+    setViewCustomer,
+    setCurrentTab,
   } = useApp();
+
+  const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
+  const [deletingInvoice, setDeletingInvoice] = useState<{ id: string; invoiceNumber: string } | null>(null);
+  const [activeMenuInvoiceId, setActiveMenuInvoiceId] = useState<string | null>(null);
 
   // Local state for invoice creator - defaults to 1 pre-filled required row
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -292,7 +304,36 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     setItems((prev) => prev.filter((_, idx) => idx !== index));
   };
 
-  // --- Save Invoice ---
+  // --- Save / Edit Invoice Handlers ---
+
+  const handleStartNewInvoice = () => {
+    setEditingInvoiceId(null);
+    setSelectedCustomerId('');
+    setInvoiceDate('2026-07-01');
+    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+    setAmountPaid(0);
+    setPaymentMethod('UPI');
+    setNotes('');
+    setIsCreatingInvoice(true);
+  };
+
+  const handleStartEditInvoice = (inv: Invoice) => {
+    setEditingInvoiceId(inv.id || inv.invoiceNumber);
+    setSelectedCustomerId(inv.customerId);
+    setInvoiceDate(inv.date);
+    setItems(
+      inv.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+      }))
+    );
+    setAmountPaid(inv.amountPaid);
+    setPaymentMethod(inv.paymentMethod || 'UPI');
+    setNotes(inv.notes || '');
+    setIsCreatingInvoice(true);
+  };
 
   const handleSaveInvoice = (e: React.FormEvent) => {
     e.preventDefault();
@@ -316,9 +357,18 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     // Verify stock availability
     for (const item of items) {
       const product = products.find((p) => p.id === item.productId);
-      if (product && product.stock < item.quantity) {
-        showToast(`Insufficient stock for ${product.name}! Available: ${product.stock}`, 'error');
-        return;
+      if (product) {
+        // If we are editing, add back the quantity of this product from the original invoice
+        const originalItem = editingInvoiceId
+          ? invoices.find((inv) => inv.id === editingInvoiceId)?.items.find((i) => i.productId === item.productId)
+          : null;
+        const originalQty = originalItem ? originalItem.quantity : 0;
+        const availableStock = product.stock + originalQty;
+
+        if (availableStock < item.quantity) {
+          showToast(`Insufficient stock for ${product.name}! Available: ${availableStock}`, 'error');
+          return;
+        }
       }
     }
 
@@ -348,39 +398,68 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
         ? 'Partial'
         : 'Unpaid';
 
-    const newInvoice = addInvoice({
-      date: invoiceDate,
-      customerId: selectedCustomerId,
-      customerName: customer.name,
-      items: invoiceItems,
-      subtotal: totals.subtotal,
-      discountTotal: totals.discountTotal,
-      gstTotal: totals.gstTotal,
-      grandTotal: totals.grandTotal,
-      amountPaid,
-      balanceDue,
-      paymentStatus,
-      paymentMethod: amountPaid > 0 ? paymentMethod : '',
-      notes: notes.trim() || undefined,
-    });
+    if (editingInvoiceId) {
+      const originalInvoice = invoices.find((i) => i.id === editingInvoiceId);
+      if (!originalInvoice) return;
 
-    showToast(`Invoice created successfully for ${customer.name}!`);
+      editInvoice({
+        ...originalInvoice,
+        date: invoiceDate,
+        customerId: selectedCustomerId,
+        customerName: customer.name,
+        items: invoiceItems,
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        gstTotal: totals.gstTotal,
+        grandTotal: totals.grandTotal,
+        amountPaid,
+        balanceDue,
+        paymentStatus,
+        paymentMethod: amountPaid > 0 ? paymentMethod : '',
+        notes: notes.trim() || undefined,
+      });
 
-    // Reset states and redirect to details print view
-    setSelectedCustomerId('');
-    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
-    setAmountPaid(0);
-    setNotes('');
-    setIsCreatingInvoice(false);
-    setViewInvoice(newInvoice.id);
+      showToast(`Invoice ${originalInvoice.invoiceNumber} updated successfully!`);
+
+      // Reset states
+      setEditingInvoiceId(null);
+      setSelectedCustomerId('');
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setAmountPaid(0);
+      setNotes('');
+      setIsCreatingInvoice(false);
+      setViewInvoice(originalInvoice.id);
+    } else {
+      const newInvoice = addInvoice({
+        date: invoiceDate,
+        customerId: selectedCustomerId,
+        customerName: customer.name,
+        items: invoiceItems,
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        gstTotal: totals.gstTotal,
+        grandTotal: totals.grandTotal,
+        amountPaid,
+        balanceDue,
+        paymentStatus,
+        paymentMethod: amountPaid > 0 ? paymentMethod : '',
+        notes: notes.trim() || undefined,
+      });
+
+      showToast(`Invoice created successfully for ${customer.name}!`);
+
+      // Reset states and redirect to details print view
+      setSelectedCustomerId('');
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setAmountPaid(0);
+      setNotes('');
+      setIsCreatingInvoice(false);
+      setViewInvoice(newInvoice.id);
+    }
   };
 
   const handleDeleteInvoice = (id: string, invoiceNo: string) => {
-    if (confirm(`Are you sure you want to delete invoice ${invoiceNo}? This will restore stock levels and adjust customer balance.`)) {
-      deleteInvoice(id);
-      showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
-      setViewInvoice(null);
-    }
+    setDeletingInvoice({ id, invoiceNumber: invoiceNo });
   };
 
   // --- Filtering & Sorting ---
@@ -417,7 +496,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     currentPage * itemsPerPage
   );
 
-  const selectedInvoice = invoices.find((inv) => inv.id === currentInvoiceId);
+  const selectedInvoice = invoices.find((inv) => inv.id === currentInvoiceId || inv.invoiceNumber === currentInvoiceId);
 
   // --- RENDERING ---
 
@@ -726,7 +805,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
 
         {/* Delete danger button no-print */}
         <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
-          <button className="btn btn-secondary" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }} onClick={() => handleDeleteInvoice(selectedInvoice.id, selectedInvoice.invoiceNumber)}>
+          <button className="btn btn-secondary" style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }} onClick={() => handleDeleteInvoice(selectedInvoice.id || selectedInvoice.invoiceNumber, selectedInvoice.invoiceNumber)}>
             <Trash2 size={16} /> Delete & Reset Stock
           </button>
         </div>
@@ -736,7 +815,8 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
 
   // 2. FORM VIEW (INVOICE CREATOR SHEET EDITOR)
   if (isCreatingInvoice) {
-    const invoiceNumber = `INV-${new Date().getFullYear()}-${(invoices.length + 1).toString().padStart(4, '0')}`;
+    const originalInvoice = editingInvoiceId ? invoices.find((i) => i.id === editingInvoiceId) : null;
+    const invoiceNumber = originalInvoice ? originalInvoice.invoiceNumber : `INV-${new Date().getFullYear()}-${(invoices.length + 1).toString().padStart(4, '0')}`;
     const activeCustomer = customers.find((c) => c.id === selectedCustomerId);
     const isCreatorInterState = activeCustomer && activeCustomer.state && settings.state && activeCustomer.state !== settings.state;
     const currentGstRate = (items[0]?.productId ? products.find((p) => p.id === items[0].productId)?.gstRate : 18) ?? 18;
@@ -747,9 +827,10 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <button type="button" className="btn btn-secondary" onClick={() => {
             setIsCreatingInvoice(false);
+            setEditingInvoiceId(null);
             setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]); // reset
           }}>
-            <ArrowLeft size={16} /> Cancel Draft
+            <ArrowLeft size={16} /> {editingInvoiceId ? 'Back to Invoices' : 'Cancel Draft'}
           </button>
           <div>
             <span style={{ fontSize: '14px', color: 'var(--text-muted)', marginRight: '8px' }}>Voucher Serial:</span>
@@ -967,12 +1048,13 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '24px', marginTop: '24px' }}>
               <button type="button" className="btn btn-secondary" onClick={() => {
                 setIsCreatingInvoice(false);
+                setEditingInvoiceId(null);
                 setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]); // reset
               }}>
                 Discard
               </button>
               <button type="submit" className="btn btn-primary" style={{ minWidth: '180px', boxShadow: '0 4px 10px rgba(16,185,129,0.3)' }} disabled={items.length === 0 || !items[0].productId}>
-                Save & Print Invoice
+                {editingInvoiceId ? 'Update & Save Invoice' : 'Save & Print Invoice'}
               </button>
             </div>
 
@@ -995,22 +1077,68 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
             <input type="text" placeholder="Search invoice or customer..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
-          <select className="filter-select" value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
-            <option value="All">All Invoices</option>
-            <option value="Paid">Paid Only</option>
-            <option value="Partial">Partial Dues</option>
-            <option value="Unpaid">Unpaid Only</option>
-          </select>
+          {/* Segmented Filter Control */}
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '4px', borderRadius: '12px', border: '1.5px solid var(--border-color)', gap: '4px' }}>
+            {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => {
+              const isActive = statusFilter === status;
+              return (
+                <button
+                  key={status}
+                  className="btn-sm"
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    backgroundColor: isActive ? 'var(--card-bg, #ffffff)' : 'transparent',
+                    color: isActive ? 'var(--primary-dark)' : 'var(--text-secondary)',
+                    boxShadow: isActive ? '0 4px 10px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02)' : 'none',
+                  }}
+                  onClick={() => {
+                    setStatusFilter(status);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {status === 'All' ? 'All Invoices' : status}
+                </button>
+              );
+            })}
+          </div>
 
-          <select className="filter-select" value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-            <option value="date-desc">Date: Newest First</option>
-            <option value="date-asc">Date: Oldest First</option>
-            <option value="amount-desc">Amount: High to Low</option>
-            <option value="amount-asc">Amount: Low to High</option>
-          </select>
+          {/* Improved Sort Dropdown */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <ArrowUpDown size={14} />
+            </span>
+            <select
+              className="filter-select"
+              style={{
+                paddingLeft: '38px',
+                paddingRight: '36px',
+                appearance: 'none',
+                WebkitAppearance: 'none',
+                MozAppearance: 'none',
+              }}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="date-desc">Newest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="amount-desc">Amount: High to Low</option>
+              <option value="amount-asc">Amount: Low to High</option>
+            </select>
+            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
         </div>
 
-        <button className="btn btn-primary" onClick={() => setIsCreatingInvoice(true)}>
+        <button className="btn btn-primary" onClick={handleStartNewInvoice}>
           <Plus size={16} /> New Invoice
         </button>
       </div>
@@ -1031,25 +1159,55 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Invoice No</th>
+                    <th className="text-nowrap">Invoice No</th>
                     <th>Customer Name</th>
-                    <th>Date</th>
-                    <th style={{ textAlign: 'right' }}>Total Bill (₹)</th>
-                    <th style={{ textAlign: 'right' }}>Collected (₹)</th>
-                    <th style={{ textAlign: 'right' }}>Balance Due (₹)</th>
+                    <th className="text-nowrap">Date</th>
+                    <th className="text-nowrap">Total Bill (₹)</th>
+                    <th className="text-nowrap">Collected (₹)</th>
+                    <th className="text-nowrap">Balance Due (₹)</th>
                     <th>Status</th>
-                    <th className="no-print" style={{ textAlign: 'center', width: '100px' }}>Actions</th>
+                    <th className="no-print" style={{ textAlign: 'center', width: '80px' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {paginatedInvoices.map((inv) => (
                     <tr key={inv.id}>
-                      <td style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{inv.invoiceNumber}</td>
-                      <td style={{ fontWeight: 600 }}>{inv.customerName}</td>
-                      <td>{formatDate(inv.date)}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right', color: 'var(--color-success-dark)', fontWeight: 600 }}>{formatINR(inv.amountPaid).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right', color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600 }}>
+                      <td 
+                        style={{ fontWeight: 700, color: 'var(--primary-color, var(--primary-dark))', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                        onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
+                        title="Click to view details"
+                        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                      >
+                        {inv.invoiceNumber}
+                      </td>
+                      <td 
+                        style={{ fontWeight: 600, color: 'var(--primary-color, var(--primary-dark))', cursor: 'pointer' }}
+                        onClick={() => {
+                          if (inv.customerId) {
+                            setViewCustomer(inv.customerId);
+                            setCurrentTab('customers');
+                          } else {
+                            // If customer ID is missing, try matching by name
+                            const matchedCustomer = customers.find(c => c.name === inv.customerName);
+                            if (matchedCustomer) {
+                              setViewCustomer(matchedCustomer.id);
+                              setCurrentTab('customers');
+                            } else {
+                              showToast(`Customer profile not found for: ${inv.customerName}`, 'info');
+                            }
+                          }
+                        }}
+                        title="Click to view customer profile"
+                        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                      >
+                        {inv.customerName}
+                      </td>
+                      <td className="text-nowrap">{formatDate(inv.date)}</td>
+                      <td style={{ fontWeight: 700 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
+                      <td style={{ color: 'var(--color-success-dark)', fontWeight: 600 }}>{formatINR(inv.amountPaid).replace('₹', '')}</td>
+                      <td style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600 }}>
                         {formatINR(inv.balanceDue).replace('₹', '')}
                       </td>
                       <td>
@@ -1057,10 +1215,119 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                           {inv.paymentStatus}
                         </span>
                       </td>
-                      <td className="no-print" style={{ textAlign: 'center' }}>
-                        <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px' }} onClick={() => setViewInvoice(inv.id)} title="View Tax Invoice Details">
-                          <Eye size={13} /> View
+                      <td className="no-print" style={{ position: 'relative', textAlign: 'center' }}>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                          onClick={() => setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id)}
+                          title="Actions"
+                        >
+                          <MoreVertical size={16} />
                         </button>
+                        
+                        {activeMenuInvoiceId === inv.id && (
+                          <>
+                            {/* Overlay to close the menu on clicking outside */}
+                            <div 
+                              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} 
+                              onClick={() => setActiveMenuInvoiceId(null)}
+                            />
+                            
+                            {/* Dropdown Menu */}
+                            <div className="card" style={{
+                              position: 'absolute',
+                              right: '100%',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              marginRight: '8px',
+                              zIndex: 999,
+                              minWidth: '130px',
+                              padding: '6px 0',
+                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px',
+                              backgroundColor: 'var(--card-bg, #ffffff)',
+                              border: '1px solid var(--border-color)',
+                            }}>
+                              <button 
+                                className="dropdown-item" 
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  background: 'none',
+                                  border: 'none',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: 500,
+                                  color: 'var(--text-primary)',
+                                }}
+                                onClick={() => {
+                                  setViewInvoice(inv.id || inv.invoiceNumber);
+                                  setActiveMenuInvoiceId(null);
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
+                                <Eye size={14} /> View Details
+                              </button>
+                              <button 
+                                className="dropdown-item" 
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  background: 'none',
+                                  border: 'none',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: 500,
+                                  color: 'var(--text-primary)',
+                                }}
+                                onClick={() => {
+                                  handleStartEditInvoice(inv);
+                                  setActiveMenuInvoiceId(null);
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
+                                <Edit2 size={14} /> Edit Invoice
+                              </button>
+                              <button 
+                                className="dropdown-item text-danger" 
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '8px',
+                                  width: '100%',
+                                  padding: '8px 12px',
+                                  background: 'none',
+                                  border: 'none',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '13px',
+                                  fontWeight: 500,
+                                  color: 'var(--color-danger)',
+                                }}
+                                onClick={() => {
+                                  handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber);
+                                  setActiveMenuInvoiceId(null);
+                                }}
+                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -1087,6 +1354,46 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           </div>
         )}
       </div>
+
+      {deletingInvoice && (
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+              <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                <AlertTriangle size={28} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Invoice</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingInvoice(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                  onClick={async () => {
+                    const idToDelete = deletingInvoice.id;
+                    const invoiceNo = deletingInvoice.invoiceNumber;
+                    setDeletingInvoice(null);
+                    try {
+                      deleteInvoice(idToDelete);
+                      showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
+                      setViewInvoice(null);
+                    } catch (error: any) {
+                      console.error("Delete invoice error:", error);
+                      showToast(`Failed to delete: ${error.message || error}`, 'error');
+                    }
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

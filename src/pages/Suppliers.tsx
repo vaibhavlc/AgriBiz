@@ -215,12 +215,12 @@ export const Suppliers: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Document Bill</th>
+                    <th className="text-nowrap">Date</th>
+                    <th className="text-nowrap">Document Bill</th>
                     <th>Description</th>
-                    <th style={{ textAlign: 'right' }}>Debit (Invoice [+])</th>
-                    <th style={{ textAlign: 'right' }}>Credit (Paid [-])</th>
-                    <th style={{ textAlign: 'right' }}>Outstanding Balance (₹)</th>
+                    <th className="text-nowrap">Debit (Invoice [+])</th>
+                    <th className="text-nowrap">Credit (Paid [-])</th>
+                    <th className="text-nowrap">Outstanding Balance (₹)</th>
                     <th className="no-print" style={{ textAlign: 'center' }}>Link</th>
                   </tr>
                 </thead>
@@ -234,18 +234,17 @@ export const Suppliers: React.FC = () => {
                   ) : (
                     ledgerWithBalance.map((entry, idx) => (
                       <tr key={idx}>
-                        <td>{formatDate(entry.date)}</td>
-                        <td style={{ fontWeight: 600, fontFamily: 'monospace' }}>{entry.docNo}</td>
+                        <td className="text-nowrap">{formatDate(entry.date)}</td>
+                        <td className="text-nowrap" style={{ fontWeight: 600, fontFamily: 'monospace' }}>{entry.docNo}</td>
                         <td style={{ fontSize: '13px' }}>{entry.desc}</td>
-                        <td style={{ textAlign: 'right', color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'inherit' }}>
+                        <td className="text-nowrap" style={{ color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'inherit' }}>
                           {entry.debit > 0 ? formatINR(entry.debit).replace('₹', '') : '—'}
                         </td>
-                        <td style={{ textAlign: 'right', color: entry.credit > 0 ? 'var(--color-success-dark)' : 'inherit' }}>
+                        <td className="text-nowrap" style={{ color: entry.credit > 0 ? 'var(--color-success-dark)' : 'inherit' }}>
                           {entry.credit > 0 ? formatINR(entry.credit).replace('₹', '') : '—'}
                         </td>
                         <td
                           style={{
-                            textAlign: 'right',
                             fontWeight: 600,
                             color: entry.balance > 0 ? 'var(--color-danger)' : 'inherit',
                           }}
@@ -341,10 +340,10 @@ export const Suppliers: React.FC = () => {
                 <thead>
                   <tr>
                     <th>Supplier Company / Name</th>
-                    <th>Phone / Contact</th>
+                    <th className="text-nowrap">Phone / Contact</th>
                     <th>Billing Address</th>
-                    <th>GSTIN Identification</th>
-                    <th style={{ textAlign: 'right' }}>We Owe Dues (₹)</th>
+                    <th className="text-nowrap">GSTIN Identification</th>
+                    <th className="text-nowrap">We Owe Dues (₹)</th>
                     <th style={{ textAlign: 'center' }}>Actions</th>
                   </tr>
                 </thead>
@@ -352,14 +351,14 @@ export const Suppliers: React.FC = () => {
                   {paginatedSuppliers.map((s) => (
                     <tr key={s.id}>
                       <td style={{ fontWeight: 600 }}>{s.name}</td>
-                      <td>{s.phone}</td>
+                      <td className="text-nowrap">{s.phone}</td>
                       <td style={{ fontSize: '13px', maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {s.address || '—'}
                       </td>
-                      <td style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</td>
+                      <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</td>
                       <td
+                        className="text-nowrap"
                         style={{
-                          textAlign: 'right',
                           fontWeight: 700,
                           color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit',
                         }}

@@ -57,6 +57,7 @@ interface AppContextType {
   deleteSupplier: (id: string) => void;
 
   addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => Invoice;
+  editInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
 
   addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => void;
@@ -276,40 +277,148 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteInvoice = (id: string) => {
-    const inv = invoices.find((i) => i.id === id);
-    if (!inv) return;
+    console.log("deleteInvoice called with id:", id);
+    const inv = invoices.find((i) => i.id === id || i.invoiceNumber === id);
+    if (!inv) {
+      throw new Error(`Invoice not found: ${id}`);
+    }
 
-    setInvoices((prev) => prev.filter((i) => i.id !== id));
+    // 1. Remove invoice from invoices list state
+    setInvoices((prev) => prev.filter((i) => i.id !== inv.id && i.invoiceNumber !== inv.invoiceNumber));
 
-    // Inventory effect: Restore stock
-    setProducts((prevProducts) =>
-      prevProducts.map((p) => {
-        const matchingItem = inv.items.find((item) => item.productId === p.id);
-        if (matchingItem) {
-          return {
-            ...p,
-            stock: p.stock + matchingItem.quantity,
-          };
-        }
-        return p;
-      })
+    // 2. Safely revert product stock quantities
+    try {
+      if (inv.items && Array.isArray(inv.items)) {
+        setProducts((prevProducts) =>
+          prevProducts.map((p) => {
+            const matchingItem = inv.items.find((item) => item && item.productId === p.id);
+            if (matchingItem) {
+              const qty = Number(matchingItem.quantity) || 0;
+              return {
+                ...p,
+                stock: (Number(p.stock) || 0) + qty,
+              };
+            }
+            return p;
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Error restoring stock on invoice delete:", err);
+    }
+
+    // 3. Safely revert customer outstanding balance
+    try {
+      if (inv.customerId) {
+        setCustomers((prevCustomers) =>
+          prevCustomers.map((cust) => {
+            if (cust.id === inv.customerId) {
+              const balanceDue = Number(inv.balanceDue) || 0;
+              return {
+                ...cust,
+                outstanding: (Number(cust.outstanding) || 0) - balanceDue,
+              };
+            }
+            return cust;
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Error reverting customer outstanding on invoice delete:", err);
+    }
+  };
+
+  const editInvoice = (updatedInvoice: Invoice) => {
+    console.log("editInvoice called with invoice:", updatedInvoice);
+    const oldInvoice = invoices.find((i) => i.id === updatedInvoice.id || i.invoiceNumber === updatedInvoice.invoiceNumber);
+    if (!oldInvoice) {
+      throw new Error(`Original invoice not found: ${updatedInvoice.invoiceNumber}`);
+    }
+
+    // 1. Revert old stock changes
+    let revertedProducts = products;
+    try {
+      if (oldInvoice.items && Array.isArray(oldInvoice.items)) {
+        revertedProducts = products.map((p) => {
+          const matchingItem = oldInvoice.items.find((item) => item && item.productId === p.id);
+          if (matchingItem) {
+            const qty = Number(matchingItem.quantity) || 0;
+            return {
+              ...p,
+              stock: (Number(p.stock) || 0) + qty,
+            };
+          }
+          return p;
+        });
+      }
+    } catch (err) {
+      console.error("Error reverting old stock changes on edit:", err);
+    }
+
+    // 2. Revert old customer outstanding changes
+    let revertedCustomers = customers;
+    try {
+      if (oldInvoice.customerId) {
+        revertedCustomers = customers.map((cust) => {
+          if (cust.id === oldInvoice.customerId) {
+            const balanceDue = Number(oldInvoice.balanceDue) || 0;
+            return {
+              ...cust,
+              outstanding: (Number(cust.outstanding) || 0) - balanceDue,
+            };
+          }
+          return cust;
+        });
+      }
+    } catch (err) {
+      console.error("Error reverting customer balance on edit:", err);
+    }
+
+    // 3. Apply new stock changes
+    let finalProducts = revertedProducts;
+    try {
+      if (updatedInvoice.items && Array.isArray(updatedInvoice.items)) {
+        finalProducts = revertedProducts.map((p) => {
+          const matchingItem = updatedInvoice.items.find((item) => item && item.productId === p.id);
+          if (matchingItem) {
+            const qty = Number(matchingItem.quantity) || 0;
+            return {
+              ...p,
+              stock: Math.max(0, (Number(p.stock) || 0) - qty),
+            };
+          }
+          return p;
+        });
+      }
+    } catch (err) {
+      console.error("Error applying new stock changes on edit:", err);
+    }
+
+    // 4. Apply new customer outstanding balance changes
+    let finalCustomers = revertedCustomers;
+    try {
+      if (updatedInvoice.customerId) {
+        finalCustomers = revertedCustomers.map((cust) => {
+          if (cust.id === updatedInvoice.customerId) {
+            const balanceDue = Number(updatedInvoice.balanceDue) || 0;
+            return {
+              ...cust,
+              outstanding: (Number(cust.outstanding) || 0) + balanceDue,
+            };
+          }
+          return cust;
+        });
+      }
+    } catch (err) {
+      console.error("Error applying new customer balance on edit:", err);
+    }
+
+    // 5. Update state atomically
+    setProducts(finalProducts);
+    setCustomers(finalCustomers);
+    setInvoices((prev) =>
+      prev.map((inv) => (inv.id === oldInvoice.id || inv.invoiceNumber === oldInvoice.invoiceNumber ? updatedInvoice : inv))
     );
-
-    // Customer effect: Revert outstanding balance
-    setCustomers((prevCustomers) =>
-      prevCustomers.map((cust) => {
-        if (cust.id === inv.customerId) {
-          return {
-            ...cust,
-            outstanding: cust.outstanding - inv.balanceDue,
-          };
-        }
-        return cust;
-      })
-    );
-
-    // Note: To keep things simple, we don't automatically delete the payment record
-    // but the ledger remains clean since deleting invoices should be rare in practice.
   };
 
   // Purchases (Supplier Inward)
@@ -557,6 +666,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteSupplier,
 
         addInvoice,
+        editInvoice,
         deleteInvoice,
 
         addPurchase,

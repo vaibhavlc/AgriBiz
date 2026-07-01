@@ -780,11 +780,11 @@ export const Purchases: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th>Bill Number</th>
+                    <th className="text-nowrap">Bill Number</th>
                     <th>Supplier Name</th>
-                    <th>Receipt Date</th>
-                    <th style={{ textAlign: 'right' }}>Total Bill (₹)</th>
-                    <th style={{ textAlign: 'right' }}>Balance Owed (₹)</th>
+                    <th className="text-nowrap">Receipt Date</th>
+                    <th className="text-nowrap">Total Bill (₹)</th>
+                    <th className="text-nowrap">Balance Owed (₹)</th>
                     <th>Status</th>
                     <th style={{ textAlign: 'center', width: '100px' }}>Actions</th>
                   </tr>
@@ -792,13 +792,12 @@ export const Purchases: React.FC = () => {
                 <tbody>
                   {paginatedPurchases.map((pur) => (
                     <tr key={pur.id}>
-                      <td style={{ fontWeight: 600, color: 'var(--color-info)' }}>{pur.purchaseNumber}</td>
+                      <td style={{ fontWeight: 600, color: 'var(--color-info)', whiteSpace: 'nowrap' }}>{pur.purchaseNumber}</td>
                       <td style={{ fontWeight: 600 }}>{pur.supplierName}</td>
-                      <td>{formatDate(pur.date)}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
+                      <td className="text-nowrap">{formatDate(pur.date)}</td>
+                      <td style={{ fontWeight: 700 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
                       <td
                         style={{
-                          textAlign: 'right',
                           fontWeight: pur.balanceDue > 0 ? 700 : 600,
                           color: pur.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)',
                         }}

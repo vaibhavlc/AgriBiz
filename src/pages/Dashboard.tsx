@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import {
@@ -15,6 +15,50 @@ import {
   DollarSign,
   FileText,
 } from 'lucide-react';
+
+interface AnimatedCounterProps {
+  value: number;
+  isCurrency?: boolean;
+}
+
+const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ value, isCurrency = false }) => {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let start = 0;
+    const end = Math.round(value);
+    if (start === end) {
+      setCount(end);
+      return;
+    }
+
+    const duration = 800;
+    const frameRate = 16;
+    const totalFrames = Math.max(1, Math.floor(duration / frameRate));
+    let currentFrame = 0;
+
+    const timer = setInterval(() => {
+      currentFrame++;
+      const progress = currentFrame / totalFrames;
+      const easeProgress = progress * (2 - progress); // easeOutQuad
+      const currentValue = Math.floor(start + (end - start) * easeProgress);
+
+      if (currentFrame >= totalFrames) {
+        setCount(end);
+        clearInterval(timer);
+      } else {
+        setCount(currentValue);
+      }
+    }, frameRate);
+
+    return () => clearInterval(timer);
+  }, [value]);
+
+  if (isCurrency) {
+    return <>{formatINR(count)}</>;
+  }
+  return <>{count.toLocaleString()}</>;
+};
 
 export const Dashboard: React.FC = () => {
   const {
@@ -98,7 +142,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('sales')} title="View today's sales invoices">
           <div className="kpi-info">
             <span className="kpi-label">Today's Sales</span>
-            <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(todaySales)}</span>
+            <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>
+              <AnimatedCounter value={todaySales} isCurrency />
+            </span>
             <span className="kpi-subtext">Date: {formatDate(todayStr)}</span>
           </div>
           <div className="kpi-icon-container emerald">
@@ -110,7 +156,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('purchases')} title="View today's purchase receipts">
           <div className="kpi-info">
             <span className="kpi-label">Today's Purchases</span>
-            <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{formatINR(todayPurchases)}</span>
+            <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>
+              <AnimatedCounter value={todayPurchases} isCurrency />
+            </span>
             <span className="kpi-subtext">Date: {formatDate(todayStr)}</span>
           </div>
           <div className="kpi-icon-container amber">
@@ -123,7 +171,7 @@ export const Dashboard: React.FC = () => {
           <div className="kpi-info">
             <span className="kpi-label">Low Stock Products</span>
             <span className="kpi-value" style={{ color: lowStockItems.length > 0 ? 'var(--color-danger)' : 'inherit' }}>
-              {lowStockItems.length}
+              <AnimatedCounter value={lowStockItems.length} />
             </span>
             <span className="kpi-subtext">Requires procurement order</span>
           </div>
@@ -142,7 +190,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('customers')} title="View customer directory">
           <div className="kpi-info">
             <span className="kpi-label">Customer Outstanding Balance</span>
-            <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(totalCustomerOutstanding)}</span>
+            <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>
+              <AnimatedCounter value={totalCustomerOutstanding} isCurrency />
+            </span>
             <span className="kpi-subtext">Dues to recover from farmers</span>
           </div>
           <div className="kpi-icon-container rose">
@@ -154,7 +204,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('suppliers')} title="View supplier directory">
           <div className="kpi-info">
             <span className="kpi-label">Supplier Dues (We Owe)</span>
-            <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(totalSupplierOutstanding)}</span>
+            <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>
+              <AnimatedCounter value={totalSupplierOutstanding} isCurrency />
+            </span>
             <span className="kpi-subtext">Dues to pay to manufacturers</span>
           </div>
           <div className="kpi-icon-container rose">
@@ -172,7 +224,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('sales')} title="View sales report">
           <div className="kpi-info">
             <span className="kpi-label">Total Sales Revenue</span>
-            <span className="kpi-value">{formatINR(totalSales)}</span>
+            <span className="kpi-value">
+              <AnimatedCounter value={totalSales} isCurrency />
+            </span>
             <span className="kpi-subtext">Cumulative sales inclusive of tax</span>
           </div>
           <div className="kpi-icon-container emerald">
@@ -184,7 +238,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('purchases')} title="View purchase report">
           <div className="kpi-info">
             <span className="kpi-label">Total Purchase Value</span>
-            <span className="kpi-value">{formatINR(totalPurchases)}</span>
+            <span className="kpi-value">
+              <AnimatedCounter value={totalPurchases} isCurrency />
+            </span>
             <span className="kpi-subtext">Cumulative inventory inward billings</span>
           </div>
           <div className="kpi-icon-container blue">
@@ -196,7 +252,9 @@ export const Dashboard: React.FC = () => {
         <div className="kpi-card" onClick={() => setCurrentTab('reports')} title="View profit reports">
           <div className="kpi-info">
             <span className="kpi-label">Total Net Profit</span>
-            <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalProfit)}</span>
+            <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>
+              <AnimatedCounter value={totalProfit} isCurrency />
+            </span>
             <span className="kpi-subtext">Taxable sales revenue minus COGS</span>
           </div>
           <div className="kpi-icon-container emerald">
