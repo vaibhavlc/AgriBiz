@@ -215,21 +215,44 @@ export const Payments: React.FC = () => {
             />
           </div>
 
-          {/* Payment Method filter */}
-          <select
-            className="filter-select"
-            value={methodFilter}
-            onChange={(e) => {
-              setMethodFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">All Methods</option>
-            <option value="UPI">UPI Receipts</option>
-            <option value="Cash">Cash Ledger</option>
-            <option value="Bank Transfer">Bank Transfer (RTGS)</option>
-            <option value="Cheque">Cheque Clearing</option>
-          </select>
+          {/* Segmented Filter Control */}
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px' }}>
+            {[
+              { value: 'All', label: 'All Methods' },
+              { value: 'UPI', label: 'UPI' },
+              { value: 'Cash', label: 'Cash' },
+              { value: 'Bank Transfer', label: 'Bank' },
+              { value: 'Cheque', label: 'Cheque' }
+            ].map((opt) => {
+              const isActive = methodFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  className="btn-sm"
+                  type="button"
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    backgroundColor: isActive ? 'var(--card-bg, #ffffff)' : 'transparent',
+                    color: isActive ? 'var(--primary-dark)' : 'var(--text-secondary)',
+                    boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.06)' : 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => {
+                    setMethodFilter(opt.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <button

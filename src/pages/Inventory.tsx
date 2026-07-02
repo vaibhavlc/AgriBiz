@@ -11,6 +11,7 @@ import {
   CheckCircle2,
   XCircle,
   Package,
+  Tag,
 } from 'lucide-react';
 import type { Product } from '../types';
 
@@ -116,36 +117,65 @@ export const Inventory: React.FC = () => {
           </div>
 
           {/* Category Filter */}
-          <select
-            className="filter-select"
-            value={categoryFilter}
-            onChange={(e) => {
-              setCategoryFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">All Categories</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>
-                {cat}
-              </option>
-            ))}
-          </select>
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <Tag size={13} />
+            </span>
+            <select
+              className="filter-select"
+              style={{ paddingLeft: '36px' }}
+              value={categoryFilter}
+              onChange={(e) => {
+                setCategoryFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="All">All Categories</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
 
-          {/* Stock Status Filter */}
-          <select
-            className="filter-select"
-            value={stockStatusFilter}
-            onChange={(e) => {
-              setStockStatusFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">All Stock Levels</option>
-            <option value="In Stock">In Stock (Good)</option>
-            <option value="Low Stock">Low Stock Alert</option>
-            <option value="Out of Stock">Out of Stock</option>
-          </select>
+          {/* Segmented Filter Control */}
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px' }}>
+            {['All', 'In Stock', 'Low Stock', 'Out of Stock'].map((status) => {
+              const isActive = stockStatusFilter === status;
+              return (
+                <button
+                  key={status}
+                  className="btn-sm"
+                  type="button"
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    backgroundColor: isActive ? 'var(--card-bg, #ffffff)' : 'transparent',
+                    color: isActive ? 'var(--primary-dark)' : 'var(--text-secondary)',
+                    boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.06)' : 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => {
+                    setStockStatusFilter(status);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {status === 'All' ? 'All Levels' : status}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <button className="btn btn-primary" onClick={handleAddNewClick}>

@@ -7,6 +7,7 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   editProductData?: Product | null;
+  onSaveCallback?: (product: Product) => void;
 }
 
 const CATEGORIES = ['Machinery', 'Irrigation', 'Implements', 'Equipment', 'Spares'];
@@ -16,6 +17,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   isOpen,
   onClose,
   editProductData = null,
+  onSaveCallback,
 }) => {
   const { addProduct, editProduct } = useApp();
   const [name, setName] = useState('');
@@ -82,7 +84,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         gstRate,
       });
     } else {
-      addProduct({
+      const newProd = addProduct({
         name,
         sku: finalSku,
         category,
@@ -92,6 +94,9 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         sellingPrice,
         gstRate,
       });
+      if (onSaveCallback) {
+        onSaveCallback(newProd);
+      }
     }
     onClose();
   };

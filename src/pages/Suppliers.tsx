@@ -301,18 +301,42 @@ export const Suppliers: React.FC = () => {
             />
           </div>
 
-          <select
-            className="filter-select"
-            value={outstandingFilter}
-            onChange={(e) => {
-              setOutstandingFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">All Suppliers</option>
-            <option value="Owed">Outstanding Bills Only</option>
-            <option value="Zero">Fully Paid (0)</option>
-          </select>
+          {/* Segmented Filter Control */}
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px' }}>
+            {[
+              { value: 'All', label: 'All Suppliers' },
+              { value: 'Owed', label: 'Outstanding' },
+              { value: 'Zero', label: 'Fully Paid' }
+            ].map((opt) => {
+              const isActive = outstandingFilter === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  className="btn-sm"
+                  type="button"
+                  style={{
+                    padding: '5px 10px',
+                    borderRadius: '7px',
+                    border: 'none',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    backgroundColor: isActive ? 'var(--card-bg, #ffffff)' : 'transparent',
+                    color: isActive ? 'var(--primary-dark)' : 'var(--text-secondary)',
+                    boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.06)' : 'none',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onClick={() => {
+                    setOutstandingFilter(opt.value);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         <button className="btn btn-primary" onClick={handleAddNewClick}>
