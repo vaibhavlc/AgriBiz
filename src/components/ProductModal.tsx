@@ -23,10 +23,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
-  const [stock, setStock] = useState(0);
-  const [minStock, setMinStock] = useState(5);
-  const [purchasePrice, setPurchasePrice] = useState(0);
-  const [sellingPrice, setSellingPrice] = useState(0);
+  const [stock, setStock] = useState<number | ''>(0);
+  const [minStock, setMinStock] = useState<number | ''>(5);
+  const [purchasePrice, setPurchasePrice] = useState<number | ''>(0);
+  const [sellingPrice, setSellingPrice] = useState<number | ''>(0);
   const [gstRate, setGstRate] = useState(18);
 
   useEffect(() => {
@@ -70,6 +70,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     if (!name.trim()) return;
 
     const finalSku = sku.trim() || `SKU-${Date.now().toString().slice(-4)}`;
+    const finalStock = stock === '' ? 0 : stock;
+    const finalMinStock = minStock === '' ? 0 : minStock;
+    const finalPurchasePrice = purchasePrice === '' ? 0 : purchasePrice;
+    const finalSellingPrice = sellingPrice === '' ? 0 : sellingPrice;
 
     if (editProductData) {
       editProduct({
@@ -77,10 +81,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         name,
         sku: finalSku,
         category,
-        stock,
-        minStock,
-        purchasePrice,
-        sellingPrice,
+        stock: finalStock,
+        minStock: finalMinStock,
+        purchasePrice: finalPurchasePrice,
+        sellingPrice: finalSellingPrice,
         gstRate,
       });
     } else {
@@ -88,10 +92,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         name,
         sku: finalSku,
         category,
-        stock,
-        minStock,
-        purchasePrice,
-        sellingPrice,
+        stock: finalStock,
+        minStock: finalMinStock,
+        purchasePrice: finalPurchasePrice,
+        sellingPrice: finalSellingPrice,
         gstRate,
       });
       if (onSaveCallback) {
@@ -166,8 +170,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               type="number"
               className="form-control"
               placeholder="0"
-              value={stock === 0 ? '' : stock}
-              onChange={(e) => setStock(Math.max(0, parseInt(e.target.value) || 0))}
+              value={stock}
+              onChange={(e) => {
+                const val = e.target.value;
+                setStock(val === '' ? '' : Math.max(0, parseInt(val) || 0));
+              }}
               required
             />
           </div>
@@ -177,8 +184,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               type="number"
               className="form-control"
               placeholder="5"
-              value={minStock === 0 ? '' : minStock}
-              onChange={(e) => setMinStock(Math.max(0, parseInt(e.target.value) || 0))}
+              value={minStock}
+              onChange={(e) => {
+                const val = e.target.value;
+                setMinStock(val === '' ? '' : Math.max(0, parseInt(val) || 0));
+              }}
               required
             />
           </div>
@@ -205,8 +215,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               type="number"
               className="form-control"
               placeholder="Base cost"
-              value={purchasePrice === 0 ? '' : purchasePrice}
-              onChange={(e) => setPurchasePrice(Math.max(0, parseFloat(e.target.value) || 0))}
+              value={purchasePrice}
+              onChange={(e) => {
+                const val = e.target.value;
+                setPurchasePrice(val === '' ? '' : Math.max(0, parseFloat(val) || 0));
+              }}
               required
             />
           </div>
@@ -216,8 +229,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               type="number"
               className="form-control"
               placeholder="Retail rate"
-              value={sellingPrice === 0 ? '' : sellingPrice}
-              onChange={(e) => setSellingPrice(Math.max(0, parseFloat(e.target.value) || 0))}
+              value={sellingPrice}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSellingPrice(val === '' ? '' : Math.max(0, parseFloat(val) || 0));
+              }}
               required
             />
           </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { formatINR, formatDate } from '../utils/dummyData';
@@ -12,13 +13,15 @@ import {
   Trash2,
   Eye,
   ArrowLeft,
-  Calendar,
   Percent,
   Share2,
   Edit2,
   AlertTriangle,
   MoreVertical,
   ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  Store,
 } from 'lucide-react';
 
 interface InvoiceItemLocal {
@@ -46,7 +49,14 @@ export const Sales: React.FC = () => {
     settings,
     setViewCustomer,
     setCurrentTab,
+    salesFormPresetCustomerId,
+    setSalesFormPresetCustomerId,
   } = useApp();
+
+  const totalSales = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
+  const totalCollected = invoices.reduce((sum, inv) => sum + inv.amountPaid, 0);
+  const totalOutstanding = invoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
+  const invoiceCount = invoices.length;
 
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<{ id: string; invoiceNumber: string } | null>(null);
@@ -62,8 +72,8 @@ export const Sales: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [notes, setNotes] = useState('');
 
-  // Print Template Selector (A4 standard vs Thermal receipt POS roll)
-  const [printTemplate, setPrintTemplate] = useState<'A4' | 'Thermal'>('A4');
+  // Print Template Selector (A5 standard vs Thermal receipt POS roll)
+  const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
 
   // Modals & Filters
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -84,6 +94,22 @@ export const Sales: React.FC = () => {
     };
   }, [printTemplate, currentInvoiceId]);
 
+  useEffect(() => {
+    if (salesFormPresetCustomerId) {
+      // Clear forms
+      setEditingInvoiceId(null);
+      setSelectedCustomerId(salesFormPresetCustomerId);
+      setInvoiceDate(new Date().toISOString().split('T')[0]);
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setAmountPaid(0);
+      setNotes('');
+      // Open modal
+      setIsCreatingInvoice(true);
+      // Consume preset
+      setSalesFormPresetCustomerId(null);
+    }
+  }, [salesFormPresetCustomerId, setSalesFormPresetCustomerId, setIsCreatingInvoice]);
+
   const handlePrint = () => {
     window.print();
   };
@@ -99,13 +125,13 @@ export const Sales: React.FC = () => {
 
     const generatePDF = (html2pdfLib: any) => {
       const opt = {
-        margin:       printTemplate === 'A4' ? 10 : 2,
+        margin:       printTemplate === 'A5' ? 0 : 2,
         filename:     `${selectedInvoice?.invoiceNumber || 'invoice'}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { 
           unit: 'mm', 
-          format: printTemplate === 'A4' ? 'a4' : [80, 200], 
+          format: printTemplate === 'A5' ? 'a5' : [80, 200], 
           orientation: 'portrait' 
         }
       };
@@ -151,13 +177,13 @@ export const Sales: React.FC = () => {
 
     const sharePDF = (html2pdfLib: any) => {
       const opt = {
-        margin:       printTemplate === 'A4' ? 10 : 2,
+        margin:       printTemplate === 'A5' ? 0 : 2,
         filename:     `${invoice.invoiceNumber}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { 
           unit: 'mm', 
-          format: printTemplate === 'A4' ? 'a4' : [80, 200], 
+          format: printTemplate === 'A5' ? 'a5' : [80, 200], 
           orientation: 'portrait' 
         }
       };
@@ -525,8 +551,8 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           </button>
           <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
             <span style={{ fontSize: "13px", fontWeight: 600 }}>Print Template:</span>
-            <select className="filter-select" style={{ padding: "6px 12px" }} value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A4" | "Thermal")}>
-              <option value="A4">Standard A4 Tax Sheet</option>
+            <select className="filter-select" style={{ padding: "6px 12px" }} value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
+              <option value="A5">Standard A5 Bill Book</option>
               <option value="Thermal">Thermal 3-Inch roll POS</option>
             </select>
             <button className="btn btn-secondary" onClick={handleDownload} title="Export invoice as PDF">
@@ -541,67 +567,272 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           </div>
         </div>
 
-        {printTemplate === "A4" ? (
-          <div className="print-invoice-layout card">
-            <div style={{ display: "flex", justifyContent: "space-between", borderBottom: "2px solid var(--border-color)", paddingBottom: "20px", marginBottom: "20px" }}>
-              <div>
-                <h2 style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "24px", color: "var(--primary-dark)" }}>AgriBiz Dealers</h2>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)", marginTop: "4px" }}>Main Market Road, Agri Industrial Zone, Ganganagar</p>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>Email: support@agribiz.com | Mob: +91 98765 43210</p>
-                <p style={{ fontSize: "13px", color: "var(--text-primary)", fontWeight: 600, marginTop: "8px" }}>GSTIN: 08AAAAA1111A1Z1</p>
+        {printTemplate === "A5" ? (
+          <div className="invoice-mockup-wrapper">
+            <div className="print-invoice-layout invoice-print-container">
+              {/* Elegant leafy branch corner watermark */}
+              <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 90 Q 50 50 90 10" />
+                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#4E6C50" />
+                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#4E6C50" />
+                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#4E6C50" />
+                </svg>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <span className="badge badge-success" style={{ textTransform: "uppercase", padding: "4px 10px", fontSize: "11px", letterSpacing: "0.5px" }}>TAX INVOICE</span>
-                <h3 style={{ marginTop: "8px", fontSize: "18px", fontWeight: 700 }}>{selectedInvoice.invoiceNumber}</h3>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>Date: {formatDate(selectedInvoice.date)}</p>
-                <p style={{ fontSize: "13px", color: "var(--text-muted)" }}>F.Y. 2026-27</p>
-              </div>
-            </div>
-            <div className="form-row" style={{ marginBottom: "24px" }}>
-              <div className="card" style={{ padding: "12px 16px", background: "var(--bg-app)", border: "none" }}>
-                <h4 style={{ textTransform: "uppercase", fontSize: "11px", color: "var(--text-muted)", marginBottom: "8px", letterSpacing: "0.5px" }}>Billed To (Customer):</h4>
-                {customerDetail ? (<><h4 style={{ fontWeight: 700 }}>{customerDetail.name}</h4><p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>{customerDetail.address || "Address: N/A"}</p><p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Phone: {customerDetail.phone}</p>{customerDetail.gstin && <p style={{ fontSize: "13px", fontWeight: 600, color: "var(--text-primary)", marginTop: "4px" }}>GSTIN: {customerDetail.gstin}</p>}</>) : (<p style={{ fontSize: "13px", color: "var(--text-secondary)" }}>Walk-in Customer</p>)}
-              </div>
-              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <h4 style={{ textTransform: "uppercase", fontSize: "11px", color: "var(--text-muted)", marginBottom: "6px", letterSpacing: "0.5px" }}>Payment Status:</h4>
-                <div style={{ display: "inline-flex", flexDirection: "column", gap: "4px" }}>
-                  <span className={`badge ${selectedInvoice.paymentStatus === "Paid" ? "badge-success" : selectedInvoice.paymentStatus === "Partial" ? "badge-warning" : "badge-danger"}`} style={{ alignSelf: "flex-end", padding: "4px 12px" }}>{selectedInvoice.paymentStatus.toUpperCase()}</span>
-                  {selectedInvoice.paymentMethod && <p style={{ fontSize: "13px", color: "var(--text-secondary)", marginTop: "4px" }}>Method: {selectedInvoice.paymentMethod}</p>}
+
+              {/* Header: Logo, Company Info, Invoice Title */}
+              <div className="invoice-header-bar">
+              <div style={{ display: "flex", alignItems: "flex-start" }}>
+                <div className="invoice-logo-pill">
+                  <Store size={22} className="invoice-logo-icon" />
+                  <span style={{ fontSize: "9px", fontWeight: 900 }}>AGRI</span>
+                </div>
+                <div>
+                  <h2 className="invoice-company-name">AgriBiz Dealers</h2>
+                  <p className="invoice-company-sub">Main Market Road, Agri Industrial Zone, Ganganagar</p>
+                  <p className="invoice-company-sub">Email: support@agribiz.com | Mob: +91 98765 43210</p>
+                  <p className="invoice-company-gst">GSTIN: 08AAAAA1111A1Z1</p>
                 </div>
               </div>
-            </div>
-            <table className="print-items-table" style={{ width: "100%", borderCollapse: "collapse", marginBottom: "24px" }}>
-              <thead><tr style={{ borderBottom: "2px solid var(--border-color)", backgroundColor: "var(--bg-app)" }}>
-                <th style={{ padding: "10px 8px", textAlign: "center", fontSize: "13px" }}>Sr</th>
-                <th style={{ padding: "10px 8px", textAlign: "left", fontSize: "13px" }}>Product / Description</th>
-                <th style={{ padding: "10px 8px", textAlign: "center", fontSize: "13px" }}>GST Rate</th>
-                <th style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>Price (₹)</th>
-                <th style={{ padding: "10px 8px", textAlign: "center", fontSize: "13px" }}>Qty</th>
-                <th style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>Disc (%)</th>
-                <th style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>Tax Amount (₹)</th>
-                <th style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>Net Total (₹)</th>
-              </tr></thead>
-              <tbody>{selectedInvoice.items.map((item, index) => (<tr key={index} style={{ borderBottom: "1px solid var(--border-color)" }}><td style={{ padding: "10px 8px", textAlign: "center", fontSize: "13px" }}>{index + 1}</td><td style={{ padding: "10px 8px", fontSize: "13px", fontWeight: 600 }}>{item.productName}</td><td style={{ padding: "10px 8px", textAlign: "center", fontSize: "13px" }}>{item.gstRate}%</td><td style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>{item.price.toFixed(2)}</td><td style={{ padding: "10px 8px", textAlign: "center", fontSize: "13px" }}>{item.quantity}</td><td style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>{item.discount}%</td><td style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px" }}>{item.gstAmount.toFixed(2)}</td><td style={{ padding: "10px 8px", textAlign: "right", fontSize: "13px", fontWeight: 600 }}>{item.total.toFixed(2)}</td></tr>))}</tbody>
-            </table>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-              <div style={{ maxWidth: "60%" }}><h5 style={{ fontWeight: 700, fontSize: "12px", color: "var(--text-secondary)", marginBottom: "6px" }}>Invoice Remarks:</h5><p style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: "1.4" }}>{selectedInvoice.notes || "Goods once sold are subject to standard industrial dealer warranties."}</p></div>
-              <div style={{ minWidth: "280px" }}>
-                <table style={{ width: "100%", fontSize: "13px", borderCollapse: "collapse" }}><tbody>
-                  <tr><td style={{ padding: "4px 0", color: "var(--text-secondary)" }}>Taxable Value</td><td style={{ padding: "4px 0", textAlign: "right", fontWeight: 600 }}>{formatINR(invoiceTotals.subtotal)}</td></tr>
-                  {invoiceTotals.discountTotal > 0 && <tr><td style={{ padding: "4px 0", color: "var(--color-success-dark)" }}>Discount (-)</td><td style={{ padding: "4px 0", textAlign: "right", fontWeight: 600, color: "var(--color-success-dark)" }}>{formatINR(invoiceTotals.discountTotal)}</td></tr>}
-                  {isInterState ? (<tr><td style={{ padding: "4px 0", color: "var(--text-secondary)" }}>IGST ({selectedInvoice.items[0]?.gstRate || 18}%)</td><td style={{ padding: "4px 0", textAlign: "right", fontWeight: 600 }}>{formatINR(invoiceTotals.gstTotal)}</td></tr>) : (<><tr><td style={{ padding: "4px 0", color: "var(--text-secondary)" }}>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td><td style={{ padding: "4px 0", textAlign: "right", fontWeight: 600 }}>{formatINR(invoiceTotals.gstTotal / 2)}</td></tr><tr><td style={{ padding: "4px 0", color: "var(--text-secondary)" }}>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td><td style={{ padding: "4px 0", textAlign: "right", fontWeight: 600 }}>{formatINR(invoiceTotals.gstTotal / 2)}</td></tr></>)}
-                  <tr style={{ borderTop: "2px solid var(--border-color)", borderBottom: "2px solid var(--border-color)", fontSize: "15px", fontWeight: 800 }}><td style={{ padding: "8px 0", color: "var(--text-primary)" }}>Grand Total</td><td style={{ padding: "8px 0", textAlign: "right", color: "var(--primary-dark)" }}>{formatINR(invoiceTotals.grandTotal)}</td></tr>
-                  <tr><td style={{ padding: "8px 0 4px 0", color: "var(--text-secondary)" }}>Amount Collected</td><td style={{ padding: "8px 0 4px 0", textAlign: "right", fontWeight: 600, color: "var(--color-success-dark)" }}>{formatINR(invoiceTotals.amountPaid)}</td></tr>
-                  <tr style={{ fontSize: "13px", fontWeight: 700 }}><td style={{ padding: "4px 0", color: "var(--color-danger)" }}>Balance Due</td><td style={{ padding: "4px 0", textAlign: "right", color: "var(--color-danger)" }}>{formatINR(invoiceTotals.balanceDue)}</td></tr>
-                </tbody></table>
+              <div style={{ textAlign: "right" }}>
+                <h1 className="invoice-main-title">INVOICE</h1>
+                <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
+                <p className="invoice-date-text">Date: {formatDate(selectedInvoice.date)}</p>
               </div>
             </div>
-            <div style={{ marginTop: "60px", display: "flex", justifyContent: "space-between", borderTop: "1px solid var(--border-color)", paddingTop: "20px" }}>
-              <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>1. Warranty is managed directly by equipment manufacturer.<br />2. Delayed payment will attract interest @1.5% per month.</div>
-              <div style={{ textAlign: "center", minWidth: "150px" }}><div style={{ height: "40px" }}></div><p style={{ borderTop: "1px solid var(--border-color)", paddingTop: "6px", fontSize: "12px", fontWeight: 700 }}>Customer Signature</p></div>
+
+            {/* Billed To and Payment details */}
+            <div className="invoice-billing-details">
+              <div>
+                <h4 className="invoice-detail-header">Billing to:</h4>
+                {customerDetail ? (
+                  <>
+                    <h3 className="invoice-customer-name">{customerDetail.name}</h3>
+                    <p className="invoice-customer-sub">{customerDetail.address || "Address: N/A"}</p>
+                    <p className="invoice-customer-sub">Phone: {customerDetail.phone}</p>
+                    {customerDetail.gstin && (
+                      <p className="invoice-customer-gst">GSTIN: {customerDetail.gstin}</p>
+                    )}
+                  </>
+                ) : (
+                  <h3 className="invoice-customer-name">Walk-in Customer</h3>
+                )}
+              </div>
+              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
+                <h4 className="invoice-detail-header">Payment Info:</h4>
+                <span className={`invoice-payment-badge ${selectedInvoice.paymentStatus.toLowerCase()}`}>
+                  {selectedInvoice.paymentStatus.toUpperCase()}
+                </span>
+                {selectedInvoice.paymentMethod && (
+                  <p className="invoice-customer-sub" style={{ marginTop: "6px", fontWeight: 600 }}>
+                    Method: {selectedInvoice.paymentMethod}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Items Table */}
+            <table className="invoice-table">
+              <thead>
+                <tr>
+                  <th style={{ width: "40px", textAlign: "center" }}>Sr</th>
+                  <th style={{ textAlign: "left" }}>Product / Description</th>
+                  <th style={{ width: "80px", textAlign: "center" }}>GST</th>
+                  <th style={{ width: "90px", textAlign: "right" }}>Price (₹)</th>
+                  <th style={{ width: "60px", textAlign: "center" }}>Qty</th>
+                  <th style={{ width: "70px", textAlign: "right" }}>Disc (%)</th>
+                  <th style={{ width: "100px", textAlign: "right" }}>Total (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedInvoice.items.map((item, index) => (
+                  <tr key={index}>
+                    <td style={{ textAlign: "center" }}>{index + 1}</td>
+                    <td style={{ fontWeight: 600 }}>{item.productName}</td>
+                    <td style={{ textAlign: "center" }}>{item.gstRate}%</td>
+                    <td style={{ textAlign: "right" }}>{item.price.toFixed(2)}</td>
+                    <td style={{ textAlign: "center" }}>{item.quantity}</td>
+                    <td style={{ textAlign: "right" }}>{item.discount}%</td>
+                    <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total.toFixed(2)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Bottom summary and remarks */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
+              <div style={{ flex: 1, maxWidth: "55%" }}>
+                <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                <p className="invoice-terms-text">
+                  {selectedInvoice.notes || "Goods once sold are subject to standard industrial dealer warranties."}
+                  <br />
+                  1. Warranty is managed directly by equipment manufacturer.
+                  <br />
+                  2. Delayed payment will attract interest @1.5% per month.
+                </p>
+                <div style={{ marginTop: "16px" }}>
+                  <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
+                  <p className="invoice-terms-text">
+                    Bank: HDFC Bank | A/c No: 501004455667788
+                    <br />
+                    IFSC: HDFC0001234 | Branch: Agri Market
+                  </p>
+                </div>
+              </div>
+              <div style={{ minWidth: "280px" }}>
+                <table className="invoice-summary-table">
+                  <tbody>
+                    <tr>
+                      <td>Subtotal</td>
+                      <td>{formatINR(invoiceTotals.subtotal)}</td>
+                    </tr>
+                    {invoiceTotals.discountTotal > 0 && (
+                      <tr className="discount-row">
+                        <td>Discount (-)</td>
+                        <td>{formatINR(invoiceTotals.discountTotal)}</td>
+                      </tr>
+                    )}
+                    {isInterState ? (
+                      <tr>
+                        <td>IGST ({selectedInvoice.items[0]?.gstRate || 18}%)</td>
+                        <td>{formatINR(invoiceTotals.gstTotal)}</td>
+                      </tr>
+                    ) : (
+                      <>
+                        <tr>
+                          <td>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
+                          <td>{formatINR(invoiceTotals.gstTotal / 2)}</td>
+                        </tr>
+                        <tr>
+                          <td>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
+                          <td>{formatINR(invoiceTotals.gstTotal / 2)}</td>
+                        </tr>
+                      </>
+                    )}
+                    <tr className="grand-total-row">
+                      <td>TOTAL</td>
+                      <td>{formatINR(invoiceTotals.grandTotal)}</td>
+                    </tr>
+                    <tr className="collected-row">
+                      <td>Collected</td>
+                      <td>{formatINR(invoiceTotals.amountPaid)}</td>
+                    </tr>
+                    {invoiceTotals.balanceDue > 0 && (
+                      <tr className="due-row">
+                        <td>Balance Due</td>
+                        <td>{formatINR(invoiceTotals.balanceDue)}</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* SVG Illustration and Signature */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "20px" }}>
+              <div style={{ flex: 1, maxWidth: "70%" }}>
+                {/* Custom Inline SVG Illustration */}
+                <svg viewBox="0 0 500 110" width="100%" height="60" style={{ display: "block" }}>
+                  {/* Ground line */}
+                  <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
+                  
+                  {/* Left Side: Sun & Cloud */}
+                  <circle cx="50" cy="20" r="7" fill="#F2C94C" opacity="0.35" />
+                  <path d="M 45 20 Q 50 14 55 20" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                  <path d="M 38 18 Q 42 12 47 18" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                  <path d="M 80 18 C 75 18, 72 14, 78 10 C 84 6, 92 10, 92 14 C 98 14, 98 18, 92 18 Z" fill="#EAE3D2" opacity="0.3" />
+
+                  {/* Left Side: Tractor & Plow */}
+                  {/* Tractor Body */}
+                  <rect x="110" y="65" width="38" height="22" fill="#4E6C50" rx="3" />
+                  <rect x="120" y="52" width="24" height="14" fill="none" stroke="#4E6C50" strokeWidth="2" rx="1.5" />
+                  <rect x="122" y="54" width="20" height="10" fill="#FCFAF6" rx="1" />
+                  {/* Engine front */}
+                  <rect x="148" y="70" width="20" height="17" fill="#4E6C50" />
+                  <line x1="168" y1="72" x2="168" y2="85" stroke="#EAE3D2" strokeWidth="1.5" />
+                  {/* Exhaust pipe */}
+                  <line x1="154" y1="70" x2="154" y2="48" stroke="#2F3E33" strokeWidth="1.5" />
+                  {/* Smoke puffs */}
+                  <circle cx="154" cy="42" r="2.5" fill="#EAE3D2" opacity="0.4" />
+                  <circle cx="157" cy="36" r="3.5" fill="#EAE3D2" opacity="0.25" />
+                  
+                  {/* Wheels */}
+                  <circle cx="120" cy="86" r="11" fill="#2F3E33" />
+                  <circle cx="120" cy="86" r="4.5" fill="#EAE3D2" />
+                  
+                  <circle cx="158" cy="89" r="8" fill="#2F3E33" />
+                  <circle cx="158" cy="89" r="3" fill="#EAE3D2" />
+
+                  {/* Plow attachment */}
+                  <path d="M 110 78 L 94 78 L 90 94 M 94 94 L 98 78" fill="none" stroke="#2F3E33" strokeWidth="1.5" />
+                  <line x1="90" y1="94" x2="82" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+                  <line x1="95" y1="94" x2="87" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+
+                  {/* Middle: Crops & Bags */}
+                  {/* Tall Corn Stalk */}
+                  <path d="M 200 100 Q 198 60 202 45" fill="none" stroke="#27AE60" strokeWidth="2.5" />
+                  <path d="M 200 80 Q 185 75 190 70" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                  <path d="M 201 65 Q 215 60 210 55" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                  <ellipse cx="204" cy="72" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" /> {/* Corn cob */}
+                  <ellipse cx="197" cy="57" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" />
+
+                  {/* Stack of Bags */}
+                  <rect x="225" y="76" width="24" height="24" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                  <line x1="225" y1="88" x2="249" y2="88" stroke="#4E6C50" strokeWidth="1.5" />
+                  <text x="229" y="85" fill="#2F3E33" fontSize="6" fontWeight="900">SEED</text>
+                  
+                  <rect x="242" y="81" width="24" height="19" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                  <line x1="242" y1="91" x2="266" y2="91" stroke="#4E6C50" strokeWidth="1.5" />
+                  <text x="246" y="89" fill="#2F3E33" fontSize="5" fontWeight="900">FERT</text>
+
+                  {/* Pumpkin */}
+                  <path d="M 282 100 C 275 100, 268 93, 268 83 C 268 72, 278 68, 285 68 C 292 68, 302 72, 302 83 C 302 93, 295 100, 288 100 Z" fill="#F2994A" />
+                  <path d="M 285 100 C 280 100, 276 93, 276 83 C 276 72, 281 70, 285 70 C 289 70, 294 72, 294 83 C 294 93, 290 100, 285 100 Z" fill="#F2C94C" />
+                  <path d="M 285 68 C 285 63, 288 60, 291 60" stroke="#27AE60" strokeWidth="2" fill="none" />
+
+                  {/* Right Side: Plant Shop & Fence */}
+                  {/* Picket Fence */}
+                  <rect x="320" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                  <rect x="328" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                  <rect x="336" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                  <line x1="316" y1="78" x2="340" y2="78" stroke="#EAE3D2" strokeWidth="1.5" />
+                  <line x1="316" y1="90" x2="340" y2="90" stroke="#EAE3D2" strokeWidth="1.5" />
+
+                  {/* Plant Shop storefront */}
+                  <rect x="355" y="40" width="115" height="60" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="2.5" />
+                  <rect x="345" y="30" width="135" height="10" fill="#BE3144" rx="2" />
+                  {/* Roof stripes */}
+                  <line x1="360" y1="30" x2="360" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                  <line x1="385" y1="30" x2="385" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                  <line x1="410" y1="30" x2="410" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                  <line x1="435" y1="30" x2="435" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                  <line x1="460" y1="30" x2="460" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                  
+                  {/* Window with OPEN sign */}
+                  <rect x="370" y="55" width="28" height="20" fill="#4E6C50" opacity="0.1" />
+                  <rect x="370" y="55" width="28" height="20" fill="none" stroke="#4E6C50" strokeWidth="1.5" />
+                  <text x="374" y="68" fill="#BE3144" fontSize="8" fontWeight="900">OPEN</text>
+                  
+                  {/* Door */}
+                  <rect x="415" y="58" width="24" height="42" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" />
+                  <circle cx="421" cy="79" r="1.5" fill="#2F3E33" />
+                  
+                  {/* Street Lamp */}
+                  <line x1="478" y1="100" x2="478" y2="40" stroke="#2F3E33" strokeWidth="2.5" />
+                  <circle cx="478" cy="35" r="7" fill="#F2C94C" />
+                  <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
+                </svg>
+              </div>
+              <div style={{ textAlign: "center", minWidth: "150px" }}>
+                <div style={{ height: "45px" }}></div>
+                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "12px", fontWeight: 700, color: "#4E6C50" }}>
+                  Authorized Signatory
+                </p>
+              </div>
             </div>
           </div>
-        ) : (
+        </div>
+      ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
               <div style={{ textAlign: "center", marginBottom: "12px" }}><h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>AGRIBIZ DEALERS</h3><p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>Industrial Zone, Ganganagar</p><p style={{ margin: 0, fontSize: "11px" }}>Mob: +91 98765 43210</p><p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: 08AAAAA1111A1Z1</p></div>
@@ -714,7 +945,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr auto auto', gap: '12px', alignItems: 'end' }}>
+            <div className="form-row-1-auto-auto" style={{ gap: '12px', alignItems: 'end' }}>
               <div className="form-group" style={{ margin: 0 }}>
                 <label className="form-label">Customer *</label>
                 <select className="form-control" value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} required>
@@ -868,7 +1099,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           </div>
 
           {/* ── Step 3: Payment + Summary ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: '20px', alignItems: 'start' }}>
+          <div className="invoice-creator-container" style={{ gap: '20px', alignItems: 'start' }}>
 
             {/* Payment Details */}
             <div className="card" style={{ padding: '24px 28px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
@@ -885,7 +1116,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                 </div>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: amountPaid > 0 ? '1fr 1fr' : '1fr', gap: '16px', marginBottom: '16px' }}>
+              <div className={amountPaid > 0 ? "form-row" : ""} style={{ gap: '16px', marginBottom: '16px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label">Amount Collected (₹)</label>
                   <input type="number" className="form-control" placeholder="0.00" min="0" max={totals.grandTotal} value={amountPaid || ''} onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))} />
@@ -1014,16 +1245,64 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
   // 3. INVOICES TABLE LIST VIEW (DEFAULT)
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      {/* Sales KPI Cards */}
+      <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+        <div className="kpi-card" style={{ cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Sales</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
+              {formatINR(totalSales)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              Total billing revenue
+            </span>
+          </div>
+        </div>
+        <div className="kpi-card" style={{ cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Collected</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
+              {formatINR(totalCollected)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              Cash and digital collection
+            </span>
+          </div>
+        </div>
+        <div className="kpi-card" style={{ cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Outstanding Dues</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
+              {formatINR(totalOutstanding)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              Accounts receivable dues
+            </span>
+          </div>
+        </div>
+        <div className="kpi-card" style={{ cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Voucher Count</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
+              {invoiceCount} invoices
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              Total sales transactions
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Top Filter and New button */}
-      <div className="filters-row" style={{ justifyContent: 'flex-start' }}>
-        <div className="filters-left" style={{ flexWrap: 'wrap', flex: 1 }}>
+      <div className="filters-row-unified">
+        <div className="filters-group-one">
           <div className="search-input-wrapper">
             <Search size={16} className="search-input-icon" />
             <input type="text" placeholder="Search invoice or customer..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
           {/* Segmented Filter Control */}
-          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px' }}>
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0 }}>
             {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => {
               const isActive = statusFilter === status;
               return (
@@ -1053,7 +1332,9 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               );
             })}
           </div>
+        </div>
 
+        <div className="filters-group-two">
           {/* Sort Dropdown */}
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
@@ -1078,7 +1359,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           </div>
 
           {/* New Invoice Button — same row */}
-          <button className="btn btn-primary" onClick={handleStartNewInvoice} style={{ marginLeft: 'auto' }}>
+          <button className="btn btn-primary" onClick={handleStartNewInvoice}>
             <Plus size={16} /> New Invoice
           </button>
         </div>
@@ -1096,210 +1377,319 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           </div>
         ) : (
           <div>
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th style={{ whiteSpace: 'nowrap' }}>Inv No</th>
-                    <th style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }}>Customer</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Date</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Total (₹)</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Paid (₹)</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Due (₹)</th>
-                    <th style={{ whiteSpace: 'nowrap' }}>Status</th>
-                    <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedInvoices.map((inv) => (
-                    <tr key={inv.id}>
-                      <td 
-                        style={{ 
-                          fontWeight: 700, 
-                          color: 'var(--primary-color, var(--primary-dark))', 
-                          whiteSpace: 'nowrap', 
-                          cursor: 'pointer' 
-                        }}
-                        onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
-                        title="Click to view details"
-                        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-                      >
-                        {inv.invoiceNumber}
-                      </td>
-                      <td 
-                        style={{ 
-                          fontWeight: 600, 
-                          color: 'var(--primary-color, var(--primary-dark))', 
-                          cursor: 'pointer',
-                          whiteSpace: 'nowrap',
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                        }}
-                        onClick={() => {
-                          if (inv.customerId) {
-                            setViewCustomer(inv.customerId);
-                            setCurrentTab('customers');
-                          } else {
-                            // If customer ID is missing, try matching by name
-                            const matchedCustomer = customers.find(c => c.name === inv.customerName);
-                            if (matchedCustomer) {
-                              setViewCustomer(matchedCustomer.id);
+            {/* Desktop View */}
+            <div className="desktop-only-table">
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th style={{ whiteSpace: 'nowrap' }}>Inv No</th>
+                      <th style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }}>Customer</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Date</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Total (₹)</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Paid (₹)</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Due (₹)</th>
+                      <th style={{ whiteSpace: 'nowrap' }}>Status</th>
+                      <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {paginatedInvoices.map((inv) => (
+                      <tr key={inv.id}>
+                        <td 
+                          style={{ 
+                            fontWeight: 700, 
+                            color: 'var(--primary-color, var(--primary-dark))', 
+                            whiteSpace: 'nowrap', 
+                            cursor: 'pointer' 
+                          }}
+                          onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
+                          title="Click to view details"
+                          onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
+                        >
+                          {inv.invoiceNumber}
+                        </td>
+                        <td 
+                          style={{ 
+                            fontWeight: 600, 
+                            color: 'var(--primary-color, var(--primary-dark))', 
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                          }}
+                          onClick={() => {
+                            if (inv.customerId) {
+                              setViewCustomer(inv.customerId);
                               setCurrentTab('customers');
                             } else {
-                              showToast(`Customer profile not found for: ${inv.customerName}`, 'info');
+                              // If customer ID is missing, try matching by name
+                              const matchedCustomer = customers.find(c => c.name === inv.customerName);
+                              if (matchedCustomer) {
+                                setViewCustomer(matchedCustomer.id);
+                                setCurrentTab('customers');
+                              } else {
+                                showToast(`Customer profile not found for: ${inv.customerName}`, 'info');
+                              }
                             }
-                          }
-                        }}
-                        title={inv.customerName}
-                        onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-                        onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-                      >
-                        {inv.customerName}
-                      </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>{formatDate(inv.date)}</td>
-                      <td style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
-                      <td style={{ color: 'var(--color-success-dark)', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatINR(inv.amountPaid).replace('₹', '')}</td>
-                      <td style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                        {formatINR(inv.balanceDue).replace('₹', '')}
-                      </td>
-                      <td style={{ whiteSpace: 'nowrap' }}>
-                        <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                          {inv.paymentStatus}
-                        </span>
-                      </td>
-                      <td className="no-print" style={{ position: 'relative', textAlign: 'center' }}>
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
-                          onClick={() => setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id)}
-                          title="Actions"
+                          }}
+                          title={inv.customerName}
+                          onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
                         >
-                          <MoreVertical size={16} />
+                          {inv.customerName}
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{formatDate(inv.date)}</td>
+                        <td style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
+                        <td style={{ color: 'var(--color-success-dark)', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatINR(inv.amountPaid).replace('₹', '')}</td>
+                        <td style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                          {formatINR(inv.balanceDue).replace('₹', '')}
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                            {inv.paymentStatus}
+                          </span>
+                        </td>
+                        <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id);
+                            }}
+                            title="Actions"
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+                          
+                          {activeMenuInvoiceId === inv.id && (
+                            <>
+                              {/* Overlay to close the menu on clicking outside */}
+                              <div 
+                                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} 
+                                onClick={() => setActiveMenuInvoiceId(null)}
+                              />
+                              
+                              {/* Dropdown Menu */}
+                              <div className="card" style={{
+                                position: 'absolute',
+                                right: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                marginRight: '8px',
+                                zIndex: 999,
+                                minWidth: '130px',
+                                padding: '6px 0',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                backgroundColor: 'var(--card-bg, #ffffff)',
+                                border: '1px solid var(--border-color)',
+                              }}>
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    background: 'none',
+                                    border: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onClick={() => {
+                                    setViewInvoice(inv.id || inv.invoiceNumber);
+                                    setActiveMenuInvoiceId(null);
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                >
+                                  <Eye size={14} /> View Details
+                                </button>
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    background: 'none',
+                                    border: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onClick={() => {
+                                    handleStartEditInvoice(inv);
+                                    setActiveMenuInvoiceId(null);
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                >
+                                  <Edit2 size={14} /> Edit Invoice
+                                </button>
+                                <button 
+                                  className="dropdown-item text-danger" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 12px',
+                                    background: 'none',
+                                    border: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    fontWeight: 500,
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onClick={() => {
+                                    handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber);
+                                    setActiveMenuInvoiceId(null);
+                                  }}
+                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                >
+                                  <Trash2 size={14} /> Delete
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="mobile-card-list">
+              {paginatedInvoices.map((inv) => (
+                <div key={inv.id} className="mobile-list-card">
+                  <div className="mobile-list-card-header">
+                    <div>
+                      <h4 className="mobile-list-card-title">
+                        <button
+                          type="button"
+                          className="table-link-btn bill-link"
+                          onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
+                        >
+                          {inv.invoiceNumber}
                         </button>
-                        
-                        {activeMenuInvoiceId === inv.id && (
-                          <>
-                            {/* Overlay to close the menu on clicking outside */}
-                            <div 
-                              style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} 
-                              onClick={() => setActiveMenuInvoiceId(null)}
-                            />
-                            
-                            {/* Dropdown Menu */}
-                            <div className="card" style={{
-                              position: 'absolute',
-                              right: '100%',
-                              top: '50%',
-                              transform: 'translateY(-50%)',
-                              marginRight: '8px',
-                              zIndex: 999,
-                              minWidth: '130px',
-                              padding: '6px 0',
-                              boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '2px',
-                              backgroundColor: 'var(--card-bg, #ffffff)',
-                              border: '1px solid var(--border-color)',
-                            }}>
-                              <button 
-                                className="dropdown-item" 
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  background: 'none',
-                                  border: 'none',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  fontSize: '13px',
-                                  fontWeight: 500,
-                                  color: 'var(--text-primary)',
-                                }}
-                                onClick={() => {
-                                  setViewInvoice(inv.id || inv.invoiceNumber);
-                                  setActiveMenuInvoiceId(null);
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              >
-                                <Eye size={14} /> View Details
-                              </button>
-                              <button 
-                                className="dropdown-item" 
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  background: 'none',
-                                  border: 'none',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  fontSize: '13px',
-                                  fontWeight: 500,
-                                  color: 'var(--text-primary)',
-                                }}
-                                onClick={() => {
-                                  handleStartEditInvoice(inv);
-                                  setActiveMenuInvoiceId(null);
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              >
-                                <Edit2 size={14} /> Edit Invoice
-                              </button>
-                              <button 
-                                className="dropdown-item text-danger" 
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '8px',
-                                  width: '100%',
-                                  padding: '8px 12px',
-                                  background: 'none',
-                                  border: 'none',
-                                  textAlign: 'left',
-                                  cursor: 'pointer',
-                                  fontSize: '13px',
-                                  fontWeight: 500,
-                                  color: 'var(--color-danger)',
-                                }}
-                                onClick={() => {
-                                  handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber);
-                                  setActiveMenuInvoiceId(null);
-                                }}
-                                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-                                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                              >
-                                <Trash2 size={14} /> Delete
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </h4>
+                      <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onClick={(e) => { e.stopPropagation(); setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id); }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {activeMenuInvoiceId === inv.id && (
+                        <>
+                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuInvoiceId(null)} />
+                          <div className="card" style={{
+                            position: 'absolute', right: '0', top: '100%', marginTop: '4px',
+                            zIndex: 999, minWidth: '150px', padding: '6px 0',
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                            display: 'flex', flexDirection: 'column', gap: '2px',
+                            backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                          }}>
+                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
+                              onClick={() => { setViewInvoice(inv.id || inv.invoiceNumber); setActiveMenuInvoiceId(null); }}>
+                              <Eye size={14} /> View Details
+                            </button>
+                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
+                              onClick={() => { handleStartEditInvoice(inv); setActiveMenuInvoiceId(null); }}>
+                              <Edit2 size={14} /> Edit Invoice
+                            </button>
+                            <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
+                              onClick={() => { handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber); setActiveMenuInvoiceId(null); }}>
+                              <Trash2 size={14} /> Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Billing Date</span>
+                    <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Status</span>
+                    <span className="mobile-list-card-val">
+                      <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                        {inv.paymentStatus}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Grand Total</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
+                      {formatINR(inv.grandTotal)}
+                    </span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Paid Amount</span>
+                    <span className="mobile-list-card-val" style={{ color: 'var(--color-success-dark)', fontWeight: 600 }}>
+                      {formatINR(inv.amountPaid)}
+                    </span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Due Amount</span>
+                    <span className="mobile-list-card-val" style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600 }}>
+                      {formatINR(inv.balanceDue)}
+                    </span>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Pagination Controls */}
             {totalPages > 1 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                  Page {currentPage} of {totalPages} ({filteredInvoices.length} invoices)
+              <div className="pagination-row">
+                <span>
+                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredInvoices.length)}</strong> of{' '}
+                  <strong>{filteredInvoices.length}</strong> invoices
                 </span>
-                <div style={{ display: 'flex', gap: '8px' }}>
-                  <button className="btn btn-secondary btn-sm" disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
-                    Previous
+                <div className="pagination-btn-group">
+                  <button
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    title="Previous Page"
+                  >
+                    <ChevronLeft size={16} />
                   </button>
-                  <button className="btn btn-secondary btn-sm" disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
-                    Next
+                  <button
+                    disabled={currentPage === totalPages}
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    title="Next Page"
+                  >
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
@@ -1308,7 +1698,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
         )}
       </div>
 
-      {deletingInvoice && (
+      {deletingInvoice && createPortal(
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
           <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
@@ -1345,7 +1735,8 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

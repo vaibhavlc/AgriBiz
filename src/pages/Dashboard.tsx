@@ -276,44 +276,78 @@ export const Dashboard: React.FC = () => {
               </button>
             </div>
 
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Invoice No</th>
-                    <th>Customer Name</th>
-                    <th>Date</th>
-                    <th style={{ textAlign: 'right' }}>Total (₹)</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentSales.length === 0 ? (
+            {/* Desktop View */}
+            <div className="desktop-only-table">
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                        No invoices logged.
-                      </td>
+                      <th>Invoice No</th>
+                      <th>Customer Name</th>
+                      <th>Date</th>
+                      <th style={{ textAlign: 'right' }}>Total (₹)</th>
+                      <th>Status</th>
                     </tr>
-                  ) : (
-                    recentSales.map((inv) => (
-                      <tr key={inv.id}>
-                        <td style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>{inv.invoiceNumber}</td>
-                        <td>{inv.customerName}</td>
-                        <td>{formatDate(inv.date)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
-                        <td>
-                          <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                            {inv.paymentStatus}
-                          </span>
+                  </thead>
+                  <tbody>
+                    {recentSales.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
+                          No invoices logged.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      recentSales.map((inv) => (
+                        <tr key={inv.id}>
+                          <td style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>{inv.invoiceNumber}</td>
+                          <td>{inv.customerName}</td>
+                          <td>{formatDate(inv.date)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
+                          <td>
+                            <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              {inv.paymentStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="mobile-card-list">
+              {recentSales.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>No invoices logged.</div>
+              ) : (
+                recentSales.map((inv) => (
+                  <div key={inv.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">{inv.invoiceNumber}</h4>
+                        <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+                      </div>
+                      <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                        {inv.paymentStatus}
+                      </span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Date</span>
+                      <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Total Amount</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
+                        {formatINR(inv.grandTotal)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
-
+ 
           {/* Recent Purchases Table */}
           <div className="card">
             <div className="card-title">
@@ -322,45 +356,78 @@ export const Dashboard: React.FC = () => {
                 View All <ArrowRight size={12} style={{ marginLeft: '4px' }} />
               </button>
             </div>
-
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th>Bill Number</th>
-                    <th>Supplier Name</th>
-                    <th>Date</th>
-                    <th style={{ textAlign: 'right' }}>Total (₹)</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recentPurchases.length === 0 ? (
+ 
+            {/* Desktop View */}
+            <div className="desktop-only-table">
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
                     <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
-                        No purchases logged.
-                      </td>
+                      <th>Bill Number</th>
+                      <th>Supplier Name</th>
+                      <th>Date</th>
+                      <th style={{ textAlign: 'right' }}>Total (₹)</th>
+                      <th>Status</th>
                     </tr>
-                  ) : (
-                    recentPurchases.map((pur) => (
-                      <tr key={pur.id}>
-                        <td style={{ fontWeight: 600, color: 'var(--color-info)' }}>{pur.purchaseNumber}</td>
-                        <td>{pur.supplierName}</td>
-                        <td>{formatDate(pur.date)}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
-                        <td>
-                          <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                            {pur.paymentStatus}
-                          </span>
+                  </thead>
+                  <tbody>
+                    {recentPurchases.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px' }}>
+                          No purchases logged.
                         </td>
                       </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
+                    ) : (
+                      recentPurchases.map((pur) => (
+                        <tr key={pur.id}>
+                          <td style={{ fontWeight: 600, color: 'var(--color-info)' }}>{pur.purchaseNumber}</td>
+                          <td>{pur.supplierName}</td>
+                          <td>{formatDate(pur.date)}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
+                          <td>
+                            <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              {pur.paymentStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
+
+            {/* Mobile View */}
+            <div className="mobile-card-list">
+              {recentPurchases.length === 0 ? (
+                <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '20px 0' }}>No purchases logged.</div>
+              ) : (
+                recentPurchases.map((pur) => (
+                  <div key={pur.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title" style={{ color: 'var(--color-info)' }}>{pur.purchaseNumber}</h4>
+                        <span className="mobile-list-card-subtitle">{pur.supplierName}</span>
+                      </div>
+                      <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                        {pur.paymentStatus}
+                      </span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Date</span>
+                      <span className="mobile-list-card-val">{formatDate(pur.date)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Total Amount</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
+                        {formatINR(pur.grandTotal)}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>  </div>
           </div>
-        </div>
 
         {/* Right Side: Quick Tasks & Payments Book */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import {
   LayoutDashboard,
@@ -23,6 +24,7 @@ import {
   ChevronDown,
   User,
   LogOut,
+  MoreHorizontal,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -48,6 +50,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   } = useApp();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>('online');
@@ -152,38 +155,283 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-    { id: 'sales', label: 'Sales Invoices', icon: <FileSpreadsheet size={20} /> },
+  const operationsItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)' },
+    { id: 'sales', label: 'Sales Invoices', icon: <FileSpreadsheet size={18} />, color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.15)' },
+    { id: 'purchases', label: 'Purchases Ledger', icon: <ShoppingBag size={18} />, color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)' },
+    { id: 'inventory', label: 'Inventory Stock', icon: <Package size={18} />, color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.15)' },
+  ];
+
+  const directoriesItems = [
+    { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={18} />, color: '#0d9488', glow: 'rgba(13, 148, 136, 0.15)' },
+    { id: 'customers', label: 'Customers List', icon: <Users size={18} />, color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)' },
+    { id: 'suppliers', label: 'Suppliers List', icon: <Truck size={18} />, color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)' },
+  ];
+
+  const adminItems = [
+    { id: 'reports', label: 'Business Reports', icon: <TrendingUp size={18} />, color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)' },
+    { id: 'settings', label: 'Store Settings', icon: <SettingsIcon size={18} />, color: '#64748b', glow: 'rgba(100, 116, 139, 0.15)' },
+  ];
+
+  const bottomNavItems = [
+    { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={20} /> },
+    { id: 'sales', label: 'Sales', icon: <FileSpreadsheet size={20} /> },
     { id: 'purchases', label: 'Purchases', icon: <ShoppingBag size={20} /> },
     { id: 'inventory', label: 'Inventory', icon: <Package size={20} /> },
-    { id: 'customers', label: 'Customers', icon: <Users size={20} /> },
-    { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} /> },
-    { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={20} /> },
-    { id: 'reports', label: 'Reports', icon: <TrendingUp size={20} /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon size={20} /> },
+    { id: 'more', label: 'More', icon: <MoreHorizontal size={20} /> },
   ];
+
+  const handleBottomNavClick = (tabId: string) => {
+    if (tabId === 'more') {
+      setIsMobileMoreOpen(true);
+    } else {
+      handleTabChange(tabId);
+      setIsMobileMoreOpen(false);
+    }
+  };
+
+  const renderSidebarSection = (title: string, items: typeof operationsItems) => (
+    <div style={{ marginBottom: '12px' }}>
+      <h4 style={{
+        fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+        letterSpacing: '1.2px', color: 'rgba(255,255,255,0.22)',
+        paddingLeft: '16px', marginBottom: '6px', fontFamily: 'var(--font-display)'
+      }}>
+        {title}
+      </h4>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+        {items.map((item) => {
+          const isActive = currentTab === item.id;
+          return (
+            <a
+              key={item.id}
+              className={`sidebar-item ${isActive ? 'active' : ''}`}
+              onClick={() => handleTabChange(item.id)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '12px',
+                padding: '8px 16px', borderRadius: '10px', fontSize: '13px',
+                fontWeight: isActive ? 600 : 500, cursor: 'pointer',
+                color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)', textDecoration: 'none',
+                backgroundColor: isActive ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                borderLeft: isActive ? `3px solid ${item.color}` : '3px solid transparent',
+                paddingLeft: isActive ? '13px' : '16px'
+              }}
+              onMouseEnter={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
+                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.transform = 'translateX(4px) scale(1.01)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.transform = 'none';
+                }
+              }}
+            >
+              <span style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                width: '28px', height: '28px', borderRadius: '8px',
+                backgroundColor: isActive ? item.glow : 'transparent',
+                color: isActive ? item.color : 'rgba(255,255,255,0.4)',
+                transition: 'all 0.25s ease'
+              }}>
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+
+  const renderMobileMoreBottomSheet = () => {
+    if (!isMobileMoreOpen) return null;
+
+    const moreItems = [
+      { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={20} />, desc: 'Ledger & Cashbook', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
+      { id: 'customers', label: 'Customers', icon: <Users size={20} />, desc: 'Client Directory', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+      { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} />, desc: 'Vendor Contacts', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+      { id: 'reports', label: 'Tax & Reports', icon: <TrendingUp size={20} />, desc: 'GSTR & P&L Analytics', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+      { id: 'settings', label: 'Settings', icon: <SettingsIcon size={20} />, desc: 'Store Preferences', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' },
+    ];
+
+    return createPortal(
+      <div style={{
+        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+        backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(8px)',
+        zIndex: 2001, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end',
+        animation: 'fadeIn 0.25s ease-out'
+      }} onClick={() => setIsMobileMoreOpen(false)}>
+        <div 
+          style={{
+            backgroundColor: 'var(--bg-card)', borderTopLeftRadius: '24px', borderTopRightRadius: '24px',
+            borderTop: '1px solid var(--border-color)', padding: '24px 20px 40px 20px',
+            boxShadow: '0 -10px 40px rgba(0, 0, 0, 0.2)', width: '100%',
+            animation: 'scaleUp 0.35s cubic-bezier(0.16, 1, 0.3, 1)',
+            maxHeight: '85vh', overflowY: 'auto'
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {/* Drag Handle */}
+          <div style={{ width: '46px', height: '5px', backgroundColor: 'var(--border-color)', borderRadius: '3px', margin: '0 auto 24px auto', opacity: 0.8 }} />
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: 0 }}>
+              Store Management
+            </h3>
+            <button
+              type="button"
+              className="btn-icon"
+              style={{ padding: '6px', backgroundColor: 'var(--bg-app)', borderRadius: '50%' }}
+              onClick={() => setIsMobileMoreOpen(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {moreItems.map((item) => {
+              const isActive = currentTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '16px',
+                    padding: '16px', borderRadius: '16px',
+                    backgroundColor: isActive ? 'var(--bg-app)' : 'var(--bg-card)',
+                    border: isActive ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                    color: 'var(--text-primary)',
+                    textAlign: 'left', cursor: 'pointer', width: '100%',
+                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.02)',
+                    transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                  }}
+                  onClick={() => {
+                    handleTabChange(item.id);
+                    setIsMobileMoreOpen(false);
+                  }}
+                >
+                  <div style={{
+                    width: '42px', height: '42px', borderRadius: '12px',
+                    backgroundColor: item.bg, color: item.color,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0
+                  }}>
+                    {item.icon}
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: isActive ? 700 : 600, color: isActive ? 'var(--primary-dark)' : 'var(--text-primary)' }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                      {item.desc}
+                    </div>
+                  </div>
+                  {isActive && (
+                    <div style={{
+                      width: '8px', height: '8px', borderRadius: '50%',
+                      backgroundColor: 'var(--primary)', boxShadow: '0 0 8px var(--primary)'
+                    }} />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>,
+      document.body
+    );
+  };
+
+  const renderMobileBottomNav = () => {
+    return (
+      <div className="mobile-bottom-nav no-print">
+        {bottomNavItems.map((item) => {
+          const isSelected = item.id === 'more' ? isMobileMoreOpen : currentTab === item.id && !isMobileMoreOpen;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => handleBottomNavClick(item.id)}
+              style={{
+                background: 'none', border: 'none', padding: '6px',
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                gap: '4px', flex: 1, cursor: 'pointer',
+                color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
+                transition: 'all 0.2s ease', position: 'relative'
+              }}
+            >
+              <div style={{
+                transform: isSelected ? 'scale(1.18) translateY(-2px)' : 'none',
+                transition: 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+                color: isSelected ? 'var(--primary)' : 'var(--text-muted)',
+                position: 'relative',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {item.icon}
+                {item.id === 'dashboard' && notifications.length > 0 && (
+                  <span style={{
+                    position: 'absolute', top: '-2px', right: '-2px',
+                    width: '6px', height: '6px', backgroundColor: 'var(--color-danger, #ef4444)',
+                    borderRadius: '50%', border: '1px solid var(--bg-card)'
+                  }} />
+                )}
+              </div>
+              <span style={{
+                fontSize: '10px', fontWeight: isSelected ? 700 : 500,
+                color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)'
+              }}>
+                {item.label}
+              </span>
+              {isSelected && (
+                <span style={{
+                  position: 'absolute', bottom: '0px', width: '16px', height: '3px',
+                  backgroundColor: 'var(--primary)', borderRadius: '2px',
+                  boxShadow: '0 -2px 6px var(--primary)'
+                }} />
+              )}
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div className="app-container">
       {/* Sidebar navigation */}
-      <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`}>
-        <div className="sidebar-header">
+      <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`} style={{
+        background: 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)',
+        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+      }}>
+        {/* Header */}
+        <div className="sidebar-header" style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <div
             style={{
-              background: 'var(--primary-light)',
-              padding: '8px',
-              borderRadius: '8px',
-              color: 'var(--primary)',
+              background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
+              padding: '10px',
+              borderRadius: '12px',
+              color: '#34d399',
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'center',
+              border: '1px solid rgba(52, 211, 153, 0.25)',
+              boxShadow: '0 4px 15px rgba(5, 150, 105, 0.1)',
+              animation: 'pulseGlow 2.5s infinite alternate'
             }}
           >
             <Store size={22} />
           </div>
           <div>
-            <h1 className="sidebar-logo-text">AgriBiz</h1>
-            <p className="sidebar-logo-sub">Dealer System</p>
+            <h1 className="sidebar-logo-text" style={{ fontSize: '20px', margin: 0, fontWeight: 850 }}>AgriBiz</h1>
+            <p className="sidebar-logo-sub" style={{ fontSize: '10px', margin: '2px 0 0 0', opacity: 0.6 }}>Dealer Ledger</p>
           </div>
           {isMobileSidebarOpen && (
             <button
@@ -201,31 +449,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-        <nav className="sidebar-menu">
-          {menuItems.map((item) => (
-            <a
-              key={item.id}
-              className={`sidebar-item ${currentTab === item.id ? 'active' : ''}`}
-              onClick={() => handleTabChange(item.id)}
-            >
-              {item.icon}
-              <span>{item.label}</span>
-            </a>
-          ))}
+        {/* Menu Items */}
+        <nav className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '12px 16px', overflowY: 'hidden' }}>
+          {renderSidebarSection('Operations', operationsItems)}
+          {renderSidebarSection('Directories', directoriesItems)}
+          {renderSidebarSection('Admin', adminItems)}
         </nav>
 
-        <div className="sidebar-footer">
-          <div className="sidebar-business-name" title={settings.businessName}>
-            {settings.businessName}
-          </div>
-          <div className="sidebar-fy">F.Y. {settings.financialYear}</div>
-        </div>
       </aside>
 
       {/* Main Content Area */}
       <div className="main-wrapper">
         <header className="header">
-          {/* Left: Mobile Toggle & Page Title */}
+          {/* Left: Brand logo & badge */}
           <div className="header-left">
             <button 
               className="menu-toggle no-print" 
@@ -234,7 +470,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <Menu size={20} />
             </button>
-            <h2 className="header-title">{getPageTitle()}</h2>
+            <div className="header-brand-container">
+              <div className="header-brand-logo">
+                <Store size={18} />
+              </div>
+              <span className="brand-name">AgriBiz</span>
+              <span className="brand-badge desktop-only">{getPageTitle()}</span>
+            </div>
           </div>
 
           {/* Middle: Global Search Input */}
@@ -246,7 +488,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   ref={searchInputRef}
                   type="text"
                   className="search-input"
-                  placeholder={`Search in ${getPageTitle()}...`}
+                  placeholder={`Search...`}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -264,7 +506,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Right: Actions (Theme Toggle, Notifications, Profile Dropdown) */}
+          {/* Right Actions */}
           <div className="header-right no-print">
             {/* Theme Toggle */}
             <button
@@ -357,7 +599,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <span className="profile-username">Kunal C.</span>
                   <span className="profile-status">{userStatus.charAt(0).toUpperCase() + userStatus.slice(1)}</span>
                 </div>
-                <ChevronDown size={14} style={{ color: 'var(--text-secondary)' }} />
+                <ChevronDown size={14} className="profile-chevron" style={{ color: 'var(--text-secondary)' }} />
               </button>
 
               {isProfileDropdownOpen && (
@@ -435,6 +677,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <main className="content-body">{children}</main>
       </div>
+
+      {renderMobileBottomNav()}
+      {renderMobileMoreBottomSheet()}
 
       {/* Global Toast Notification */}
       {toast && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
@@ -10,6 +10,12 @@ import {
   TrendingUp,
   Printer,
   ArrowRightLeft,
+  MoreVertical,
+  Edit2,
+  Eye,
+  Tag,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import type { Payment } from '../types';
 
@@ -19,16 +25,32 @@ export const Payments: React.FC = () => {
     customers,
     suppliers,
     addPayment,
+    editPayment,
     deletePayment,
     searchQuery,
     setSearchQuery,
     showToast,
+    setViewCustomer,
+    setViewSupplier,
+    setCurrentTab,
+    paymentFormPreset,
+    setPaymentFormPreset,
   } = useApp();
+
+  const upiIn = payments.filter((p) => p.type === 'CustomerReceipt' && p.paymentMethod === 'UPI').reduce((s, p) => s + p.amount, 0);
+  const upiOut = payments.filter((p) => p.type === 'SupplierPayment' && p.paymentMethod === 'UPI').reduce((s, p) => s + p.amount, 0);
+  const cashIn = payments.filter((p) => p.type === 'CustomerReceipt' && p.paymentMethod === 'Cash').reduce((s, p) => s + p.amount, 0);
+  const cashOut = payments.filter((p) => p.type === 'SupplierPayment' && p.paymentMethod === 'Cash').reduce((s, p) => s + p.amount, 0);
+
+  const totalCustomerDues = customers.reduce((s, c) => s + c.outstanding, 0);
+  const totalSupplierOwed = suppliers.reduce((s, supp) => s + supp.outstanding, 0);
 
   const [activeTab, setActiveTab] = useState<'CustomerReceipt' | 'SupplierPayment'>('CustomerReceipt');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
+  const [activeMenuPaymentId, setActiveMenuPaymentId] = useState<string | null>(null);
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
 
   // New payment form states
   const [paymentType, setPaymentType] = useState<'CustomerReceipt' | 'SupplierPayment'>('CustomerReceipt');
@@ -38,6 +60,19 @@ export const Payments: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque'>('UPI');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
+
+  useEffect(() => {
+    if (paymentFormPreset) {
+      setPaymentType(paymentFormPreset.type);
+      setContactId(paymentFormPreset.contactId);
+      setAmount(0);
+      setReferenceNumber('');
+      setNotes('');
+      setEditingPaymentId(null);
+      setIsFormOpen(true);
+      setPaymentFormPreset(null);
+    }
+  }, [paymentFormPreset, setPaymentFormPreset]);
 
   // Filtering states
   const [methodFilter, setMethodFilter] = useState('All');
@@ -69,18 +104,33 @@ export const Payments: React.FC = () => {
         ? customers.find((c) => c.id === contactId)?.name || 'Unknown Customer'
         : suppliers.find((s) => s.id === contactId)?.name || 'Unknown Supplier';
 
-    addPayment({
-      date: paymentDate,
-      type: paymentType,
-      contactId,
-      contactName,
-      amount,
-      paymentMethod,
-      referenceNumber: referenceNumber.trim() || undefined,
-      notes: notes.trim() || undefined,
-    });
-
-    showToast(`Payment of ${formatINR(amount)} logged successfully!`);
+    if (editingPaymentId) {
+      editPayment({
+        id: editingPaymentId,
+        date: paymentDate,
+        type: paymentType,
+        contactId,
+        contactName,
+        amount,
+        paymentMethod,
+        referenceNumber: referenceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      showToast(`Payment of ${formatINR(amount)} updated successfully!`);
+      setEditingPaymentId(null);
+    } else {
+      addPayment({
+        date: paymentDate,
+        type: paymentType,
+        contactId,
+        contactName,
+        amount,
+        paymentMethod,
+        referenceNumber: referenceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      showToast(`Payment of ${formatINR(amount)} logged successfully!`);
+    }
 
     // Reset states
     setContactId('');
@@ -167,23 +217,80 @@ export const Payments: React.FC = () => {
         </div>
       </div>
 
+      <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+        {/* UPI Ledger */}
+        <div className="kpi-card" style={{ padding: '16px 20px', cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>UPI Ledger</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
+              {formatINR(upiIn + upiOut)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              In: {formatINR(upiIn)} | Out: {formatINR(upiOut)}
+            </span>
+          </div>
+        </div>
+
+        {/* Cash Ledger */}
+        <div className="kpi-card" style={{ padding: '16px 20px', cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Cash Ledger</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
+              {formatINR(cashIn + cashOut)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              In: {formatINR(cashIn)} | Out: {formatINR(cashOut)}
+            </span>
+          </div>
+        </div>
+
+        {/* Total Customer Dues */}
+        <div className="kpi-card" style={{ padding: '16px 20px', cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Customer Dues (Receivable)</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-warning-dark)' }}>
+              {formatINR(totalCustomerDues)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              Total outstanding balance
+            </span>
+          </div>
+        </div>
+
+        {/* Total Supplier Owed */}
+        <div className="kpi-card" style={{ padding: '16px 20px', cursor: 'default' }}>
+          <div className="kpi-info" style={{ gap: '2px' }}>
+            <span className="kpi-label" style={{ fontSize: '11px' }}>Supplier Owed (Payable)</span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
+              {formatINR(totalSupplierOwed)}
+            </span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+              Total accounts payable balance
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Navigation and filters */}
-      <div className="filters-row">
-        <div className="filters-left">
+      <div className="filters-row-unified">
+        <div className="filters-group-one">
           {/* Tab switches */}
           <div
+            className="segmented-control-payments-tabs"
             style={{
               display: 'flex',
               backgroundColor: 'var(--bg-app)',
               padding: '4px',
               borderRadius: '8px',
               border: '1px solid var(--border-color)',
+              flexShrink: 1,
+              minWidth: 0,
             }}
           >
             <button
               type="button"
-              className={`btn btn-sm ${activeTab === 'CustomerReceipt' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none', borderRadius: '6px' }}
+              className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'CustomerReceipt' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
               onClick={() => {
                 setActiveTab('CustomerReceipt');
                 setCurrentPage(1);
@@ -193,8 +300,8 @@ export const Payments: React.FC = () => {
             </button>
             <button
               type="button"
-              className={`btn btn-sm ${activeTab === 'SupplierPayment' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none', borderRadius: '6px' }}
+              className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'SupplierPayment' ? 'btn-primary' : 'btn-secondary'}`}
+              style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
               onClick={() => {
                 setActiveTab('SupplierPayment');
                 setCurrentPage(1);
@@ -214,58 +321,51 @@ export const Payments: React.FC = () => {
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
-
-          {/* Segmented Filter Control */}
-          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px' }}>
-            {[
-              { value: 'All', label: 'All Methods' },
-              { value: 'UPI', label: 'UPI' },
-              { value: 'Cash', label: 'Cash' },
-              { value: 'Bank Transfer', label: 'Bank' },
-              { value: 'Cheque', label: 'Cheque' }
-            ].map((opt) => {
-              const isActive = methodFilter === opt.value;
-              return (
-                <button
-                  key={opt.value}
-                  className="btn-sm"
-                  type="button"
-                  style={{
-                    padding: '5px 10px',
-                    borderRadius: '7px',
-                    border: 'none',
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    cursor: 'pointer',
-                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    backgroundColor: isActive ? 'var(--card-bg, #ffffff)' : 'transparent',
-                    color: isActive ? 'var(--primary-dark)' : 'var(--text-secondary)',
-                    boxShadow: isActive ? '0 2px 8px rgba(0, 0, 0, 0.06)' : 'none',
-                    whiteSpace: 'nowrap',
-                  }}
-                  onClick={() => {
-                    setMethodFilter(opt.value);
-                    setCurrentPage(1);
-                  }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
         </div>
 
-        <button
-          className="btn btn-primary"
-          onClick={() => {
-            setPaymentType(activeTab);
-            setContactId('');
-            setAmount(0);
-            setIsFormOpen(true);
-          }}
-        >
-          <Plus size={16} /> Record Payment
-        </button>
+        <div className="filters-group-two">
+          {/* Payment Method Dropdown Filter */}
+          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+            <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <Tag size={13} />
+            </span>
+            <select
+              className="filter-select"
+              style={{ paddingLeft: '36px' }}
+              value={methodFilter}
+              onChange={(e) => {
+                setMethodFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              <option value="All">All Methods</option>
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
+            </span>
+          </div>
+
+          <button
+            className="btn btn-primary"
+            onClick={() => {
+              setPaymentType(activeTab);
+              setContactId('');
+              setAmount(0);
+              setReferenceNumber('');
+              setNotes('');
+              setEditingPaymentId(null);
+              setIsFormOpen(true);
+            }}
+          >
+            <Plus size={16} /> Record Payment
+          </button>
+        </div>
       </div>
 
       {/* Main transaction list */}
@@ -283,89 +383,308 @@ export const Payments: React.FC = () => {
           </div>
         ) : (
           <>
-            <div className="table-wrapper">
-              <table className="data-table">
-                <thead>
-                  <tr>
-                    <th className="text-nowrap">Receipt Date</th>
-                    <th className="text-nowrap">ID Code</th>
-                    <th>{activeTab === 'CustomerReceipt' ? 'Customer' : 'Supplier'} Name</th>
-                    <th className="text-nowrap">Amount Paid (₹)</th>
-                    <th className="text-nowrap">Payment Method</th>
-                    <th className="text-nowrap">Reference / Document No</th>
-                    <th>Remarks / Notes</th>
-                    <th className="text-nowrap" style={{ textAlign: 'center' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {paginatedPayments.map((pay) => (
-                    <tr key={pay.id}>
-                      <td className="text-nowrap">{formatDate(pay.date)}</td>
-                      <td className="text-nowrap" style={{ fontWeight: 600, fontFamily: 'monospace' }}>{pay.id}</td>
-                      <td style={{ fontWeight: 600 }}>{pay.contactName}</td>
-                      <td
-                        className="text-nowrap"
-                        style={{
-                          fontWeight: 700,
-                          color: pay.type === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--color-danger-dark)',
-                        }}
-                      >
-                        {formatINR(pay.amount)}
-                      </td>
-                      <td className="text-nowrap">
-                        <span className="badge badge-info">{pay.paymentMethod}</span>
-                      </td>
-                      <td className="text-nowrap" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                        {pay.referenceNumber || '—'}
-                      </td>
-                      <td style={{ fontStyle: 'italic', fontSize: '13px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {pay.notes || '—'}
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        <div style={{ display: 'flex', gap: '6px', justifyContent: 'center' }}>
-                          <button
-                            className="btn-icon"
-                            onClick={() => handleOpenReceipt(pay)}
-                            title="Print / View Receipt voucher"
-                          >
-                            <Printer size={16} />
-                          </button>
-                          <button
-                            className="btn-icon danger"
-                            onClick={() => handleDeletePayment(pay.id, pay.contactName, pay.type)}
-                            title="Delete Payment record"
-                          >
-                            <Trash size={16} />
-                          </button>
-                        </div>
-                      </td>
+            {/* Desktop View */}
+            <div className="desktop-only-table">
+              <div className="table-wrapper">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th className="text-nowrap">Receipt Date</th>
+                      <th className="text-nowrap">ID Code</th>
+                      <th>{activeTab === 'CustomerReceipt' ? 'Customer' : 'Supplier'} Name</th>
+                      <th className="text-nowrap">Amount Paid (₹)</th>
+                      <th className="text-nowrap">Payment Method</th>
+                      <th className="text-nowrap">Reference / Document No</th>
+                      <th>Remarks / Notes</th>
+                      <th className="text-nowrap" style={{ textAlign: 'center' }}>Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {paginatedPayments.map((pay) => (
+                      <tr key={pay.id}>
+                        <td className="text-nowrap">{formatDate(pay.date)}</td>
+                        <td className="text-nowrap" style={{ fontWeight: 600, fontFamily: 'monospace' }}>{pay.id}</td>
+                        <td style={{ fontWeight: 600 }}>
+                          <button
+                            type="button"
+                            className="table-link-btn supplier-link"
+                            onClick={() => {
+                              if (pay.type === 'CustomerReceipt') {
+                                setViewCustomer(pay.contactId);
+                                setCurrentTab('customers');
+                              } else {
+                                setViewSupplier(pay.contactId);
+                                setCurrentTab('suppliers');
+                              }
+                            }}
+                          >
+                            {pay.contactName}
+                          </button>
+                        </td>
+                        <td
+                          className="text-nowrap"
+                          style={{
+                            fontWeight: 700,
+                            color: pay.type === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--color-danger-dark)',
+                          }}
+                        >
+                          {formatINR(pay.amount)}
+                        </td>
+                        <td className="text-nowrap">
+                          <span className="badge badge-info">{pay.paymentMethod}</span>
+                        </td>
+                        <td className="text-nowrap" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
+                          {pay.referenceNumber || '—'}
+                        </td>
+                        <td style={{ fontStyle: 'italic', fontSize: '13px', maxWidth: '240px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {pay.notes || '—'}
+                        </td>
+                        <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuPaymentId(activeMenuPaymentId === pay.id ? null : pay.id);
+                            }}
+                            title="Actions"
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+                          
+                          {activeMenuPaymentId === pay.id && (
+                            <>
+                              {/* Overlay to close the menu on clicking outside */}
+                              <div 
+                                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} 
+                                onClick={() => setActiveMenuPaymentId(null)}
+                              />
+                              
+                              {/* Dropdown Menu */}
+                              <div className="card" style={{
+                                position: 'absolute',
+                                right: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                marginRight: '8px',
+                                zIndex: 999,
+                                minWidth: '150px',
+                                padding: '6px 0',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                backgroundColor: 'var(--card-bg, #ffffff)',
+                                border: '1px solid var(--border-color)',
+                              }}>
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    background: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onClick={() => {
+                                    setActiveMenuPaymentId(null);
+                                    handleOpenReceipt(pay);
+                                  }}
+                                >
+                                  <Eye size={14} /> View Voucher
+                                </button>
+
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    background: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onClick={() => {
+                                    setActiveMenuPaymentId(null);
+                                    setPaymentType(pay.type);
+                                    setContactId(pay.contactId);
+                                    setPaymentDate(pay.date);
+                                    setAmount(pay.amount);
+                                    setPaymentMethod(pay.paymentMethod);
+                                    setReferenceNumber(pay.referenceNumber || '');
+                                    setNotes(pay.notes || '');
+                                    setEditingPaymentId(pay.id);
+                                    setIsFormOpen(true);
+                                  }}
+                                >
+                                  <Edit2 size={14} /> Edit Record
+                                </button>
+                                
+                                <button 
+                                  className="dropdown-item danger" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    background: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: 'var(--color-danger)',
+                                  }}
+                                  onClick={() => {
+                                    setActiveMenuPaymentId(null);
+                                    handleDeletePayment(pay.id, pay.contactName, pay.type);
+                                  }}
+                                >
+                                  <Trash size={14} /> Delete Record
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile View */}
+            <div className="mobile-card-list">
+              {paginatedPayments.map((pay) => (
+                <div key={pay.id} className="mobile-list-card">
+                  <div className="mobile-list-card-header">
+                    <div>
+                      <h4 className="mobile-list-card-title">
+                        <button
+                          type="button"
+                          className="table-link-btn supplier-link"
+                          onClick={() => {
+                            if (pay.type === 'CustomerReceipt') {
+                              setViewCustomer(pay.contactId);
+                              setCurrentTab('customers');
+                            } else {
+                              setViewSupplier(pay.contactId);
+                              setCurrentTab('suppliers');
+                            }
+                          }}
+                        >
+                          {pay.contactName}
+                        </button>
+                      </h4>
+                      <span className="mobile-list-card-subtitle">{formatDate(pay.date)} • <span className="badge badge-info">{pay.paymentMethod}</span></span>
+                    </div>
+                    <div style={{ position: 'relative' }}>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onClick={(e) => { e.stopPropagation(); setActiveMenuPaymentId(activeMenuPaymentId === pay.id ? null : pay.id); }}
+                      >
+                        <MoreVertical size={16} />
+                      </button>
+                      {activeMenuPaymentId === pay.id && (
+                        <>
+                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuPaymentId(null)} />
+                          <div className="card" style={{
+                            position: 'absolute', right: '0', top: '100%', marginTop: '4px',
+                            zIndex: 999, minWidth: '150px', padding: '6px 0',
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                            display: 'flex', flexDirection: 'column', gap: '2px',
+                            backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                          }}>
+                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
+                              onClick={() => { setActiveMenuPaymentId(null); handleOpenReceipt(pay); }}>
+                              <Eye size={14} /> View Voucher
+                            </button>
+                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
+                              onClick={() => {
+                                setActiveMenuPaymentId(null);
+                                setPaymentType(pay.type);
+                                setContactId(pay.contactId);
+                                setPaymentDate(pay.date);
+                                setAmount(pay.amount);
+                                setPaymentMethod(pay.paymentMethod);
+                                setReferenceNumber(pay.referenceNumber || '');
+                                setNotes(pay.notes || '');
+                                setEditingPaymentId(pay.id);
+                                setIsFormOpen(true);
+                              }}>
+                              <Edit2 size={14} /> Edit Record
+                            </button>
+                            <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
+                              onClick={() => { setActiveMenuPaymentId(null); handleDeletePayment(pay.id, pay.contactName, pay.type); }}>
+                              <Trash size={14} /> Delete Record
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Voucher ID</span>
+                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{pay.id}</span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Reference</span>
+                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{pay.referenceNumber || '—'}</span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Amount</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700, color: pay.type === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--color-danger-dark)' }}>
+                      {formatINR(pay.amount)}
+                    </span>
+                  </div>
+
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Remarks</span>
+                    <span className="mobile-list-card-val" style={{ fontStyle: 'italic', fontSize: '12px' }}>{pay.notes || '—'}</span>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="pagination-row">
                 <span>
-                  Showing page <strong>{currentPage}</strong> of <strong>{totalPages}</strong> (
-                  {filteredPayments.length} transactions)
+                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredPayments.length)}</strong> of{' '}
+                  <strong>{filteredPayments.length}</strong> transactions
                 </span>
                 <div className="pagination-btn-group">
                   <button
-                    className="btn btn-secondary btn-sm"
                     disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((c) => c - 1)}
+                    onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
+                    title="Previous Page"
                   >
-                    Previous
+                    <ChevronLeft size={16} />
                   </button>
                   <button
-                    className="btn btn-secondary btn-sm"
                     disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((c) => c + 1)}
+                    onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
+                    title="Next Page"
                   >
-                    Next
+                    <ChevronRight size={16} />
                   </button>
                 </div>
               </div>
@@ -374,40 +693,65 @@ export const Payments: React.FC = () => {
         )}
       </div>
 
-      {/* Record Payment Form Modal */}
-      <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title="Record New Transaction">
+      <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}>
         <form onSubmit={handleSavePayment}>
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label">Transaction Type *</label>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                <input
-                  type="radio"
-                  name="payType"
-                  checked={paymentType === 'CustomerReceipt'}
-                  onChange={() => {
-                    setPaymentType('CustomerReceipt');
-                    setContactId('');
-                  }}
-                />
-                Customer Receipt (Inward)
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 600 }}>
-                <input
-                  type="radio"
-                  name="payType"
-                  checked={paymentType === 'SupplierPayment'}
-                  onChange={() => {
-                    setPaymentType('SupplierPayment');
-                    setContactId('');
-                  }}
-                />
-                Supplier Payout (Outward)
-              </label>
+            <div style={{
+              display: 'flex',
+              backgroundColor: 'var(--bg-app)',
+              padding: '4px',
+              borderRadius: '10px',
+              border: '1.5px solid var(--border-color)',
+              gap: '4px',
+              width: '100%',
+            }}>
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  backgroundColor: paymentType === 'CustomerReceipt' ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: paymentType === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--text-secondary)',
+                  border: paymentType === 'CustomerReceipt' ? '1px solid var(--color-success-dark)' : '1px solid transparent',
+                }}
+                onClick={() => {
+                  setPaymentType('CustomerReceipt');
+                  setContactId('');
+                }}
+              >
+                Inward Receipt (Customer)
+              </button>
+              <button
+                type="button"
+                style={{
+                  flex: 1,
+                  padding: '10px',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                  backgroundColor: paymentType === 'SupplierPayment' ? 'rgba(239,68,68,0.12)' : 'transparent',
+                  color: paymentType === 'SupplierPayment' ? 'var(--color-danger-dark)' : 'var(--text-secondary)',
+                  border: paymentType === 'SupplierPayment' ? '1px solid var(--color-danger-dark)' : '1px solid transparent',
+                }}
+                onClick={() => {
+                  setPaymentType('SupplierPayment');
+                  setContactId('');
+                }}
+              >
+                Outward Payout (Supplier)
+              </button>
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label">
               Select {paymentType === 'CustomerReceipt' ? 'Customer' : 'Supplier'} *
             </label>
@@ -416,24 +760,84 @@ export const Payments: React.FC = () => {
               value={contactId}
               onChange={(e) => setContactId(e.target.value)}
               required
+              style={{ paddingRight: '36px' }}
             >
               <option value="">-- Choose Contact --</option>
               {paymentType === 'CustomerReceipt'
                 ? customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} — Outstanding Dues: {formatINR(c.outstanding)}
+                      {c.name} — Dues: {formatINR(c.outstanding)}
                     </option>
                   ))
                 : suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} — Balance Owed: {formatINR(s.outstanding)}
+                      {s.name} — Owed: {formatINR(s.outstanding)}
                     </option>
                   ))}
             </select>
+
+            {contactId && (() => {
+              const selectedContact = paymentType === 'CustomerReceipt'
+                ? customers.find(c => c.id === contactId)
+                : suppliers.find(s => s.id === contactId);
+
+              if (!selectedContact) return null;
+
+              const isOwed = selectedContact.outstanding > 0;
+              const cardColor = paymentType === 'CustomerReceipt' 
+                ? (isOwed ? 'rgba(245,158,11,0.06)' : 'rgba(16,185,129,0.06)')
+                : (isOwed ? 'rgba(239,68,68,0.05)' : 'rgba(16,185,129,0.06)');
+              const borderColor = paymentType === 'CustomerReceipt'
+                ? (isOwed ? 'var(--color-warning)' : 'var(--color-success)')
+                : (isOwed ? 'var(--color-danger)' : 'var(--color-success)');
+              const textColor = paymentType === 'CustomerReceipt'
+                ? (isOwed ? 'var(--color-warning-dark)' : 'var(--color-success-dark)')
+                : (isOwed ? 'var(--color-danger-dark)' : 'var(--color-success-dark)');
+              const labelText = paymentType === 'CustomerReceipt' ? 'Customer Dues' : 'Balance We Owe';
+
+              return (
+                <div style={{
+                  marginTop: '12px',
+                  padding: '12px 18px',
+                  borderRadius: '12px',
+                  background: cardColor,
+                  border: `1px solid ${borderColor}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  animation: 'fadeIn 0.2s ease-out',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: borderColor,
+                      color: '#fff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 800,
+                      fontSize: '14px',
+                    }}>
+                      {selectedContact.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{selectedContact.name}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{selectedContact.phone}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{labelText}</div>
+                    <div style={{ fontSize: '15px', fontWeight: 800, color: textColor }}>{formatINR(selectedContact.outstanding)}</div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div className="form-row" style={{ marginBottom: '16px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Payment Date *</label>
               <input
                 type="date"
@@ -443,34 +847,47 @@ export const Payments: React.FC = () => {
                 required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Amount Transferred (₹) *</label>
-              <input
-                type="number"
-                className="form-control"
-                placeholder="₹ 0.00"
-                value={amount || ''}
-                onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))}
-                required
-              />
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Amount Transferred *</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  fontSize: '13px',
+                  pointerEvents: 'none',
+                }}>₹</span>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="0.00"
+                  value={amount || ''}
+                  onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  required
+                  style={{ paddingLeft: '26px' }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="form-row">
-            <div className="form-group">
+          <div className="form-row" style={{ marginBottom: '16px' }}>
+            <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Payment Method *</label>
               <select
                 className="form-control"
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as any)}
               >
-                <option value="UPI">UPI / GPay / BHIM</option>
+                <option value="UPI">UPI / GPay / PhonePe</option>
                 <option value="Cash">Cash Ledger</option>
                 <option value="Bank Transfer">Bank Transfer (IMPS/RTGS)</option>
                 <option value="Cheque">Cheque</option>
               </select>
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Reference Number (Txn/Cheque ID)</label>
               <input
                 type="text"
@@ -482,23 +899,29 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group">
+          <div className="form-group" style={{ marginBottom: '24px' }}>
             <label className="form-label">Remarks / Description</label>
             <textarea
               className="form-control"
-              placeholder="e.g. Settle clear invoice AB-2026-002"
+              placeholder="e.g. Settle outstanding bill payment"
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              style={{ resize: 'vertical' }}
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-            <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }} className="no-print">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)} style={{ borderRadius: '8px' }}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary">
-              Log Payment Receipt
+            <button type="submit" className="btn btn-primary" style={{
+              borderRadius: '8px',
+              padding: '10px 20px',
+              boxShadow: '0 4px 14px rgba(16,185,129,0.2)',
+              fontWeight: 700,
+            }}>
+              {editingPaymentId ? '✓ Save Changes' : '✓ Log Transaction'}
             </button>
           </div>
         </form>

@@ -81,7 +81,7 @@ export const Settings: React.FC = () => {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1.2fr', gap: '24px', alignItems: 'start' }}>
+      <div className="settings-grid-layout">
         {/* Left side: settings form */}
         <form onSubmit={handleSubmit}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>

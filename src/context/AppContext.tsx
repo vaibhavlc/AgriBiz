@@ -60,14 +60,23 @@ interface AppContextType {
   editInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
 
-  addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => void;
+  addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => Purchase;
+  editPurchase: (purchase: Purchase) => void;
   deletePurchase: (id: string) => void;
 
   addPayment: (payment: Omit<Payment, 'id'>) => void;
+  editPayment: (payment: Payment) => void;
   deletePayment: (id: string) => void;
 
   updateSettings: (settings: BusinessSettings) => void;
   resetToDefault: () => void;
+
+  paymentFormPreset: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null;
+  setPaymentFormPreset: (preset: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null) => void;
+  salesFormPresetCustomerId: string | null;
+  setSalesFormPresetCustomerId: (id: string | null) => void;
+  purchaseFormPresetSupplierId: string | null;
+  setPurchaseFormPresetSupplierId: (id: string | null) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -122,6 +131,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isEditingSupplier, setIsEditingSupplier] = useState<Supplier | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const [paymentFormPreset, setPaymentFormPreset] = useState<{ contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null>(null);
+  const [salesFormPresetCustomerId, setSalesFormPresetCustomerId] = useState<string | null>(null);
+  const [purchaseFormPresetSupplierId, setPurchaseFormPresetSupplierId] = useState<string | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -422,7 +435,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // Purchases (Supplier Inward)
-  const addPurchase = (pur: Omit<Purchase, 'id' | 'purchaseNumber'>) => {
+  const addPurchase = (pur: Omit<Purchase, 'id' | 'purchaseNumber'>): Purchase => {
     const count = purchases.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const purchaseNumber = `PUR-${settings.invoicePrefix.replace('AB-', '')}${formattedCount}`;
@@ -477,6 +490,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setPayments((prev) => [newPayment, ...prev]);
     }
+    return newPurchase;
   };
 
   const deletePurchase = (id: string) => {
@@ -510,6 +524,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return supp;
       })
+    );
+  };
+
+  const editPurchase = (updatedPurchase: Purchase) => {
+    const oldPurchase = purchases.find((p) => p.id === updatedPurchase.id || p.purchaseNumber === updatedPurchase.purchaseNumber);
+    if (!oldPurchase) {
+      throw new Error(`Original purchase not found: ${updatedPurchase.purchaseNumber}`);
+    }
+
+    // 1. Revert old stock changes (deduct the stock added by the old purchase)
+    let revertedProducts = products;
+    try {
+      if (oldPurchase.items && Array.isArray(oldPurchase.items)) {
+        revertedProducts = products.map((p) => {
+          const matchingItem = oldPurchase.items.find((item) => item && item.productId === p.id);
+          if (matchingItem) {
+            const qty = Number(matchingItem.quantity) || 0;
+            return {
+              ...p,
+              stock: Math.max(0, (Number(p.stock) || 0) - qty),
+            };
+          }
+          return p;
+        });
+      }
+    } catch (err) {
+      console.error("Error reverting stock on purchase edit:", err);
+    }
+
+    // 2. Revert old supplier outstanding changes (deduct the outstanding from the old purchase)
+    let revertedSuppliers = suppliers;
+    try {
+      if (oldPurchase.supplierId) {
+        revertedSuppliers = suppliers.map((supp) => {
+          if (supp.id === oldPurchase.supplierId) {
+            const balanceDue = Number(oldPurchase.balanceDue) || 0;
+            return {
+              ...supp,
+              outstanding: (Number(supp.outstanding) || 0) - balanceDue,
+            };
+          }
+          return supp;
+        });
+      }
+    } catch (err) {
+      console.error("Error reverting supplier balance on purchase edit:", err);
+    }
+
+    // 3. Apply new stock changes (add stock from the updated purchase)
+    let finalProducts = revertedProducts;
+    try {
+      if (updatedPurchase.items && Array.isArray(updatedPurchase.items)) {
+        finalProducts = revertedProducts.map((p) => {
+          const matchingItem = updatedPurchase.items.find((item) => item && item.productId === p.id);
+          if (matchingItem) {
+            const qty = Number(matchingItem.quantity) || 0;
+            return {
+              ...p,
+              stock: (Number(p.stock) || 0) + qty,
+            };
+          }
+          return p;
+        });
+      }
+    } catch (err) {
+      console.error("Error applying new stock changes on purchase edit:", err);
+    }
+
+    // 4. Apply new supplier outstanding changes (add outstanding from the updated purchase)
+    let finalSuppliers = revertedSuppliers;
+    try {
+      if (updatedPurchase.supplierId) {
+        finalSuppliers = revertedSuppliers.map((supp) => {
+          if (supp.id === updatedPurchase.supplierId) {
+            const balanceDue = Number(updatedPurchase.balanceDue) || 0;
+            return {
+              ...supp,
+              outstanding: (Number(supp.outstanding) || 0) + balanceDue,
+            };
+          }
+          return supp;
+        });
+      }
+    } catch (err) {
+      console.error("Error applying supplier balance on purchase edit:", err);
+    }
+
+    // 5. Update state atomically
+    setProducts(finalProducts);
+    setSuppliers(finalSuppliers);
+    setPurchases((prev) =>
+      prev.map((pur) => (pur.id === oldPurchase.id || pur.purchaseNumber === oldPurchase.purchaseNumber ? updatedPurchase : pur))
     );
   };
 
@@ -548,6 +654,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         })
       );
     }
+  };
+
+  const editPayment = (updatedPayment: Payment) => {
+    const oldPayment = payments.find((p) => p.id === updatedPayment.id);
+    if (!oldPayment) return;
+
+    // Revert old outstanding
+    let revertedCustomers = customers;
+    let revertedSuppliers = suppliers;
+
+    if (oldPayment.type === 'CustomerReceipt') {
+      revertedCustomers = customers.map((cust) => {
+        if (cust.id === oldPayment.contactId) {
+          return {
+            ...cust,
+            outstanding: cust.outstanding + oldPayment.amount,
+          };
+        }
+        return cust;
+      });
+    } else {
+      revertedSuppliers = suppliers.map((supp) => {
+        if (supp.id === oldPayment.contactId) {
+          return {
+            ...supp,
+            outstanding: supp.outstanding + oldPayment.amount,
+          };
+        }
+        return supp;
+      });
+    }
+
+    // Apply new outstanding
+    if (updatedPayment.type === 'CustomerReceipt') {
+      revertedCustomers = revertedCustomers.map((cust) => {
+        if (cust.id === updatedPayment.contactId) {
+          return {
+            ...cust,
+            outstanding: cust.outstanding - updatedPayment.amount,
+          };
+        }
+        return cust;
+      });
+    } else {
+      revertedSuppliers = revertedSuppliers.map((supp) => {
+        if (supp.id === updatedPayment.contactId) {
+          return {
+            ...supp,
+            outstanding: supp.outstanding - updatedPayment.amount,
+          };
+        }
+        return supp;
+      });
+    }
+
+    setCustomers(revertedCustomers);
+    setSuppliers(revertedSuppliers);
+    setPayments((prev) =>
+      prev.map((p) => (p.id === updatedPayment.id ? updatedPayment : p))
+    );
   };
 
   const deletePayment = (id: string) => {
@@ -670,13 +836,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteInvoice,
 
         addPurchase,
+        editPurchase,
         deletePurchase,
 
         addPayment,
+        editPayment,
         deletePayment,
 
         updateSettings,
         resetToDefault,
+
+        paymentFormPreset,
+        setPaymentFormPreset,
+        salesFormPresetCustomerId,
+        setSalesFormPresetCustomerId,
+        purchaseFormPresetSupplierId,
+        setPurchaseFormPresetSupplierId,
       }}
     >
       {children}

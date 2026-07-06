@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 
 interface ModalProps {
@@ -25,7 +26,7 @@ export const Modal: React.FC<ModalProps> = ({
     }
   };
 
-  return (
+  return createPortal(
     <div className="modal-overlay" onClick={handleBackdropClick}>
       <div className={`modal-content ${size === 'large' ? 'large' : ''}`}>
         <div className="modal-header">
@@ -36,6 +37,7 @@ export const Modal: React.FC<ModalProps> = ({
         </div>
         <div className="modal-body">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
