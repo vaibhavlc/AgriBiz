@@ -3610,4 +3610,14 @@ body.dark-theme select.form-control {
   }
 }
 
+/* Table Alignment Utilities to override !important defaults */
+.data-table th.align-right,
+.data-table td.align-right {
+  text-align: right !important;
+}
+.data-table th.align-center,
+.data-table td.align-center {
+  text-align: center !important;
+}
+
 

@@ -1513,39 +1513,38 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             {/* GSTR-1 Header Dashboard Cards */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-              gap: '16px',
-              marginBottom: '24px'
-            }}>
-              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid var(--primary-color)' }}>
-                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B2B Invoices (Registered)</span>
-                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1B2BList.length} Rows</span>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Taxable: <strong>{formatINR(gstr1B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}</strong>
+            <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">B2B Invoices (Registered)</span>
+                  <span className="kpi-value">{gstr1B2BList.length} Rows</span>
+                  <span className="kpi-subtext">Taxable: {formatINR(gstr1B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}</span>
                 </div>
+                <div className="kpi-icon-container emerald"><BookOpen size={20} /></div>
               </div>
-              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid #3182CE' }}>
-                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B2CS (Unregistered OE)</span>
-                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1B2CSList.length} Groups</span>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Taxable: <strong>{formatINR(gstr1B2CSList.reduce((acc, x) => acc + x.taxable, 0))}</strong>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">B2CS (Unregistered OE)</span>
+                  <span className="kpi-value">{gstr1B2CSList.length} Groups</span>
+                  <span className="kpi-subtext">Taxable: {formatINR(gstr1B2CSList.reduce((acc, x) => acc + x.taxable, 0))}</span>
                 </div>
+                <div className="kpi-icon-container blue"><Users size={20} /></div>
               </div>
-              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid #27AE60' }}>
-                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>HSN Summary (Table 12)</span>
-                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1HSNList.length} Categories</span>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Taxable: <strong>{formatINR(gstr1HSNList.reduce((acc, x) => acc + x.taxable, 0))}</strong>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">HSN Summary (Table 12)</span>
+                  <span className="kpi-value">{gstr1HSNList.length} Categories</span>
+                  <span className="kpi-subtext">Taxable: {formatINR(gstr1HSNList.reduce((acc, x) => acc + x.taxable, 0))}</span>
                 </div>
+                <div className="kpi-icon-container amber"><Layers size={20} /></div>
               </div>
-              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid #8E44AD' }}>
-                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Documents Issued (Table 13)</span>
-                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1DocsSummary.total} Invoices</span>
-                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Range: <strong>{gstr1DocsSummary.from} - {gstr1DocsSummary.to}</strong>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Documents Issued (Table 13)</span>
+                  <span className="kpi-value">{gstr1DocsSummary.total} Invoices</span>
+                  <span className="kpi-subtext">Range: {gstr1DocsSummary.from} - {gstr1DocsSummary.to}</span>
                 </div>
+                <div className="kpi-icon-container rose"><FileText size={20} /></div>
               </div>
             </div>
 
@@ -1568,21 +1567,21 @@ export const Reports: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="table-responsive">
-                  <table className="table">
+                <div className="table-wrapper">
+                  <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Recipient GSTIN</th>
-                        <th>Recipient Name</th>
-                        <th>Invoice No</th>
-                        <th>Invoice Date</th>
-                        <th style={{ textAlign: 'right' }}>Total Value</th>
-                        <th>POS</th>
-                        <th style={{ textAlign: 'center' }}>Rate</th>
-                        <th style={{ textAlign: 'right' }}>Taxable Value</th>
-                        <th style={{ textAlign: 'right' }}>CGST</th>
-                        <th style={{ textAlign: 'right' }}>SGST</th>
-                        <th style={{ textAlign: 'right' }}>IGST</th>
+                        <th className="text-nowrap">Recipient GSTIN</th>
+                        <th className="text-nowrap">Recipient Name</th>
+                        <th className="text-nowrap">Invoice No</th>
+                        <th className="text-nowrap">Invoice Date</th>
+                        <th className="text-nowrap align-right">Total Value</th>
+                        <th className="text-nowrap">POS</th>
+                        <th className="text-nowrap align-center">Rate</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST</th>
+                        <th className="text-nowrap align-right">SGST</th>
+                        <th className="text-nowrap align-right">IGST</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1595,17 +1594,17 @@ export const Reports: React.FC = () => {
                       ) : (
                         gstr1B2BList.map((item, idx) => (
                           <tr key={idx}>
-                            <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{item.gstin}</td>
-                            <td>{item.receiverName}</td>
-                            <td style={{ fontFamily: 'monospace' }}>{item.invoiceNumber}</td>
-                            <td>{item.invoiceDate}</td>
-                            <td style={{ textAlign: 'right' }}>{formatINR(item.invoiceValue).replace('₹', '')}</td>
-                            <td>{item.pos}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.rate}%</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(item.taxableValue).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                            <td className="text-nowrap" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{item.gstin}</td>
+                            <td className="text-nowrap">{item.receiverName}</td>
+                            <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{item.invoiceNumber}</td>
+                            <td className="text-nowrap">{item.invoiceDate}</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.invoiceValue).replace('₹', '')}</td>
+                            <td className="text-nowrap">{item.pos}</td>
+                            <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{item.rate}%</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.taxableValue).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
                           </tr>
                         ))
                       )}
@@ -1630,17 +1629,17 @@ export const Reports: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="table-responsive">
-                  <table className="table">
+                <div className="table-wrapper">
+                  <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Type</th>
-                        <th>Place of Supply (POS)</th>
-                        <th style={{ textAlign: 'center' }}>GST Rate</th>
-                        <th style={{ textAlign: 'right' }}>Total Taxable Value</th>
-                        <th style={{ textAlign: 'right' }}>CGST Amount</th>
-                        <th style={{ textAlign: 'right' }}>SGST Amount</th>
-                        <th style={{ textAlign: 'right' }}>IGST Amount</th>
+                        <th className="text-nowrap">Type</th>
+                        <th className="text-nowrap">Place of Supply (POS)</th>
+                        <th className="text-nowrap align-center">GST Rate</th>
+                        <th className="text-nowrap align-right">Total Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST Amount</th>
+                        <th className="text-nowrap align-right">SGST Amount</th>
+                        <th className="text-nowrap align-right">IGST Amount</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1653,13 +1652,13 @@ export const Reports: React.FC = () => {
                       ) : (
                         gstr1B2CSList.map((item, idx) => (
                           <tr key={idx}>
-                            <td>OE (Other)</td>
-                            <td style={{ fontWeight: 600 }}>{item.pos}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.rate}%</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                            <td className="text-nowrap">OE (Other)</td>
+                            <td className="text-nowrap" style={{ fontWeight: 600 }}>{item.pos}</td>
+                            <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{item.rate}%</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
                           </tr>
                         ))
                       )}
@@ -1684,19 +1683,19 @@ export const Reports: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="table-responsive">
-                  <table className="table">
+                <div className="table-wrapper">
+                  <table className="data-table">
                     <thead>
                       <tr>
-                        <th>HSN/SAC</th>
-                        <th>Product Description</th>
-                        <th>Unit (UQC)</th>
-                        <th style={{ textAlign: 'center' }}>Total Qty</th>
-                        <th style={{ textAlign: 'right' }}>Total Value</th>
-                        <th style={{ textAlign: 'right' }}>Taxable Value</th>
-                        <th style={{ textAlign: 'right' }}>CGST Paid</th>
-                        <th style={{ textAlign: 'right' }}>SGST Paid</th>
-                        <th style={{ textAlign: 'right' }}>IGST Paid</th>
+                        <th className="text-nowrap">HSN/SAC</th>
+                        <th className="text-nowrap">Product Description</th>
+                        <th className="text-nowrap">Unit (UQC)</th>
+                        <th className="text-nowrap align-center">Total Qty</th>
+                        <th className="text-nowrap align-right">Total Value</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST Paid</th>
+                        <th className="text-nowrap align-right">SGST Paid</th>
+                        <th className="text-nowrap align-right">IGST Paid</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1709,15 +1708,15 @@ export const Reports: React.FC = () => {
                       ) : (
                         gstr1HSNList.map((item, idx) => (
                           <tr key={idx}>
-                            <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{item.hsn}</td>
-                            <td>{item.desc}</td>
-                            <td style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.uqc}</td>
-                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.qty}</td>
-                            <td style={{ textAlign: 'right' }}>{formatINR(item.totalVal).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
-                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                            <td className="text-nowrap" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{item.hsn}</td>
+                            <td className="text-nowrap">{item.desc}</td>
+                            <td className="text-nowrap" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.uqc}</td>
+                            <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{item.qty}</td>
+                            <td className="text-nowrap align-right">{formatINR(item.totalVal).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
                           </tr>
                         ))
                       )}
@@ -1742,16 +1741,16 @@ export const Reports: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="table-responsive">
-                  <table className="table">
+                <div className="table-wrapper">
+                  <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Nature of Document</th>
-                        <th>Sr. No. From</th>
-                        <th>Sr. No. To</th>
-                        <th style={{ textAlign: 'center' }}>Total Count</th>
-                        <th style={{ textAlign: 'center' }}>Cancelled</th>
-                        <th style={{ textAlign: 'center' }}>Net Issued</th>
+                        <th className="text-nowrap">Nature of Document</th>
+                        <th className="text-nowrap">Sr. No. From</th>
+                        <th className="text-nowrap">Sr. No. To</th>
+                        <th className="text-nowrap align-center">Total Count</th>
+                        <th className="text-nowrap align-center">Cancelled</th>
+                        <th className="text-nowrap align-center">Net Issued</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1763,12 +1762,12 @@ export const Reports: React.FC = () => {
                         </tr>
                       ) : (
                         <tr>
-                          <td style={{ fontWeight: 600 }}>Invoices for outward supply</td>
-                          <td style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.from}</td>
-                          <td style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.to}</td>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{gstr1DocsSummary.total}</td>
-                          <td style={{ textAlign: 'center', color: '#BE3144' }}>{gstr1DocsSummary.cancelled}</td>
-                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--primary-dark)' }}>{gstr1DocsSummary.netIssued}</td>
+                          <td className="text-nowrap" style={{ fontWeight: 600 }}>Invoices for outward supply</td>
+                          <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.from}</td>
+                          <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.to}</td>
+                          <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{gstr1DocsSummary.total}</td>
+                          <td className="text-nowrap align-center" style={{ color: '#BE3144' }}>{gstr1DocsSummary.cancelled}</td>
+                          <td className="text-nowrap align-center" style={{ fontWeight: 'bold', color: 'var(--primary-dark)' }}>{gstr1DocsSummary.netIssued}</td>
                         </tr>
                       )}
                     </tbody>
