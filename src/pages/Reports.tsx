@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import {
@@ -26,7 +26,7 @@ export const Reports: React.FC = () => {
     settings,
   } = useApp();
 
-  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger'>('sales');
+  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1'>('sales');
   
   // Date filtering state
   const [dateRange, setDateRange] = useState('All');
@@ -40,14 +40,341 @@ export const Reports: React.FC = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
-
-  // Filter callback
   const filterByDate = (dateStr: string) => {
     if (dateRange === 'All') return true;
     const date = new Date(dateStr).getTime();
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
     return date >= start && date <= end;
+  };
+  // --- GSTR-1 Data Mappings & Calculations ---
+
+  const GST_STATES: { [key: string]: string } = {
+    'MADHYA PRADESH': '23-Madhya Pradesh',
+    'GUJARAT': '24-Gujarat',
+    'PUNJAB': '03-Punjab',
+    'MAHARASHTRA': '27-Maharashtra',
+    'RAJASTHAN': '08-Rajasthan',
+    'DELHI': '07-Delhi',
+    'UTTAR PRADESH': '09-Uttar Pradesh',
+    'HARYANA': '06-Haryana',
+    'KARNATAKA': '29-Karnataka',
+    'TAMIL NADU': '33-Tamil Nadu',
+    'ANDHRA PRADESH': '37-Andhra Pradesh',
+    'TELANGANA': '36-Telangana',
+    'KERALA': '32-Kerala',
+    'WEST BENGAL': '19-West Bengal',
+    'BIHAR': '10-Bihar',
+    'CHHATTISGARH': '22-Chhattisgarh',
+    'JHARKHAND': '20-Jharkhand',
+    'ODISHA': '21-Odisha',
+  };
+
+  const resolvePOS = (custName: string): string => {
+    const cust = customers.find(c => c.name === custName);
+    if (!cust) return '23-Madhya Pradesh';
+    if (cust.gstin && cust.gstin.length >= 2) {
+      const prefix = cust.gstin.substring(0, 2);
+      const found = Object.values(GST_STATES).find(s => s.startsWith(prefix));
+      if (found) return found;
+      return `${prefix}-Other State`;
+    }
+    const stateName = (cust.state || 'Madhya Pradesh').toUpperCase().trim();
+    return GST_STATES[stateName] || '23-Madhya Pradesh';
+  };
+
+  const businessStateCode = settings.gstin ? settings.gstin.substring(0, 2) : '23';
+
+  const formatGstDate = (dateStr: string) => {
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const day = String(d.getDate()).padStart(2, '0');
+      const month = months[d.getMonth()];
+      const year = d.getFullYear();
+      return `${day}-${month}-${year}`;
+    } catch {
+      return dateStr;
+    }
+  };
+
+  // Reusable CSV downloader
+  const downloadCSVFile = (headers: string[], rows: any[][], filename: string) => {
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(e => e.map(val => {
+        const strVal = val === null || val === undefined ? '' : String(val);
+        return `"${strVal.replace(/"/g, '""')}"`;
+      }).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', filename);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // B2B Sheet (Registered Outward Supplies)
+  const gstr1B2BList = useMemo(() => {
+    const list: Array<{
+      gstin: string;
+      receiverName: string;
+      invoiceNumber: string;
+      invoiceDate: string;
+      invoiceValue: number;
+      pos: string;
+      reverseCharge: string;
+      rate: number;
+      taxableValue: number;
+      cgst: number;
+      sgst: number;
+      igst: number;
+    }> = [];
+
+    const targetInvoices = invoices.filter(inv => filterByDate(inv.date));
+
+    targetInvoices.forEach(inv => {
+      const cust = customers.find(c => c.id === inv.customerId);
+      if (cust && cust.gstin && cust.gstin.trim().length > 0) {
+        const pos = resolvePOS(cust.name);
+        const isInterState = !pos.startsWith(businessStateCode);
+
+        // Group items in this invoice by tax rate
+        const rateGroups: { [rate: number]: { taxable: number; gst: number } } = {};
+        inv.items.forEach(item => {
+          const rate = item.gstRate;
+          if (!rateGroups[rate]) {
+            rateGroups[rate] = { taxable: 0, gst: 0 };
+          }
+          rateGroups[rate].taxable += item.subtotal;
+          rateGroups[rate].gst += item.gstAmount;
+        });
+
+        Object.entries(rateGroups).forEach(([rateStr, group]) => {
+          const rate = parseFloat(rateStr);
+          let cgst = 0;
+          let sgst = 0;
+          let igst = 0;
+
+          if (isInterState) {
+            igst = group.gst;
+          } else {
+            cgst = group.gst / 2;
+            sgst = group.gst / 2;
+          }
+
+          list.push({
+            gstin: cust.gstin!.toUpperCase(),
+            receiverName: cust.name,
+            invoiceNumber: inv.invoiceNumber,
+            invoiceDate: formatGstDate(inv.date),
+            invoiceValue: inv.grandTotal,
+            pos,
+            reverseCharge: 'N',
+            rate,
+            taxableValue: group.taxable,
+            cgst,
+            sgst,
+            igst
+          });
+        });
+      }
+    });
+
+    return list;
+  }, [invoices, customers, dateRange, startDate, endDate, settings.gstin]);
+
+  // B2CS Sheet (Unregistered Consumer Small consolidated)
+  const gstr1B2CSList = useMemo(() => {
+    const targetInvoices = invoices.filter(inv => filterByDate(inv.date));
+    const groups: { [key: string]: { pos: string; rate: number; taxable: number; cgst: number; sgst: number; igst: number } } = {};
+
+    targetInvoices.forEach(inv => {
+      const cust = customers.find(c => c.id === inv.customerId);
+      if (cust && (!cust.gstin || cust.gstin.trim().length === 0)) {
+        const pos = resolvePOS(cust.name);
+        const isInterState = !pos.startsWith(businessStateCode);
+
+        inv.items.forEach(item => {
+          const rate = item.gstRate;
+          const key = `${pos}_${rate}`;
+
+          if (!groups[key]) {
+            groups[key] = {
+              pos,
+              rate,
+              taxable: 0,
+              cgst: 0,
+              sgst: 0,
+              igst: 0
+            };
+          }
+
+          groups[key].taxable += item.subtotal;
+          if (isInterState) {
+            groups[key].igst += item.gstAmount;
+          } else {
+            groups[key].cgst += item.gstAmount / 2;
+            groups[key].sgst += item.gstAmount / 2;
+          }
+        });
+      }
+    });
+
+    return Object.values(groups);
+  }, [invoices, customers, dateRange, startDate, endDate, settings.gstin]);
+
+  // HSN Summary Sheet (Table 12)
+  const gstr1HSNList = useMemo(() => {
+    const targetInvoices = invoices.filter(inv => filterByDate(inv.date));
+    const groups: { [key: string]: { hsn: string; desc: string; uqc: string; qty: number; totalVal: number; taxable: number; cgst: number; sgst: number; igst: number } } = {};
+
+    targetInvoices.forEach(inv => {
+      const cust = customers.find(c => c.id === inv.customerId);
+      const pos = cust ? resolvePOS(cust.name) : '23-Madhya Pradesh';
+      const isInterState = !pos.startsWith(businessStateCode);
+
+      inv.items.forEach(item => {
+        const prod = products.find(p => p.id === item.productId);
+        const hsn = prod?.hsn || '8432';
+        const desc = item.productName;
+        
+        let uqc = 'NOS-NUMBERS';
+        if (prod) {
+          const cat = prod.category.toUpperCase();
+          if (cat.includes('SEED') || cat.includes('FERT') || cat.includes('IRR')) {
+            uqc = 'BAG-BAGS';
+          }
+        }
+
+        const rate = item.gstRate;
+        const key = `${hsn}_${desc}_${uqc}_${rate}`;
+
+        if (!groups[key]) {
+          groups[key] = {
+            hsn,
+            desc,
+            uqc,
+            qty: 0,
+            totalVal: 0,
+            taxable: 0,
+            cgst: 0,
+            sgst: 0,
+            igst: 0
+          };
+        }
+
+        groups[key].qty += item.quantity;
+        groups[key].taxable += item.subtotal;
+        groups[key].totalVal += item.total;
+        if (isInterState) {
+          groups[key].igst += item.gstAmount;
+        } else {
+          groups[key].cgst += item.gstAmount / 2;
+          groups[key].sgst += item.gstAmount / 2;
+        }
+      });
+    });
+
+    return Object.values(groups);
+  }, [invoices, products, customers, dateRange, startDate, endDate, settings.gstin]);
+
+  // Documents Issued Sheet (Table 13)
+  const gstr1DocsSummary = useMemo(() => {
+    const targetInvoices = invoices.filter(inv => filterByDate(inv.date));
+    if (targetInvoices.length === 0) {
+      return { from: '—', to: '—', total: 0, cancelled: 0, netIssued: 0 };
+    }
+
+    const sortedInvoices = [...targetInvoices].sort((a, b) => a.invoiceNumber.localeCompare(b.invoiceNumber));
+    const from = sortedInvoices[0].invoiceNumber;
+    const to = sortedInvoices[sortedInvoices.length - 1].invoiceNumber;
+    const total = targetInvoices.length;
+
+    return {
+      from,
+      to,
+      total,
+      cancelled: 0,
+      netIssued: total
+    };
+  }, [invoices, dateRange, startDate, endDate]);
+
+  // CSV download handlers
+  const handleExportGstr1B2B = () => {
+    const headers = ['GSTIN/UIN of Recipient', 'Receiver Name', 'Invoice Number', 'Invoice Date', 'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Invoice Type', 'E-Commerce GSTIN', 'Rate', 'Taxable Value', 'Cess Amount'];
+    const rows = gstr1B2BList.map(item => [
+      item.gstin,
+      item.receiverName,
+      item.invoiceNumber,
+      item.invoiceDate,
+      item.invoiceValue.toFixed(2),
+      item.pos,
+      item.reverseCharge,
+      'Regular',
+      '',
+      item.rate,
+      item.taxableValue.toFixed(2),
+      '0.00'
+    ]);
+    downloadCSVFile(headers, rows, `gstr1_b2b_${startDate}_to_${endDate}.csv`);
+    showToast('B2B GSTR-1 sheet exported successfully!');
+  };
+
+  const handleExportGstr1B2CS = () => {
+    const headers = ['Type', 'Place Of Supply', 'Applicable % of Tax Rate', 'E-Commerce GSTIN', 'Rate', 'Taxable Value', 'Cess Amount'];
+    const rows = gstr1B2CSList.map(item => [
+      'OE',
+      item.pos,
+      '',
+      '',
+      item.rate,
+      item.taxable.toFixed(2),
+      '0.00'
+    ]);
+    downloadCSVFile(headers, rows, `gstr1_b2cs_${startDate}_to_${endDate}.csv`);
+    showToast('B2CS GSTR-1 sheet exported successfully!');
+  };
+
+  const handleExportGstr1HSN = () => {
+    const headers = ['HSN', 'Description', 'UQC', 'Total Quantity', 'Total Value', 'Taxable Value', 'Integrated Tax Amount', 'Central Tax Amount', 'State/UT Tax Amount', 'Cess Amount'];
+    const rows = gstr1HSNList.map(item => [
+      item.hsn,
+      item.desc,
+      item.uqc,
+      item.qty,
+      item.totalVal.toFixed(2),
+      item.taxable.toFixed(2),
+      item.igst.toFixed(2),
+      item.cgst.toFixed(2),
+      item.sgst.toFixed(2),
+      '0.00'
+    ]);
+    downloadCSVFile(headers, rows, `gstr1_hsn_${startDate}_to_${endDate}.csv`);
+    showToast('HSN Summary GSTR-1 sheet exported successfully!');
+  };
+
+  const handleExportGstr1Docs = () => {
+    const headers = ['Nature of Document', 'Sr. No. From', 'Sr. No. To', 'Total Number', 'Cancelled', 'Net Issued'];
+    const rows = [
+      [
+        'Invoices for outward supply',
+        gstr1DocsSummary.from,
+        gstr1DocsSummary.to,
+        gstr1DocsSummary.total,
+        gstr1DocsSummary.cancelled,
+        gstr1DocsSummary.netIssued
+      ]
+    ];
+    downloadCSVFile(headers, rows, `gstr1_docs_${startDate}_to_${endDate}.csv`);
+    showToast('Documents Issued GSTR-1 sheet exported successfully!');
   };
 
   const handlePrint = () => {
@@ -104,6 +431,14 @@ export const Reports: React.FC = () => {
 
   // --- Export CSV Handler ---
   const handleExport = () => {
+    if (activeReport === 'gstr1') {
+      handleExportGstr1B2B();
+      handleExportGstr1B2CS();
+      handleExportGstr1HSN();
+      handleExportGstr1Docs();
+      return;
+    }
+
     let headers: string[] = [];
     let rows: string[][] = [];
     let filename = `${activeReport}_report_${new Date().toISOString().split('T')[0]}.csv`;
@@ -196,23 +531,7 @@ export const Reports: React.FC = () => {
       rows.push(['Accumulated We Owe Suppliers', '', '', '', pendingPayables.toFixed(2), '']);
     }
 
-    // Convert data items to comma-separated text
-    const csvContent = [
-      headers.join(','),
-      ...rows.map(e => e.map(val => `"${val.replace(/"/g, '""')}"`).join(','))
-    ].join('\n');
-
-    // Compile blob and download file
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', filename);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
+    downloadCSVFile(headers, rows, filename);
     showToast('Report exported as CSV successfully!');
   };
 
@@ -1190,6 +1509,277 @@ export const Reports: React.FC = () => {
           </div>
         );
 
+      case 'gstr1':
+        return (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            {/* GSTR-1 Header Dashboard Cards */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '16px',
+              marginBottom: '24px'
+            }}>
+              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid var(--primary-color)' }}>
+                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B2B Invoices (Registered)</span>
+                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1B2BList.length} Rows</span>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Taxable: <strong>{formatINR(gstr1B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}</strong>
+                </div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid #3182CE' }}>
+                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>B2CS (Unregistered OE)</span>
+                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1B2CSList.length} Groups</span>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Taxable: <strong>{formatINR(gstr1B2CSList.reduce((acc, x) => acc + x.taxable, 0))}</strong>
+                </div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid #27AE60' }}>
+                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>HSN Summary (Table 12)</span>
+                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1HSNList.length} Categories</span>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Taxable: <strong>{formatINR(gstr1HSNList.reduce((acc, x) => acc + x.taxable, 0))}</strong>
+                </div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default', borderLeft: '4px solid #8E44AD' }}>
+                <span className="kpi-title" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Documents Issued (Table 13)</span>
+                <span className="kpi-val" style={{ margin: '8px 0', fontSize: '20px' }}>{gstr1DocsSummary.total} Invoices</span>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                  Range: <strong>{gstr1DocsSummary.from} - {gstr1DocsSummary.to}</strong>
+                </div>
+              </div>
+            </div>
+
+            {/* GSTR-1 Main Section Panels */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* 1. B2B Outward Supplies */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      1. B2B Registered Outward Supplies (4A, 4B, 4C, 6B, 6C)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Outward supplies made to GST registered entities. Grouped by invoice number and tax rate.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1B2B} disabled={gstr1B2BList.length === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download B2B CSV
+                  </button>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Recipient GSTIN</th>
+                        <th>Recipient Name</th>
+                        <th>Invoice No</th>
+                        <th>Invoice Date</th>
+                        <th style={{ textAlign: 'right' }}>Total Value</th>
+                        <th>POS</th>
+                        <th style={{ textAlign: 'center' }}>Rate</th>
+                        <th style={{ textAlign: 'right' }}>Taxable Value</th>
+                        <th style={{ textAlign: 'right' }}>CGST</th>
+                        <th style={{ textAlign: 'right' }}>SGST</th>
+                        <th style={{ textAlign: 'right' }}>IGST</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr1B2BList.length === 0 ? (
+                        <tr>
+                          <td colSpan={11} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No registered B2B supplies found in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        gstr1B2BList.map((item, idx) => (
+                          <tr key={idx}>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{item.gstin}</td>
+                            <td>{item.receiverName}</td>
+                            <td style={{ fontFamily: 'monospace' }}>{item.invoiceNumber}</td>
+                            <td>{item.invoiceDate}</td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(item.invoiceValue).replace('₹', '')}</td>
+                            <td>{item.pos}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.rate}%</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(item.taxableValue).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 2. B2CS Consumer Supplies */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      2. B2C Small Outward Supplies (7 - Consolidated)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Consolidated taxable outward supplies to unregistered customers. Grouped by Place of Supply (POS) and Tax Rate.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1B2CS} disabled={gstr1B2CSList.length === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download B2CS CSV
+                  </button>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Type</th>
+                        <th>Place of Supply (POS)</th>
+                        <th style={{ textAlign: 'center' }}>GST Rate</th>
+                        <th style={{ textAlign: 'right' }}>Total Taxable Value</th>
+                        <th style={{ textAlign: 'right' }}>CGST Amount</th>
+                        <th style={{ textAlign: 'right' }}>SGST Amount</th>
+                        <th style={{ textAlign: 'right' }}>IGST Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr1B2CSList.length === 0 ? (
+                        <tr>
+                          <td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No unregistered B2C supplies found in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        gstr1B2CSList.map((item, idx) => (
+                          <tr key={idx}>
+                            <td>OE (Other)</td>
+                            <td style={{ fontWeight: 600 }}>{item.pos}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.rate}%</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 3. HSN Summary */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      3. HSN Summary of Outward Supplies (Table 12)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      HSN-code summary of agricultural goods supplied. Required for return filing.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1HSN} disabled={gstr1HSNList.length === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download HSN CSV
+                  </button>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>HSN/SAC</th>
+                        <th>Product Description</th>
+                        <th>Unit (UQC)</th>
+                        <th style={{ textAlign: 'center' }}>Total Qty</th>
+                        <th style={{ textAlign: 'right' }}>Total Value</th>
+                        <th style={{ textAlign: 'right' }}>Taxable Value</th>
+                        <th style={{ textAlign: 'right' }}>CGST Paid</th>
+                        <th style={{ textAlign: 'right' }}>SGST Paid</th>
+                        <th style={{ textAlign: 'right' }}>IGST Paid</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr1HSNList.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No items found in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        gstr1HSNList.map((item, idx) => (
+                          <tr key={idx}>
+                            <td style={{ fontFamily: 'monospace', fontWeight: 700 }}>{item.hsn}</td>
+                            <td>{item.desc}</td>
+                            <td style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.uqc}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{item.qty}</td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(item.totalVal).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 4. Documents Issued */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      4. Summary of Documents Issued (Table 13)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Serial number range and counts of tax invoices issued during the period.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1Docs} disabled={gstr1DocsSummary.total === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download Docs CSV
+                  </button>
+                </div>
+
+                <div className="table-responsive">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Nature of Document</th>
+                        <th>Sr. No. From</th>
+                        <th>Sr. No. To</th>
+                        <th style={{ textAlign: 'center' }}>Total Count</th>
+                        <th style={{ textAlign: 'center' }}>Cancelled</th>
+                        <th style={{ textAlign: 'center' }}>Net Issued</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr1DocsSummary.total === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No invoice documents issued in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td style={{ fontWeight: 600 }}>Invoices for outward supply</td>
+                          <td style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.from}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.to}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold' }}>{gstr1DocsSummary.total}</td>
+                          <td style={{ textAlign: 'center', color: '#BE3144' }}>{gstr1DocsSummary.cancelled}</td>
+                          <td style={{ textAlign: 'center', fontWeight: 'bold', color: 'var(--primary-dark)' }}>{gstr1DocsSummary.netIssued}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -1555,6 +2145,175 @@ export const Reports: React.FC = () => {
           </div>
         );
 
+      case 'gstr1':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '14px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33', borderBottom: '1px solid #E2E9E0', paddingBottom: '6px' }}>
+              GSTR-1 Outward Supplies Audit Summary (CA-Ready)
+            </h2>
+
+            {/* Overall summary block */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
+              <div><strong>B2B Invoices:</strong> {gstr1B2BList.length} Rows</div>
+              <div><strong>B2CS Groups:</strong> {gstr1B2CSList.length} Groups</div>
+              <div><strong>HSN Categories:</strong> {gstr1HSNList.length} Codes</div>
+              <div><strong>Docs Issued:</strong> {gstr1DocsSummary.total} Bills</div>
+            </div>
+
+            {/* 1. B2B Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              1. B2B Registered Supplies (4A, 4B, 4C, 6B, 6C)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>GSTIN</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Name</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Inv No</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Date</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>POS</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Rate</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Amt (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr1B2BList.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No registered B2B supplies found.</td>
+                  </tr>
+                ) : (
+                  gstr1B2BList.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{item.gstin}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.receiverName}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{item.invoiceNumber}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.invoiceDate}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.pos.split('-')[0]}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{item.rate}%</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{item.taxableValue.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.cgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.sgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.igst.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* 2. B2CS Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              2. B2C Small Supplies (7 - Consolidated)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Place of Supply (POS)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>GST Rate</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Value (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST Amount (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST Amount (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST Amount (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr1B2CSList.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No unregistered B2C supplies found.</td>
+                  </tr>
+                ) : (
+                  gstr1B2CSList.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{item.pos}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{item.rate}%</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{item.taxable.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.cgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.sgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.igst.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* 3. HSN Summary Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              3. HSN Summary of Outward Supplies (Table 12)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>HSN</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Description</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>UQC</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Qty</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Total Value (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Value (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr1HSNList.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No HSN details found.</td>
+                  </tr>
+                ) : (
+                  gstr1HSNList.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.hsn}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.desc}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.uqc.split('-')[0]}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{item.qty}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.totalVal.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{item.taxable.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.cgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.sgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.igst.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* 4. Docs Summary Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              4. Documents Issued Summary (Table 13)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Nature of Document</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>From</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>To</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Total Number</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Cancelled</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Net Issued</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr1DocsSummary.total === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No document summary found.</td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Invoices for outward supply</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr1DocsSummary.from}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr1DocsSummary.to}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{gstr1DocsSummary.total}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center', color: '#BE3144' }}>{gstr1DocsSummary.cancelled}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold' }}>{gstr1DocsSummary.netIssued}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -1568,6 +2327,7 @@ export const Reports: React.FC = () => {
     { id: 'gst', label: 'GST Tax Summary', icon: <Percent size={18} /> },
     { id: 'custLedger', label: 'Customer Dues Ledger', icon: <Users size={18} /> },
     { id: 'suppLedger', label: 'Supplier Payables Ledger', icon: <Truck size={18} /> },
+    { id: 'gstr1', label: 'GSTR-1 Return (CA-Ready)', icon: <Percent size={18} /> },
   ];
 
   return (

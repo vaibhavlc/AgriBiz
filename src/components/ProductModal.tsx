@@ -28,6 +28,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [purchasePrice, setPurchasePrice] = useState<number | ''>(0);
   const [sellingPrice, setSellingPrice] = useState<number | ''>(0);
   const [gstRate, setGstRate] = useState(18);
+  const [hsn, setHsn] = useState('');
 
   useEffect(() => {
     if (editProductData) {
@@ -39,6 +40,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setPurchasePrice(editProductData.purchasePrice);
       setSellingPrice(editProductData.sellingPrice);
       setGstRate(editProductData.gstRate);
+      setHsn(editProductData.hsn || '');
     } else {
       setName('');
       setSku('');
@@ -48,6 +50,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
       setPurchasePrice(0);
       setSellingPrice(0);
       setGstRate(18);
+      setHsn('');
     }
   }, [editProductData, isOpen]);
 
@@ -86,6 +89,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         purchasePrice: finalPurchasePrice,
         sellingPrice: finalSellingPrice,
         gstRate,
+        hsn: hsn.trim(),
       });
     } else {
       const newProd = addProduct({
@@ -97,6 +101,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         purchasePrice: finalPurchasePrice,
         sellingPrice: finalSellingPrice,
         gstRate,
+        hsn: hsn.trim(),
       });
       if (onSaveCallback) {
         onSaveCallback(newProd);
@@ -125,7 +130,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           />
         </div>
 
-        <div className="form-row">
+        <div className="form-row-three">
           <div className="form-group">
             <label className="form-label">SKU / Item Code</label>
             <div style={{ display: 'flex', gap: '8px' }}>
@@ -146,6 +151,16 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 Gen
               </button>
             </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">HSN / SAC Code</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. 8432"
+              value={hsn}
+              onChange={(e) => setHsn(e.target.value)}
+            />
           </div>
           <div className="form-group">
             <label className="form-label">Category *</label>

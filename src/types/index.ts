@@ -8,6 +8,7 @@ export interface Product {
   purchasePrice: number;
   sellingPrice: number;
   gstRate: number; // GST percentage, e.g., 5, 12, 18, 28
+  hsn?: string; // HSN code for GST billing
 }
 
 export interface Customer {

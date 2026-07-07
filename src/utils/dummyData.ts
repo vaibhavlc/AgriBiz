@@ -32,6 +32,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 18000,
     sellingPrice: 22500,
     gstRate: 12,
+    hsn: '8432',
   },
   {
     id: 'P102',
@@ -43,6 +44,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 85000,
     sellingPrice: 98000,
     gstRate: 12,
+    hsn: '8432',
   },
   {
     id: 'P103',
@@ -54,6 +56,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 48000,
     sellingPrice: 55000,
     gstRate: 12,
+    hsn: '8432',
   },
   {
     id: 'P104',
@@ -65,6 +68,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 14500,
     sellingPrice: 16800,
     gstRate: 18,
+    hsn: '8413',
   },
   {
     id: 'P105',
@@ -76,6 +80,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 450,
     sellingPrice: 580,
     gstRate: 18,
+    hsn: '3917',
   },
   {
     id: 'P106',
@@ -87,6 +92,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 1600,
     sellingPrice: 2200,
     gstRate: 12,
+    hsn: '8424',
   },
   {
     id: 'P107',
@@ -98,6 +104,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 800,
     sellingPrice: 1100,
     gstRate: 18,
+    hsn: '8516',
   },
   {
     id: 'P108',
@@ -109,6 +116,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 2500,
     sellingPrice: 3200,
     gstRate: 5,
+    hsn: '8432',
   },
   {
     id: 'P109',
@@ -120,6 +128,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 120,
     sellingPrice: 180,
     gstRate: 18,
+    hsn: '8432',
   },
   {
     id: 'P110',
@@ -131,6 +140,7 @@ export const initialProducts: Product[] = [
     purchasePrice: 1200,
     sellingPrice: 1650,
     gstRate: 18,
+    hsn: '8432',
   },
 ];
 
