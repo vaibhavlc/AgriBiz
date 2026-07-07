@@ -376,16 +376,13 @@ export const Purchases: React.FC = () => {
     showToast('Compiling high-definition PDF bill...', 'info');
 
     const generatePDF = (html2pdfLib: any) => {
-      // Clone the element to avoid DOM rendering issues due to mobile CSS zoom
-      const clone = element.cloneNode(true) as HTMLElement;
-      clone.style.position = 'absolute';
-      clone.style.left = '-9999px';
-      clone.style.top = '-9999px';
-      clone.style.zoom = '1';
-      clone.style.transform = 'none';
-      clone.style.width = '148mm';
-      clone.style.height = '210mm';
-      document.body.appendChild(clone);
+      // Temporarily clear mobile zoom styling to ensure html2pdf captures native A5 dimensions
+      const htmlElement = element as HTMLElement;
+      const originalZoom = htmlElement.style.zoom;
+      const originalTransform = htmlElement.style.transform;
+      
+      htmlElement.style.setProperty('zoom', '1', 'important');
+      htmlElement.style.setProperty('transform', 'none', 'important');
 
       const opt = {
         margin:       0,
@@ -399,15 +396,15 @@ export const Purchases: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(clone).set(opt).save().then(() => {
+      html2pdfLib().from(element).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
-        document.body.removeChild(clone);
+        htmlElement.style.zoom = originalZoom;
+        htmlElement.style.transform = originalTransform;
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
-        if (clone.parentNode) {
-          document.body.removeChild(clone);
-        }
+        htmlElement.style.zoom = originalZoom;
+        htmlElement.style.transform = originalTransform;
       });
     };
 

@@ -64,7 +64,6 @@ export const Reports: React.FC = () => {
   const totalPurchasesBase = filteredPurchases.reduce((s, i) => s + i.subtotal, 0);
 
   // 3. Profit Report
-  // Profit = Taxable sales (revenue) minus COGS
   const coGS = filteredInvoices.reduce((sum, inv) => {
     const invCOGS = inv.items.reduce((invSum, item) => {
       const prod = products.find((p) => p.id === item.productId);
@@ -77,27 +76,41 @@ export const Reports: React.FC = () => {
   const profitMarginPercent = totalSalesBase > 0 ? (grossProfit / totalSalesBase) * 100 : 0;
 
   // 4. Stock Valuation Report
-  // Valued at purchase price (assets) and selling price (potential value)
   const totalStockQty = products.reduce((s, p) => s + p.stock, 0);
   const totalAssetVal = products.reduce((s, p) => s + (p.stock * p.purchasePrice), 0);
   const totalRetailVal = products.reduce((s, p) => s + (p.stock * p.sellingPrice), 0);
 
   // 5. GST Report (Tax filing summary)
-  // GSTR-1 (Output tax collected) vs GSTR-2 (Input tax credit paid)
   const totalCGSTCollected = totalSalesTax / 2;
   const totalSGSTCollected = totalSalesTax / 2;
   const totalCGSTPaid = totalPurchasesTax / 2;
   const totalSGSTPaid = totalPurchasesTax / 2;
   const netGSTDue = totalSalesTax - totalPurchasesTax;
 
-  // --- Rendering sub-sheets ---
+  // 6. Customer Ledger Report
+  const totalCustomers = customers.length;
+  const pendingReceivables = customers.reduce((sum, c) => sum + (c.outstanding > 0 ? c.outstanding : 0), 0);
+  const averageReceivable = customers.length > 0 ? (pendingReceivables / customers.length) : 0;
+
+  // 7. Supplier Ledger Report
+  const totalSuppliers = suppliers.length;
+  const pendingPayables = suppliers.reduce((sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0), 0);
+  const averagePayable = suppliers.length > 0 ? (pendingPayables / suppliers.length) : 0;
+
+  // Auto-fitting responsive grid style for KPIs
+  const kpiGridStyle: React.CSSProperties = {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gap: '16px',
+    marginBottom: '24px'
+  };
 
   const renderReportContent = () => {
     switch (activeReport) {
       case 'sales':
         return (
-          <div>
-            <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
                   <span className="kpi-label">Sales Invoices Count</span>
@@ -220,8 +233,8 @@ export const Reports: React.FC = () => {
 
       case 'purchase':
         return (
-          <div>
-            <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
                   <span className="kpi-label">Bills logged</span>
@@ -344,8 +357,8 @@ export const Reports: React.FC = () => {
 
       case 'profit':
         return (
-          <div>
-            <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
                   <span className="kpi-label">Sales Revenue (Taxable)</span>
@@ -372,7 +385,7 @@ export const Reports: React.FC = () => {
               </div>
             </div>
 
-            <div className="card" style={{ padding: '20px' }}>
+            <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
               <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Sales Profit Breakdown by Invoices</h4>
               {/* Desktop View */}
               <div className="desktop-only-table">
@@ -489,8 +502,8 @@ export const Reports: React.FC = () => {
 
       case 'stock':
         return (
-          <div>
-            <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
                   <span className="kpi-label">Total Stock Quantity</span>
@@ -614,9 +627,9 @@ export const Reports: React.FC = () => {
 
       case 'gst':
         return (
-          <div>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             {/* GST Summary metrics */}
-            <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+            <div style={kpiGridStyle}>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
                   <span className="kpi-label">Output GST (Collected)</span>
@@ -646,132 +659,132 @@ export const Reports: React.FC = () => {
             </div>
 
             {/* GST summary log */}
-            <div className="card">
-              <h3 className="card-title">GSTR Summary Ledger Logs</h3>
-              <div className="table-wrapper">
-              {/* Desktop View */}
-              <div className="desktop-only-table">
-                <div className="table-wrapper">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Transaction Type</th>
-                        <th>Document Count</th>
-                        <th style={{ textAlign: 'right' }}>Goods Value (Base cost)</th>
-                        <th style={{ textAlign: 'right' }}>Central GST (CGST)</th>
-                        <th style={{ textAlign: 'right' }}>State GST (SGST)</th>
-                        <th style={{ textAlign: 'right' }}>Total Tax Liability (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>Outward Supply (Sales Invoices)</td>
-                        <td>{filteredInvoices.length}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalCGSTCollected).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalSGSTCollected).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-success-dark)' }}>
-                          {formatINR(totalSalesTax).replace('₹', '')}
-                        </td>
-                      </tr>
-                      <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                        <td style={{ fontWeight: 600, color: 'var(--color-info-dark)' }}>Inward Supply (Supplier Bills)</td>
-                        <td>{filteredPurchases.length}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalCGSTPaid).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalSGSTPaid).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-info-dark)' }}>
-                          {formatINR(totalPurchasesTax).replace('₹', '')}
-                        </td>
-                      </tr>
-                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={2}>Net Payable Tax Dues:</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase - totalPurchasesBase).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
-                          {formatINR(totalCGSTCollected - totalCGSTPaid).replace('₹', '')}
-                        </td>
-                        <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
-                          {formatINR(totalSGSTCollected - totalSGSTPaid).replace('₹', '')}
-                        </td>
-                        <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
-                          {formatINR(netGSTDue).replace('₹', '')}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Mobile View */}
-              <div className="mobile-card-list">
-                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-success-dark)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-success-dark)' }}>Outward Supply (Sales)</div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Document Count</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{filteredInvoices.length}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Goods Value (Base)</span>
-                    <span className="mobile-list-card-val">{formatINR(totalSalesBase)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">CGST collected</span>
-                    <span className="mobile-list-card-val">{formatINR(totalCGSTCollected)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">SGST collected</span>
-                    <span className="mobile-list-card-val">{formatINR(totalSGSTCollected)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Output GST</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>{formatINR(totalSalesTax)}</span>
+            <div className="card" style={{ border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+              <h3 className="card-title" style={{ padding: '20px 20px 0 20px', margin: 0, fontWeight: 700 }}>GSTR Summary Ledger Logs</h3>
+              <div style={{ padding: '20px' }}>
+                {/* Desktop View */}
+                <div className="desktop-only-table">
+                  <div className="table-wrapper">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Transaction Type</th>
+                          <th>Document Count</th>
+                          <th style={{ textAlign: 'right' }}>Goods Value (Base cost)</th>
+                          <th style={{ textAlign: 'right' }}>Central GST (CGST)</th>
+                          <th style={{ textAlign: 'right' }}>State GST (SGST)</th>
+                          <th style={{ textAlign: 'right' }}>Total Tax Liability (₹)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr>
+                          <td style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>Outward Supply (Sales Invoices)</td>
+                          <td>{filteredInvoices.length}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalCGSTCollected).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalSGSTCollected).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-success-dark)' }}>
+                            {formatINR(totalSalesTax).replace('₹', '')}
+                          </td>
+                        </tr>
+                        <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
+                          <td style={{ fontWeight: 600, color: 'var(--color-info-dark)' }}>Inward Supply (Supplier Bills)</td>
+                          <td>{filteredPurchases.length}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalCGSTPaid).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalSGSTPaid).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600, color: 'var(--color-info-dark)' }}>
+                            {formatINR(totalPurchasesTax).replace('₹', '')}
+                          </td>
+                        </tr>
+                        <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                          <td colSpan={2}>Net Payable Tax Dues:</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase - totalPurchasesBase).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
+                            {formatINR(totalCGSTCollected - totalCGSTPaid).replace('₹', '')}
+                          </td>
+                          <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
+                            {formatINR(totalSGSTCollected - totalSGSTPaid).replace('₹', '')}
+                          </td>
+                          <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
+                            {formatINR(netGSTDue).replace('₹', '')}
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 
-                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info-dark)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-info-dark)' }}>Inward Supply (Purchases)</div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Document Count</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{filteredPurchases.length}</span>
+                {/* Mobile View */}
+                <div className="mobile-card-list">
+                  <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-success-dark)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-success-dark)' }}>Outward Supply (Sales)</div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Document Count</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{filteredInvoices.length}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Goods Value (Base)</span>
+                      <span className="mobile-list-card-val">{formatINR(totalSalesBase)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">CGST collected</span>
+                      <span className="mobile-list-card-val">{formatINR(totalCGSTCollected)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">SGST collected</span>
+                      <span className="mobile-list-card-val">{formatINR(totalSGSTCollected)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Total Output GST</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>{formatINR(totalSalesTax)}</span>
+                    </div>
                   </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Goods Value (Base)</span>
-                    <span className="mobile-list-card-val">{formatINR(totalPurchasesBase)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">CGST Paid</span>
-                    <span className="mobile-list-card-val">{formatINR(totalCGSTPaid)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">SGST Paid</span>
-                    <span className="mobile-list-card-val">{formatINR(totalSGSTPaid)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Input ITC</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700, color: 'var(--color-info-dark)' }}>{formatINR(totalPurchasesTax)}</span>
-                  </div>
-                </div>
 
-                <div className="mobile-list-card" style={{ borderLeftColor: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', background: 'var(--bg-app)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Net Payable Tax Dues</div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Net Goods Difference</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(totalSalesBase - totalPurchasesBase)}</span>
+                  <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info-dark)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-info-dark)' }}>Inward Supply (Purchases)</div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Document Count</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{filteredPurchases.length}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Goods Value (Base)</span>
+                      <span className="mobile-list-card-val">{formatINR(totalPurchasesBase)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">CGST Paid</span>
+                      <span className="mobile-list-card-val">{formatINR(totalCGSTPaid)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">SGST Paid</span>
+                      <span className="mobile-list-card-val">{formatINR(totalSGSTPaid)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Total Input ITC</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700, color: 'var(--color-info-dark)' }}>{formatINR(totalPurchasesTax)}</span>
+                    </div>
                   </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Net CGST</span>
-                    <span className="mobile-list-card-val" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>{formatINR(totalCGSTCollected - totalCGSTPaid)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Net SGST</span>
-                    <span className="mobile-list-card-val" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>{formatINR(totalSGSTCollected - totalSGSTPaid)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Net Liability</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', fontSize: '15px' }}>{formatINR(netGSTDue)}</span>
+
+                  <div className="mobile-list-card" style={{ borderLeftColor: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', background: 'var(--bg-app)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Net Payable Tax Dues</div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Net Goods Difference</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(totalSalesBase - totalPurchasesBase)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Net CGST</span>
+                      <span className="mobile-list-card-val" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>{formatINR(totalCGSTCollected - totalCGSTPaid)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Net SGST</span>
+                      <span className="mobile-list-card-val" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>{formatINR(totalSGSTCollected - totalSGSTPaid)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Net Liability</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 800, color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', fontSize: '15px' }}>{formatINR(netGSTDue)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
               </div>
             </div>
           </div>
@@ -779,8 +792,34 @@ export const Reports: React.FC = () => {
 
       case 'custLedger':
         return (
-          <div>
-            <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Customer Outstanding Summary Ledger</h4>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Registered Customers</span>
+                  <span className="kpi-value">{totalCustomers}</span>
+                  <span className="kpi-subtext">Active accounts</span>
+                </div>
+                <div className="kpi-icon-container blue"><Users size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Total Outstanding Dues</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(pendingReceivables)}</span>
+                  <span className="kpi-subtext">Collectable assets</span>
+                </div>
+                <div className="kpi-icon-container rose"><TrendingUp size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Average Outstanding</span>
+                  <span className="kpi-value">{formatINR(averageReceivable)}</span>
+                  <span className="kpi-subtext">Per active customer account</span>
+                </div>
+                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
+              </div>
+            </div>
+
             {/* Desktop View */}
             <div className="desktop-only-table">
               <div className="table-wrapper">
@@ -789,7 +828,7 @@ export const Reports: React.FC = () => {
                     <tr>
                       <th>Customer ID</th>
                       <th>Customer Name</th>
-                      <th>Phone / Contact</th>
+                      <th>Phone Number</th>
                       <th>GSTIN Identification</th>
                       <th style={{ textAlign: 'right' }}>Outstanding Balance (₹)</th>
                       <th>Status</th>
@@ -821,7 +860,7 @@ export const Reports: React.FC = () => {
                     <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
                       <td colSpan={4}>Accumulated Customer Dues:</td>
                       <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
-                        {formatINR(customers.reduce((s, c) => s + c.outstanding, 0))}
+                        {formatINR(pendingReceivables)}
                       </td>
                       <td></td>
                     </tr>
@@ -861,7 +900,7 @@ export const Reports: React.FC = () => {
                 <div className="mobile-list-card-row">
                   <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Customer Dues</span>
                   <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
-                    {formatINR(customers.reduce((s, c) => s + c.outstanding, 0))}
+                    {formatINR(pendingReceivables)}
                   </span>
                 </div>
               </div>
@@ -871,8 +910,34 @@ export const Reports: React.FC = () => {
 
       case 'suppLedger':
         return (
-          <div>
-            <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Supplier Payable Summary Ledger</h4>
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Registered Suppliers</span>
+                  <span className="kpi-value">{totalSuppliers}</span>
+                  <span className="kpi-subtext">Active accounts</span>
+                </div>
+                <div className="kpi-icon-container blue"><Truck size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Total Balance Owed</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(pendingPayables)}</span>
+                  <span className="kpi-subtext">Accounts payable cost</span>
+                </div>
+                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Average Payable</span>
+                  <span className="kpi-value">{formatINR(averagePayable)}</span>
+                  <span className="kpi-subtext">Per active supplier account</span>
+                </div>
+                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
+              </div>
+            </div>
+
             {/* Desktop View */}
             <div className="desktop-only-table">
               <div className="table-wrapper">
@@ -913,7 +978,7 @@ export const Reports: React.FC = () => {
                     <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
                       <td colSpan={4}>Accumulated We Owe Suppliers:</td>
                       <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
-                        {formatINR(suppliers.reduce((sum, s) => sum + s.outstanding, 0))}
+                        {formatINR(pendingPayables)}
                       </td>
                       <td></td>
                     </tr>
@@ -953,7 +1018,7 @@ export const Reports: React.FC = () => {
                 <div className="mobile-list-card-row">
                   <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Owed Balance</span>
                   <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
-                    {formatINR(suppliers.reduce((sum, s) => sum + s.outstanding, 0))}
+                    {formatINR(pendingPayables)}
                   </span>
                 </div>
               </div>
