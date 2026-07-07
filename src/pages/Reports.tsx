@@ -23,6 +23,7 @@ export const Reports: React.FC = () => {
     products,
     customers,
     suppliers,
+    settings,
   } = useApp();
 
   const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger'>('sales');
@@ -39,6 +40,8 @@ export const Reports: React.FC = () => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3500);
   };
+
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Filter callback
   const filterByDate = (dateStr: string) => {
@@ -213,6 +216,71 @@ export const Reports: React.FC = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
     showToast('Report exported as CSV successfully!');
+  };
+
+  // --- Save PDF Handler (Clean Statement Table) ---
+  const handleDownloadPDF = () => {
+    const element = document.getElementById('pdf-report-printout');
+    if (!element) {
+      showToast('Could not find report printout element.', 'error');
+      return;
+    }
+
+    showToast('Compiling high-definition PDF statement...', 'info');
+    setIsGeneratingPDF(true);
+
+    // Yield execution to allow React to paint the loading blur overlay on screen
+    setTimeout(() => {
+      // Make element temporarily visible but behind everything at 0, 0
+      const htmlElement = element as HTMLElement;
+      htmlElement.style.display = 'block';
+      htmlElement.style.position = 'absolute';
+      htmlElement.style.left = '0';
+      htmlElement.style.top = '0';
+      htmlElement.style.zIndex = '99998'; // sit underneath the loading overlay
+      htmlElement.style.width = '210mm'; // Standard A4 width
+
+      const generatePDF = (html2pdfLib: any) => {
+        const opt = {
+          margin:       0,
+          filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdfLib().from(element).set(opt).save().then(() => {
+          showToast('PDF downloaded successfully!');
+          htmlElement.style.display = 'none';
+          setIsGeneratingPDF(false);
+        }).catch((err: any) => {
+          console.error(err);
+          showToast('Error exporting PDF document.', 'error');
+          htmlElement.style.display = 'none';
+          setIsGeneratingPDF(false);
+        });
+      };
+
+      const globalWindow = window as any;
+      if (globalWindow.html2pdf) {
+        generatePDF(globalWindow.html2pdf);
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => {
+          if (globalWindow.html2pdf) {
+            generatePDF(globalWindow.html2pdf);
+          }
+        };
+        script.onerror = () => {
+          showToast('Failed to load PDF engine from CDN.', 'error');
+          htmlElement.style.display = 'none';
+          setIsGeneratingPDF(false);
+        };
+        document.body.appendChild(script);
+      }
+    }, 150);
   };
 
   // Auto-fitting responsive grid style for KPIs
@@ -1150,8 +1218,7 @@ export const Reports: React.FC = () => {
   };
 
   // --- Print-Only PDF content renderer ---
-  const _unusedPrintContent = () => {
-    (window as any)._unusedPrintContent = _unusedPrintContent;
+  const renderPrintReportContent = () => {
     switch (activeReport) {
       case 'sales':
         return (
@@ -1561,6 +1628,9 @@ export const Reports: React.FC = () => {
           <button className="btn btn-secondary" onClick={handleExport}>
             <Download size={16} /> Export CSV
           </button>
+          <button className="btn btn-secondary" onClick={handleDownloadPDF}>
+            <FileText size={16} /> Save PDF
+          </button>
           <button className="btn btn-primary" onClick={handlePrint}>
             <Printer size={16} /> Print Report
           </button>
@@ -1591,6 +1661,46 @@ export const Reports: React.FC = () => {
         </div>
       </div>
 
+      {/* Hidden A4 Printable Report Element used for PDF generation */}
+      <div id="pdf-report-printout" style={{
+        display: 'none',
+        width: '210mm',
+        backgroundColor: '#ffffff',
+        fontFamily: 'var(--font-sans)',
+        color: '#000000',
+        padding: '15mm',
+        boxSizing: 'border-box'
+      }}>
+        {/* Header Block */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '16px' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
+            <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{settings.address}</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#555555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Financial Audit Report
+            </h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>
+              Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
+            </p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555' }}>
+              Date Generated: {formatDate(new Date().toISOString())}
+            </p>
+          </div>
+        </div>
+
+        {/* Dynamic content */}
+        {renderPrintReportContent()}
+
+        {/* Signatory Blocks */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '48px', fontSize: '10px', color: '#555555' }}>
+          <div>Prepared By: ___________________________</div>
+          <div>Authorized Signatory: ___________________________</div>
+        </div>
+      </div>
+
       {/* Status Toast Alert */}
       {toast && (
         <div style={{
@@ -1608,6 +1718,36 @@ export const Reports: React.FC = () => {
           animation: 'fadeIn 0.2s ease-out'
         }}>
           {toast.message}
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isGeneratingPDF && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          animation: 'fadeIn 0.15s ease-out'
+        }}>
+          <div className="animate-spin" style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid var(--border-color)',
+            borderTopColor: 'var(--primary-dark)',
+            borderRadius: '50%'
+          }} />
+          <p style={{ marginTop: '16px', fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px' }}>
+            Generating A4 PDF Report Statement...
+          </p>
         </div>
       )}
     </div>
