@@ -229,55 +229,58 @@ export const Reports: React.FC = () => {
     showToast('Compiling high-definition PDF statement...', 'info');
     setIsGeneratingPDF(true);
 
-    // Make element temporarily visible but behind everything at 0, 0
-    const htmlElement = element as HTMLElement;
-    htmlElement.style.display = 'block';
-    htmlElement.style.position = 'absolute';
-    htmlElement.style.left = '0';
-    htmlElement.style.top = '0';
-    htmlElement.style.zIndex = '99998'; // sit underneath the loading overlay
-    htmlElement.style.width = '210mm'; // Standard A4 width
+    // Yield execution to allow React to paint the loading blur overlay on screen
+    setTimeout(() => {
+      // Make element temporarily visible but behind everything at 0, 0
+      const htmlElement = element as HTMLElement;
+      htmlElement.style.display = 'block';
+      htmlElement.style.position = 'absolute';
+      htmlElement.style.left = '0';
+      htmlElement.style.top = '0';
+      htmlElement.style.zIndex = '99998'; // sit underneath the loading overlay
+      htmlElement.style.width = '210mm'; // Standard A4 width
 
-    const generatePDF = (html2pdfLib: any) => {
-      const opt = {
-        margin:       0,
-        filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      const generatePDF = (html2pdfLib: any) => {
+        const opt = {
+          margin:       0,
+          filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
+          image:        { type: 'jpeg', quality: 0.98 },
+          html2canvas:  { scale: 2, useCORS: true, logging: false },
+          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+
+        html2pdfLib().from(element).set(opt).save().then(() => {
+          showToast('PDF downloaded successfully!');
+          htmlElement.style.display = 'none';
+          setIsGeneratingPDF(false);
+        }).catch((err: any) => {
+          console.error(err);
+          showToast('Error exporting PDF document.', 'error');
+          htmlElement.style.display = 'none';
+          setIsGeneratingPDF(false);
+        });
       };
 
-      html2pdfLib().from(element).set(opt).save().then(() => {
-        showToast('PDF downloaded successfully!');
-        htmlElement.style.display = 'none';
-        setIsGeneratingPDF(false);
-      }).catch((err: any) => {
-        console.error(err);
-        showToast('Error exporting PDF document.', 'error');
-        htmlElement.style.display = 'none';
-        setIsGeneratingPDF(false);
-      });
-    };
-
-    const globalWindow = window as any;
-    if (globalWindow.html2pdf) {
-      generatePDF(globalWindow.html2pdf);
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.crossOrigin = 'anonymous';
-      script.onload = () => {
-        if (globalWindow.html2pdf) {
-          generatePDF(globalWindow.html2pdf);
-        }
-      };
-      script.onerror = () => {
-        showToast('Failed to load PDF engine from CDN.', 'error');
-        htmlElement.style.display = 'none';
-        setIsGeneratingPDF(false);
-      };
-      document.body.appendChild(script);
-    }
+      const globalWindow = window as any;
+      if (globalWindow.html2pdf) {
+        generatePDF(globalWindow.html2pdf);
+      } else {
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => {
+          if (globalWindow.html2pdf) {
+            generatePDF(globalWindow.html2pdf);
+          }
+        };
+        script.onerror = () => {
+          showToast('Failed to load PDF engine from CDN.', 'error');
+          htmlElement.style.display = 'none';
+          setIsGeneratingPDF(false);
+        };
+        document.body.appendChild(script);
+      }
+    }, 150);
   };
 
   // Auto-fitting responsive grid style for KPIs
