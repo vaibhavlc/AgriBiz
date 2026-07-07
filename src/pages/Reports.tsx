@@ -1616,7 +1616,7 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Main panel layout */}
-      <div className="report-sidebar-layout">
+      <div className="report-sidebar-layout no-print">
         {/* Left Side Menu */}
         <div className="report-menu no-print">
           {reportTabs.map((tab) => (
@@ -1640,7 +1640,7 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Hidden A4 Printable Report Element wrapper to prevent flash */}
-      <div style={{ position: 'absolute', left: 0, top: 0, width: 0, height: 0, overflow: 'hidden', zIndex: -99999, pointerEvents: 'none' }}>
+      <div className="pdf-print-wrapper" style={{ position: 'absolute', left: 0, top: 0, width: 0, height: 0, overflow: 'hidden', zIndex: -99999, pointerEvents: 'none' }}>
         <div id="pdf-report-printout" style={{
           width: '210mm',
           backgroundColor: '#ffffff',

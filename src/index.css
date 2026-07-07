@@ -3591,4 +3591,23 @@ body.dark-theme select.form-control {
   animation: spin 1s linear infinite;
 }
 
+/* Reports print styling overrides */
+@media print {
+  .pdf-print-wrapper {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
+    z-index: 1 !important;
+  }
+
+  .pdf-print-wrapper #pdf-report-printout {
+    display: block !important;
+    width: 100% !important;
+    padding: 10mm !important;
+    box-shadow: none !important;
+  }
+}
+
 
