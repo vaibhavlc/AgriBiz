@@ -226,11 +226,13 @@ export const Reports: React.FC = () => {
 
     showToast('Compiling high-definition PDF statement...', 'info');
 
-    // Move elements temporarily to normal layout so layout engine computes boundaries correctly
+    // Make element temporarily visible but behind everything at 0, 0
     const htmlElement = element as HTMLElement;
-    htmlElement.style.position = 'relative';
+    htmlElement.style.display = 'block';
+    htmlElement.style.position = 'absolute';
     htmlElement.style.left = '0';
     htmlElement.style.top = '0';
+    htmlElement.style.zIndex = '-9999';
     htmlElement.style.width = '210mm'; // Standard A4 width
 
     const generatePDF = (html2pdfLib: any) => {
@@ -244,16 +246,11 @@ export const Reports: React.FC = () => {
 
       html2pdfLib().from(element).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
-        // Hide element back offscreen
-        htmlElement.style.position = 'absolute';
-        htmlElement.style.left = '-9999px';
-        htmlElement.style.top = '-9999px';
+        htmlElement.style.display = 'none';
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
-        htmlElement.style.position = 'absolute';
-        htmlElement.style.left = '-9999px';
-        htmlElement.style.top = '-9999px';
+        htmlElement.style.display = 'none';
       });
     };
 
@@ -1659,9 +1656,7 @@ export const Reports: React.FC = () => {
 
       {/* Hidden A4 Printable Report Element used for PDF generation */}
       <div id="pdf-report-printout" style={{
-        position: 'absolute',
-        left: '-9999px',
-        top: '-9999px',
+        display: 'none',
         width: '210mm',
         backgroundColor: '#ffffff',
         fontFamily: 'var(--font-sans)',
