@@ -3554,3 +3554,31 @@ body.dark-theme select.form-control {
   }
 }
 
+/* Responsive Invoice/Bill View on Screen for Mobile Devices (No changes to Desktop/Print) */
+@media screen and (max-width: 640px) {
+  .invoice-mockup-wrapper {
+    padding: 12px !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    justify-content: center !important;
+  }
+  .invoice-print-container {
+    zoom: 0.68;
+    flex-shrink: 0 !important;
+    margin: 0 auto !important;
+    box-shadow: 0 10px 30px rgba(130, 76, 54, 0.08) !important;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .invoice-print-container {
+    zoom: 0.58;
+  }
+}
+
+@media screen and (max-width: 380px) {
+  .invoice-print-container {
+    zoom: 0.52;
+  }
+}
+
