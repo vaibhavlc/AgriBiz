@@ -1718,25 +1718,43 @@ export const Reports: React.FC = () => {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(5px)',
+          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backdropFilter: 'blur(2px)',
           display: 'flex',
-          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
           zIndex: 999999,
-          animation: 'fadeIn 0.15s ease-out'
+          animation: 'fadeIn 0.2s ease-out'
         }}>
-          <div className="animate-spin" style={{
-            width: '40px',
-            height: '40px',
-            border: '4px solid var(--border-color)',
-            borderTopColor: 'var(--primary-dark)',
-            borderRadius: '50%'
-          }} />
-          <p style={{ marginTop: '16px', fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px' }}>
-            Generating A4 PDF Report Statement...
-          </p>
+          <div style={{
+            backgroundColor: '#ffffff',
+            padding: '20px 24px',
+            borderRadius: '12px',
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '16px',
+            maxWidth: '90%',
+            width: '320px',
+            border: '1px solid var(--border-color)'
+          }}>
+            <div className="animate-spin" style={{
+              width: '24px',
+              height: '24px',
+              border: '3px solid var(--border-color)',
+              borderTopColor: 'var(--primary-dark)',
+              borderRadius: '50%',
+              flexShrink: 0
+            }} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px' }}>
+                Generating PDF Statement
+              </span>
+              <span style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>
+                Please wait a moment...
+              </span>
+            </div>
+          </div>
         </div>
       )}
     </div>
