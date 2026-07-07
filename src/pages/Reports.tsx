@@ -41,8 +41,6 @@ export const Reports: React.FC = () => {
     setTimeout(() => setToast(null), 3500);
   };
 
-  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
-
   // Filter callback
   const filterByDate = (dateStr: string) => {
     if (dateRange === 'All') return true;
@@ -218,7 +216,6 @@ export const Reports: React.FC = () => {
     showToast('Report exported as CSV successfully!');
   };
 
-  // --- Save PDF Handler (Clean Statement Table) ---
   const handleDownloadPDF = () => {
     const element = document.getElementById('pdf-report-printout');
     if (!element) {
@@ -226,49 +223,42 @@ export const Reports: React.FC = () => {
       return;
     }
 
-    showToast('Compiling high-definition PDF statement...', 'info');
-    setIsGeneratingPDF(true);
+    showToast('Compiling and downloading PDF statement...', 'info');
 
-    // Yield execution to allow React to paint the loading blur overlay on screen
-    setTimeout(() => {
-      const generatePDF = (html2pdfLib: any) => {
-        const opt = {
-          margin:       0,
-          filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
-          image:        { type: 'jpeg', quality: 0.98 },
-          html2canvas:  { scale: 2, useCORS: true, logging: false },
-          jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-        };
-
-        html2pdfLib().from(element).set(opt).save().then(() => {
-          showToast('PDF downloaded successfully!');
-          setIsGeneratingPDF(false);
-        }).catch((err: any) => {
-          console.error(err);
-          showToast('Error exporting PDF document.', 'error');
-          setIsGeneratingPDF(false);
-        });
+    const generatePDF = (html2pdfLib: any) => {
+      const opt = {
+        margin:       0,
+        filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
       };
 
-      const globalWindow = window as any;
-      if (globalWindow.html2pdf) {
-        generatePDF(globalWindow.html2pdf);
-      } else {
-        const script = document.createElement('script');
-        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-        script.crossOrigin = 'anonymous';
-        script.onload = () => {
-          if (globalWindow.html2pdf) {
-            generatePDF(globalWindow.html2pdf);
-          }
-        };
-        script.onerror = () => {
-          showToast('Failed to load PDF engine from CDN.', 'error');
-          setIsGeneratingPDF(false);
-        };
-        document.body.appendChild(script);
-      }
-    }, 150);
+      html2pdfLib().from(element).set(opt).save().then(() => {
+        showToast('PDF downloaded successfully!');
+      }).catch((err: any) => {
+        console.error(err);
+        showToast('Error exporting PDF document.', 'error');
+      });
+    };
+
+    const globalWindow = window as any;
+    if (globalWindow.html2pdf) {
+      generatePDF(globalWindow.html2pdf);
+    } else {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      script.crossOrigin = 'anonymous';
+      script.onload = () => {
+        if (globalWindow.html2pdf) {
+          generatePDF(globalWindow.html2pdf);
+        }
+      };
+      script.onerror = () => {
+        showToast('Failed to load PDF engine from CDN.', 'error');
+      };
+      document.body.appendChild(script);
+    }
   };
 
   // Auto-fitting responsive grid style for KPIs
@@ -1707,54 +1697,6 @@ export const Reports: React.FC = () => {
           animation: 'fadeIn 0.2s ease-out'
         }}>
           {toast.message}
-        </div>
-      )}
-
-      {/* Loading Overlay */}
-      {isGeneratingPDF && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
-          backdropFilter: 'blur(2px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 999999,
-          animation: 'fadeIn 0.2s ease-out'
-        }}>
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '20px 24px',
-            borderRadius: '12px',
-            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.05)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '16px',
-            maxWidth: '90%',
-            width: '320px',
-            border: '1px solid var(--border-color)'
-          }}>
-            <div className="animate-spin" style={{
-              width: '24px',
-              height: '24px',
-              border: '3px solid var(--border-color)',
-              borderTopColor: 'var(--primary-dark)',
-              borderRadius: '50%',
-              flexShrink: 0
-            }} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '14px' }}>
-                Generating PDF Statement
-              </span>
-              <span style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '2px' }}>
-                Please wait a moment...
-              </span>
-            </div>
-          </div>
         </div>
       )}
     </div>
