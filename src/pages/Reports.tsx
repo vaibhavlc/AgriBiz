@@ -2374,27 +2374,25 @@ export const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Main panel layout */}
-      <div className="report-sidebar-layout no-print">
-        {/* Left Side Menu */}
-        <div className="report-menu no-print">
+      {/* Interactive dashboard area (hidden during print) */}
+      <div className="no-print">
+        {/* Horizontal Tabs selector */}
+        <div className="report-tabs-horizontal">
           {reportTabs.map((tab) => (
-            <a
+            <div
               key={tab.id}
-              className={`report-menu-item ${activeReport === tab.id ? 'active' : ''}`}
+              className={`report-tab-pill ${activeReport === tab.id ? 'active' : ''}`}
               onClick={() => setActiveReport(tab.id as any)}
             >
               {tab.icon}
               <span>{tab.label}</span>
-            </a>
+            </div>
           ))}
         </div>
 
-        {/* Right Side Content */}
-        <div style={{ flex: 1 }}>
-          <div className="card" style={{ border: 'none', boxShadow: 'none', padding: 0 }}>
-            {renderReportContent()}
-          </div>
+        {/* Main Content Area (Full screen width!) */}
+        <div className="card" style={{ border: 'none', boxShadow: 'none', padding: 0 }}>
+          {renderReportContent()}
         </div>
       </div>
 
