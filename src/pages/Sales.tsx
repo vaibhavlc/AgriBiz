@@ -124,6 +124,17 @@ export const Sales: React.FC = () => {
     showToast('Compiling high-definition PDF document...', 'info');
 
     const generatePDF = (html2pdfLib: any) => {
+      // Clone the element to avoid DOM rendering issues due to mobile CSS zoom
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '-9999px';
+      clone.style.zoom = '1';
+      clone.style.transform = 'none';
+      clone.style.width = printTemplate === 'A5' ? '148mm' : '80mm';
+      clone.style.height = printTemplate === 'A5' ? '210mm' : 'auto';
+      document.body.appendChild(clone);
+
       const opt = {
         margin:       printTemplate === 'A5' ? 0 : 2,
         filename:     `${selectedInvoice?.invoiceNumber || 'invoice'}.pdf`,
@@ -136,11 +147,15 @@ export const Sales: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(element).set(opt).save().then(() => {
+      html2pdfLib().from(clone).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
+        document.body.removeChild(clone);
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
+        if (clone.parentNode) {
+          document.body.removeChild(clone);
+        }
       });
     };
 
@@ -176,6 +191,17 @@ export const Sales: React.FC = () => {
     showToast('Compiling PDF invoice for sharing...', 'info');
 
     const sharePDF = (html2pdfLib: any) => {
+      // Clone the element to avoid DOM rendering issues due to mobile CSS zoom
+      const clone = element.cloneNode(true) as HTMLElement;
+      clone.style.position = 'absolute';
+      clone.style.left = '-9999px';
+      clone.style.top = '-9999px';
+      clone.style.zoom = '1';
+      clone.style.transform = 'none';
+      clone.style.width = printTemplate === 'A5' ? '148mm' : '80mm';
+      clone.style.height = printTemplate === 'A5' ? '210mm' : 'auto';
+      document.body.appendChild(clone);
+
       const opt = {
         margin:       printTemplate === 'A5' ? 0 : 2,
         filename:     `${invoice.invoiceNumber}.pdf`,
@@ -188,7 +214,8 @@ export const Sales: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
+      html2pdfLib().from(clone).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
+        document.body.removeChild(clone);
         const pdfFile = new File([pdfBlob], `${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
         
         // Mobile share drawer check
@@ -241,6 +268,9 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
       }).catch((err: any) => {
         console.error(err);
         showToast('Error generating PDF for WhatsApp sharing.', 'error');
+        if (clone.parentNode) {
+          document.body.removeChild(clone);
+        }
       });
     };
 
