@@ -235,7 +235,7 @@ export const Reports: React.FC = () => {
 
     const generatePDF = (html2pdfLib: any) => {
       const opt = {
-        margin:       10,
+        margin:       0,
         filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, logging: false },
@@ -1666,7 +1666,7 @@ export const Reports: React.FC = () => {
         backgroundColor: '#ffffff',
         fontFamily: 'var(--font-sans)',
         color: '#000000',
-        padding: '20px',
+        padding: '15mm',
         boxSizing: 'border-box'
       }}>
         {/* Header Block */}
