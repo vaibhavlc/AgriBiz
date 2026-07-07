@@ -26,7 +26,7 @@ export const Reports: React.FC = () => {
     settings,
   } = useApp();
 
-  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1'>('sales');
+  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
   
   // Date filtering state
   const [dateRange, setDateRange] = useState('All');
@@ -307,6 +307,202 @@ export const Reports: React.FC = () => {
     };
   }, [invoices, dateRange, startDate, endDate]);
 
+
+  // --- GSTR-2 Calculations (Inward Supplies / Purchases) ---
+  const gstr2B2BList = useMemo(() => {
+    const list: Array<{
+      gstin: string;
+      supplierName: string;
+      invoiceNumber: string;
+      invoiceDate: string;
+      invoiceValue: number;
+      pos: string;
+      reverseCharge: string;
+      rate: number;
+      taxableValue: number;
+      cgst: number;
+      sgst: number;
+      igst: number;
+      itcEligible: 'Inputs' | 'Capital Goods' | 'Ineligible';
+    }> = [];
+
+    const targetPurchases = purchases.filter(pur => filterByDate(pur.date));
+
+    targetPurchases.forEach(pur => {
+      const supp = suppliers.find(s => s.id === pur.supplierId);
+      if (supp && supp.gstin && supp.gstin.trim().length > 0) {
+        const prefix = supp.gstin.substring(0, 2);
+        const supplierState = Object.values(GST_STATES).find(s => s.startsWith(prefix)) || `${prefix}-Other State`;
+        const isInterState = !supplierState.startsWith(businessStateCode);
+
+        const rateGroups: { [rate: number]: { taxable: number; gst: number } } = {};
+        pur.items.forEach(item => {
+          const rate = item.gstRate;
+          if (!rateGroups[rate]) {
+            rateGroups[rate] = { taxable: 0, gst: 0 };
+          }
+          rateGroups[rate].taxable += item.subtotal;
+          rateGroups[rate].gst += item.gstAmount;
+        });
+
+        Object.entries(rateGroups).forEach(([rateStr, group]) => {
+          const rate = parseFloat(rateStr);
+          let cgst = 0;
+          let sgst = 0;
+          let igst = 0;
+
+          if (isInterState) {
+            igst = group.gst;
+          } else {
+            cgst = group.gst / 2;
+            sgst = group.gst / 2;
+          }
+
+          list.push({
+            gstin: supp.gstin!.toUpperCase(),
+            supplierName: supp.name,
+            invoiceNumber: pur.purchaseNumber,
+            invoiceDate: formatGstDate(pur.date),
+            invoiceValue: pur.grandTotal,
+            pos: supplierState,
+            reverseCharge: 'N',
+            rate,
+            taxableValue: group.taxable,
+            cgst,
+            sgst,
+            igst,
+            itcEligible: 'Inputs'
+          });
+        });
+      }
+    });
+
+    return list;
+  }, [purchases, suppliers, dateRange, startDate, endDate, settings.gstin]);
+
+  const gstr2HSNList = useMemo(() => {
+    const targetPurchases = purchases.filter(pur => filterByDate(pur.date));
+    const groups: { [key: string]: { hsn: string; desc: string; uqc: string; qty: number; totalVal: number; taxable: number; cgst: number; sgst: number; igst: number } } = {};
+
+    targetPurchases.forEach(pur => {
+      const supp = suppliers.find(s => s.id === pur.supplierId);
+      const prefix = supp && supp.gstin ? supp.gstin.substring(0, 2) : businessStateCode;
+      const isInterState = prefix !== businessStateCode;
+
+      pur.items.forEach(item => {
+        const prod = products.find(p => p.id === item.productId);
+        const hsn = prod?.hsn || '3101';
+        const desc = item.productName;
+        
+        let uqc = 'NOS-NUMBERS';
+        if (prod) {
+          const cat = prod.category.toUpperCase();
+          if (cat.includes('SEED') || cat.includes('FERT') || cat.includes('IRR')) {
+            uqc = 'BAG-BAGS';
+          }
+        }
+
+        const rate = item.gstRate;
+        const key = `${hsn}_${desc}_${uqc}_${rate}`;
+
+        if (!groups[key]) {
+          groups[key] = {
+            hsn,
+            desc,
+            uqc,
+            qty: 0,
+            totalVal: 0,
+            taxable: 0,
+            cgst: 0,
+            sgst: 0,
+            igst: 0
+          };
+        }
+
+        groups[key].qty += item.quantity;
+        groups[key].taxable += item.subtotal;
+        groups[key].totalVal += item.total;
+        if (isInterState) {
+          groups[key].igst += item.gstAmount;
+        } else {
+          groups[key].cgst += item.gstAmount / 2;
+          groups[key].sgst += item.gstAmount / 2;
+        }
+      });
+    });
+
+    return Object.values(groups);
+  }, [purchases, products, suppliers, dateRange, startDate, endDate, settings.gstin]);
+
+  const gstr2DocsSummary = useMemo(() => {
+    const targetPurchases = purchases.filter(pur => filterByDate(pur.date));
+    if (targetPurchases.length === 0) {
+      return { from: '—', to: '—', total: 0, cancelled: 0, netIssued: 0 };
+    }
+
+    const sortedPurchases = [...targetPurchases].sort((a, b) => a.purchaseNumber.localeCompare(b.purchaseNumber));
+    const from = sortedPurchases[0].purchaseNumber;
+    const to = sortedPurchases[sortedPurchases.length - 1].purchaseNumber;
+    const total = targetPurchases.length;
+
+    return {
+      from,
+      to,
+      total,
+      cancelled: 0,
+      netIssued: total
+    };
+  }, [purchases, dateRange, startDate, endDate]);
+
+  // --- GSTR-3B Calculations (Consolidated return values) ---
+  const gstr3BData = useMemo(() => {
+    let outwardTaxableVal = 0;
+    let outwardCGST = 0;
+    let outwardSGST = 0;
+    let outwardIGST = 0;
+
+    gstr1B2BList.forEach(item => {
+      outwardTaxableVal += item.taxableValue;
+      outwardCGST += item.cgst;
+      outwardSGST += item.sgst;
+      outwardIGST += item.igst;
+    });
+
+    gstr1B2CSList.forEach(item => {
+      outwardTaxableVal += item.taxable;
+      outwardCGST += item.cgst;
+      outwardSGST += item.sgst;
+      outwardIGST += item.igst;
+    });
+
+    let itcTaxableVal = 0;
+    let itcCGST = 0;
+    let itcSGST = 0;
+    let itcIGST = 0;
+
+    gstr2B2BList.forEach(item => {
+      itcTaxableVal += item.taxableValue;
+      itcCGST += item.cgst;
+      itcSGST += item.sgst;
+      itcIGST += item.igst;
+    });
+
+    return {
+      outward: {
+        taxable: outwardTaxableVal,
+        cgst: outwardCGST,
+        sgst: outwardSGST,
+        igst: outwardIGST
+      },
+      itc: {
+        taxable: itcTaxableVal,
+        cgst: itcCGST,
+        sgst: itcSGST,
+        igst: itcIGST
+      }
+    };
+  }, [gstr1B2BList, gstr1B2CSList, gstr2B2BList]);
+
   // CSV download handlers
   const handleExportGstr1B2B = () => {
     const headers = ['GSTIN/UIN of Recipient', 'Receiver Name', 'Invoice Number', 'Invoice Date', 'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Invoice Type', 'E-Commerce GSTIN', 'Rate', 'Taxable Value', 'Cess Amount'];
@@ -377,6 +573,73 @@ export const Reports: React.FC = () => {
     showToast('Documents Issued GSTR-1 sheet exported successfully!');
   };
 
+  const handleExportGstr2B2B = () => {
+    const headers = ['GSTIN of Supplier', 'Supplier Name', 'Invoice Number', 'Invoice Date', 'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Rate', 'Taxable Value', 'Integrated Tax Paid', 'Central Tax Paid', 'State/UT Tax Paid', 'ITC Eligible'];
+    const rows = gstr2B2BList.map(item => [
+      item.gstin,
+      item.supplierName,
+      item.invoiceNumber,
+      item.invoiceDate,
+      item.invoiceValue.toFixed(2),
+      item.pos,
+      item.reverseCharge,
+      item.rate,
+      item.taxableValue.toFixed(2),
+      item.igst.toFixed(2),
+      item.cgst.toFixed(2),
+      item.sgst.toFixed(2),
+      item.itcEligible
+    ]);
+    downloadCSVFile(headers, rows, `gstr2_b2b_${startDate}_to_${endDate}.csv`);
+    showToast('GSTR-2 B2B sheet exported successfully!');
+  };
+
+  const handleExportGstr2HSN = () => {
+    const headers = ['HSN', 'Description', 'UQC', 'Total Quantity', 'Total Value', 'Taxable Value', 'Integrated Tax Amount', 'Central Tax Amount', 'State/UT Tax Amount', 'Cess Amount'];
+    const rows = gstr2HSNList.map(item => [
+      item.hsn,
+      item.desc,
+      item.uqc,
+      item.qty,
+      item.totalVal.toFixed(2),
+      item.taxable.toFixed(2),
+      item.igst.toFixed(2),
+      item.cgst.toFixed(2),
+      item.sgst.toFixed(2),
+      '0.00'
+    ]);
+    downloadCSVFile(headers, rows, `gstr2_hsn_${startDate}_to_${endDate}.csv`);
+    showToast('GSTR-2 HSN summary sheet exported successfully!');
+  };
+
+  const handleExportGstr2Docs = () => {
+    const headers = ['Nature of Document', 'Sr. No. From', 'Sr. No. To', 'Total Number', 'Cancelled', 'Net Received'];
+    const rows = [
+      [
+        'Invoices for inward supply',
+        gstr2DocsSummary.from,
+        gstr2DocsSummary.to,
+        gstr2DocsSummary.total,
+        gstr2DocsSummary.cancelled,
+        gstr2DocsSummary.netIssued
+      ]
+    ];
+    downloadCSVFile(headers, rows, `gstr2_docs_${startDate}_to_${endDate}.csv`);
+    showToast('GSTR-2 Documents summary sheet exported successfully!');
+  };
+
+  const handleExportGstr3B = () => {
+    const headers = ['GSTR-3B Table Section', 'Nature of Supplies / Credit', 'Total Taxable Value (₹)', 'Integrated Tax (₹)', 'Central Tax (₹)', 'State/UT Tax (₹)', 'Cess (₹)'];
+    const rows = [
+      ['Table 3.1(a)', 'Outward Taxable Supplies (other than zero rated, nil rated and exempted)', gstr3BData.outward.taxable.toFixed(2), gstr3BData.outward.igst.toFixed(2), gstr3BData.outward.cgst.toFixed(2), gstr3BData.outward.sgst.toFixed(2), '0.00'],
+      ['Table 3.1(d)', 'Inward Supplies Liable to Reverse Charge', '0.00', '0.00', '0.00', '0.00', '0.00'],
+      ['Table 4(A)(5)', 'All Other Eligible ITC Available', gstr3BData.itc.taxable.toFixed(2), gstr3BData.itc.igst.toFixed(2), gstr3BData.itc.cgst.toFixed(2), gstr3BData.itc.sgst.toFixed(2), '0.00'],
+      ['Table 4(C)', 'Net ITC Available (A - B)', gstr3BData.itc.taxable.toFixed(2), gstr3BData.itc.igst.toFixed(2), gstr3BData.itc.cgst.toFixed(2), gstr3BData.itc.sgst.toFixed(2), '0.00']
+    ];
+    downloadCSVFile(headers, rows, `gstr3b_return_${startDate}_to_${endDate}.csv`);
+    showToast('GSTR-3B consolidated return exported successfully!');
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -436,6 +699,18 @@ export const Reports: React.FC = () => {
       handleExportGstr1B2CS();
       handleExportGstr1HSN();
       handleExportGstr1Docs();
+      return;
+    }
+
+    if (activeReport === 'gstr2') {
+      handleExportGstr2B2B();
+      handleExportGstr2HSN();
+      handleExportGstr2Docs();
+      return;
+    }
+
+    if (activeReport === 'gstr3b') {
+      handleExportGstr3B();
       return;
     }
 
@@ -1779,6 +2054,415 @@ export const Reports: React.FC = () => {
           </div>
         );
 
+      case 'gstr2':
+        return (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            {/* GSTR-2 Header Dashboard Cards */}
+            <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">B2B Purchases (Registered)</span>
+                  <span className="kpi-value">{gstr2B2BList.length} Rows</span>
+                  <span className="kpi-subtext">Taxable: {formatINR(gstr2B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}</span>
+                </div>
+                <div className="kpi-icon-container emerald"><Briefcase size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">HSN Inward Summary (Table 13)</span>
+                  <span className="kpi-value">{gstr2HSNList.length} Categories</span>
+                  <span className="kpi-subtext">Taxable: {formatINR(gstr2HSNList.reduce((acc, x) => acc + x.taxable, 0))}</span>
+                </div>
+                <div className="kpi-icon-container amber"><Layers size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Documents Received</span>
+                  <span className="kpi-value">{gstr2DocsSummary.total} Invoices</span>
+                  <span className="kpi-subtext">Range: {gstr2DocsSummary.from} - {gstr2DocsSummary.to}</span>
+                </div>
+                <div className="kpi-icon-container rose"><FileText size={20} /></div>
+              </div>
+            </div>
+
+            {/* GSTR-2 Main Section Panels */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* 1. B2B Inward Supplies */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      1. B2B Inward Supplies Received from Registered Suppliers (3, 4A)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Inward supplies received from GST registered suppliers. Grouped by invoice number and tax rate.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr2B2B} disabled={gstr2B2BList.length === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download B2B CSV
+                  </button>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th className="text-nowrap">Supplier GSTIN</th>
+                        <th className="text-nowrap">Supplier Name</th>
+                        <th className="text-nowrap">Bill No</th>
+                        <th className="text-nowrap">Bill Date</th>
+                        <th className="text-nowrap align-right">Total Value</th>
+                        <th className="text-nowrap">POS</th>
+                        <th className="text-nowrap align-center">Rate</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST</th>
+                        <th className="text-nowrap align-right">SGST</th>
+                        <th className="text-nowrap align-right">IGST</th>
+                        <th className="text-nowrap align-center">ITC Eligible</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr2B2BList.length === 0 ? (
+                        <tr>
+                          <td colSpan={12} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No registered inward supplies found in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        gstr2B2BList.map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="text-nowrap" style={{ fontFamily: 'monospace', fontWeight: 600 }}>{item.gstin}</td>
+                            <td className="text-nowrap">{item.supplierName}</td>
+                            <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{item.invoiceNumber}</td>
+                            <td className="text-nowrap">{item.invoiceDate}</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.invoiceValue).replace('₹', '')}</td>
+                            <td className="text-nowrap">{item.pos}</td>
+                            <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{item.rate}%</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.taxableValue).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-center"><span className="badge badge-success">{item.itcEligible}</span></td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 2. HSN Inward Summary */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      2. HSN Summary of Inward Supplies (Table 13)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      HSN-code summary of goods received (purchases). Required to audit input tax credit.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr2HSN} disabled={gstr2HSNList.length === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download HSN CSV
+                  </button>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th className="text-nowrap">HSN/SAC</th>
+                        <th className="text-nowrap">Product Description</th>
+                        <th className="text-nowrap">Unit (UQC)</th>
+                        <th className="text-nowrap align-center">Total Qty</th>
+                        <th className="text-nowrap align-right">Total Value</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST Paid</th>
+                        <th className="text-nowrap align-right">SGST Paid</th>
+                        <th className="text-nowrap align-right">IGST Paid</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr2HSNList.length === 0 ? (
+                        <tr>
+                          <td colSpan={9} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No inward items found in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        gstr2HSNList.map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="text-nowrap" style={{ fontFamily: 'monospace', fontWeight: 700 }}>{item.hsn}</td>
+                            <td className="text-nowrap">{item.desc}</td>
+                            <td className="text-nowrap" style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{item.uqc}</td>
+                            <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{item.qty}</td>
+                            <td className="text-nowrap align-right">{formatINR(item.totalVal).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.cgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.sgst).replace('₹', '')}</td>
+                            <td className="text-nowrap align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(item.igst).replace('₹', '')}</td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* 3. Documents Received */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      3. Summary of Documents Received
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Serial numbers and counts of supplier inward bills received during the period.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr2Docs} disabled={gstr2DocsSummary.total === 0}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download Docs CSV
+                  </button>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th className="text-nowrap">Nature of Document</th>
+                        <th className="text-nowrap">Sr. No. From</th>
+                        <th className="text-nowrap">Sr. No. To</th>
+                        <th className="text-nowrap align-center">Total Count</th>
+                        <th className="text-nowrap align-center">Cancelled</th>
+                        <th className="text-nowrap align-center">Net Received</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {gstr2DocsSummary.total === 0 ? (
+                        <tr>
+                          <td colSpan={6} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
+                            No invoice documents received in this period.
+                          </td>
+                        </tr>
+                      ) : (
+                        <tr>
+                          <td className="text-nowrap" style={{ fontWeight: 600 }}>Invoices for inward supply</td>
+                          <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr2DocsSummary.from}</td>
+                          <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr2DocsSummary.to}</td>
+                          <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{gstr2DocsSummary.total}</td>
+                          <td className="text-nowrap align-center" style={{ color: '#BE3144' }}>{gstr2DocsSummary.cancelled}</td>
+                          <td className="text-nowrap align-center" style={{ fontWeight: 'bold', color: 'var(--primary-dark)' }}>{gstr2DocsSummary.netIssued}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+
+      case 'gstr3b':
+        return (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            {/* GSTR-3B Header Dashboard Cards */}
+            <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Total Outward Tax Liability</span>
+                  <span className="kpi-value">{formatINR(gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)}</span>
+                  <span className="kpi-subtext">Taxable Outward: {formatINR(gstr3BData.outward.taxable)}</span>
+                </div>
+                <div className="kpi-icon-container rose"><TrendingUp size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Eligible Input Tax Credit (ITC)</span>
+                  <span className="kpi-value">{formatINR(gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)}</span>
+                  <span className="kpi-subtext">Taxable Inward: {formatINR(gstr3BData.itc.taxable)}</span>
+                </div>
+                <div className="kpi-icon-container emerald"><TrendingDown size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Net GST Cash Liability</span>
+                  <span className="kpi-value">
+                    {formatINR(Math.max(0, (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst) - (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)))}
+                  </span>
+                  <span className="kpi-subtext">Tax Offset Applied</span>
+                </div>
+                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
+              </div>
+            </div>
+
+            {/* GSTR-3B Main Section Panels */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+              {/* Table 3.1 */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Table 3.1: Details of Outward Supplies and Inward Supplies Liable to Reverse Charge
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Consolidated summary of sales and reverse charge liabilities for self-declaration.
+                    </p>
+                  </div>
+                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr3B}>
+                    <Percent size={14} style={{ marginRight: '6px' }} /> Download GSTR-3B CSV
+                  </button>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Nature of Supplies</th>
+                        <th className="align-right">Total Taxable Value (₹)</th>
+                        <th className="align-right">Integrated Tax (₹)</th>
+                        <th className="align-right">Central Tax (₹)</th>
+                        <th className="align-right">State/UT Tax (₹)</th>
+                        <th className="align-right">Cess (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ fontWeight: 600 }}>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
+                        <td className="align-right" style={{ fontWeight: 600 }}>{formatINR(gstr3BData.outward.taxable).replace('₹', '')}</td>
+                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(gstr3BData.outward.igst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(gstr3BData.outward.cgst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(gstr3BData.outward.sgst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600 }}>(b) Outward taxable supplies (zero rated)</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600 }}>(c) Other outward supplies (Nil rated, exempted)</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600 }}>(d) Inward supplies (liable to reverse charge)</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ fontWeight: 600 }}>(e) Non-GST outward supplies</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Table 4 */}
+              <div className="card" style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Table 4: Eligible Input Tax Credit (ITC)
+                    </h3>
+                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      Consolidated summary of input credits available to offset your tax liability.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Details of Input Tax Credit</th>
+                        <th className="align-right">Integrated Tax (₹)</th>
+                        <th className="align-right">Central Tax (₹)</th>
+                        <th className="align-right">State/UT Tax (₹)</th>
+                        <th className="align-right">Cess (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr style={{ backgroundColor: 'var(--bg-app)', fontWeight: 700 }}>
+                        <td colSpan={5} style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>(A) ITC Available (whether in full or part)</td>
+                      </tr>
+                      <tr>
+                        <td style={{ paddingLeft: '20px' }}>1. Import of goods</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ paddingLeft: '20px' }}>2. Import of services</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ paddingLeft: '20px' }}>3. Inward supplies liable to reverse charge</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr>
+                        <td style={{ paddingLeft: '20px' }}>4. Inward supplies from ISD</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr style={{ fontWeight: 600 }}>
+                        <td style={{ paddingLeft: '20px' }}>5. All other ITC (Registered purchases)</td>
+                        <td className="align-right" style={{ color: 'var(--text-primary)' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ color: 'var(--text-primary)' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ color: 'var(--text-primary)' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr style={{ backgroundColor: 'var(--bg-app)', fontWeight: 700 }}>
+                        <td colSpan={5} style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>(B) ITC Reversed</td>
+                      </tr>
+                      <tr>
+                        <td style={{ paddingLeft: '20px' }}>1. As per rules 42 & 43 of CGST Rules</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                      <tr style={{ backgroundColor: 'var(--bg-app)', fontWeight: 700 }}>
+                        <td style={{ fontWeight: 700 }}>(C) Net ITC Available (A - B)</td>
+                        <td className="align-right" style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
+                        <td className="align-right" style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
+                        <td className="align-right">0.00</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -2313,6 +2997,256 @@ export const Reports: React.FC = () => {
           </div>
         );
 
+      case 'gstr2':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '14px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33', borderBottom: '1px solid #E2E9E0', paddingBottom: '6px' }}>
+              GSTR-2 Inward Supplies Audit Summary (CA-Ready)
+            </h2>
+
+            {/* Overall summary block */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
+              <div><strong>B2B Purchases:</strong> {gstr2B2BList.length} Rows</div>
+              <div><strong>HSN Categories:</strong> {gstr2HSNList.length} Codes</div>
+              <div><strong>Docs Received:</strong> {gstr2DocsSummary.total} Bills</div>
+            </div>
+
+            {/* 1. B2B Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              1. B2B Inward Supplies (3, 4A)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>GSTIN</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Supplier Name</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Bill No</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Date</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Rate</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Amt (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>ITC</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr2B2BList.length === 0 ? (
+                  <tr>
+                    <td colSpan={10} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No registered inward supplies found.</td>
+                  </tr>
+                ) : (
+                  gstr2B2BList.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{item.gstin}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.supplierName}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{item.invoiceNumber}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.invoiceDate}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.rate}%</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{item.taxableValue.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.cgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.sgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.igst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{item.itcEligible}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* 2. HSN Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              2. HSN Summary of Inward Supplies (Table 13)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>HSN</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Description</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>UQC</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Qty</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Total Value (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Value (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr2HSNList.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No HSN details found.</td>
+                  </tr>
+                ) : (
+                  gstr2HSNList.map((item, idx) => (
+                    <tr key={idx}>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace', fontWeight: 'bold' }}>{item.hsn}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.desc}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>{item.uqc.split('-')[0]}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{item.qty}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.totalVal.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{item.taxable.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.cgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.sgst.toFixed(2)}</td>
+                      <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{item.igst.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+
+            {/* 3. Docs Table */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              3. Summary of Documents Received
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Nature of Document</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>From</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>To</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Total Number</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Cancelled</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Net Received</th>
+                </tr>
+              </thead>
+              <tbody>
+                {gstr2DocsSummary.total === 0 ? (
+                  <tr>
+                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No document summary found.</td>
+                  </tr>
+                ) : (
+                  <tr>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Invoices for inward supply</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr2DocsSummary.from}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr2DocsSummary.to}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{gstr2DocsSummary.total}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center', color: '#BE3144' }}>{gstr2DocsSummary.cancelled}</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold' }}>{gstr2DocsSummary.netIssued}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'gstr3b':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '14px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33', borderBottom: '1px solid #E2E9E0', paddingBottom: '6px' }}>
+              GSTR-3B Self-Declaration Consolidated Return (CA-Ready)
+            </h2>
+
+            {/* Overall summary block */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
+              <div><strong>Outward Tax Liability:</strong> {formatINR(gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)}</div>
+              <div><strong>Eligible Input Tax Credit (ITC):</strong> {formatINR(gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)}</div>
+              <div><strong>Net Cash Payable:</strong> {formatINR(Math.max(0, (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst) - (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)))}</div>
+            </div>
+
+            {/* Table 3.1 */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              Table 3.1: Outward Supplies & Reverse Charge Liability
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Nature of Supplies</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Total Taxable Value (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Cess (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.outward.taxable.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{gstr3BData.outward.igst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{gstr3BData.outward.cgst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{gstr3BData.outward.sgst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(b) Outward taxable supplies (zero rated)</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(c) Other outward supplies (Nil rated, exempted)</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(d) Inward supplies (liable to reverse charge)</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(e) Non-GST outward supplies</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+              </tbody>
+            </table>
+
+            {/* Table 4 */}
+            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
+              Table 4: Eligible Input Tax Credit (ITC)
+            </h3>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Details of ITC</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Integrated Tax (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Central Tax (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>State/UT Tax (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Cess (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ backgroundColor: '#F9FAF9', fontWeight: 'bold' }}>
+                  <td colSpan={5} style={{ padding: '4px 6px', border: '1px solid #C8D3C5' }}>(A) ITC Available</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '4px 6px', paddingLeft: '15px', border: '1px solid #E2E9E0' }}>1. Import of goods</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td style={{ padding: '4px 6px', paddingLeft: '15px', border: '1px solid #E2E9E0' }}>5. All other ITC (Registered purchases)</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.igst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.cgst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.sgst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
+                </tr>
+                <tr style={{ backgroundColor: '#F9FAF9', fontWeight: 'bold' }}>
+                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5' }}>(C) Net ITC Available (A - B)</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.igst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.cgst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.sgst.toFixed(2)}</td>
+                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>0.00</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
       default:
         return null;
     }
@@ -2327,6 +3261,8 @@ export const Reports: React.FC = () => {
     { id: 'custLedger', label: 'Customer Dues Ledger', icon: <Users size={18} /> },
     { id: 'suppLedger', label: 'Supplier Payables Ledger', icon: <Truck size={18} /> },
     { id: 'gstr1', label: 'GSTR-1 Return (CA-Ready)', icon: <Percent size={18} /> },
+    { id: 'gstr2', label: 'GSTR-2 Inward (CA-Ready)', icon: <Percent size={18} /> },
+    { id: 'gstr3b', label: 'GSTR-3B Return (CA-Ready)', icon: <Percent size={18} /> },
   ];
 
   return (
