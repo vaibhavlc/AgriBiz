@@ -231,15 +231,6 @@ export const Reports: React.FC = () => {
 
     // Yield execution to allow React to paint the loading blur overlay on screen
     setTimeout(() => {
-      // Make element temporarily visible but behind everything at 0, 0
-      const htmlElement = element as HTMLElement;
-      htmlElement.style.display = 'block';
-      htmlElement.style.position = 'absolute';
-      htmlElement.style.left = '0';
-      htmlElement.style.top = '0';
-      htmlElement.style.zIndex = '99998'; // sit underneath the loading overlay
-      htmlElement.style.width = '210mm'; // Standard A4 width
-
       const generatePDF = (html2pdfLib: any) => {
         const opt = {
           margin:       0,
@@ -251,12 +242,10 @@ export const Reports: React.FC = () => {
 
         html2pdfLib().from(element).set(opt).save().then(() => {
           showToast('PDF downloaded successfully!');
-          htmlElement.style.display = 'none';
           setIsGeneratingPDF(false);
         }).catch((err: any) => {
           console.error(err);
           showToast('Error exporting PDF document.', 'error');
-          htmlElement.style.display = 'none';
           setIsGeneratingPDF(false);
         });
       };
@@ -275,7 +264,6 @@ export const Reports: React.FC = () => {
         };
         script.onerror = () => {
           showToast('Failed to load PDF engine from CDN.', 'error');
-          htmlElement.style.display = 'none';
           setIsGeneratingPDF(false);
         };
         document.body.appendChild(script);
@@ -1661,43 +1649,44 @@ export const Reports: React.FC = () => {
         </div>
       </div>
 
-      {/* Hidden A4 Printable Report Element used for PDF generation */}
-      <div id="pdf-report-printout" style={{
-        display: 'none',
-        width: '210mm',
-        backgroundColor: '#ffffff',
-        fontFamily: 'var(--font-sans)',
-        color: '#000000',
-        padding: '15mm',
-        boxSizing: 'border-box'
-      }}>
-        {/* Header Block */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '16px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
-            <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{settings.address}</p>
-            <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
+      {/* Hidden A4 Printable Report Element wrapper to prevent flash */}
+      <div style={{ position: 'absolute', left: 0, top: 0, width: 0, height: 0, overflow: 'hidden', zIndex: -99999, pointerEvents: 'none' }}>
+        <div id="pdf-report-printout" style={{
+          width: '210mm',
+          backgroundColor: '#ffffff',
+          fontFamily: 'var(--font-sans)',
+          color: '#000000',
+          padding: '15mm',
+          boxSizing: 'border-box'
+        }}>
+          {/* Header Block */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '16px' }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{settings.address}</p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
+            </div>
+            <div style={{ textAlign: 'right' }}>
+              <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#555555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Financial Audit Report
+              </h2>
+              <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>
+                Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
+              </p>
+              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555' }}>
+                Date Generated: {formatDate(new Date().toISOString())}
+              </p>
+            </div>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#555555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Financial Audit Report
-            </h2>
-            <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>
-              Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
-            </p>
-            <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555' }}>
-              Date Generated: {formatDate(new Date().toISOString())}
-            </p>
+
+          {/* Dynamic content */}
+          {renderPrintReportContent()}
+
+          {/* Signatory Blocks */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '48px', fontSize: '10px', color: '#555555' }}>
+            <div>Prepared By: ___________________________</div>
+            <div>Authorized Signatory: ___________________________</div>
           </div>
-        </div>
-
-        {/* Dynamic content */}
-        {renderPrintReportContent()}
-
-        {/* Signatory Blocks */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '48px', fontSize: '10px', color: '#555555' }}>
-          <div>Prepared By: ___________________________</div>
-          <div>Authorized Signatory: ___________________________</div>
         </div>
       </div>
 
