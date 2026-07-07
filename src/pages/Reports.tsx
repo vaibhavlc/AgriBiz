@@ -41,6 +41,8 @@ export const Reports: React.FC = () => {
     setTimeout(() => setToast(null), 3500);
   };
 
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+
   // Filter callback
   const filterByDate = (dateStr: string) => {
     if (dateRange === 'All') return true;
@@ -225,6 +227,7 @@ export const Reports: React.FC = () => {
     }
 
     showToast('Compiling high-definition PDF statement...', 'info');
+    setIsGeneratingPDF(true);
 
     // Make element temporarily visible but behind everything at 0, 0
     const htmlElement = element as HTMLElement;
@@ -232,7 +235,7 @@ export const Reports: React.FC = () => {
     htmlElement.style.position = 'absolute';
     htmlElement.style.left = '0';
     htmlElement.style.top = '0';
-    htmlElement.style.zIndex = '-9999';
+    htmlElement.style.zIndex = '99998'; // sit underneath the loading overlay
     htmlElement.style.width = '210mm'; // Standard A4 width
 
     const generatePDF = (html2pdfLib: any) => {
@@ -247,10 +250,12 @@ export const Reports: React.FC = () => {
       html2pdfLib().from(element).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
         htmlElement.style.display = 'none';
+        setIsGeneratingPDF(false);
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
         htmlElement.style.display = 'none';
+        setIsGeneratingPDF(false);
       });
     };
 
@@ -268,9 +273,8 @@ export const Reports: React.FC = () => {
       };
       script.onerror = () => {
         showToast('Failed to load PDF engine from CDN.', 'error');
-        htmlElement.style.position = 'absolute';
-        htmlElement.style.left = '-9999px';
-        htmlElement.style.top = '-9999px';
+        htmlElement.style.display = 'none';
+        setIsGeneratingPDF(false);
       };
       document.body.appendChild(script);
     }
@@ -1711,6 +1715,36 @@ export const Reports: React.FC = () => {
           animation: 'fadeIn 0.2s ease-out'
         }}>
           {toast.message}
+        </div>
+      )}
+
+      {/* Loading Overlay */}
+      {isGeneratingPDF && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(255, 255, 255, 0.85)',
+          backdropFilter: 'blur(5px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 999999,
+          animation: 'fadeIn 0.15s ease-out'
+        }}>
+          <div className="animate-spin" style={{
+            width: '40px',
+            height: '40px',
+            border: '4px solid var(--border-color)',
+            borderTopColor: 'var(--primary-dark)',
+            borderRadius: '50%'
+          }} />
+          <p style={{ marginTop: '16px', fontWeight: 600, color: 'var(--text-primary)', fontSize: '13px' }}>
+            Generating A4 PDF Report Statement...
+          </p>
         </div>
       )}
     </div>
