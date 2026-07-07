@@ -23,6 +23,7 @@ export const Reports: React.FC = () => {
     products,
     customers,
     suppliers,
+    settings,
   } = useApp();
 
   const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger'>('sales');
@@ -215,23 +216,22 @@ export const Reports: React.FC = () => {
     showToast('Report exported as CSV successfully!');
   };
 
-  // --- Save PDF Handler ---
+  // --- Save PDF Handler (Clean Statement Table) ---
   const handleDownloadPDF = () => {
-    const element = document.querySelector('.report-content-to-print');
+    const element = document.getElementById('pdf-report-printout');
     if (!element) {
-      showToast('Could not find report content to export.', 'error');
+      showToast('Could not find report printout element.', 'error');
       return;
     }
 
-    showToast('Compiling high-definition PDF report...', 'info');
+    showToast('Compiling high-definition PDF statement...', 'info');
 
-    // Temporarily apply style overrides to live element to avoid mobile responsive distortions in canvas
+    // Move elements temporarily to normal layout so layout engine computes boundaries correctly
     const htmlElement = element as HTMLElement;
-    const originalZoom = htmlElement.style.zoom;
-    const originalTransform = htmlElement.style.transform;
-
-    htmlElement.style.setProperty('zoom', '1', 'important');
-    htmlElement.style.setProperty('transform', 'none', 'important');
+    htmlElement.style.position = 'relative';
+    htmlElement.style.left = '0';
+    htmlElement.style.top = '0';
+    htmlElement.style.width = '210mm'; // Standard A4 width
 
     const generatePDF = (html2pdfLib: any) => {
       const opt = {
@@ -244,13 +244,16 @@ export const Reports: React.FC = () => {
 
       html2pdfLib().from(element).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
+        // Hide element back offscreen
+        htmlElement.style.position = 'absolute';
+        htmlElement.style.left = '-9999px';
+        htmlElement.style.top = '-9999px';
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
+        htmlElement.style.position = 'absolute';
+        htmlElement.style.left = '-9999px';
+        htmlElement.style.top = '-9999px';
       });
     };
 
@@ -268,6 +271,9 @@ export const Reports: React.FC = () => {
       };
       script.onerror = () => {
         showToast('Failed to load PDF engine from CDN.', 'error');
+        htmlElement.style.position = 'absolute';
+        htmlElement.style.left = '-9999px';
+        htmlElement.style.top = '-9999px';
       };
       document.body.appendChild(script);
     }
@@ -1172,7 +1178,7 @@ export const Reports: React.FC = () => {
                       <h4 className="mobile-list-card-title">{s.name}</h4>
                       <span className="mobile-list-card-subtitle">ID: {s.id} • {s.phone}</span>
                     </div>
-                    <span className={`badge ${s.outstanding === 0 ? 'badge-success' : 'badge-warning'}`}>
+                    <span className={`badge ${s.outstanding === 0 ? 'badge-success' : s.outstanding >-1 ? 'badge-warning' : 'badge-info'}`}>
                       {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
                     </span>
                   </div>
@@ -1199,6 +1205,371 @@ export const Reports: React.FC = () => {
                 </div>
               </div>
             </div>
+          </div>
+        );
+
+      default:
+        return null;
+    }
+  };
+
+  // --- Print-Only PDF content renderer ---
+  const renderPrintReportContent = () => {
+    switch (activeReport) {
+      case 'sales':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Sales Transaction Statement
+            </h2>
+            
+            {/* Summary metrics block */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Invoices count:</strong> {filteredInvoices.length} bills</div>
+              <div><strong>Taxable Amount:</strong> {formatINR(totalSalesBase)}</div>
+              <div><strong>Total Sales (Inc. GST):</strong> {formatINR(totalSalesVal)}</div>
+            </div>
+
+            {/* Print Grid Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Invoice No</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer Name</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Taxable Amt (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Tax (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Grand Total (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((inv, idx) => (
+                  <tr key={inv.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace', fontWeight: 'bold' }}>{inv.invoiceNumber}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{inv.customerName}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(inv.date)}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(inv.subtotal - inv.discountTotal).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(inv.gstTotal).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{inv.paymentStatus}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesVal).replace('₹', '')}</td>
+                  <td style={{ border: '1px solid #C8D3C5' }}></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'purchase':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Purchase Transaction Statement
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Bills Logged:</strong> {filteredPurchases.length} invoices</div>
+              <div><strong>Taxable Purchases:</strong> {formatINR(totalPurchasesBase)}</div>
+              <div><strong>Total Cost (Inc. GST):</strong> {formatINR(totalPurchasesVal)}</div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Bill Number</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Supplier Name</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Base Cost (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Tax Paid (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Total Cost (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPurchases.map((pur, idx) => (
+                  <tr key={pur.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace', fontWeight: 'bold' }}>{pur.purchaseNumber}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{pur.supplierName}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(pur.date)}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(pur.subtotal).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(pur.gstTotal).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{pur.paymentStatus}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalPurchasesVal).replace('₹', '')}</td>
+                  <td style={{ border: '1px solid #C8D3C5' }}></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'profit':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Sales Profit & Loss Statement
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Sales Revenue:</strong> {formatINR(totalSalesBase)}</div>
+              <div><strong>Cost of Goods (COGS):</strong> {formatINR(coGS)}</div>
+              <div><strong>Net Profit Margin:</strong> {formatINR(grossProfit)} ({profitMarginPercent.toFixed(1)}%)</div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Invoice No</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Taxable Sales (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Cost Price (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Net Profit (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Margin</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((inv, idx) => {
+                  const invoiceCOGS = inv.items.reduce((s, i) => {
+                    const cost = products.find((p) => p.id === i.productId)?.purchasePrice || 0;
+                    return s + (i.quantity * cost);
+                  }, 0);
+                  const invProfit = inv.subtotal - invoiceCOGS;
+                  const invMargin = inv.subtotal > 0 ? (invProfit / inv.subtotal) * 100 : 0;
+                  return (
+                    <tr key={inv.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace', fontWeight: 'bold' }}>{inv.invoiceNumber}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(inv.date)}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{inv.customerName}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(inv.subtotal).replace('₹', '')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(invoiceCOGS).replace('₹', '')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold', color: invProfit >= 0 ? '#27AE60' : '#BE3144' }}>{formatINR(invProfit).replace('₹', '')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold' }}>{invMargin.toFixed(1)}%</td>
+                    </tr>
+                  );
+                })}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(coGS).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(grossProfit).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{profitMarginPercent.toFixed(1)}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'stock':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Stock Inventory Asset Valuation
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Total Items:</strong> {totalStockQty} units</div>
+              <div><strong>Asset Value (Cost):</strong> {formatINR(totalAssetVal)}</div>
+              <div><strong>Retail Value (Potential):</strong> {formatINR(totalRetailVal)}</div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>SKU</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Product Name</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Category</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Qty</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Cost Price (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Asset Value (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Retail Price (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Retail Value (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((p, idx) => {
+                  const itemAssetVal = p.stock * p.purchasePrice;
+                  const itemRetailVal = p.stock * p.sellingPrice;
+                  return (
+                    <tr key={p.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{p.sku}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{p.name}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{p.category}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold' }}>{p.stock}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(p.purchasePrice).replace('₹', '')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(itemAssetVal).replace('₹', '')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(p.sellingPrice).replace('₹', '')}</td>
+                      <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(itemRetailVal).replace('₹', '')}</td>
+                    </tr>
+                  );
+                })}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Stock Summary Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{totalStockQty}</td>
+                  <td style={{ border: '1px solid #C8D3C5' }}></td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalAssetVal).replace('₹', '')}</td>
+                  <td style={{ border: '1px solid #C8D3C5' }}></td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalRetailVal).replace('₹', '')}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'gst':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              GST Tax Ledger Summary
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Output GST Collected:</strong> {formatINR(totalSalesTax)}</div>
+              <div><strong>Input GST ITC Paid:</strong> {formatINR(totalPurchasesTax)}</div>
+              <div><strong>Net GST Payable:</strong> {formatINR(netGSTDue)}</div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Transaction Supply Type</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Doc Count</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Base Goods Value (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Central GST (CGST) (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>State GST (SGST) (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Total Tax Liability (₹)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ backgroundColor: '#ffffff' }}>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Outward Supply (Sales Invoices)</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{filteredInvoices.length}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalCGSTCollected).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalSGSTCollected).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
+                </tr>
+                <tr style={{ backgroundColor: '#F9FAF9' }}>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Inward Supply (Supplier Bills)</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{filteredPurchases.length}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalCGSTPaid).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalSGSTPaid).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
+                </tr>
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Net Payable Tax Dues:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'center' }}></td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase - totalPurchasesBase).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalCGSTCollected - totalCGSTPaid).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSGSTCollected - totalSGSTPaid).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: netGSTDue >= 0 ? '#BE3144' : '#27AE60' }}>{formatINR(netGSTDue).replace('₹', '')}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'custLedger':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Customer Outstanding Balances Statement
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Registered Customers:</strong> {totalCustomers} accounts</div>
+              <div><strong>Accumulated Dues:</strong> {formatINR(pendingReceivables)}</div>
+              <div><strong>Average Dues:</strong> {formatINR(averageReceivable)}</div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer ID</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer Name</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Phone Number</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>GSTIN</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Outstanding (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {customers.map((c, idx) => (
+                  <tr key={c.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{c.id}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{c.name}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{c.phone}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{c.gstin || '—'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold', color: c.outstanding > 0 ? '#BE3144' : c.outstanding < 0 ? '#27AE60' : 'inherit' }}>{formatINR(c.outstanding).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues' : 'Advance'}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Accumulated Outstanding Dues Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: '#BE3144' }}>{formatINR(pendingReceivables).replace('₹', '')}</td>
+                  <td style={{ border: '1px solid #C8D3C5' }}></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
+      case 'suppLedger':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Supplier Account Payables Statement
+            </h2>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Registered Suppliers:</strong> {totalSuppliers} accounts</div>
+              <div><strong>Accumulated Owed:</strong> {formatINR(pendingPayables)}</div>
+              <div><strong>Average Payables:</strong> {formatINR(averagePayable)}</div>
+            </div>
+
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Supplier ID</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Company / Supplier Name</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Phone Number</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>GSTIN</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Balance Owed (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {suppliers.map((s, idx) => (
+                  <tr key={s.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{s.id}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{s.name}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{s.phone}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{s.gstin || '—'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold', color: s.outstanding > 0 ? '#BE3144' : 'inherit' }}>{formatINR(s.outstanding).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{s.outstanding === 0 ? 'Settled' : 'Payable'}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Accumulated Supplier Payables Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: '#BE3144' }}>{formatINR(pendingPayables).replace('₹', '')}</td>
+                  <td style={{ border: '1px solid #C8D3C5' }}></td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         );
 
@@ -1279,10 +1650,52 @@ export const Reports: React.FC = () => {
         </div>
 
         {/* Right Side Content */}
-        <div style={{ flex: 1 }} className="report-content-to-print">
+        <div style={{ flex: 1 }}>
           <div className="card" style={{ border: 'none', boxShadow: 'none', padding: 0 }}>
             {renderReportContent()}
           </div>
+        </div>
+      </div>
+
+      {/* Hidden A4 Printable Report Element used for PDF generation */}
+      <div id="pdf-report-printout" style={{
+        position: 'absolute',
+        left: '-9999px',
+        top: '-9999px',
+        width: '210mm',
+        backgroundColor: '#ffffff',
+        fontFamily: 'var(--font-sans)',
+        color: '#000000',
+        padding: '20px',
+        boxSizing: 'border-box'
+      }}>
+        {/* Header Block */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '16px' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
+            <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{settings.address}</p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
+          </div>
+          <div style={{ textAlign: 'right' }}>
+            <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#555555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Financial Audit Report
+            </h2>
+            <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>
+              Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
+            </p>
+            <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555' }}>
+              Date Generated: {formatDate(new Date().toISOString())}
+            </p>
+          </div>
+        </div>
+
+        {/* Dynamic content */}
+        {renderPrintReportContent()}
+
+        {/* Signatory Blocks */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '48px', fontSize: '10px', color: '#555555' }}>
+          <div>Prepared By: ___________________________</div>
+          <div>Authorized Signatory: ___________________________</div>
         </div>
       </div>
 
