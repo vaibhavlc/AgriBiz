@@ -34,6 +34,7 @@ export const Expenses: React.FC = () => {
   // Search/Filters
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [methodFilter, setMethodFilter] = useState('All');
+  const [dateRange, setDateRange] = useState<'All' | 'Custom'>('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -60,6 +61,18 @@ export const Expenses: React.FC = () => {
     'Staff Salary',
     'Marketing',
     'Other'
+  ];
+
+  const filterTabs = [
+    { id: 'All', label: 'All Expenses' },
+    { id: 'Shop Rent', label: 'Shop Rent' },
+    { id: 'Light Bill', label: 'Light Bill' },
+    { id: 'Tea Bills', label: 'Tea Bills' },
+    { id: 'Transportation', label: 'Transportation' },
+    { id: 'Maintenance', label: 'Maintenance' },
+    { id: 'Staff Salary', label: 'Staff Salary' },
+    { id: 'Marketing', label: 'Marketing' },
+    { id: 'Other', label: 'Other Spends' },
   ];
 
   // Calculations for stats
@@ -96,30 +109,65 @@ export const Expenses: React.FC = () => {
     return { name: topCatName, amount: maxVal };
   }, [expenses]);
 
-  const categorySummaryList = useMemo(() => {
-    const totals: { [cat: string]: number } = {};
-    expenses.forEach((e) => {
-      totals[e.category] = (totals[e.category] || 0) + e.amount;
-    });
-    return Object.entries(totals).sort((a, b) => b[1] - a[1]);
-  }, [expenses]);
+  const getCategorySum = (catId: string) => {
+    return expenses
+      .filter((e) => {
+        const matchesMethod = methodFilter === 'All' || e.paymentMethod === methodFilter;
+
+        let matchesDate = true;
+        if (dateRange === 'Custom') {
+          if (startDate) {
+            matchesDate = matchesDate && e.date >= startDate;
+          }
+          if (endDate) {
+            matchesDate = matchesDate && e.date <= endDate;
+          }
+        }
+
+        const matchesSearch =
+          e.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          (e.notes && e.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (e.referenceNumber && e.referenceNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          e.id.toLowerCase().includes(searchQuery.toLowerCase());
+
+        if (!matchesMethod || !matchesDate || !matchesSearch) return false;
+
+        if (catId === 'All') return true;
+        if (catId === 'Other') {
+          const standardCats = categoriesList.filter(c => c !== 'Other');
+          return !standardCats.includes(e.category);
+        }
+        return e.category === catId;
+      })
+      .reduce((sum, e) => sum + e.amount, 0);
+  };
 
   // Filtering & Pagination
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
-      // Tab/Category Filter
-      const matchesCategory = categoryFilter === 'All' || e.category === categoryFilter;
+      // Category Filter
+      let matchesCategory = true;
+      if (categoryFilter !== 'All') {
+        if (categoryFilter === 'Other') {
+          const standardCats = categoriesList.filter(c => c !== 'Other');
+          matchesCategory = !standardCats.includes(e.category);
+        } else {
+          matchesCategory = e.category === categoryFilter;
+        }
+      }
 
       // Method Filter
       const matchesMethod = methodFilter === 'All' || e.paymentMethod === methodFilter;
 
       // Date range filter
       let matchesDate = true;
-      if (startDate) {
-        matchesDate = matchesDate && e.date >= startDate;
-      }
-      if (endDate) {
-        matchesDate = matchesDate && e.date <= endDate;
+      if (dateRange === 'Custom') {
+        if (startDate) {
+          matchesDate = matchesDate && e.date >= startDate;
+        }
+        if (endDate) {
+          matchesDate = matchesDate && e.date <= endDate;
+        }
       }
 
       // Search query
@@ -131,7 +179,7 @@ export const Expenses: React.FC = () => {
 
       return matchesCategory && matchesMethod && matchesDate && matchesSearch;
     });
-  }, [expenses, categoryFilter, methodFilter, startDate, endDate, searchQuery]);
+  }, [expenses, categoryFilter, methodFilter, dateRange, startDate, endDate, searchQuery]);
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
   const paginatedExpenses = useMemo(() => {
@@ -348,75 +396,93 @@ export const Expenses: React.FC = () => {
       {/* Category Pills Breakdown Scrollable Bar */}
       <div className="card" style={{ padding: '16px 20px', marginBottom: '24px', backgroundColor: 'var(--bg-card)' }}>
         <h5 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Layers size={14} /> Spends Distribution by Category
+          <Layers size={14} /> Category Quick Filters
         </h5>
         <div className="category-scroll-pills-bar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {categorySummaryList.length === 0 ? (
-            <span style={{ fontSize: '13px', fontStyle: 'italic', color: 'var(--text-muted)' }}>No expense distribution recorded yet.</span>
-          ) : (
-            categorySummaryList.map(([cat, amt]) => (
+          {filterTabs.map((tab) => {
+            const sum = getCategorySum(tab.id);
+            const isActive = categoryFilter === tab.id;
+            return (
               <div
-                key={cat}
+                key={tab.id}
                 className="category-summary-pill"
                 onClick={() => {
-                  setCategoryFilter(categoryFilter === cat ? 'All' : cat);
+                  setCategoryFilter(tab.id);
                   setCurrentPage(1);
                 }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: categoryFilter === cat ? 'var(--primary)' : 'var(--bg-app)',
-                  color: categoryFilter === cat ? '#ffffff' : 'var(--text-primary)',
+                  gap: '8px',
+                  backgroundColor: isActive ? 'var(--primary)' : 'var(--bg-app)',
+                  color: isActive ? '#ffffff' : 'var(--text-primary)',
                   border: '1px solid var(--border-color)',
-                  padding: '6px 12px',
+                  padding: '6px 14px',
                   borderRadius: '20px',
                   fontSize: '12px',
                   fontWeight: 600,
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
-                  transition: 'all 0.2s'
+                  transition: 'all 0.2s',
+                  boxShadow: isActive ? '0 2px 8px rgba(47, 62, 51, 0.2)' : 'none'
                 }}
               >
-                <span>{cat}</span>
+                <span>{tab.label}</span>
                 <span style={{
                   padding: '2px 6px',
                   borderRadius: '12px',
-                  backgroundColor: categoryFilter === cat ? 'rgba(255,255,255,0.2)' : 'var(--border-color)',
+                  backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : 'var(--border-color)',
+                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
                   fontSize: '10px',
                   fontWeight: 700
                 }}>
-                  {formatINR(amt)}
+                  {formatINR(sum)}
                 </span>
               </div>
-            ))
-          )}
+            );
+          })}
         </div>
       </div>
 
       {/* Filters row */}
-      <div className="filters-row-unified">
-        <div className="filters-group-one">
+      <div className="filters-row-unified" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
+        <div className="filters-group-one" style={{ display: 'flex', flex: '1 1 350px', gap: '10px', alignItems: 'center' }}>
           {/* Main search */}
-          <div className="search-input-wrapper">
+          <div className="search-input-wrapper" style={{ flex: 1 }}>
             <Search size={16} className="search-input-icon" />
             <input
               type="text"
-              placeholder="Search category, notes, ref..."
+              placeholder="Search notes, reference, ID..."
               value={searchQuery}
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setCurrentPage(1);
               }}
+              style={{ width: '100%' }}
             />
           </div>
 
-          {/* Date controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          {/* Date range picker selector */}
+          <select
+            className="filter-select"
+            value={dateRange}
+            onChange={(e) => {
+              setDateRange(e.target.value as any);
+              setCurrentPage(1);
+            }}
+            style={{ minWidth: '130px' }}
+          >
+            <option value="All">All Historical</option>
+            <option value="Custom">Custom Dates</option>
+          </select>
+        </div>
+
+        {dateRange === 'Custom' && (
+          <div className="date-inputs-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 0 auto', justifyContent: 'center' }}>
             <input
               type="date"
               className="filter-select"
-              style={{ padding: '6px 8px', fontSize: '13px' }}
+              style={{ padding: '6px 8px', fontSize: '13px', width: '130px' }}
               value={startDate}
               onChange={(e) => {
                 setStartDate(e.target.value);
@@ -427,7 +493,7 @@ export const Expenses: React.FC = () => {
             <input
               type="date"
               className="filter-select"
-              style={{ padding: '6px 8px', fontSize: '13px' }}
+              style={{ padding: '6px 8px', fontSize: '13px', width: '130px' }}
               value={endDate}
               onChange={(e) => {
                 setEndDate(e.target.value);
@@ -435,25 +501,9 @@ export const Expenses: React.FC = () => {
               }}
             />
           </div>
-        </div>
+        )}
 
-        <div className="filters-group-two">
-          {/* Category Selector */}
-          <select
-            className="filter-select"
-            value={categoryFilter}
-            onChange={(e) => {
-              setCategoryFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-          >
-            <option value="All">All Categories</option>
-            {categoriesList.filter(c => c !== 'Other').map((c) => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-            <option value="Other">Other Custom</option>
-          </select>
-
+        <div className="filters-group-two" style={{ display: 'flex', flex: '1 1 auto', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           {/* Payment Method Selector */}
           <select
             className="filter-select"
@@ -462,6 +512,7 @@ export const Expenses: React.FC = () => {
               setMethodFilter(e.target.value);
               setCurrentPage(1);
             }}
+            style={{ minWidth: '130px' }}
           >
             <option value="All">All Methods</option>
             <option value="UPI">UPI</option>
@@ -471,15 +522,17 @@ export const Expenses: React.FC = () => {
           </select>
 
           {/* Action buttons */}
-          <button className="btn btn-secondary" onClick={handleExportCSV} title="Export current sheet as CSV">
-            <Download size={16} /> Export CSV
-          </button>
-          <button className="btn btn-secondary" onClick={handleDownloadPDF} title="Download current report as PDF">
-            <FileText size={16} /> Save PDF
-          </button>
-          <button className="btn btn-primary" onClick={() => setIsFormOpen(true)}>
-            <Plus size={16} /> Log Expense
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-secondary" onClick={handleExportCSV} title="Export current sheet as CSV">
+              <Download size={16} /> Export CSV
+            </button>
+            <button className="btn btn-secondary" onClick={handleDownloadPDF} title="Download current report as PDF">
+              <FileText size={16} /> Save PDF
+            </button>
+            <button className="btn btn-primary" onClick={() => setIsFormOpen(true)}>
+              <Plus size={16} /> Log Expense
+            </button>
+          </div>
         </div>
       </div>
 

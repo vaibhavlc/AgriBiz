@@ -26,6 +26,7 @@ export const Reports: React.FC = () => {
     customers,
     suppliers,
     settings,
+    expenses,
   } = useApp();
 
   const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
@@ -675,7 +676,9 @@ export const Reports: React.FC = () => {
     return sum + invCOGS;
   }, 0);
   const grossProfit = totalSalesBase - coGS;
-  const profitMarginPercent = totalSalesBase > 0 ? (grossProfit / totalSalesBase) * 100 : 0;
+  const totalExpenses = expenses.filter((exp) => filterByDate(exp.date)).reduce((s, e) => s + e.amount, 0);
+  const netProfit = grossProfit - totalExpenses;
+  const profitMarginPercent = totalSalesBase > 0 ? (netProfit / totalSalesBase) * 100 : 0;
 
   // 4. Stock Valuation Report
   const totalStockQty = products.reduce((s, p) => s + p.stock, 0);
@@ -1310,9 +1313,17 @@ export const Reports: React.FC = () => {
               </div>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
-                  <span className="kpi-label">Gross Net Margin</span>
-                  <span className="kpi-value" style={{ color: 'var(--primary-dark)' }}>{formatINR(grossProfit)}</span>
-                  <span className="kpi-subtext">Profit percentage: {profitMarginPercent.toFixed(1)}%</span>
+                  <span className="kpi-label">Operational Expenses</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(totalExpenses)}</span>
+                  <span className="kpi-subtext">Rent, utility bills, salary, etc.</span>
+                </div>
+                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Net Profit (Loss)</span>
+                  <span className="kpi-value" style={{ color: netProfit >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)' }}>{formatINR(netProfit)}</span>
+                  <span className="kpi-subtext">Margin percentage: {profitMarginPercent.toFixed(1)}%</span>
                 </div>
                 <div className="kpi-icon-container emerald"><Percent size={20} /></div>
               </div>
@@ -2753,10 +2764,12 @@ export const Reports: React.FC = () => {
               Sales Profit & Loss Statement
             </h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '9px' }}>
               <div><strong>Sales Revenue:</strong> {formatINR(totalSalesBase)}</div>
-              <div><strong>Cost of Goods (COGS):</strong> {formatINR(coGS)}</div>
-              <div><strong>Net Profit Margin:</strong> {formatINR(grossProfit)} ({profitMarginPercent.toFixed(1)}%)</div>
+              <div><strong>Cost of Goods:</strong> {formatINR(coGS)}</div>
+              <div><strong>Gross Profit:</strong> {formatINR(grossProfit)}</div>
+              <div><strong>Operating Expenses:</strong> {formatINR(totalExpenses)}</div>
+              <div><strong>Net Profit (Loss):</strong> {formatINR(netProfit)} ({profitMarginPercent.toFixed(1)}%)</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
@@ -2792,10 +2805,10 @@ export const Reports: React.FC = () => {
                   );
                 })}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary (Net Profit):</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(coGS).replace('₹', '')}</td>
-                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(grossProfit).replace('₹', '')}</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: netProfit >= 0 ? '#27AE60' : '#BE3144' }}>{formatINR(netProfit).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{profitMarginPercent.toFixed(1)}%</td>
                 </tr>
               </tbody>

@@ -68,6 +68,7 @@ export const Dashboard: React.FC = () => {
     invoices,
     purchases,
     payments,
+    expenses,
     setCurrentTab,
     setIsCreatingInvoice,
     setIsEnteringPurchase,
@@ -89,8 +90,9 @@ export const Dashboard: React.FC = () => {
   // 2. Historical cumulative totals
   const totalSales = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
   const totalPurchases = purchases.reduce((sum, pur) => sum + pur.grandTotal, 0);
+  const totalExpensesVal = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  // 3. Profit = Taxable sales value minus original purchase cost of products billed
+  // 3. Profit = Taxable sales value minus original purchase cost of products billed and operational expenses
   const totalCOGS = invoices.reduce((sum, inv) => {
     const invCOGS = inv.items.reduce((itemSum, item) => {
       const prod = products.find((p) => p.id === item.productId);
@@ -100,7 +102,7 @@ export const Dashboard: React.FC = () => {
     return sum + invCOGS;
   }, 0);
   const totalSalesBase = invoices.reduce((sum, inv) => sum + inv.subtotal, 0);
-  const totalProfit = totalSalesBase - totalCOGS;
+  const totalProfit = totalSalesBase - totalCOGS - totalExpensesVal;
 
   // 4. Outstanding Dues
   const totalCustomerOutstanding = customers.reduce((sum, c) => sum + c.outstanding, 0);
@@ -255,7 +257,7 @@ export const Dashboard: React.FC = () => {
             <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>
               <AnimatedCounter value={totalProfit} isCurrency />
             </span>
-            <span className="kpi-subtext">Taxable sales revenue minus COGS</span>
+            <span className="kpi-subtext">Sales minus COGS and operational expenses</span>
           </div>
           <div className="kpi-icon-container emerald">
             <DollarSign size={24} />
