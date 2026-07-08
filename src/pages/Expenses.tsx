@@ -378,6 +378,48 @@ export const Expenses: React.FC = () => {
           justify-content: flex-end;
           flex: 0 1 auto;
         }
+        .expense-custom-dates-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-top: 12px;
+          padding-top: 12px;
+          border-top: 1px dashed var(--border-color);
+          animation: fadeIn 0.2s ease-out;
+        }
+        .expense-custom-dates-label {
+          font-size: 13px;
+          color: var(--text-secondary);
+          font-weight: 600;
+        }
+        .expense-custom-dates-inputs {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .expense-custom-dates-inputs input {
+          padding: 6px 8px;
+          font-size: 13px;
+          width: 140px;
+        }
+        .expense-custom-dates-separator {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+        .expense-custom-dates-clear {
+          background: none;
+          border: none;
+          color: var(--color-danger);
+          font-size: 12px;
+          font-weight: 500;
+          cursor: pointer;
+          padding: 2px 6px;
+          margin-left: 8px;
+          transition: opacity 0.2s;
+        }
+        .expense-custom-dates-clear:hover {
+          text-decoration: underline;
+        }
         @media (max-width: 768px) {
           .expense-filter-card {
             padding: 12px 14px;
@@ -438,17 +480,34 @@ export const Expenses: React.FC = () => {
             grid-column: span 1;
           }
           .expense-custom-dates-row {
-            flex-wrap: wrap;
-            gap: 6px !important;
-          }
-          .expense-custom-dates-row span {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 8px;
             width: 100%;
+          }
+          .expense-custom-dates-label {
+            font-size: 12px;
             margin-bottom: 2px;
           }
-          .expense-custom-dates-row input {
-            flex: 1 1 40% !important;
-            width: auto !important;
+          .expense-custom-dates-inputs {
+            display: flex;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            gap: 6px;
+          }
+          .expense-custom-dates-inputs input {
+            flex: 1;
+            width: 100% !important;
             height: 38px;
+          }
+          .expense-custom-dates-clear {
+            display: inline-block;
+            text-align: center;
+            font-size: 11px;
+            margin: 4px auto 0 auto;
+            width: fit-content;
+            color: var(--color-danger);
           }
         }
       `}</style>
@@ -537,42 +596,33 @@ export const Expenses: React.FC = () => {
 
         {/* Conditional Custom Dates Row (Vertical expansion, preserves horizontal layout positions) */}
         {dateRange === 'Custom' && (
-          <div className="expense-custom-dates-row" style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            marginTop: '12px',
-            paddingTop: '12px',
-            borderTop: '1px dashed var(--border-color)',
-            animation: 'fadeIn 0.2s ease-out'
-          }}>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Date Range:</span>
-            <input
-              type="date"
-              className="filter-select"
-              style={{ padding: '6px 8px', fontSize: '13px', width: '140px' }}
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>to</span>
-            <input
-              type="date"
-              className="filter-select"
-              style={{ padding: '6px 8px', fontSize: '13px', width: '140px' }}
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
+          <div className="expense-custom-dates-row">
+            <span className="expense-custom-dates-label">Date Range:</span>
+            <div className="expense-custom-dates-inputs">
+              <input
+                type="date"
+                className="filter-select"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+              <span className="expense-custom-dates-separator">to</span>
+              <input
+                type="date"
+                className="filter-select"
+                value={endDate}
+                onChange={(e) => {
+                  setEndDate(e.target.value);
+                  setCurrentPage(1);
+                }}
+              />
+            </div>
             {(startDate || endDate) && (
               <button
                 type="button"
-                className="table-link-btn"
-                style={{ fontSize: '12px', marginLeft: '8px', color: 'var(--color-danger)' }}
+                className="expense-custom-dates-clear"
                 onClick={() => {
                   setStartDate('');
                   setEndDate('');
