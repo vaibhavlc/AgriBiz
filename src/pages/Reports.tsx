@@ -29,7 +29,7 @@ export const Reports: React.FC = () => {
     expenses,
   } = useApp();
 
-  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
+  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'expense' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
   
   // Date filtering state
   const [dateRange, setDateRange] = useState('All');
@@ -676,7 +676,28 @@ export const Reports: React.FC = () => {
     return sum + invCOGS;
   }, 0);
   const grossProfit = totalSalesBase - coGS;
-  const totalExpenses = expenses.filter((exp) => filterByDate(exp.date)).reduce((s, e) => s + e.amount, 0);
+  const filteredExpenses = expenses.filter((exp) => filterByDate(exp.date));
+  const totalExpenses = filteredExpenses.reduce((s, e) => s + e.amount, 0);
+  const totalPaidExpensesVal = filteredExpenses.filter(e => e.status === 'Paid').reduce((s, e) => s + e.amount, 0);
+  const totalDueExpensesVal = filteredExpenses.filter(e => e.status === 'Due').reduce((s, e) => s + e.amount, 0);
+
+  const topExpenseCategory = useMemo(() => {
+    const totals: { [cat: string]: number } = {};
+    filteredExpenses.forEach((e) => {
+      totals[e.category] = (totals[e.category] || 0) + e.amount;
+    });
+
+    let topCatName = 'None';
+    let maxVal = 0;
+    Object.entries(totals).forEach(([cat, val]) => {
+      if (val > maxVal) {
+        maxVal = val;
+        topCatName = cat;
+      }
+    });
+    return { name: topCatName, amount: maxVal };
+  }, [filteredExpenses]);
+
   const netProfit = grossProfit - totalExpenses;
   const profitMarginPercent = totalSalesBase > 0 ? (netProfit / totalSalesBase) * 100 : 0;
 
@@ -1285,6 +1306,154 @@ export const Reports: React.FC = () => {
                 <div className="mobile-list-card-row">
                   <span className="mobile-list-card-label">Total Cost</span>
                   <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)', fontSize: '15px' }}>{formatINR(totalPurchasesVal)}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'expense':
+        return (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Total Expenses Spends</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(totalExpenses)}</span>
+                  <span className="kpi-subtext">Cumulative operational spends</span>
+                </div>
+                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Settled / Paid Expenses</span>
+                  <span className="kpi-value" style={{ color: 'var(--primary)' }}>{formatINR(totalPaidExpensesVal)}</span>
+                  <span className="kpi-subtext">Fully paid invoices</span>
+                </div>
+                <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Outstanding / Due Dues</span>
+                  <span className="kpi-value" style={{ color: '#D97706' }}>{formatINR(totalDueExpensesVal)}</span>
+                  <span className="kpi-subtext">Unsettled accounts due</span>
+                </div>
+                <div className="kpi-icon-container amber"><DollarSign size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Top Category</span>
+                  <span className="kpi-value" style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{topExpenseCategory.name}</span>
+                  <span className="kpi-subtext">Total: {formatINR(topExpenseCategory.amount)}</span>
+                </div>
+                <div className="kpi-icon-container blue"><Layers size={20} /></div>
+              </div>
+            </div>
+
+            <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+              <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Expense Statement Breakdown</h4>
+              
+              {/* Desktop view */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Voucher ID</th>
+                        <th>Category</th>
+                        <th>Payee (Paid To)</th>
+                        <th style={{ textAlign: 'right' }}>Amount (₹)</th>
+                        <th>Status</th>
+                        <th>Method</th>
+                        <th>Ref Number</th>
+                        <th>Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredExpenses.map((exp) => (
+                        <tr key={exp.id}>
+                          <td>{formatDate(exp.date)}</td>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.id}</td>
+                          <td style={{ fontWeight: 700 }}>{exp.category}</td>
+                          <td>{exp.payee || 'General'}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>{formatINR(exp.amount)}</td>
+                          <td>
+                            <span className="badge" style={{
+                              padding: '2px 6px',
+                              fontSize: '11px',
+                              borderRadius: '4px',
+                              fontWeight: 700,
+                              backgroundColor: exp.status === 'Due' ? 'rgba(217, 119, 6, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                              color: exp.status === 'Due' ? '#D97706' : 'var(--primary)',
+                              border: exp.status === 'Due' ? '1px solid rgba(217, 119, 6, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)'
+                            }}>
+                              {exp.status || 'Paid'}
+                            </span>
+                          </td>
+                          <td>{exp.status === 'Due' ? '—' : exp.paymentMethod}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}</td>
+                          <td style={{ fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.notes || '—'}</td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                        <td colSpan={4}>Report Summary Total:</td>
+                        <td style={{ textAlign: 'right', color: 'var(--color-danger-dark)' }}>{formatINR(totalExpenses).replace('₹', '')}</td>
+                        <td colSpan={4}></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile view */}
+              <div className="mobile-card-list">
+                {filteredExpenses.map((exp) => (
+                  <div key={exp.id} className="mobile-list-card" style={{ borderLeftColor: exp.status === 'Due' ? '#D97706' : 'var(--color-danger)' }}>
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">{exp.category}</h4>
+                        <span className="mobile-list-card-subtitle">{formatDate(exp.date)}</span>
+                      </div>
+                      <span className="badge" style={{
+                        padding: '2px 6px',
+                        fontSize: '11px',
+                        borderRadius: '4px',
+                        fontWeight: 700,
+                        backgroundColor: exp.status === 'Due' ? 'rgba(217, 119, 6, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                        color: exp.status === 'Due' ? '#D97706' : 'var(--primary)',
+                        border: exp.status === 'Due' ? '1px solid rgba(217, 119, 6, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)'
+                      }}>
+                        {exp.status || 'Paid'}
+                      </span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Payee</span>
+                      <span className="mobile-list-card-val">{exp.payee || 'General'}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Amount</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>{formatINR(exp.amount)}</span>
+                    </div>
+                    {exp.status !== 'Due' && (
+                      <div className="mobile-list-card-row">
+                        <span className="mobile-list-card-label">Method</span>
+                        <span className="mobile-list-card-val">{exp.paymentMethod}</span>
+                      </div>
+                    )}
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Remarks</span>
+                      <span className="mobile-list-card-val" style={{ fontStyle: 'italic' }}>{exp.notes || '—'}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info)', background: 'var(--bg-app)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Total Expense</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)', fontSize: '15px' }}>{formatINR(totalExpenses)}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2757,6 +2926,58 @@ export const Reports: React.FC = () => {
           </div>
         );
 
+      case 'expense':
+        return (
+          <div>
+            <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
+              Operational Expense Statement
+            </h2>
+            
+            {/* Summary metrics block */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
+              <div><strong>Total Operational Spends:</strong> {formatINR(totalExpenses)}</div>
+              <div><strong>Settled Spends:</strong> {formatINR(totalPaidExpensesVal)}</div>
+              <div><strong>Outstanding Dues:</strong> {formatINR(totalDueExpensesVal)}</div>
+              <div><strong>Top Category:</strong> {topExpenseCategory.name}</div>
+            </div>
+
+            {/* Print Grid Table */}
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
+              <thead>
+                <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Voucher ID</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Category</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Payee (Paid To)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Amount (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Method</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Ref Number</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredExpenses.map((exp, idx) => (
+                  <tr key={exp.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(exp.date)}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.id}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{exp.category}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.payee || 'General'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(exp.amount).replace('₹', '')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold', color: exp.status === 'Due' ? '#D97706' : 'var(--primary)' }}>{exp.status || 'Paid'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.status === 'Due' ? '—' : exp.paymentMethod}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}</td>
+                  </tr>
+                ))}
+                <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
+                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: 'var(--color-danger-dark)' }}>{formatINR(totalExpenses).replace('₹', '')}</td>
+                  <td colSpan={3} style={{ border: '1px solid #C8D3C5' }}></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        );
+
       case 'profit':
         return (
           <div>
@@ -3443,6 +3664,7 @@ export const Reports: React.FC = () => {
   const reportTabs = [
     { id: 'sales', label: 'Sales Report', icon: <FileText size={18} /> },
     { id: 'purchase', label: 'Purchase Report', icon: <FileText size={18} /> },
+    { id: 'expense', label: 'Expense Report', icon: <TrendingDown size={18} /> },
     { id: 'profit', label: 'Profit & Loss Summary', icon: <Briefcase size={18} /> },
     { id: 'stock', label: 'Stock Asset Value', icon: <Layers size={18} /> },
     { id: 'gst', label: 'GST Tax Summary', icon: <Percent size={18} /> },

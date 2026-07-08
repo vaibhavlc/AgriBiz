@@ -33,6 +33,7 @@ export const Expenses: React.FC = () => {
   // Search/Filters
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [methodFilter, setMethodFilter] = useState('All');
+  const [statusFilter, setStatusFilter] = useState('All');
   const [dateRange, setDateRange] = useState<'All' | 'Custom'>('All');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -44,9 +45,12 @@ export const Expenses: React.FC = () => {
   const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null);
   const [category, setCategory] = useState('Shop Rent');
   const [customCategory, setCustomCategory] = useState('');
+  const [payee, setPayee] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [amount, setAmount] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque'>('UPI');
+  const [status, setStatus] = useState<'Paid' | 'Due'>('Paid');
+  const [dueDate, setDueDate] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
 
@@ -116,6 +120,9 @@ export const Expenses: React.FC = () => {
       // Method Filter
       const matchesMethod = methodFilter === 'All' || e.paymentMethod === methodFilter;
 
+      // Status Filter
+      const matchesStatus = statusFilter === 'All' || e.status === statusFilter;
+
       // Date range filter
       let matchesDate = true;
       if (dateRange === 'Custom') {
@@ -130,13 +137,14 @@ export const Expenses: React.FC = () => {
       // Search query
       const matchesSearch =
         e.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (e.payee && e.payee.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (e.notes && e.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (e.referenceNumber && e.referenceNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
         e.id.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchesCategory && matchesMethod && matchesDate && matchesSearch;
+      return matchesCategory && matchesMethod && matchesStatus && matchesDate && matchesSearch;
     });
-  }, [expenses, categoryFilter, methodFilter, dateRange, startDate, endDate, searchQuery]);
+  }, [expenses, categoryFilter, methodFilter, statusFilter, dateRange, startDate, endDate, searchQuery]);
 
   const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
   const paginatedExpenses = useMemo(() => {
@@ -166,8 +174,11 @@ export const Expenses: React.FC = () => {
         id: editingExpenseId,
         date,
         category: finalCategory,
+        payee: payee.trim() || 'General',
         amount: finalAmount,
         paymentMethod,
+        status,
+        dueDate: status === 'Due' ? dueDate : undefined,
         referenceNumber: referenceNumber.trim() || undefined,
         notes: notes.trim() || undefined,
       });
@@ -176,8 +187,11 @@ export const Expenses: React.FC = () => {
       addExpense({
         date,
         category: finalCategory,
+        payee: payee.trim() || 'General',
         amount: finalAmount,
         paymentMethod,
+        status,
+        dueDate: status === 'Due' ? dueDate : undefined,
         referenceNumber: referenceNumber.trim() || undefined,
         notes: notes.trim() || undefined,
       });
@@ -189,9 +203,12 @@ export const Expenses: React.FC = () => {
     setEditingExpenseId(null);
     setCategory('Shop Rent');
     setCustomCategory('');
+    setPayee('');
     setDate(new Date().toISOString().split('T')[0]);
     setAmount('');
     setPaymentMethod('UPI');
+    setStatus('Paid');
+    setDueDate('');
     setReferenceNumber('');
     setNotes('');
   };
@@ -210,7 +227,18 @@ export const Expenses: React.FC = () => {
     setPaymentMethod(exp.paymentMethod);
     setReferenceNumber(exp.referenceNumber || '');
     setNotes(exp.notes || '');
+    setPayee(exp.payee || '');
+    setStatus(exp.status || 'Paid');
+    setDueDate(exp.dueDate || '');
     setIsFormOpen(true);
+  };
+
+  const handleMarkAsPaid = (exp: Expense) => {
+    editExpense({
+      ...exp,
+      status: 'Paid',
+    });
+    showToast(`Expense for ${exp.category} marked as Paid!`);
   };
 
   const handleDeleteExpense = (id: string, cat: string, amt: number) => {
@@ -225,17 +253,20 @@ export const Expenses: React.FC = () => {
     const csvRows: string[] = [];
     csvRows.push('EXPENSES TRANSACTION RECORD');
     csvRows.push(`Exported Date: ${new Date().toLocaleDateString('en-IN')}`);
-    csvRows.push(`Filters: Category: ${categoryFilter}, Method: ${methodFilter}, Date Range: ${startDate || 'Start'} to ${endDate || 'End'}`);
+    csvRows.push(`Filters: Category: ${categoryFilter}, Method: ${methodFilter}, Status: ${statusFilter}, Date Range: ${startDate || 'Start'} to ${endDate || 'End'}`);
     csvRows.push('');
-    csvRows.push(['Expense ID', 'Date', 'Category', 'Amount (INR)', 'Payment Method', 'Ref No.', 'Notes'].join(','));
+    csvRows.push(['Expense ID', 'Date', 'Category', 'Payee / Paid To', 'Amount (INR)', 'Payment Method', 'Status', 'Due Date', 'Ref No.', 'Notes'].join(','));
 
     filteredExpenses.forEach((exp) => {
       csvRows.push([
         `"${exp.id}"`,
         `"${exp.date}"`,
         `"${exp.category.replace(/"/g, '""')}"`,
+        `"${(exp.payee || '').replace(/"/g, '""')}"`,
         exp.amount.toFixed(2),
         `"${exp.paymentMethod}"`,
+        `"${exp.status || 'Paid'}"`,
+        `"${exp.dueDate || ''}"`,
         `"${exp.referenceNumber || ''}"`,
         `"${(exp.notes || '').replace(/"/g, '""')}"`
       ].join(','));
@@ -458,8 +489,11 @@ export const Expenses: React.FC = () => {
           .expense-filter-inputs select.method-select {
             grid-column: span 1;
           }
+          .expense-filter-inputs select.status-select {
+            grid-column: span 1;
+          }
           .expense-filter-inputs select.date-range-select {
-            grid-column: span 2;
+            grid-column: span 1;
           }
           .expense-filter-actions {
             display: grid;
@@ -586,6 +620,21 @@ export const Expenses: React.FC = () => {
               <option value="Cheque">Cheque</option>
             </select>
 
+            {/* Status Dropdown */}
+            <select
+              style={{ minWidth: '130px', flex: '1 1 100px' }}
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="filter-select status-select"
+            >
+              <option value="All">All Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Due">Due</option>
+            </select>
+
             {/* Date Selector */}
             <select
               className="filter-select date-range-select"
@@ -681,7 +730,9 @@ export const Expenses: React.FC = () => {
                       <th className="text-nowrap">Expense Date</th>
                       <th className="text-nowrap">Voucher ID</th>
                       <th>Category</th>
-                      <th className="text-nowrap" style={{ textAlign: 'right' }}>Amount Paid (₹)</th>
+                      <th>Payee (Paid To)</th>
+                      <th className="text-nowrap" style={{ textAlign: 'right' }}>Amount (₹)</th>
+                      <th className="text-nowrap">Status</th>
                       <th className="text-nowrap">Payment Method</th>
                       <th className="text-nowrap">Reference Number</th>
                       <th>Notes / Remarks</th>
@@ -695,24 +746,50 @@ export const Expenses: React.FC = () => {
                         <td className="text-nowrap" style={{ fontWeight: 600, fontFamily: 'monospace' }}>{exp.id}</td>
                         <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
-                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--color-danger)' }}></span>
+                            <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: exp.status === 'Due' ? '#D97706' : 'var(--color-danger)' }}></span>
                             {exp.category}
                           </span>
                         </td>
-                        <td className="text-nowrap" style={{ textAlign: 'right', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
+                        <td style={{ fontWeight: 600 }}>{exp.payee || 'General'}</td>
+                        <td className="text-nowrap" style={{ textAlign: 'right', fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>
                           {formatINR(exp.amount)}
                         </td>
                         <td className="text-nowrap">
-                          <span className="badge badge-info">{exp.paymentMethod}</span>
+                          {exp.status === 'Due' ? (
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span className="badge" style={{ display: 'inline-block', width: 'fit-content', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.1)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.2)' }}>Due</span>
+                              {exp.dueDate && (
+                                <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                                  By: {formatDate(exp.dueDate)}
+                                </span>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="badge" style={{ display: 'inline-block', width: 'fit-content', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>Paid</span>
+                          )}
+                        </td>
+                        <td className="text-nowrap">
+                          {exp.status === 'Due' ? '—' : <span className="badge badge-info">{exp.paymentMethod}</span>}
                         </td>
                         <td className="text-nowrap" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
-                          {exp.referenceNumber || '—'}
+                          {exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}
                         </td>
-                        <td style={{ fontStyle: 'italic', fontSize: '13px', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <td style={{ fontStyle: 'italic', fontSize: '13px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {exp.notes || '—'}
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'inline-flex', gap: '6px' }}>
+                          <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
+                            {exp.status === 'Due' && (
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '3px 8px', fontSize: '10px', fontWeight: 700, color: 'var(--primary)', borderColor: 'rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
+                                onClick={() => handleMarkAsPaid(exp)}
+                                title="Mark this expense as fully Paid"
+                              >
+                                Mark Paid
+                              </button>
+                            )}
                             <button
                               type="button"
                               className="btn btn-secondary btn-sm"
@@ -743,11 +820,14 @@ export const Expenses: React.FC = () => {
             {/* Mobile Cards List View */}
             <div className="mobile-card-list">
               {paginatedExpenses.map((exp) => (
-                <div key={exp.id} className="mobile-list-card" style={{ borderLeft: '4px solid var(--color-danger)' }}>
+                <div key={exp.id} className="mobile-list-card" style={{ borderLeft: exp.status === 'Due' ? '4px solid #D97706' : '4px solid var(--color-danger)' }}>
                   <div className="mobile-list-card-header">
                     <div>
                       <h4 className="mobile-list-card-title">{exp.category}</h4>
-                      <span className="mobile-list-card-subtitle">{formatDate(exp.date)} • <span className="badge badge-info">{exp.paymentMethod}</span></span>
+                      <span className="mobile-list-card-subtitle">
+                        {formatDate(exp.date)}
+                        {exp.payee && ` • ${exp.payee}`}
+                      </span>
                     </div>
                     <div style={{ display: 'flex', gap: '6px' }}>
                       <button
@@ -775,13 +855,35 @@ export const Expenses: React.FC = () => {
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Ref Number</span>
-                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{exp.referenceNumber || '—'}</span>
+                    <span className="mobile-list-card-label">Status</span>
+                    <span className="mobile-list-card-val">
+                      {exp.status === 'Due' ? (
+                        <span className="badge" style={{ padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.1)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.2)' }}>
+                          Due {exp.dueDate ? `by ${formatDate(exp.dueDate)}` : ''}
+                        </span>
+                      ) : (
+                        <span className="badge" style={{ padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>Paid</span>
+                      )}
+                    </span>
                   </div>
 
+                  {exp.status !== 'Due' && (
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Method</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{exp.paymentMethod}</span>
+                    </div>
+                  )}
+
+                  {exp.status !== 'Due' && exp.referenceNumber && (
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Ref Number</span>
+                      <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{exp.referenceNumber}</span>
+                    </div>
+                  )}
+
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Amount Paid</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)' }}>
+                    <span className="mobile-list-card-label">Amount</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>
                       {formatINR(exp.amount)}
                     </span>
                   </div>
@@ -790,6 +892,19 @@ export const Expenses: React.FC = () => {
                     <span className="mobile-list-card-label">Remarks</span>
                     <span className="mobile-list-card-val" style={{ fontStyle: 'italic', fontSize: '12px' }}>{exp.notes || '—'}</span>
                   </div>
+
+                  {exp.status === 'Due' && (
+                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-color)' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        style={{ width: '100%', height: '34px', justifyContent: 'center', backgroundColor: 'var(--primary)', border: 'none', fontWeight: 700 }}
+                        onClick={() => handleMarkAsPaid(exp)}
+                      >
+                        Mark as Paid
+                      </button>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -852,13 +967,25 @@ export const Expenses: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="Enter custom category name (e.g. Staff Salary)"
+                placeholder="Enter custom category name"
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 required
               />
             </div>
           )}
+
+          <div className="form-group" style={{ marginBottom: '16px' }}>
+            <label className="form-label">Paid To / Payee Name *</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="e.g. Mandi Board Complex, Madan Tea Stall, Staff Name"
+              value={payee}
+              onChange={(e) => setPayee(e.target.value)}
+              required
+            />
+          </div>
 
           <div className="grid-cols-2" style={{ gap: '16px', marginBottom: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
@@ -873,7 +1000,7 @@ export const Expenses: React.FC = () => {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Amount Paid (₹) *</label>
+              <label className="form-label">Amount (₹) *</label>
               <input
                 type="number"
                 step="0.01"
@@ -888,31 +1015,59 @@ export const Expenses: React.FC = () => {
 
           <div className="grid-cols-2" style={{ gap: '16px', marginBottom: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Payment Method *</label>
+              <label className="form-label">Payment Status *</label>
               <select
                 className="form-control"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
+                value={status}
+                onChange={(e) => setStatus(e.target.value as 'Paid' | 'Due')}
                 required
               >
-                <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer / NetBanking</option>
-                <option value="Cheque">Cheque</option>
+                <option value="Paid">Paid (Expense Settled)</option>
+                <option value="Due">Due (Pay Later / Dues)</option>
               </select>
             </div>
 
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Reference Number</label>
+            {status === 'Due' ? (
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Payment Due Date *</label>
+                <input
+                  type="date"
+                  className="form-control"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  required
+                />
+              </div>
+            ) : (
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Payment Method *</label>
+                <select
+                  className="form-control"
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  required
+                >
+                  <option value="UPI">UPI</option>
+                  <option value="Cash">Cash</option>
+                  <option value="Bank Transfer">Bank Transfer / NetBanking</option>
+                  <option value="Cheque">Cheque</option>
+                </select>
+              </div>
+            )}
+          </div>
+
+          {status === 'Paid' && (
+            <div className="form-group" style={{ marginBottom: '16px' }}>
+              <label className="form-label">Reference Number (optional)</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Transaction/UPI ID (optional)"
+                placeholder="Transaction ID, UPI reference, Cheque number"
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
               />
             </div>
-          </div>
+          )}
 
           <div className="form-group" style={{ marginBottom: '24px' }}>
             <label className="form-label">Notes / Remarks</label>

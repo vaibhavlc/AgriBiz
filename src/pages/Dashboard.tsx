@@ -91,6 +91,9 @@ export const Dashboard: React.FC = () => {
   const totalSales = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
   const totalPurchases = purchases.reduce((sum, pur) => sum + pur.grandTotal, 0);
   const totalExpensesVal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  const totalDueExpensesVal = expenses
+    .filter((e) => e.status === 'Due')
+    .reduce((sum, e) => sum + e.amount, 0);
 
   // 3. Profit = Taxable sales value minus original purchase cost of products billed and operational expenses
   const totalCOGS = invoices.reduce((sum, inv) => {
@@ -221,7 +224,7 @@ export const Dashboard: React.FC = () => {
       <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '14px' }}>
         Financial Health Summary
       </h3>
-      <div className="grid-cols-3" style={{ marginBottom: '32px' }}>
+      <div className="grid-cols-4" style={{ marginBottom: '32px' }}>
         {/* Total Sales */}
         <div className="kpi-card" onClick={() => setCurrentTab('sales')} title="View sales report">
           <div className="kpi-info">
@@ -246,6 +249,22 @@ export const Dashboard: React.FC = () => {
             <span className="kpi-subtext">Cumulative inventory inward billings</span>
           </div>
           <div className="kpi-icon-container blue">
+            <TrendingDown size={24} />
+          </div>
+        </div>
+
+        {/* Total Expenses */}
+        <div className="kpi-card" onClick={() => setCurrentTab('expenses')} title="View expenses book">
+          <div className="kpi-info">
+            <span className="kpi-label">Total Operational Spends</span>
+            <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>
+              <AnimatedCounter value={totalExpensesVal} isCurrency />
+            </span>
+            <span className="kpi-subtext">
+              Paid: {formatINR(totalExpensesVal - totalDueExpensesVal)} • Due: {formatINR(totalDueExpensesVal)}
+            </span>
+          </div>
+          <div className="kpi-icon-container rose">
             <TrendingDown size={24} />
           </div>
         </div>

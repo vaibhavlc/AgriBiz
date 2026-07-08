@@ -118,8 +118,11 @@ export interface Expense {
   id: string;
   date: string;
   category: string; // e.g., 'Shop Rent', 'Light Bill', 'Tea Bills', 'Transportation', 'Maintenance', etc.
+  payee: string; // To Whom Paid
   amount: number;
   paymentMethod: 'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque';
+  status: 'Paid' | 'Due';
+  dueDate?: string; // Optional due date if status is 'Due'
   referenceNumber?: string;
   notes?: string;
 }
