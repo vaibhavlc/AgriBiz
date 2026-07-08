@@ -1,4 +1,4 @@
-import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings } from '../types';
+import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense } from '../types';
 
 // Helper to format currency in Indian Rupees (INR)
 export const formatINR = (amount: number): string => {
@@ -563,3 +563,49 @@ export const initialSettings: BusinessSettings = {
   financialYear: '2026-2027',
   theme: 'light',
 };
+
+export const initialExpenses: Expense[] = [
+  {
+    id: 'EXP-001',
+    date: '2026-06-01',
+    category: 'Shop Rent',
+    amount: 15000,
+    paymentMethod: 'Bank Transfer',
+    referenceNumber: 'TXN202606019912',
+    notes: 'June 2026 rent for Pipariya mandi complex shop',
+  },
+  {
+    id: 'EXP-002',
+    date: '2026-06-05',
+    category: 'Light Bill',
+    amount: 3200,
+    paymentMethod: 'UPI',
+    referenceNumber: 'UPI202606051234',
+    notes: 'Electricity bill for May 2026 usage',
+  },
+  {
+    id: 'EXP-003',
+    date: '2026-06-10',
+    category: 'Tea Bills',
+    amount: 650,
+    paymentMethod: 'Cash',
+    notes: 'Monthly tea stall expense for staff and visitors',
+  },
+  {
+    id: 'EXP-004',
+    date: '2026-06-12',
+    category: 'Transportation',
+    amount: 4500,
+    paymentMethod: 'Cash',
+    notes: 'Freight charge for local cultivator delivery to customer site',
+  },
+  {
+    id: 'EXP-005',
+    date: '2026-06-18',
+    category: 'Maintenance',
+    amount: 1800,
+    paymentMethod: 'UPI',
+    referenceNumber: 'UPI202606189999',
+    notes: 'Repair of billing PC power supply',
+  },
+];

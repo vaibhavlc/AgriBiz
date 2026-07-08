@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings } from '../types';
+import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense } from '../types';
 import {
   initialProducts,
   initialCustomers,
@@ -8,6 +8,7 @@ import {
   initialPurchases,
   initialPayments,
   initialSettings,
+  initialExpenses,
 } from '../utils/dummyData';
 
 interface AppContextType {
@@ -71,6 +72,11 @@ interface AppContextType {
   updateSettings: (settings: BusinessSettings) => void;
   resetToDefault: () => void;
 
+  expenses: Expense[];
+  addExpense: (expense: Omit<Expense, 'id'>) => Expense;
+  editExpense: (expense: Expense) => void;
+  deleteExpense: (id: string) => void;
+
   paymentFormPreset: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null;
   setPaymentFormPreset: (preset: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null) => void;
   salesFormPresetCustomerId: string | null;
@@ -116,6 +122,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [settings, setSettings] = useState<BusinessSettings>(() => {
     const local = localStorage.getItem('agribiz_settings');
     return local ? JSON.parse(local) : initialSettings;
+  });
+
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const local = localStorage.getItem('agribiz_expenses');
+    return local ? JSON.parse(local) : initialExpenses;
   });
 
   // UI State
@@ -174,6 +185,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Apply body theme class
     document.body.className = settings.theme === 'dark' ? 'dark-theme' : 'light-theme';
   }, [settings]);
+
+  useEffect(() => {
+    localStorage.setItem('agribiz_expenses', JSON.stringify(expenses));
+  }, [expenses]);
 
   // Actions
   const addProduct = (p: Omit<Product, 'id'>) => {
@@ -754,6 +769,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSettings(s);
   };
 
+  const addExpense = (exp: Omit<Expense, 'id'>) => {
+    const newExpense: Expense = {
+      ...exp,
+      id: `EXP-${Date.now().toString().slice(-4)}`,
+    };
+    setExpenses((prev) => [newExpense, ...prev]);
+    return newExpense;
+  };
+
+  const editExpense = (exp: Expense) => {
+    setExpenses((prev) => prev.map((item) => (item.id === exp.id ? exp : item)));
+  };
+
+  const deleteExpense = (id: string) => {
+    setExpenses((prev) => prev.filter((item) => item.id !== id));
+  };
+
   const resetToDefault = () => {
     localStorage.removeItem('agribiz_products');
     localStorage.removeItem('agribiz_customers');
@@ -762,6 +794,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('agribiz_purchases');
     localStorage.removeItem('agribiz_payments');
     localStorage.removeItem('agribiz_settings');
+    localStorage.removeItem('agribiz_expenses');
 
     setProducts(initialProducts);
     setCustomers(initialCustomers);
@@ -770,6 +803,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPurchases(initialPurchases);
     setPayments(initialPayments);
     setSettings(initialSettings);
+    setExpenses(initialExpenses);
 
     setCurrentTab('dashboard');
     setViewInvoice(null);
@@ -845,6 +879,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         updateSettings,
         resetToDefault,
+
+        expenses,
+        addExpense,
+        editExpense,
+        deleteExpense,
 
         paymentFormPreset,
         setPaymentFormPreset,

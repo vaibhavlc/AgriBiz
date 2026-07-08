@@ -113,3 +113,13 @@ export interface BusinessSettings {
   financialYear: string;
   theme: 'light' | 'dark';
 }
+
+export interface Expense {
+  id: string;
+  date: string;
+  category: string; // e.g., 'Shop Rent', 'Light Bill', 'Tea Bills', 'Transportation', 'Maintenance', etc.
+  amount: number;
+  paymentMethod: 'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque';
+  referenceNumber?: string;
+  notes?: string;
+}
