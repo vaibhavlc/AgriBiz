@@ -407,18 +407,25 @@ export const Expenses: React.FC = () => {
           color: var(--text-muted);
         }
         .expense-custom-dates-clear {
-          background: none;
-          border: none;
+          background: rgba(239, 68, 68, 0.08);
+          border: 1px solid rgba(239, 68, 68, 0.15);
           color: var(--color-danger);
-          font-size: 12px;
-          font-weight: 500;
+          font-size: 11px;
+          font-weight: 600;
           cursor: pointer;
-          padding: 2px 6px;
+          padding: 5px 14px;
+          border-radius: 999px;
+          transition: all 0.2s ease;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           margin-left: 8px;
-          transition: opacity 0.2s;
+          text-decoration: none;
         }
         .expense-custom-dates-clear:hover {
-          text-decoration: underline;
+          background: rgba(239, 68, 68, 0.15);
+          border-color: rgba(239, 68, 68, 0.3);
+          text-decoration: none;
         }
         @media (max-width: 768px) {
           .expense-filter-card {
@@ -488,6 +495,7 @@ export const Expenses: React.FC = () => {
           .expense-custom-dates-label {
             font-size: 12px;
             margin-bottom: 2px;
+            text-align: center;
           }
           .expense-custom-dates-inputs {
             display: flex;
@@ -502,12 +510,25 @@ export const Expenses: React.FC = () => {
             height: 38px;
           }
           .expense-custom-dates-clear {
-            display: inline-block;
+            display: inline-flex;
             text-align: center;
             font-size: 11px;
-            margin: 4px auto 0 auto;
+            font-weight: 600;
+            margin: 6px auto 0 auto;
             width: fit-content;
+            padding: 5px 14px;
+            background: rgba(239, 68, 68, 0.08);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 999px;
             color: var(--color-danger);
+            justify-content: center;
+            align-items: center;
+            transition: all 0.2s ease;
+          }
+          .expense-custom-dates-clear:hover {
+            background: rgba(239, 68, 68, 0.15);
+            border-color: rgba(239, 68, 68, 0.3);
+            text-decoration: none;
           }
         }
       `}</style>
