@@ -3600,6 +3600,7 @@ body.dark-theme select.form-control {
     overflow: visible !important;
     display: block !important;
     z-index: 1 !important;
+    visibility: visible !important;
   }
 
   .pdf-print-wrapper #pdf-report-printout {
@@ -3607,6 +3608,7 @@ body.dark-theme select.form-control {
     width: 100% !important;
     padding: 10mm !important;
     box-shadow: none !important;
+    visibility: visible !important;
   }
 }
 

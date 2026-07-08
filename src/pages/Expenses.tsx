@@ -1133,10 +1133,12 @@ export const Expenses: React.FC = () => {
         </div>
 
         {/* Quick summary stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '12px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '20px', backgroundColor: '#F9FAF9', fontSize: '12px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', padding: '12px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '20px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
           <div><strong>Total Spends:</strong> {formatINR(filteredExpenses.reduce((sum, e) => sum + e.amount, 0))}</div>
-          <div><strong>Total Records count:</strong> {filteredExpenses.length} entries</div>
-          <div><strong>Active Category Filter:</strong> {categoryFilter}</div>
+          <div><strong>Paid Spends:</strong> {formatINR(filteredExpenses.filter(e => e.status !== 'Due').reduce((sum, e) => sum + e.amount, 0))}</div>
+          <div><strong>Due Dues:</strong> {formatINR(filteredExpenses.filter(e => e.status === 'Due').reduce((sum, e) => sum + e.amount, 0))}</div>
+          <div><strong>Entries Count:</strong> {filteredExpenses.length}</div>
+          <div><strong>Category Filter:</strong> {categoryFilter}</div>
         </div>
 
         {/* Audit Data Table */}
@@ -1146,10 +1148,11 @@ export const Expenses: React.FC = () => {
               <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Date</th>
               <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Voucher ID</th>
               <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Category</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'right' }}>Amount Paid (₹)</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Payee (Paid To)</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'right' }}>Amount (₹)</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'center' }}>Status</th>
               <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Method</th>
               <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Reference ID</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Remarks</th>
             </tr>
           </thead>
           <tbody>
@@ -1158,10 +1161,11 @@ export const Expenses: React.FC = () => {
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(exp.date)}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.id}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{exp.category}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.payee || 'General'}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(exp.amount).replace('₹', '')}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.paymentMethod}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.referenceNumber || '—'}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontStyle: 'italic' }}>{exp.notes || '—'}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold', color: exp.status === 'Due' ? '#D97706' : 'var(--primary)' }}>{exp.status || 'Paid'}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.status === 'Due' ? '—' : exp.paymentMethod}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}</td>
               </tr>
             ))}
           </tbody>
