@@ -15,7 +15,6 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingDown,
-  Layers,
   FileText,
 } from 'lucide-react';
 import type { Expense } from '../types';
@@ -63,17 +62,6 @@ export const Expenses: React.FC = () => {
     'Other'
   ];
 
-  const filterTabs = [
-    { id: 'All', label: 'All Expenses' },
-    { id: 'Shop Rent', label: 'Shop Rent' },
-    { id: 'Light Bill', label: 'Light Bill' },
-    { id: 'Tea Bills', label: 'Tea Bills' },
-    { id: 'Transportation', label: 'Transportation' },
-    { id: 'Maintenance', label: 'Maintenance' },
-    { id: 'Staff Salary', label: 'Staff Salary' },
-    { id: 'Marketing', label: 'Marketing' },
-    { id: 'Other', label: 'Other Spends' },
-  ];
 
   // Calculations for stats
   const totalExpenseAmt = useMemo(() => {
@@ -109,38 +97,7 @@ export const Expenses: React.FC = () => {
     return { name: topCatName, amount: maxVal };
   }, [expenses]);
 
-  const getCategorySum = (catId: string) => {
-    return expenses
-      .filter((e) => {
-        const matchesMethod = methodFilter === 'All' || e.paymentMethod === methodFilter;
 
-        let matchesDate = true;
-        if (dateRange === 'Custom') {
-          if (startDate) {
-            matchesDate = matchesDate && e.date >= startDate;
-          }
-          if (endDate) {
-            matchesDate = matchesDate && e.date <= endDate;
-          }
-        }
-
-        const matchesSearch =
-          e.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          (e.notes && e.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          (e.referenceNumber && e.referenceNumber.toLowerCase().includes(searchQuery.toLowerCase())) ||
-          e.id.toLowerCase().includes(searchQuery.toLowerCase());
-
-        if (!matchesMethod || !matchesDate || !matchesSearch) return false;
-
-        if (catId === 'All') return true;
-        if (catId === 'Other') {
-          const standardCats = categoriesList.filter(c => c !== 'Other');
-          return !standardCats.includes(e.category);
-        }
-        return e.category === catId;
-      })
-      .reduce((sum, e) => sum + e.amount, 0);
-  };
 
   // Filtering & Pagination
   const filteredExpenses = useMemo(() => {
@@ -393,136 +350,97 @@ export const Expenses: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Pills Breakdown Scrollable Bar */}
-      <div className="card" style={{ padding: '16px 20px', marginBottom: '24px', backgroundColor: 'var(--bg-card)' }}>
-        <h5 style={{ fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <Layers size={14} /> Category Quick Filters
-        </h5>
-        <div className="category-scroll-pills-bar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
-          {filterTabs.map((tab) => {
-            const sum = getCategorySum(tab.id);
-            const isActive = categoryFilter === tab.id;
-            return (
-              <div
-                key={tab.id}
-                className="category-summary-pill"
-                onClick={() => {
-                  setCategoryFilter(tab.id);
+      {/* Filters Card */}
+      <div className="card" style={{ padding: '16px 20px', marginBottom: '20px' }}>
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          {/* Group 1: Filter inputs */}
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '12px',
+            alignItems: 'center',
+            flex: '1 1 500px',
+            minWidth: 0
+          }}>
+            {/* Search */}
+            <div className="search-input-wrapper" style={{ flex: '1 1 200px', minWidth: '150px' }}>
+              <Search size={16} className="search-input-icon" />
+              <input
+                type="text"
+                placeholder="Search notes, reference, ID..."
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
                   setCurrentPage(1);
                 }}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  backgroundColor: isActive ? 'var(--primary)' : 'var(--bg-app)',
-                  color: isActive ? '#ffffff' : 'var(--text-primary)',
-                  border: '1px solid var(--border-color)',
-                  padding: '6px 14px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.2s',
-                  boxShadow: isActive ? '0 2px 8px rgba(47, 62, 51, 0.2)' : 'none'
-                }}
-              >
-                <span>{tab.label}</span>
-                <span style={{
-                  padding: '2px 6px',
-                  borderRadius: '12px',
-                  backgroundColor: isActive ? 'rgba(255,255,255,0.2)' : 'var(--border-color)',
-                  color: isActive ? '#ffffff' : 'var(--text-secondary)',
-                  fontSize: '10px',
-                  fontWeight: 700
-                }}>
-                  {formatINR(sum)}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+                style={{ width: '100%' }}
+              />
+            </div>
 
-      {/* Filters row */}
-      <div className="filters-row-unified" style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', marginBottom: '20px' }}>
-        <div className="filters-group-one" style={{ display: 'flex', flex: '1 1 350px', gap: '10px', alignItems: 'center' }}>
-          {/* Main search */}
-          <div className="search-input-wrapper" style={{ flex: 1 }}>
-            <Search size={16} className="search-input-icon" />
-            <input
-              type="text"
-              placeholder="Search notes, reference, ID..."
-              value={searchQuery}
+            {/* Category Dropdown */}
+            <select
+              className="filter-select"
+              value={categoryFilter}
               onChange={(e) => {
-                setSearchQuery(e.target.value);
+                setCategoryFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              style={{ width: '100%' }}
-            />
+              style={{ minWidth: '150px', flex: '1 1 120px' }}
+            >
+              <option value="All">All Categories</option>
+              {categoriesList.filter(c => c !== 'Other').map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+              <option value="Other">Other Custom</option>
+            </select>
+
+            {/* Payment Method Dropdown */}
+            <select
+              className="filter-select"
+              value={methodFilter}
+              onChange={(e) => {
+                setMethodFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+              style={{ minWidth: '130px', flex: '1 1 100px' }}
+            >
+              <option value="All">All Methods</option>
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cheque">Cheque</option>
+            </select>
+
+            {/* Date Selector */}
+            <select
+              className="filter-select"
+              value={dateRange}
+              onChange={(e) => {
+                setDateRange(e.target.value as any);
+                setCurrentPage(1);
+              }}
+              style={{ minWidth: '130px', flex: '1 1 100px' }}
+            >
+              <option value="All">All Historical</option>
+              <option value="Custom">Custom Dates</option>
+            </select>
           </div>
 
-          {/* Date range picker selector */}
-          <select
-            className="filter-select"
-            value={dateRange}
-            onChange={(e) => {
-              setDateRange(e.target.value as any);
-              setCurrentPage(1);
-            }}
-            style={{ minWidth: '130px' }}
-          >
-            <option value="All">All Historical</option>
-            <option value="Custom">Custom Dates</option>
-          </select>
-        </div>
-
-        {dateRange === 'Custom' && (
-          <div className="date-inputs-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '6px', flex: '1 0 auto', justifyContent: 'center' }}>
-            <input
-              type="date"
-              className="filter-select"
-              style={{ padding: '6px 8px', fontSize: '13px', width: '130px' }}
-              value={startDate}
-              onChange={(e) => {
-                setStartDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-            <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>to</span>
-            <input
-              type="date"
-              className="filter-select"
-              style={{ padding: '6px 8px', fontSize: '13px', width: '130px' }}
-              value={endDate}
-              onChange={(e) => {
-                setEndDate(e.target.value);
-                setCurrentPage(1);
-              }}
-            />
-          </div>
-        )}
-
-        <div className="filters-group-two" style={{ display: 'flex', flex: '1 1 auto', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-          {/* Payment Method Selector */}
-          <select
-            className="filter-select"
-            value={methodFilter}
-            onChange={(e) => {
-              setMethodFilter(e.target.value);
-              setCurrentPage(1);
-            }}
-            style={{ minWidth: '130px' }}
-          >
-            <option value="All">All Methods</option>
-            <option value="UPI">UPI</option>
-            <option value="Cash">Cash</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-            <option value="Cheque">Cheque</option>
-          </select>
-
-          {/* Action buttons */}
-          <div style={{ display: 'flex', gap: '8px' }}>
+          {/* Group 2: Actions */}
+          <div style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            justifyContent: 'flex-end',
+            flex: '0 1 auto'
+          }}>
             <button className="btn btn-secondary" onClick={handleExportCSV} title="Export current sheet as CSV">
               <Download size={16} /> Export CSV
             </button>
@@ -534,6 +452,56 @@ export const Expenses: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {/* Conditional Custom Dates Row (Vertical expansion, preserves horizontal layout positions) */}
+        {dateRange === 'Custom' && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '12px',
+            paddingTop: '12px',
+            borderTop: '1px dashed var(--border-color)',
+            animation: 'fadeIn 0.2s ease-out'
+          }}>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>Date Range:</span>
+            <input
+              type="date"
+              className="filter-select"
+              style={{ padding: '6px 8px', fontSize: '13px', width: '140px' }}
+              value={startDate}
+              onChange={(e) => {
+                setStartDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>to</span>
+            <input
+              type="date"
+              className="filter-select"
+              style={{ padding: '6px 8px', fontSize: '13px', width: '140px' }}
+              value={endDate}
+              onChange={(e) => {
+                setEndDate(e.target.value);
+                setCurrentPage(1);
+              }}
+            />
+            {(startDate || endDate) && (
+              <button
+                type="button"
+                className="table-link-btn"
+                style={{ fontSize: '12px', marginLeft: '8px', color: 'var(--color-danger)' }}
+                onClick={() => {
+                  setStartDate('');
+                  setEndDate('');
+                  setCurrentPage(1);
+                }}
+              >
+                Clear Dates
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Main Expenses List Container */}
