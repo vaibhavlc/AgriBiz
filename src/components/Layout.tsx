@@ -419,6 +419,23 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-container">
+      {/* Sidebar Backdrop Blur Overlay on Mobile */}
+      {isMobileSidebarOpen && (
+        <div 
+          className="sidebar-backdrop no-print"
+          onClick={() => setIsMobileSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.4)',
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            zIndex: 99,
+            animation: 'fadeIn 0.25s ease-out'
+          }}
+        />
+      )}
+
       {/* Sidebar navigation */}
       <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`} style={{
         background: settings.theme === 'dark' ? 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)' : '#ffffff',

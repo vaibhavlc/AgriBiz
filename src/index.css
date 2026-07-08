@@ -1951,10 +1951,61 @@ body.dark-theme select.form-control {
     bottom: 0;
     transform: translateX(-100%);
     width: 260px;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
   }
 
   .sidebar.open {
     transform: translateX(0);
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.25) !important;
+  }
+
+  .sidebar.open .sidebar-section-heading {
+    animation: slideInItem 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  
+  .sidebar.open .sidebar-item {
+    animation: slideInItem 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .sidebar.open button svg {
+    animation: rotateIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+    animation-delay: 0.1s;
+  }
+  
+  /* Cascade Delays */
+  .sidebar.open nav > div:nth-child(1) .sidebar-item:nth-child(1) { animation-delay: 0.05s; }
+  .sidebar.open nav > div:nth-child(1) .sidebar-item:nth-child(2) { animation-delay: 0.08s; }
+  .sidebar.open nav > div:nth-child(1) .sidebar-item:nth-child(3) { animation-delay: 0.11s; }
+  .sidebar.open nav > div:nth-child(1) .sidebar-item:nth-child(4) { animation-delay: 0.14s; }
+  .sidebar.open nav > div:nth-child(1) .sidebar-item:nth-child(5) { animation-delay: 0.17s; }
+
+  .sidebar.open nav > div:nth-child(2) .sidebar-item:nth-child(1) { animation-delay: 0.20s; }
+  .sidebar.open nav > div:nth-child(2) .sidebar-item:nth-child(2) { animation-delay: 0.23s; }
+  .sidebar.open nav > div:nth-child(2) .sidebar-item:nth-child(3) { animation-delay: 0.26s; }
+
+  .sidebar.open nav > div:nth-child(3) .sidebar-item:nth-child(1) { animation-delay: 0.29s; }
+  .sidebar.open nav > div:nth-child(3) .sidebar-item:nth-child(2) { animation-delay: 0.32s; }
+
+  @keyframes slideInItem {
+    from {
+      opacity: 0;
+      transform: translateX(-16px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes rotateIn {
+    from {
+      opacity: 0;
+      transform: rotate(-90deg) scale(0.8);
+    }
+    to {
+      opacity: 1;
+      transform: rotate(0) scale(1);
+    }
   }
 
   .menu-toggle {
