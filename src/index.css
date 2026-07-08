@@ -3497,8 +3497,23 @@ body.dark-theme select.form-control {
   }
 
   @page {
-    size: A5 portrait !important;
-    margin: 0 !important; /* Direct print page properties */
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  @page invoice-page {
+    size: A5 portrait;
+    margin: 0;
+  }
+
+  @page report-portrait {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  @page report-landscape {
+    size: A4 landscape;
+    margin: 10mm;
   }
 
   .invoice-mockup-wrapper {
@@ -3511,6 +3526,7 @@ body.dark-theme select.form-control {
   }
 
   .invoice-print-container {
+    page: invoice-page;
     background-color: #FCFAF6 !important;
     border: none !important;
     padding: 24px !important; /* Keep original padding */
@@ -3601,6 +3617,14 @@ body.dark-theme select.form-control {
     display: block !important;
     z-index: 1 !important;
     visibility: visible !important;
+  }
+
+  .pdf-print-wrapper.portrait-report {
+    page: report-portrait;
+  }
+
+  .pdf-print-wrapper.landscape-report {
+    page: report-landscape;
   }
 
   .pdf-print-wrapper #pdf-report-printout {

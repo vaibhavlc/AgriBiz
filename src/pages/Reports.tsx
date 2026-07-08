@@ -3757,7 +3757,7 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Hidden A4 Printable Report Element wrapper to prevent flash */}
-      <div className="pdf-print-wrapper" style={{ position: 'fixed', left: '-9999px', top: 0, width: activeReport.startsWith('gstr') ? '1122px' : '794px', height: 'auto', overflow: 'visible', zIndex: -1, pointerEvents: 'none', visibility: 'hidden' }}>
+      <div className={`pdf-print-wrapper ${activeReport.startsWith('gstr') ? 'landscape-report' : 'portrait-report'}`} style={{ position: 'fixed', left: '-9999px', top: 0, width: activeReport.startsWith('gstr') ? '1122px' : '794px', height: 'auto', overflow: 'visible', zIndex: -1, pointerEvents: 'none', visibility: 'hidden' }}>
         <div id="pdf-report-printout" style={{
           width: activeReport.startsWith('gstr') ? '1122px' : '794px',
           backgroundColor: '#ffffff',
