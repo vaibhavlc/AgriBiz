@@ -350,26 +350,116 @@ export const Expenses: React.FC = () => {
         </div>
       </div>
 
+      <style>{`
+        .expense-filter-card {
+          padding: 16px 20px;
+          margin-bottom: 20px;
+        }
+        .expense-filter-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .expense-filter-inputs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          flex: 1 1 500px;
+          min-width: 0;
+        }
+        .expense-filter-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          flex: 0 1 auto;
+        }
+        @media (max-width: 768px) {
+          .expense-filter-card {
+            padding: 12px 14px;
+          }
+          .expense-filter-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .expense-filter-inputs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            flex: none;
+          }
+          .expense-filter-inputs .search-input-wrapper {
+            grid-column: span 2;
+            width: 100%;
+          }
+          .expense-filter-inputs select {
+            width: 100% !important;
+            min-width: 0 !important;
+            height: 38px;
+          }
+          .expense-filter-inputs select.category-select {
+            grid-column: span 1;
+          }
+          .expense-filter-inputs select.method-select {
+            grid-column: span 1;
+          }
+          .expense-filter-inputs select.date-range-select {
+            grid-column: span 2;
+          }
+          .expense-filter-actions {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            width: 100%;
+            flex: none;
+          }
+          .expense-filter-actions button,
+          .expense-filter-actions .btn {
+            width: 100% !important;
+            margin: 0 !important;
+            justify-content: center;
+            height: 38px;
+            font-size: 13px;
+          }
+          .expense-filter-actions .btn-log-expense {
+            grid-column: span 2;
+            order: -1;
+          }
+          .expense-filter-actions .btn-export {
+            grid-column: span 1;
+          }
+          .expense-filter-actions .btn-pdf {
+            grid-column: span 1;
+          }
+          .expense-custom-dates-row {
+            flex-wrap: wrap;
+            gap: 6px !important;
+          }
+          .expense-custom-dates-row span {
+            width: 100%;
+            margin-bottom: 2px;
+          }
+          .expense-custom-dates-row input {
+            flex: 1 1 40% !important;
+            width: auto !important;
+            height: 38px;
+          }
+        }
+      `}</style>
+
       {/* Filters Card */}
-      <div className="card" style={{ padding: '16px 20px', marginBottom: '20px' }}>
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '12px',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }}>
+      <div className="card expense-filter-card">
+        <div className="expense-filter-row">
           {/* Group 1: Filter inputs */}
-          <div style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: '12px',
-            alignItems: 'center',
-            flex: '1 1 500px',
-            minWidth: 0
-          }}>
+          <div className="expense-filter-inputs">
             {/* Search */}
-            <div className="search-input-wrapper" style={{ flex: '1 1 200px', minWidth: '150px' }}>
+            <div className="search-input-wrapper">
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
@@ -385,7 +475,7 @@ export const Expenses: React.FC = () => {
 
             {/* Category Dropdown */}
             <select
-              className="filter-select"
+              className="filter-select category-select"
               value={categoryFilter}
               onChange={(e) => {
                 setCategoryFilter(e.target.value);
@@ -400,15 +490,14 @@ export const Expenses: React.FC = () => {
               <option value="Other">Other Custom</option>
             </select>
 
-            {/* Payment Method Dropdown */}
             <select
-              className="filter-select"
+              style={{ minWidth: '130px', flex: '1 1 100px' }}
               value={methodFilter}
               onChange={(e) => {
                 setMethodFilter(e.target.value);
                 setCurrentPage(1);
               }}
-              style={{ minWidth: '130px', flex: '1 1 100px' }}
+              className="filter-select method-select"
             >
               <option value="All">All Methods</option>
               <option value="UPI">UPI</option>
@@ -419,7 +508,7 @@ export const Expenses: React.FC = () => {
 
             {/* Date Selector */}
             <select
-              className="filter-select"
+              className="filter-select date-range-select"
               value={dateRange}
               onChange={(e) => {
                 setDateRange(e.target.value as any);
@@ -433,21 +522,14 @@ export const Expenses: React.FC = () => {
           </div>
 
           {/* Group 2: Actions */}
-          <div style={{
-            display: 'flex',
-            gap: '8px',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            justifyContent: 'flex-end',
-            flex: '0 1 auto'
-          }}>
-            <button className="btn btn-secondary" onClick={handleExportCSV} title="Export current sheet as CSV">
+          <div className="expense-filter-actions">
+            <button className="btn btn-secondary btn-export" onClick={handleExportCSV} title="Export current sheet as CSV">
               <Download size={16} /> Export CSV
             </button>
-            <button className="btn btn-secondary" onClick={handleDownloadPDF} title="Download current report as PDF">
+            <button className="btn btn-secondary btn-pdf" onClick={handleDownloadPDF} title="Download current report as PDF">
               <FileText size={16} /> Save PDF
             </button>
-            <button className="btn btn-primary" onClick={() => setIsFormOpen(true)}>
+            <button className="btn btn-primary btn-log-expense" onClick={() => setIsFormOpen(true)}>
               <Plus size={16} /> Log Expense
             </button>
           </div>
@@ -455,7 +537,7 @@ export const Expenses: React.FC = () => {
 
         {/* Conditional Custom Dates Row (Vertical expansion, preserves horizontal layout positions) */}
         {dateRange === 'Custom' && (
-          <div style={{
+          <div className="expense-custom-dates-row" style={{
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
