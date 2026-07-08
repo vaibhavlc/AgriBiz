@@ -13,7 +13,11 @@
 
   /* Light Theme Colors (Default) */
   --bg-app: #f8fafc;
-  --bg-sidebar: #0f172a;
+  --bg-sidebar: #ffffff;
+  --bg-sidebar-hover: #f1f5f9;
+  --text-sidebar-hover: #0f172a;
+  --border-sidebar: #e2e8f0;
+  --footer-text-color: #0f172a;
   --bg-card: #ffffff;
   --card-bg: #ffffff;
   --bg-header: #ffffff;
@@ -26,8 +30,8 @@
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-muted: #94a3b8;
-  --text-on-sidebar: #94a3b8;
-  --text-on-sidebar-active: #ffffff;
+  --text-on-sidebar: #64748b;
+  --text-on-sidebar-active: #10b981;
 
   /* Primary Brand (Agricultural Emerald Green) */
   --primary: #10b981;
@@ -64,6 +68,10 @@
 body.dark-theme {
   --bg-app: #0b0f19;
   --bg-sidebar: #070a13;
+  --bg-sidebar-hover: rgba(255, 255, 255, 0.03);
+  --text-sidebar-hover: #ffffff;
+  --border-sidebar: rgba(255, 255, 255, 0.05);
+  --footer-text-color: #ffffff;
   --bg-card: #111827;
   --card-bg: #111827;
   --bg-header: #111827;
@@ -76,6 +84,8 @@ body.dark-theme {
   --text-primary: #f3f4f6;
   --text-secondary: #9ca3af;
   --text-muted: #6b7280;
+  --text-on-sidebar: #9ca3af;
+  --text-on-sidebar-active: #ffffff;
   
   --primary: #34d399;
   --primary-hover: #10b981;
@@ -142,6 +152,7 @@ select option {
 .sidebar {
   background-color: var(--bg-sidebar);
   color: var(--text-on-sidebar);
+  border-right: 1px solid var(--border-sidebar);
   display: flex;
   flex-direction: column;
   height: 100vh;
@@ -155,7 +166,7 @@ select option {
 
 .sidebar-header {
   padding: 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid var(--border-sidebar);
   display: flex;
   align-items: center;
   gap: 12px;
@@ -165,7 +176,7 @@ select option {
   font-family: var(--font-display);
   font-weight: 800;
   font-size: 22px;
-  color: #ffffff;
+  color: var(--logo-text-color, var(--primary));
   letter-spacing: -0.5px;
   background: linear-gradient(135deg, #34d399 0%, #059669 100%);
   -webkit-background-clip: text;
@@ -209,8 +220,8 @@ select option {
 }
 
 .sidebar-item:hover {
-  background-color: rgba(255, 255, 255, 0.03);
-  color: #ffffff;
+  background-color: var(--bg-sidebar-hover);
+  color: var(--text-sidebar-hover);
 }
 
 .sidebar-item.active {
@@ -221,14 +232,14 @@ select option {
 
 .sidebar-footer {
   padding: 16px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-top: 1px solid var(--border-sidebar);
   display: flex;
   flex-direction: column;
   gap: 4px;
 }
 
 .sidebar-business-name {
-  color: #ffffff;
+  color: var(--footer-text-color);
   font-weight: 600;
   font-size: 13px;
   white-space: nowrap;
