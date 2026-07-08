@@ -196,9 +196,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const renderSidebarSection = (title: string, items: typeof operationsItems) => (
     <div style={{ marginBottom: '12px' }}>
-      <h4 style={{
+      <h4 className="sidebar-section-heading" style={{
         fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '1.2px', color: 'rgba(255,255,255,0.22)',
+        letterSpacing: '1.2px', color: 'var(--text-muted)',
         paddingLeft: '16px', marginBottom: '6px', fontFamily: 'var(--font-display)'
       }}>
         {title}
@@ -206,6 +206,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
         {items.map((item) => {
           const isActive = currentTab === item.id;
+          const isDark = settings.theme === 'dark';
+          
+          // Theme-aware active item styles
+          const activeBg = isDark ? 'rgba(255, 255, 255, 0.05)' : item.glow;
+          const activeColor = isDark ? '#ffffff' : item.color;
+          const inactiveColor = isDark ? 'rgba(255, 255, 255, 0.5)' : '#64748b';
+          const iconInactiveColor = isDark ? 'rgba(255, 255, 255, 0.4)' : '#64748b';
+
           return (
             <a
               key={item.id}
@@ -215,23 +223,23 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 display: 'flex', alignItems: 'center', gap: '12px',
                 padding: '8px 16px', borderRadius: '10px', fontSize: '13px',
                 fontWeight: isActive ? 600 : 500, cursor: 'pointer',
-                color: isActive ? '#ffffff' : 'rgba(255,255,255,0.5)',
+                color: isActive ? activeColor : inactiveColor,
                 transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)', textDecoration: 'none',
-                backgroundColor: isActive ? 'rgba(255, 255, 255, 0.05)' : 'transparent',
+                backgroundColor: isActive ? activeBg : 'transparent',
                 borderLeft: isActive ? `3px solid ${item.color}` : '3px solid transparent',
                 paddingLeft: isActive ? '13px' : '16px'
               }}
               onMouseEnter={(e) => {
                 if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.03)';
-                  e.currentTarget.style.color = '#ffffff';
+                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.03)' : '#f1f5f9';
+                  e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
                   e.currentTarget.style.transform = 'translateX(4px) scale(1.01)';
                 }
               }}
               onMouseLeave={(e) => {
                 if (!isActive) {
                   e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.color = inactiveColor;
                   e.currentTarget.style.transform = 'none';
                 }
               }}
@@ -240,7 +248,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 width: '28px', height: '28px', borderRadius: '8px',
                 backgroundColor: isActive ? item.glow : 'transparent',
-                color: isActive ? item.color : 'rgba(255,255,255,0.4)',
+                color: isActive ? item.color : iconInactiveColor,
                 transition: 'all 0.25s ease'
               }}>
                 {item.icon}
@@ -413,11 +421,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     <div className="app-container">
       {/* Sidebar navigation */}
       <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`} style={{
-        background: 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)',
-        borderRight: '1px solid rgba(255, 255, 255, 0.06)',
+        background: settings.theme === 'dark' ? 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)' : '#ffffff',
+        borderRight: `1px solid ${settings.theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}`,
       }}>
         {/* Header */}
-        <div className="sidebar-header" style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div className="sidebar-header" style={{ 
+          padding: '16px 20px', 
+          borderBottom: `1px solid ${settings.theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}`, 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px' 
+        }}>
           <div
             style={{
               background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
@@ -445,7 +459,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 marginLeft: 'auto',
                 background: 'none',
                 border: 'none',
-                color: '#ffffff',
+                color: settings.theme === 'dark' ? '#ffffff' : '#0f172a',
                 cursor: 'pointer',
               }}
             >
