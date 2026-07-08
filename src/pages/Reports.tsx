@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import {
@@ -38,6 +40,11 @@ export const Reports: React.FC = () => {
   
   const showToast = (message: string, type: 'info' | 'success' | 'error' = 'success') => {
     setToast({ message, type });
+    if (type === 'error') {
+      console.error(`[TOAST ERROR] ${message}`);
+    } else {
+      console.log(`[TOAST ${type.toUpperCase()}] ${message}`);
+    }
     setTimeout(() => setToast(null), 3500);
   };
   const filterByDate = (dateStr: string) => {
@@ -692,20 +699,169 @@ export const Reports: React.FC = () => {
   const pendingPayables = suppliers.reduce((sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0), 0);
   const averagePayable = suppliers.length > 0 ? (pendingPayables / suppliers.length) : 0;
 
+  const handleExportGstr1Consolidated = () => {
+    const csvRows: string[] = [];
+    csvRows.push('GSTR-1 OUTWARD SUPPLIES RETURN STATEMENT (CA-READY)');
+    csvRows.push(`Period: ${startDate} to ${endDate}`);
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 1: B2B REGISTERED SUPPLIES (4A; 4B; 4C; 6B; 6C) ---');
+    csvRows.push(['GSTIN/UIN of Recipient', 'Receiver Name', 'Invoice Number', 'Invoice Date', 'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Invoice Type', 'E-Commerce GSTIN', 'Rate', 'Taxable Value', 'Cess Amount'].join(','));
+    gstr1B2BList.forEach(item => {
+      csvRows.push([
+        `"${item.gstin}"`,
+        `"${item.receiverName.replace(/"/g, '""')}"`,
+        `"${item.invoiceNumber}"`,
+        `"${item.invoiceDate}"`,
+        item.invoiceValue.toFixed(2),
+        `"${item.pos}"`,
+        `"${item.reverseCharge}"`,
+        '"Regular"',
+        '""',
+        item.rate,
+        item.taxableValue.toFixed(2),
+        '0.00'
+      ].join(','));
+    });
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 2: B2C SMALL OUTWARD SUPPLIES (7 - CONSOLIDATED) ---');
+    csvRows.push(['Type', 'Place Of Supply', 'Applicable % of Tax Rate', 'E-Commerce GSTIN', 'Rate', 'Taxable Value', 'Cess Amount'].join(','));
+    gstr1B2CSList.forEach(item => {
+      csvRows.push([
+        '"OE"',
+        `"${item.pos}"`,
+        '""',
+        '""',
+        item.rate,
+        item.taxable.toFixed(2),
+        '0.00'
+      ].join(','));
+    });
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 3: HSN SUMMARY OF OUTWARD SUPPLIES (12) ---');
+    csvRows.push(['HSN', 'Description', 'UQC', 'Total Quantity', 'Total Value', 'Taxable Value', 'Integrated Tax Amount', 'Central Tax Amount', 'State/UT Tax Amount', 'Cess Amount'].join(','));
+    gstr1HSNList.forEach(item => {
+      csvRows.push([
+        `"${item.hsn}"`,
+        `"${item.desc.replace(/"/g, '""')}"`,
+        `"${item.uqc.split('-')[0]}"`,
+        item.qty,
+        item.totalVal.toFixed(2),
+        item.taxable.toFixed(2),
+        item.igst.toFixed(2),
+        item.cgst.toFixed(2),
+        item.sgst.toFixed(2),
+        '0.00'
+      ].join(','));
+    });
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 4: DOCUMENTS ISSUED SUMMARY (13) ---');
+    csvRows.push(['Nature of Document', 'Sr. No. From', 'Sr. No. To', 'Total Number', 'Cancelled', 'Net Issued'].join(','));
+    csvRows.push([
+      '"Invoices for outward supply"',
+      `"${gstr1DocsSummary.from}"`,
+      `"${gstr1DocsSummary.to}"`,
+      gstr1DocsSummary.total,
+      gstr1DocsSummary.cancelled,
+      gstr1DocsSummary.netIssued
+    ].join(','));
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `gstr1_consolidated_return_${startDate}_to_${endDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('Consolidated GSTR-1 Return exported successfully!');
+  };
+
+  const handleExportGstr2Consolidated = () => {
+    const csvRows: string[] = [];
+    csvRows.push('GSTR-2 INWARD SUPPLIES RETURN STATEMENT (CA-READY)');
+    csvRows.push(`Period: ${startDate} to ${endDate}`);
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 1: B2B INWARD SUPPLIES RECEIVED FROM REGISTERED SUPPLIERS (3; 4A) ---');
+    csvRows.push(['GSTIN of Supplier', 'Supplier Name', 'Invoice Number', 'Invoice Date', 'Invoice Value', 'Place Of Supply', 'Reverse Charge', 'Rate', 'Taxable Value', 'Integrated Tax Paid', 'Central Tax Paid', 'State/UT Tax Paid', 'ITC Eligible'].join(','));
+    gstr2B2BList.forEach(item => {
+      csvRows.push([
+        `"${item.gstin}"`,
+        `"${item.supplierName.replace(/"/g, '""')}"`,
+        `"${item.invoiceNumber}"`,
+        `"${item.invoiceDate}"`,
+        item.invoiceValue.toFixed(2),
+        `"${item.pos}"`,
+        `"${item.reverseCharge}"`,
+        item.rate,
+        item.taxableValue.toFixed(2),
+        item.igst.toFixed(2),
+        item.cgst.toFixed(2),
+        item.sgst.toFixed(2),
+        `"${item.itcEligible}"`
+      ].join(','));
+    });
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 2: HSN SUMMARY OF INWARD SUPPLIES (13) ---');
+    csvRows.push(['HSN', 'Description', 'UQC', 'Total Quantity', 'Total Value', 'Taxable Value', 'Integrated Tax Amount', 'Central Tax Amount', 'State/UT Tax Amount', 'Cess Amount'].join(','));
+    gstr2HSNList.forEach(item => {
+      csvRows.push([
+        `"${item.hsn}"`,
+        `"${item.desc.replace(/"/g, '""')}"`,
+        `"${item.uqc.split('-')[0]}"`,
+        item.qty,
+        item.totalVal.toFixed(2),
+        item.taxable.toFixed(2),
+        item.igst.toFixed(2),
+        item.cgst.toFixed(2),
+        item.sgst.toFixed(2),
+        '0.00'
+      ].join(','));
+    });
+    csvRows.push('');
+
+    csvRows.push('--- SECTION 3: SUMMARY OF DOCUMENTS RECEIVED ---');
+    csvRows.push(['Nature of Document', 'Sr. No. From', 'Sr. No. To', 'Total Number', 'Cancelled', 'Net Received'].join(','));
+    csvRows.push([
+      '"Invoices for inward supply"',
+      `"${gstr2DocsSummary.from}"`,
+      `"${gstr2DocsSummary.to}"`,
+      gstr2DocsSummary.total,
+      gstr2DocsSummary.cancelled,
+      gstr2DocsSummary.netIssued
+    ].join(','));
+
+    const csvContent = csvRows.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', `gstr2_consolidated_return_${startDate}_to_${endDate}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast('Consolidated GSTR-2 Return exported successfully!');
+  };
+
   // --- Export CSV Handler ---
   const handleExport = () => {
     if (activeReport === 'gstr1') {
-      handleExportGstr1B2B();
-      handleExportGstr1B2CS();
-      handleExportGstr1HSN();
-      handleExportGstr1Docs();
+      handleExportGstr1Consolidated();
       return;
     }
 
     if (activeReport === 'gstr2') {
-      handleExportGstr2B2B();
-      handleExportGstr2HSN();
-      handleExportGstr2Docs();
+      handleExportGstr2Consolidated();
       return;
     }
 
@@ -810,48 +966,67 @@ export const Reports: React.FC = () => {
     showToast('Report exported as CSV successfully!');
   };
 
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
+    const wrapper = document.querySelector('.pdf-print-wrapper') as HTMLElement | null;
     const element = document.getElementById('pdf-report-printout');
-    if (!element) {
+    if (!element || !wrapper) {
       showToast('Could not find report printout element.', 'error');
       return;
     }
 
-    showToast('Compiling and downloading PDF statement...', 'info');
+    showToast('Generating PDF, please wait...', 'info');
 
-    const generatePDF = (html2pdfLib: any) => {
-      const opt = {
-        margin:       0,
-        filename:     `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, logging: false },
-        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
-      };
+    // Temporarily make element visible for html2canvas to capture
+    wrapper.style.visibility = 'visible';
+    wrapper.style.zIndex = '9999';
 
-      html2pdfLib().from(element).set(opt).save().then(() => {
-        showToast('PDF downloaded successfully!');
-      }).catch((err: any) => {
-        console.error(err);
-        showToast('Error exporting PDF document.', 'error');
+    try {
+      const isGstr = activeReport.startsWith('gstr');
+      const orientation = isGstr ? 'landscape' : 'portrait';
+      const pageW = isGstr ? 297 : 210;
+      const pageH = isGstr ? 210 : 297;
+
+      await new Promise(r => setTimeout(r, 80)); // allow render flush
+
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: '#ffffff',
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
       });
-    };
 
-    const globalWindow = window as any;
-    if (globalWindow.html2pdf) {
-      generatePDF(globalWindow.html2pdf);
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.crossOrigin = 'anonymous';
-      script.onload = () => {
-        if (globalWindow.html2pdf) {
-          generatePDF(globalWindow.html2pdf);
-        }
-      };
-      script.onerror = () => {
-        showToast('Failed to load PDF engine from CDN.', 'error');
-      };
-      document.body.appendChild(script);
+      // Hide again immediately
+      wrapper.style.visibility = 'hidden';
+      wrapper.style.zIndex = '-1';
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.97);
+      const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
+      const imgW = pageW;
+      const imgH = (canvas.height * imgW) / canvas.width;
+      let heightLeft = imgH;
+      let posY = 0;
+
+      pdf.addImage(imgData, 'JPEG', 0, posY, imgW, imgH);
+      heightLeft -= pageH;
+
+      while (heightLeft > 0) {
+        posY -= pageH;
+        pdf.addPage();
+        pdf.addImage(imgData, 'JPEG', 0, posY, imgW, imgH);
+        heightLeft -= pageH;
+      }
+
+      const filename = `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`;
+      pdf.save(filename);
+      showToast('PDF downloaded successfully!');
+    } catch (err) {
+      wrapper.style.visibility = 'hidden';
+      wrapper.style.zIndex = '-1';
+      console.error('PDF generation error:', err);
+      showToast('Error generating PDF. Please try again.', 'error');
     }
   };
 
@@ -3333,9 +3508,9 @@ export const Reports: React.FC = () => {
       </div>
 
       {/* Hidden A4 Printable Report Element wrapper to prevent flash */}
-      <div className="pdf-print-wrapper" style={{ position: 'absolute', left: 0, top: 0, width: 0, height: 0, overflow: 'hidden', zIndex: -99999, pointerEvents: 'none' }}>
+      <div className="pdf-print-wrapper" style={{ position: 'fixed', left: '-9999px', top: 0, width: activeReport.startsWith('gstr') ? '1122px' : '794px', height: 'auto', overflow: 'visible', zIndex: -1, pointerEvents: 'none', visibility: 'hidden' }}>
         <div id="pdf-report-printout" style={{
-          width: '210mm',
+          width: activeReport.startsWith('gstr') ? '1122px' : '794px',
           backgroundColor: '#ffffff',
           fontFamily: 'var(--font-sans)',
           color: '#000000',
