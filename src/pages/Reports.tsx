@@ -698,7 +698,7 @@ export const Reports: React.FC = () => {
     return { name: topCatName, amount: maxVal };
   }, [filteredExpenses]);
 
-  const netProfit = grossProfit - totalExpenses;
+  const netProfit = grossProfit;
   const profitMarginPercent = totalSalesBase > 0 ? (netProfit / totalSalesBase) * 100 : 0;
 
   // 4. Stock Valuation Report
@@ -984,6 +984,20 @@ export const Reports: React.FC = () => {
         s.outstanding === 0 ? 'Settled' : 'Payable Pending'
       ]);
       rows.push(['Accumulated We Owe Suppliers', '', '', '', pendingPayables.toFixed(2), '']);
+    } else if (activeReport === 'expense') {
+      headers = ['Date', 'Voucher ID', 'Category', 'Payee / Paid To', 'Amount (INR)', 'Status', 'Payment Method', 'Ref No.', 'Notes'];
+      rows = filteredExpenses.map(exp => [
+        formatDate(exp.date),
+        exp.id,
+        exp.category,
+        exp.payee || 'General',
+        exp.amount.toFixed(2),
+        exp.status || 'Paid',
+        exp.status === 'Due' ? '—' : exp.paymentMethod,
+        exp.status === 'Due' ? '—' : (exp.referenceNumber || '—'),
+        exp.notes || '—'
+      ]);
+      rows.push(['Report Summary Total', '', '', '', totalExpenses.toFixed(2), '', '', '', '']);
     }
 
     downloadCSVFile(headers, rows, filename);

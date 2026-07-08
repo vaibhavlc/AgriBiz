@@ -105,7 +105,7 @@ export const Dashboard: React.FC = () => {
     return sum + invCOGS;
   }, 0);
   const totalSalesBase = invoices.reduce((sum, inv) => sum + inv.subtotal, 0);
-  const totalProfit = totalSalesBase - totalCOGS - totalExpensesVal;
+  const totalProfit = totalSalesBase - totalCOGS;
 
   // 4. Outstanding Dues
   const totalCustomerOutstanding = customers.reduce((sum, c) => sum + c.outstanding, 0);
