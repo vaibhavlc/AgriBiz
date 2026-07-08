@@ -2030,6 +2030,35 @@ body.dark-theme select.form-control {
     grid-template-columns: 1fr;
   }
 
+  /* Force all KPI card parent grid containers to display exactly 2 cards in one row on mobile */
+  .grid-cols-4:has(.kpi-card),
+  .grid-cols-3:has(.kpi-card),
+  .grid-cols-2:has(.kpi-card),
+  .kpi-grid-container {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 12px !important;
+  }
+
+  .kpi-card {
+    padding: 12px 14px !important;
+    min-height: 90px;
+  }
+
+  .kpi-value {
+    font-size: 17px !important;
+    letter-spacing: -0.2px !important;
+    margin-top: 2px;
+  }
+
+  .kpi-label {
+    font-size: 10px !important;
+  }
+
+  .kpi-subtext {
+    font-size: 9px !important;
+    line-height: 1.1;
+  }
+
   .invoice-creator-container {
     grid-template-columns: 1fr;
   }
@@ -2962,6 +2991,39 @@ body.dark-theme select.form-control {
   .cust-outstanding-banner { flex-direction: column; align-items: flex-start; gap: 8px; }
   .cust-outstanding-amount { font-size: 20px; }
   .cust-ledger-card-amounts { grid-template-columns: 1fr 1fr; }
+
+  .grid-cols-4 {
+    grid-template-columns: 1fr;
+  }
+
+  /* Keep exactly 2 columns for KPI cards grids even on tiny screens */
+  .grid-cols-4:has(.kpi-card),
+  .grid-cols-3:has(.kpi-card),
+  .grid-cols-2:has(.kpi-card) {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
+  .header-actions {
+    gap: 8px;
+  }
+
+  .global-search-wrapper {
+    width: 130px;
+  }
+
+  .global-search-wrapper .search-input:focus {
+    width: 150px;
+  }
+
+  .header-business-badge {
+    display: none;
+  }
+
+  .kpi-card {
+    padding: 10px 12px !important;
+  }
+
   .cust-hero-name { font-size: 16px; }
   .cust-avatar { width: 48px; height: 48px; min-width: 48px; font-size: 20px; }
   .cust-action-btn { min-width: 100px; font-size: 12px; }

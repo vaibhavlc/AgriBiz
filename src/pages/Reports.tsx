@@ -1071,7 +1071,7 @@ export const Reports: React.FC = () => {
   // Auto-fitting responsive grid style for KPIs
   const kpiGridStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
     gap: '16px',
     marginBottom: '24px'
   };
