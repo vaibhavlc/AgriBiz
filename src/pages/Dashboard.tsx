@@ -12,13 +12,13 @@ import {
   ArrowRightLeft,
   DollarSign,
   FileText,
-  Calendar,
   Percent,
   ShoppingBag,
   Package,
   Activity,
   RefreshCw,
   Clock,
+  X,
 } from 'lucide-react';
 
 interface AnimatedCounterProps {
@@ -54,7 +54,7 @@ const BarChart = ({
   const maxVal = Math.max(...data.map((d) => Math.max(d.value1, d.value2, 1)));
   return (
     <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', fontSize: '11px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', fontSize: '11px', flexWrap: 'wrap' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
           <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: color1 }} />
           <span style={{ color: 'var(--text-secondary)' }}>{label1}</span>
@@ -64,74 +64,77 @@ const BarChart = ({
           <span style={{ color: 'var(--text-secondary)' }}>{label2}</span>
         </div>
       </div>
-      <div 
-        style={{ 
-          display: 'flex', 
-          height: '220px', 
-          alignItems: 'flex-end', 
-          gap: '12px', 
-          borderBottom: '1px solid var(--border-color)', 
-          paddingBottom: '8px',
-          paddingTop: '20px'
-        }}
-      >
-        {data.map((d, idx) => {
-          const h1 = (d.value1 / maxVal) * 100;
-          const h2 = (d.value2 / maxVal) * 100;
-          return (
-            <div 
-              key={idx} 
-              style={{ 
-                flex: 1, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                alignItems: 'center', 
-                height: '100%', 
-                justifyContent: 'flex-end', 
-                position: 'relative' 
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', width: '100%', height: '100%' }}>
-                <div 
-                  style={{ 
-                    flex: 1, 
-                    height: `${Math.max(1, h1)}%`, 
-                    backgroundColor: color1, 
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'height 0.3s ease-out',
-                    opacity: d.value1 > 0 ? 0.9 : 0.2
-                  }}
-                  title={`${label1}: ${formatINR(d.value1)}`}
-                />
-                <div 
-                  style={{ 
-                    flex: 1, 
-                    height: `${Math.max(1, h2)}%`, 
-                    backgroundColor: color2, 
-                    borderRadius: '4px 4px 0 0',
-                    transition: 'height 0.3s ease-out',
-                    opacity: d.value2 > 0 ? 0.9 : 0.2
-                  }}
-                  title={`${label2}: ${formatINR(d.value2)}`}
-                />
-              </div>
-              <span 
+      <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }} className="no-scrollbar">
+        <div 
+          style={{ 
+            display: 'flex', 
+            height: '220px', 
+            alignItems: 'flex-end', 
+            gap: '12px', 
+            borderBottom: '1px solid var(--border-color)', 
+            paddingBottom: '8px',
+            paddingTop: '20px',
+            minWidth: '400px'
+          }}
+        >
+          {data.map((d, idx) => {
+            const h1 = (d.value1 / maxVal) * 100;
+            const h2 = (d.value2 / maxVal) * 100;
+            return (
+              <div 
+                key={idx} 
                 style={{ 
-                  fontSize: '9px', 
-                  color: 'var(--text-muted)', 
-                  marginTop: '8px', 
-                  whiteSpace: 'nowrap', 
-                  overflow: 'hidden', 
-                  textOverflow: 'ellipsis', 
-                  maxWidth: '50px',
-                  textAlign: 'center' 
+                  flex: 1, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  alignItems: 'center', 
+                  height: '100%', 
+                  justifyContent: 'flex-end', 
+                  position: 'relative' 
                 }}
               >
-                {d.label}
-              </span>
-            </div>
-          );
-        })}
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', width: '100%', height: '100%' }}>
+                  <div 
+                    style={{ 
+                      flex: 1, 
+                      height: `${Math.max(1, h1)}%`, 
+                      backgroundColor: color1, 
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.3s ease-out',
+                      opacity: d.value1 > 0 ? 0.9 : 0.2
+                    }}
+                    title={`${label1}: ${formatINR(d.value1)}`}
+                  />
+                  <div 
+                    style={{ 
+                      flex: 1, 
+                      height: `${Math.max(1, h2)}%`, 
+                      backgroundColor: color2, 
+                      borderRadius: '4px 4px 0 0',
+                      transition: 'height 0.3s ease-out',
+                      opacity: d.value2 > 0 ? 0.9 : 0.2
+                    }}
+                    title={`${label2}: ${formatINR(d.value2)}`}
+                  />
+                </div>
+                <span 
+                  style={{ 
+                    fontSize: '9px', 
+                    color: 'var(--text-muted)', 
+                    marginTop: '8px', 
+                    whiteSpace: 'nowrap', 
+                    overflow: 'hidden', 
+                    textOverflow: 'ellipsis', 
+                    maxWidth: '50px',
+                    textAlign: 'center' 
+                  }}
+                >
+                  {d.label}
+                </span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
@@ -185,6 +188,7 @@ export const Dashboard: React.FC = () => {
   const [customRange, setCustomRange] = useState({ start: '2026-06-01', end: '2026-07-31' });
   const [activeKpiTab, setActiveKpiTab] = useState<'financial' | 'payments' | 'gst' | 'inventory'>('financial');
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'sales' | 'profit' | 'inventory' | 'entities'>('sales');
+  const [isAlertDismissed, setIsAlertDismissed] = useState(false);
 
   // Simulated Reload
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -494,38 +498,43 @@ export const Dashboard: React.FC = () => {
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Alerts Panel */}
-      {stats.lowStockCount > 0 && (
-        <div className="alert-banner" style={{ marginBottom: '20px' }}>
-          <div className="alert-content">
+      {stats.lowStockCount > 0 && !isAlertDismissed && (
+        <div className="stock-warning-alert">
+          <div className="stock-warning-left">
             <AlertTriangle size={18} />
             <span style={{ fontSize: '13px' }}>
               <strong>Inventory Warning:</strong> {stats.lowStockCount} products are below safety limits, and {stats.outOfStockCount} products are completely out of stock.
             </span>
           </div>
-          <button className="alert-action-btn" onClick={() => setCurrentTab('inventory')}>
-            Reorder Stock
-          </button>
+          <div className="stock-warning-right">
+            <button className="alert-action-btn" onClick={() => setCurrentTab('inventory')} style={{ fontSize: '12px', padding: '6px 12px' }}>
+              Reorder Stock
+            </button>
+            <button 
+              onClick={() => setIsAlertDismissed(true)} 
+              style={{ background: 'none', border: 'none', color: 'var(--color-danger-dark)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+              title="Dismiss warning"
+            >
+              <X size={16} />
+            </button>
+          </div>
         </div>
       )}
-
       {/* Date Filter & Title Toolbar */}
       <div 
         style={{ 
           display: 'flex', 
-          justifyContent: 'space-between', 
-          alignItems: 'center', 
-          flexWrap: 'wrap', 
-          gap: '12px',
+          flexDirection: 'column',
+          gap: '16px',
           marginBottom: '24px' 
         }}
       >
-        <div>
-          <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Intelligence Dashboard</h2>
-          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>Real-time summaries calculated directly from local transactions ledger.</p>
-        </div>
-
-        {/* Filters Select */}
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+          <div>
+            <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Intelligence Dashboard</h2>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>Real-time summaries calculated directly from local transactions ledger.</p>
+          </div>
+          
           <button 
             className="btn btn-secondary btn-icon"
             onClick={triggerRefresh}
@@ -534,28 +543,29 @@ export const Dashboard: React.FC = () => {
           >
             <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
           </button>
-          
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)', display: 'flex', pointerEvents: 'none' }}>
-              <Calendar size={14} />
-            </span>
-            <select
-              className="filter-select"
-              style={{ paddingLeft: '32px' }}
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
+        </div>
+
+        {/* Modern Segmented Pill Tabs */}
+        <div className="pill-filter-bar">
+          {[
+            { value: 'All', label: 'All Time' },
+            { value: 'today', label: 'Today' },
+            { value: 'yesterday', label: 'Yesterday' },
+            { value: 'week', label: 'This Week' },
+            { value: 'month', label: 'This Month' },
+            { value: 'last_month', label: 'Last Month' },
+            { value: 'quarter', label: 'This Quarter' },
+            { value: 'year', label: 'This Year' },
+            { value: 'custom', label: 'Custom Date' },
+          ].map((opt) => (
+            <button
+              key={opt.value}
+              className={`pill-filter-btn ${filterType === opt.value ? 'active' : ''}`}
+              onClick={() => setFilterType(opt.value)}
             >
-              <option value="All">All Time</option>
-              <option value="today">Today</option>
-              <option value="yesterday">Yesterday</option>
-              <option value="week">This Week</option>
-              <option value="month">This Month</option>
-              <option value="last_month">Last Month</option>
-              <option value="quarter">This Quarter</option>
-              <option value="year">This Year</option>
-              <option value="custom">Custom Date Range</option>
-            </select>
-          </div>
+              {opt.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -927,30 +937,30 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* Main Analysis Blocks divided into tab panels */}
-      <div className="grid-main-recent" style={{ display: 'grid', gridTemplateColumns: '3fr 1.2fr', gap: '24px', marginBottom: '24px' }}>
+      <div className="dashboard-main-layout">
         {/* Left Side: Dynamic Analytics Tabs */}
         <div>
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '16px', gap: '16px' }}>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '16px', gap: '16px', overflowX: 'auto', paddingBottom: '6px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }} className="no-scrollbar">
             <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'sales' ? 800 : 500, color: activeAnalysisTab === 'sales' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'sales' ? '2px solid var(--primary)' : 'none', cursor: 'pointer' }}
+              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'sales' ? 800 : 500, color: activeAnalysisTab === 'sales' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'sales' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
               onClick={() => setActiveAnalysisTab('sales')}
             >
               Sales & Purchases
             </button>
             <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'profit' ? 800 : 500, color: activeAnalysisTab === 'profit' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'profit' ? '2px solid var(--primary)' : 'none', cursor: 'pointer' }}
+              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'profit' ? 800 : 500, color: activeAnalysisTab === 'profit' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'profit' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
               onClick={() => setActiveAnalysisTab('profit')}
             >
               Product Profitability
             </button>
             <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'inventory' ? 800 : 500, color: activeAnalysisTab === 'inventory' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'inventory' ? '2px solid var(--primary)' : 'none', cursor: 'pointer' }}
+              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'inventory' ? 800 : 500, color: activeAnalysisTab === 'inventory' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'inventory' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
               onClick={() => setActiveAnalysisTab('inventory')}
             >
               Stock Status
             </button>
             <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'entities' ? 800 : 500, color: activeAnalysisTab === 'entities' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'entities' ? '2px solid var(--primary)' : 'none', cursor: 'pointer' }}
+              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'entities' ? 800 : 500, color: activeAnalysisTab === 'entities' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'entities' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
               onClick={() => setActiveAnalysisTab('entities')}
             >
               Directories Accounts
