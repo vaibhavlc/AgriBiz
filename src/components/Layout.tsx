@@ -26,6 +26,7 @@ import {
   LogOut,
   MoreHorizontal,
   TrendingDown,
+  Trash2,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -153,6 +154,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         return 'Application Settings';
       case 'expenses':
         return 'Expense Manager';
+      case 'recycle_bin':
+        return 'Recycle Bin';
       default:
         return 'AgriBiz';
     }
@@ -174,6 +177,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const adminItems = [
     { id: 'reports', label: 'Business Reports', icon: <TrendingUp size={18} />, color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)' },
+    { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
     { id: 'settings', label: 'Store Settings', icon: <SettingsIcon size={18} />, color: '#64748b', glow: 'rgba(100, 116, 139, 0.15)' },
   ];
 
@@ -270,6 +274,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'customers', label: 'Customers', icon: <Users size={20} />, desc: 'Client Directory', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
       { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} />, desc: 'Vendor Contacts', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
       { id: 'reports', label: 'Tax & Reports', icon: <TrendingUp size={20} />, desc: 'GSTR & P&L Analytics', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+      { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={20} />, desc: 'Restore deleted records', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
       { id: 'settings', label: 'Settings', icon: <SettingsIcon size={20} />, desc: 'Store Preferences', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' },
     ];
 

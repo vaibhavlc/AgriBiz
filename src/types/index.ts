@@ -156,3 +156,13 @@ export interface Expense {
   referenceNumber?: string;
   notes?: string;
 }
+
+export interface RecycleBinItem {
+  id: string;
+  originalId: string;
+  name: string;
+  module: 'Product' | 'Customer' | 'Supplier' | 'Invoice' | 'Quotation' | 'Purchase' | 'Payment' | 'Expense';
+  deletedAt: string;
+  deletedBy: string;
+  originalData: any;
+}

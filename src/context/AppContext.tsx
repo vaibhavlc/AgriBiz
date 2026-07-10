@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation } from '../types';
+import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem } from '../types';
 import {
   initialProducts,
   initialCustomers,
@@ -12,6 +12,11 @@ import {
 } from '../utils/dummyData';
 
 interface AppContextType {
+  recycleBin: RecycleBinItem[];
+  restoreRecord: (id: string) => void;
+  deletePermanently: (id: string) => void;
+  restoreRecords: (ids: string[]) => void;
+  deleteRecordsPermanently: (ids: string[]) => void;
   products: Product[];
   customers: Customer[];
   suppliers: Supplier[];
@@ -148,6 +153,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return local ? JSON.parse(local) : initialExpenses;
   });
 
+  const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>(() => {
+    const local = localStorage.getItem('agribiz_recycle_bin');
+    return local ? JSON.parse(local) : [];
+  });
+
   // UI State
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [currentInvoiceId, setViewInvoice] = useState<string | null>(null);
@@ -217,6 +227,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('agribiz_expenses', JSON.stringify(expenses));
   }, [expenses]);
 
+  useEffect(() => {
+    localStorage.setItem('agribiz_recycle_bin', JSON.stringify(recycleBin));
+  }, [recycleBin]);
+
   // Actions
   const addProduct = (p: Omit<Product, 'id'>) => {
     const newProduct: Product = {
@@ -232,6 +246,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteProduct = (id: string) => {
+    const item = products.find((p) => p.id === id);
+    if (item) {
+      const binItem: RecycleBinItem = {
+        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        originalId: item.id,
+        name: item.name,
+        module: 'Product',
+        deletedAt: new Date().toISOString(),
+        deletedBy: 'Kunal Chaudhari',
+        originalData: item,
+      };
+      setRecycleBin((prev) => [binItem, ...prev]);
+    }
     setProducts((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -250,6 +277,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteCustomer = (id: string) => {
+    const item = customers.find((c) => c.id === id);
+    if (item) {
+      const binItem: RecycleBinItem = {
+        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        originalId: item.id,
+        name: item.name,
+        module: 'Customer',
+        deletedAt: new Date().toISOString(),
+        deletedBy: 'Kunal Chaudhari',
+        originalData: item,
+      };
+      setRecycleBin((prev) => [binItem, ...prev]);
+    }
     setCustomers((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -268,6 +308,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteSupplier = (id: string) => {
+    const item = suppliers.find((s) => s.id === id);
+    if (item) {
+      const binItem: RecycleBinItem = {
+        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        originalId: item.id,
+        name: item.name,
+        module: 'Supplier',
+        deletedAt: new Date().toISOString(),
+        deletedBy: 'Kunal Chaudhari',
+        originalData: item,
+      };
+      setRecycleBin((prev) => [binItem, ...prev]);
+    }
     setSuppliers((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -337,6 +390,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!inv) {
       throw new Error(`Invoice not found: ${id}`);
     }
+
+    const binItem: RecycleBinItem = {
+      id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      originalId: inv.id,
+      name: inv.invoiceNumber,
+      module: 'Invoice',
+      deletedAt: new Date().toISOString(),
+      deletedBy: 'Kunal Chaudhari',
+      originalData: inv,
+    };
+    setRecycleBin((prev) => [binItem, ...prev]);
 
     // 1. Remove invoice from invoices list state
     setInvoices((prev) => prev.filter((i) => i.id !== inv.id && i.invoiceNumber !== inv.invoiceNumber));
@@ -498,6 +562,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteQuotation = (id: string) => {
+    const item = quotations.find((q) => q.id === id);
+    if (item) {
+      const binItem: RecycleBinItem = {
+        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        originalId: item.id,
+        name: item.quotationNumber,
+        module: 'Quotation',
+        deletedAt: new Date().toISOString(),
+        deletedBy: 'Kunal Chaudhari',
+        originalData: item,
+      };
+      setRecycleBin((prev) => [binItem, ...prev]);
+    }
     setQuotations((prev) => prev.filter((item) => item.id !== id));
   };
 
@@ -610,6 +687,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const deletePurchase = (id: string) => {
     const pur = purchases.find((p) => p.id === id);
     if (!pur) return;
+
+    const binItem: RecycleBinItem = {
+      id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      originalId: pur.id,
+      name: pur.purchaseNumber,
+      module: 'Purchase',
+      deletedAt: new Date().toISOString(),
+      deletedBy: 'Kunal Chaudhari',
+      originalData: pur,
+    };
+    setRecycleBin((prev) => [binItem, ...prev]);
 
     setPurchases((prev) => prev.filter((p) => p.id !== id));
 
@@ -834,6 +922,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const pay = payments.find((p) => p.id === id);
     if (!pay) return;
 
+    const binItem: RecycleBinItem = {
+      id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      originalId: pay.id,
+      name: `Payment - ₹${pay.amount} (${pay.paymentMethod})`,
+      module: 'Payment',
+      deletedAt: new Date().toISOString(),
+      deletedBy: 'Kunal Chaudhari',
+      originalData: pay,
+    };
+    setRecycleBin((prev) => [binItem, ...prev]);
+
     setPayments((prev) => prev.filter((p) => p.id !== id));
 
     // Revert outstanding
@@ -882,7 +981,88 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteExpense = (id: string) => {
+    const exp = expenses.find((e) => e.id === id);
+    if (exp) {
+      const binItem: RecycleBinItem = {
+        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        originalId: exp.id,
+        name: `${exp.category} - ${exp.payee}`,
+        module: 'Expense',
+        deletedAt: new Date().toISOString(),
+        deletedBy: 'Kunal Chaudhari',
+        originalData: exp,
+      };
+      setRecycleBin((prev) => [binItem, ...prev]);
+    }
     setExpenses((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const restoreRecord = (id: string) => {
+    const item = recycleBin.find((r) => r.id === id);
+    if (!item) return;
+
+    if (item.module === 'Product') {
+      setProducts((prev) => [...prev, item.originalData]);
+    } else if (item.module === 'Customer') {
+      setCustomers((prev) => [...prev, item.originalData]);
+    } else if (item.module === 'Supplier') {
+      setSuppliers((prev) => [...prev, item.originalData]);
+    } else if (item.module === 'Invoice') {
+      setInvoices((prev) => [item.originalData, ...prev]);
+    } else if (item.module === 'Quotation') {
+      setQuotations((prev) => [item.originalData, ...prev]);
+    } else if (item.module === 'Purchase') {
+      setPurchases((prev) => [item.originalData, ...prev]);
+    } else if (item.module === 'Payment') {
+      setPayments((prev) => [item.originalData, ...prev]);
+    } else if (item.module === 'Expense') {
+      setExpenses((prev) => [item.originalData, ...prev]);
+    }
+
+    setRecycleBin((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const deletePermanently = (id: string) => {
+    setRecycleBin((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  const restoreRecords = (ids: string[]) => {
+    const itemsToRestore = recycleBin.filter((r) => ids.includes(r.id));
+    
+    const productsToRestore: Product[] = [];
+    const customersToRestore: Customer[] = [];
+    const suppliersToRestore: Supplier[] = [];
+    const invoicesToRestore: Invoice[] = [];
+    const quotationsToRestore: Quotation[] = [];
+    const purchasesToRestore: Purchase[] = [];
+    const paymentsToRestore: Payment[] = [];
+    const expensesToRestore: Expense[] = [];
+
+    itemsToRestore.forEach((item) => {
+      if (item.module === 'Product') productsToRestore.push(item.originalData);
+      else if (item.module === 'Customer') customersToRestore.push(item.originalData);
+      else if (item.module === 'Supplier') suppliersToRestore.push(item.originalData);
+      else if (item.module === 'Invoice') invoicesToRestore.push(item.originalData);
+      else if (item.module === 'Quotation') quotationsToRestore.push(item.originalData);
+      else if (item.module === 'Purchase') purchasesToRestore.push(item.originalData);
+      else if (item.module === 'Payment') paymentsToRestore.push(item.originalData);
+      else if (item.module === 'Expense') expensesToRestore.push(item.originalData);
+    });
+
+    if (productsToRestore.length > 0) setProducts((prev) => [...prev, ...productsToRestore]);
+    if (customersToRestore.length > 0) setCustomers((prev) => [...prev, ...customersToRestore]);
+    if (suppliersToRestore.length > 0) setSuppliers((prev) => [...prev, ...suppliersToRestore]);
+    if (invoicesToRestore.length > 0) setInvoices((prev) => [...invoicesToRestore, ...prev]);
+    if (quotationsToRestore.length > 0) setQuotations((prev) => [...quotationsToRestore, ...prev]);
+    if (purchasesToRestore.length > 0) setPurchases((prev) => [...purchasesToRestore, ...prev]);
+    if (paymentsToRestore.length > 0) setPayments((prev) => [...paymentsToRestore, ...prev]);
+    if (expensesToRestore.length > 0) setExpenses((prev) => [...expensesToRestore, ...prev]);
+
+    setRecycleBin((prev) => prev.filter((r) => !ids.includes(r.id)));
+  };
+
+  const deleteRecordsPermanently = (ids: string[]) => {
+    setRecycleBin((prev) => prev.filter((r) => !ids.includes(r.id)));
   };
 
   const resetToDefault = () => {
@@ -924,6 +1104,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        recycleBin,
+        restoreRecord,
+        deletePermanently,
+        restoreRecords,
+        deleteRecordsPermanently,
         products,
         customers,
         suppliers,

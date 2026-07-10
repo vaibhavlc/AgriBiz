@@ -147,7 +147,7 @@ export const Sales: React.FC = () => {
   const handleDownload = () => {
     const element = document.querySelector('.print-invoice-layout');
     if (!element) {
-      showToast('Could not find invoice layout element.', 'error');
+      showToast('Could not find layout element.', 'error');
       return;
     }
 
@@ -162,9 +162,13 @@ export const Sales: React.FC = () => {
       htmlElement.style.setProperty('zoom', '1', 'important');
       htmlElement.style.setProperty('transform', 'none', 'important');
 
+      const fileName = selectedInvoice 
+        ? `${selectedInvoice.invoiceNumber}.pdf` 
+        : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
+
       const opt = {
         margin:       printTemplate === 'A5' ? 0 : 2,
-        filename:     `${selectedInvoice?.invoiceNumber || 'invoice'}.pdf`,
+        filename:     fileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { 
@@ -206,19 +210,52 @@ export const Sales: React.FC = () => {
   };
 
   const handleWhatsAppShare = () => {
-    const invoice = invoices.find((inv) => inv.id === currentInvoiceId);
-    if (!invoice) return;
-    const customerDetail = customers.find((c) => c.id === invoice.customerId);
+    const activeDoc = selectedInvoice 
+      ? { 
+          id: selectedInvoice.id, 
+          number: selectedInvoice.invoiceNumber, 
+          customerId: selectedInvoice.customerId,
+          customerName: selectedInvoice.customerName,
+          grandTotal: selectedInvoice.grandTotal,
+          isQuotation: false,
+          msgText: `Your invoice *${selectedInvoice.invoiceNumber}* from *${settings.businessName}* has been generated.
+
+*Summary of Transactions:*
+---------------------------------------
+*Total Amount:* ${formatINR(selectedInvoice.grandTotal)}
+*Amount Collected:* ${formatINR(selectedInvoice.amountPaid)}
+*Balance Dues:* ${formatINR(selectedInvoice.balanceDue)}
+---------------------------------------`
+        }
+      : selectedQuotation 
+      ? {
+          id: selectedQuotation.id,
+          number: selectedQuotation.quotationNumber,
+          customerId: selectedQuotation.customerId,
+          customerName: selectedQuotation.customerName,
+          grandTotal: selectedQuotation.grandTotal,
+          isQuotation: true,
+          msgText: `Your quotation *${selectedQuotation.quotationNumber}* from *${settings.businessName}* has been generated.
+
+*Summary of Estimate:*
+---------------------------------------
+*Total Amount:* ${formatINR(selectedQuotation.grandTotal)}
+*Valid Until:* ${formatDate(selectedQuotation.validUntil)}
+---------------------------------------`
+        }
+      : null;
+
+    if (!activeDoc) return;
+    const customerDetail = customers.find((c) => c.id === activeDoc.customerId);
     const element = document.querySelector('.print-invoice-layout');
     if (!element) {
-      showToast('Could not find invoice layout element.', 'error');
+      showToast('Could not find layout element.', 'error');
       return;
     }
 
-    showToast('Compiling PDF invoice for sharing...', 'info');
+    showToast('Compiling PDF for sharing...', 'info');
 
     const sharePDF = (html2pdfLib: any) => {
-      // Temporarily clear mobile zoom styling to ensure html2pdf captures native A5/Thermal dimensions
       const htmlElement = element as HTMLElement;
       const originalZoom = htmlElement.style.zoom;
       const originalTransform = htmlElement.style.transform;
@@ -228,7 +265,7 @@ export const Sales: React.FC = () => {
 
       const opt = {
         margin:       printTemplate === 'A5' ? 0 : 2,
-        filename:     `${invoice.invoiceNumber}.pdf`,
+        filename:     `${activeDoc.number}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true },
         jsPDF:        { 
@@ -241,43 +278,34 @@ export const Sales: React.FC = () => {
       html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
         htmlElement.style.zoom = originalZoom;
         htmlElement.style.transform = originalTransform;
-        const pdfFile = new File([pdfBlob], `${invoice.invoiceNumber}.pdf`, { type: 'application/pdf' });
+        const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
         
-        // Mobile share drawer check
         const nav = navigator as any;
         if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
           nav.share({
             files: [pdfFile],
-            title: `Invoice ${invoice.invoiceNumber}`,
-            text: `Invoice from ${settings.businessName}`
+            title: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} ${activeDoc.number}`,
+            text: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} from ${settings.businessName}`
           }).then(() => {
-            showToast('Invoice shared successfully!');
+            showToast('Document shared successfully!');
           }).catch((err: any) => {
             console.log('Share canceled', err);
           });
         } else {
-          // Desktop Fallback: Trigger file download + redirect to WhatsApp Web
           const downloadUrl = URL.createObjectURL(pdfBlob);
           const link = document.createElement('a');
           link.href = downloadUrl;
-          link.download = `${invoice.invoiceNumber}.pdf`;
+          link.download = `${activeDoc.number}.pdf`;
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
           URL.revokeObjectURL(downloadUrl);
 
-          const message = `Hello ${invoice.customerName},
+          const message = `Hello ${activeDoc.customerName},
 
-Your invoice *${invoice.invoiceNumber}* from *${settings.businessName}* has been generated.
+${activeDoc.msgText}
 
-*Summary of Transactions:*
----------------------------------------
-*Total Amount:* ${formatINR(invoice.grandTotal)}
-*Amount Collected:* ${formatINR(invoice.amountPaid)}
-*Balance Dues:* ${formatINR(invoice.balanceDue)}
----------------------------------------
-
-We have downloaded the PDF invoice to your device. Please attach it in the chat.`;
+We have downloaded the PDF document to your device. Please attach it in the chat.`;
 
           const encoded = encodeURIComponent(message);
           const phoneNum = customerDetail?.phone ? customerDetail.phone.replace(/[^0-9]/g, '') : '';
@@ -739,16 +767,20 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     return (
       <div style={{ animation: "fadeIn 0.2s ease-out" }}>
         {/* Navigation Action header */}
-        <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px", backgroundColor: "var(--bg-card)", padding: "16px", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-          <button className="btn btn-secondary" onClick={() => setViewInvoice(null)}>
-            <ArrowLeft size={16} /> Back to Invoices
-          </button>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <span style={{ fontSize: "13px", fontWeight: 600 }}>Print Template:</span>
-            <select className="filter-select" style={{ padding: "6px 12px" }} value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-              <option value="A5">Standard A5 Bill Book</option>
-              <option value="Thermal">Thermal 3-Inch roll POS</option>
-            </select>
+        <div className="invoice-detail-nav-panel no-print">
+          <div className="invoice-detail-top-row">
+            <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewInvoice(null)}>
+              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Invoices</span>
+            </button>
+            <div className="template-selector-group">
+              <span className="template-label">Print Template:</span>
+              <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
+                <option value="A5">Standard A5 Bill Book</option>
+                <option value="Thermal">Thermal 3-Inch roll POS</option>
+              </select>
+            </div>
+          </div>
+          <div className="action-buttons-grid">
             <button className="btn btn-secondary" onClick={handleDownload} title="Export invoice as PDF">
               <Download size={16} /> Save as PDF
             </button>
@@ -1069,131 +1101,272 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Quotations</span>
             </button>
             <div className="template-selector-group">
-              <span className="template-label">Template:</span>
+              <span className="template-label">Print Template:</span>
               <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">Standard A5</option>
-                <option value="Thermal">Thermal roll</option>
+                <option value="A5">Standard A5 Bill Book</option>
+                <option value="Thermal">Thermal 3-Inch roll POS</option>
               </select>
             </div>
           </div>
           <div className="action-buttons-grid">
-            <button className="btn btn-secondary" onClick={() => window.print()} title="Print paper voucher">
+            <button className="btn btn-secondary" onClick={handleDownload} title="Export quotation as PDF">
+              <Download size={16} /> Save as PDF
+            </button>
+            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share quotation details on WhatsApp">
+              <Share2 size={16} /> Share on WhatsApp
+            </button>
+            <button className="btn btn-primary" onClick={handlePrint} title="Print paper voucher">
               <Printer size={16} /> Print Estimate
             </button>
           </div>
         </div>
 
-        {/* Invoice Page Container */}
-        {printTemplate === 'A5' ? (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="printable-invoice-card a5-layout">
-              {/* Header section */}
-              <div className="invoice-header-grid">
-                <div>
-                  <h2 className="invoice-brand-title">{settings.businessName}</h2>
-                  <p className="invoice-brand-subtitle">{settings.address}</p>
-                  <p className="invoice-brand-subtitle">GSTIN: {settings.gstin}</p>
-                  {settings.phone && <p className="invoice-brand-subtitle">Phone: {settings.phone}</p>}
+        {printTemplate === "A5" ? (
+          <div className="invoice-mockup-wrapper">
+            <div className="print-invoice-layout invoice-print-container">
+              {/* Elegant leafy branch corner watermark */}
+              <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 90 Q 50 50 90 10" />
+                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#4E6C50" />
+                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#4E6C50" />
+                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#4E6C50" />
+                </svg>
+              </div>
+
+              {/* Header: Logo, Company Info, Title */}
+              <div className="invoice-header-bar">
+                <div style={{ display: "flex", alignItems: "flex-start" }}>
+                  <div className="invoice-logo-pill">
+                    <Store size={22} className="invoice-logo-icon" />
+                    <span style={{ fontSize: "9px", fontWeight: 900 }}>AGRI</span>
+                  </div>
+                  <div>
+                    <h2 className="invoice-company-name">AgriBiz Dealers</h2>
+                    <p className="invoice-company-sub">Main Market Road, Agri Industrial Zone, Ganganagar</p>
+                    <p className="invoice-company-sub">Email: support@agribiz.com | Mob: +91 98765 43210</p>
+                    <p className="invoice-company-gst">GSTIN: 08AAAAA1111A1Z1</p>
+                  </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-tag text-quotation" style={{ color: "var(--primary)" }}>SALES ESTIMATE</h1>
-                  <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "1fr auto", gap: "6px 12px", fontSize: "13px" }}>
-                    <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Estimate No:</span>
-                    <strong style={{ color: "var(--text-primary)" }}>{selectedQuotation.quotationNumber}</strong>
-                    <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Date:</span>
-                    <span style={{ color: "var(--text-primary)" }}>{formatDate(selectedQuotation.date)}</span>
-                    <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Valid Until:</span>
-                    <span style={{ color: "var(--text-primary)" }}>{formatDate(selectedQuotation.validUntil)}</span>
-                  </div>
+                  <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>SALES ESTIMATE</h1>
+                  <h3 className="invoice-number-text">#{selectedQuotation.quotationNumber}</h3>
+                  <p className="invoice-date-text">Date: {formatDate(selectedQuotation.date)}</p>
                 </div>
               </div>
 
-              {/* Bill To section */}
-              <div className="invoice-customer-card" style={{ marginTop: "24px" }}>
-                <h4 className="invoice-detail-header">ESTIMATE FOR:</h4>
-                {customerDetail ? (
-                  <>
-                    <h3 className="invoice-customer-name">{customerDetail.name}</h3>
-                    <div className="invoice-customer-details-grid">
-                      {customerDetail.phone && <span className="invoice-customer-sub">Phone: {customerDetail.phone}</span>}
-                      {customerDetail.address && <span className="invoice-customer-sub">Address: {customerDetail.address}</span>}
-                      {customerDetail.gstin && <span className="invoice-customer-sub">GSTIN: {customerDetail.gstin}</span>}
-                      {customerDetail.state && <span className="invoice-customer-sub">State: {customerDetail.state}</span>}
-                    </div>
-                  </>
-                ) : (
-                  <h3 className="invoice-customer-name">Walk-in Customer</h3>
-                )}
+              {/* Billed To and Payment details */}
+              <div className="invoice-billing-details">
+                <div>
+                  <h4 className="invoice-detail-header">Estimate for:</h4>
+                  {customerDetail ? (
+                    <>
+                      <h3 className="invoice-customer-name">{customerDetail.name}</h3>
+                      <p className="invoice-customer-sub">{customerDetail.address || "Address: N/A"}</p>
+                      <p className="invoice-customer-sub">Phone: {customerDetail.phone}</p>
+                      {customerDetail.gstin && (
+                        <p className="invoice-customer-gst">GSTIN: {customerDetail.gstin}</p>
+                      )}
+                    </>
+                  ) : (
+                    <h3 className="invoice-customer-name">Walk-in Customer</h3>
+                  )}
+                </div>
+                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
+                  <h4 className="invoice-detail-header">Validity Info:</h4>
+                  <span className="invoice-payment-badge paid" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}>
+                    VALID UNTIL: {formatDate(selectedQuotation.validUntil)}
+                  </span>
+                </div>
               </div>
 
               {/* Items Table */}
-              <table className="invoice-table" style={{ marginTop: "24px" }}>
+              <table className="invoice-table">
                 <thead>
                   <tr>
-                    <th>Item Description</th>
-                    <th style={{ textAlign: "center" }}>GST %</th>
-                    <th style={{ textAlign: "right" }}>Rate (₹)</th>
-                    <th style={{ textAlign: "center" }}>Qty</th>
-                    <th style={{ textAlign: "center" }}>Disc %</th>
-                    <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                    <th style={{ width: "40px", textAlign: "center" }}>Sr</th>
+                    <th style={{ textAlign: "left" }}>Product / Description</th>
+                    <th style={{ width: "80px", textAlign: "center" }}>GST</th>
+                    <th style={{ width: "90px", textAlign: "right" }}>Price (₹)</th>
+                    <th style={{ width: "60px", textAlign: "center" }}>Qty</th>
+                    <th style={{ width: "70px", textAlign: "right" }}>Disc (%)</th>
+                    <th style={{ width: "100px", textAlign: "right" }}>Total (₹)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {selectedQuotation.items.map((item, index) => (
                     <tr key={index}>
+                      <td style={{ textAlign: "center" }}>{index + 1}</td>
                       <td style={{ fontWeight: 600 }}>{item.productName}</td>
                       <td style={{ textAlign: "center" }}>{item.gstRate}%</td>
-                      <td style={{ textAlign: "right" }}>{formatINR(item.price).replace("₹", "")}</td>
-                      <td style={{ textAlign: "center", fontWeight: 700 }}>{item.quantity}</td>
-                      <td style={{ textAlign: "center" }}>{item.discount}%</td>
-                      <td style={{ textAlign: "right", fontWeight: 700 }}>{formatINR(item.total).replace("₹", "")}</td>
+                      <td style={{ textAlign: "right" }}>{item.price.toFixed(2)}</td>
+                      <td style={{ textAlign: "center" }}>{item.quantity}</td>
+                      <td style={{ textAlign: "right" }}>{item.discount}%</td>
+                      <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
 
-              {/* Footer Summary Grid */}
-              <div className="invoice-totals-section" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "30px", marginTop: "24px" }}>
-                <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6 }}>
-                  <h4 style={{ fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>Terms & Conditions:</h4>
-                  <p style={{ margin: 0 }}>1. This is a commercial sales estimate, not a tax invoice.</p>
-                  <p style={{ margin: 0 }}>2. Prices are valid until the validity date specified above.</p>
-                </div>
-                <div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                      <span style={{ color: "var(--text-secondary)" }}>Subtotal:</span>
-                      <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.subtotal)}</span>
-                    </div>
-                    {quotationTotals.discountTotal > 0 && (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", color: "var(--color-success-dark)" }}>
-                        <span>Discount (−):</span>
-                        <span style={{ fontWeight: 600 }}>−{formatINR(quotationTotals.discountTotal)}</span>
-                      </div>
-                    )}
-                    {isInterState ? (
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                        <span style={{ color: "var(--text-secondary)" }}>IGST ({selectedQuotation.items[0]?.gstRate || 18}%):</span>
-                        <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.gstTotal)}</span>
-                      </div>
-                    ) : (
-                      <>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                          <span style={{ color: "var(--text-secondary)" }}>CGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%):</span>
-                          <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.gstTotal / 2)}</span>
-                        </div>
-                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
-                          <span style={{ color: "var(--text-secondary)" }}>SGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%):</span>
-                          <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.gstTotal / 2)}</span>
-                        </div>
-                      </>
-                    )}
-                    <div style={{ borderTop: "1.5px solid var(--border-color)", margin: "6px 0" }}></div>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                      <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--text-primary)" }}>Grand Total:</span>
-                      <span style={{ fontSize: "20px", fontWeight: 900, color: "var(--primary)" }}>{formatINR(quotationTotals.grandTotal)}</span>
-                    </div>
+              {/* Bottom summary and remarks */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
+                <div style={{ flex: 1, maxWidth: "55%" }}>
+                  <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                  <p className="invoice-terms-text">
+                    {selectedQuotation.notes || "This is a commercial sales estimate, not a tax invoice."}
+                    <br />
+                    1. Prices are valid until the validity date specified above.
+                    <br />
+                    2. Warranty is managed directly by equipment manufacturer.
+                  </p>
+                  <div style={{ marginTop: "16px" }}>
+                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
+                    <p className="invoice-terms-text">
+                      Bank: HDFC Bank | A/c No: 501004455667788
+                      <br />
+                      IFSC: HDFC0001234 | Branch: Agri Market
+                    </p>
                   </div>
+                </div>
+                <div style={{ minWidth: "280px" }}>
+                  <table className="invoice-summary-table">
+                    <tbody>
+                      <tr>
+                        <td>Subtotal</td>
+                        <td>{formatINR(quotationTotals.subtotal)}</td>
+                      </tr>
+                      {quotationTotals.discountTotal > 0 && (
+                        <tr className="discount-row">
+                          <td>Discount (-)</td>
+                          <td>{formatINR(quotationTotals.discountTotal)}</td>
+                        </tr>
+                      )}
+                      {isInterState ? (
+                        <tr>
+                          <td>IGST ({selectedQuotation.items[0]?.gstRate || 18}%)</td>
+                          <td>{formatINR(quotationTotals.gstTotal)}</td>
+                        </tr>
+                      ) : (
+                        <>
+                          <tr>
+                            <td>CGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</td>
+                            <td>{formatINR(quotationTotals.gstTotal / 2)}</td>
+                          </tr>
+                          <tr>
+                            <td>SGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</td>
+                            <td>{formatINR(quotationTotals.gstTotal / 2)}</td>
+                          </tr>
+                        </>
+                      )}
+                      <tr className="grand-total-row">
+                        <td>TOTAL</td>
+                        <td>{formatINR(quotationTotals.grandTotal)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* SVG Illustration and Signature */}
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "20px" }}>
+                <div style={{ flex: 1, maxWidth: "70%" }}>
+                  {/* Custom Inline SVG Illustration */}
+                  <svg viewBox="0 0 500 110" width="100%" height="60" style={{ display: "block" }}>
+                    {/* Ground line */}
+                    <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
+                    
+                    {/* Left Side: Sun & Cloud */}
+                    <circle cx="50" cy="20" r="7" fill="#F2C94C" opacity="0.35" />
+                    <path d="M 45 20 Q 50 14 55 20" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                    <path d="M 38 18 Q 42 12 47 18" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                    <path d="M 80 18 C 75 18, 72 14, 78 10 C 84 6, 92 10, 92 14 C 98 14, 98 18, 92 18 Z" fill="#EAE3D2" opacity="0.3" />
+
+                    {/* Left Side: Tractor & Plow */}
+                    {/* Tractor Body */}
+                    <rect x="110" y="65" width="38" height="22" fill="#4E6C50" rx="3" />
+                    <rect x="120" y="52" width="24" height="14" fill="none" stroke="#4E6C50" strokeWidth="2" rx="1.5" />
+                    <rect x="122" y="54" width="20" height="10" fill="#FCFAF6" rx="1" />
+                    {/* Engine front */}
+                    <rect x="148" y="70" width="20" height="17" fill="#4E6C50" />
+                    <line x1="168" y1="72" x2="168" y2="85" stroke="#EAE3D2" strokeWidth="1.5" />
+                    {/* Exhaust pipe */}
+                    <line x1="154" y1="70" x2="154" y2="48" stroke="#2F3E33" strokeWidth="1.5" />
+                    {/* Smoke puffs */}
+                    <circle cx="154" cy="42" r="2.5" fill="#EAE3D2" opacity="0.4" />
+                    <circle cx="157" cy="36" r="3.5" fill="#EAE3D2" opacity="0.25" />
+                    
+                    {/* Wheels */}
+                    <circle cx="120" cy="86" r="11" fill="#2F3E33" />
+                    <circle cx="120" cy="86" r="4.5" fill="#EAE3D2" />
+                    
+                    <circle cx="158" cy="89" r="8" fill="#2F3E33" />
+                    <circle cx="158" cy="89" r="3" fill="#EAE3D2" />
+
+                    {/* Plow attachment */}
+                    <path d="M 110 78 L 94 78 L 90 94 M 94 94 L 98 78" fill="none" stroke="#2F3E33" strokeWidth="1.5" />
+                    <line x1="90" y1="94" x2="82" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+                    <line x1="95" y1="94" x2="87" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+
+                    {/* Middle: Crops & Bags */}
+                    {/* Tall Corn Stalk */}
+                    <path d="M 200 100 Q 198 60 202 45" fill="none" stroke="#27AE60" strokeWidth="2.5" />
+                    <path d="M 200 80 Q 185 75 190 70" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                    <path d="M 201 65 Q 215 60 210 55" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                    <ellipse cx="204" cy="72" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" /> {/* Corn cob */}
+                    <ellipse cx="197" cy="57" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" />
+
+                    {/* Stack of Bags */}
+                    <rect x="225" y="76" width="24" height="24" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                    <line x1="225" y1="88" x2="249" y2="88" stroke="#4E6C50" strokeWidth="1.5" />
+                    <text x="229" y="85" fill="#2F3E33" fontSize="6" fontWeight="900">SEED</text>
+                    
+                    <rect x="242" y="81" width="24" height="19" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                    <line x1="242" y1="91" x2="266" y2="91" stroke="#4E6C50" strokeWidth="1.5" />
+                    <text x="246" y="89" fill="#2F3E33" fontSize="5" fontWeight="900">FERT</text>
+
+                    {/* Pumpkin */}
+                    <path d="M 282 100 C 275 100, 268 93, 268 83 C 268 72, 278 68, 285 68 C 292 68, 302 72, 302 83 C 302 93, 295 100, 288 100 Z" fill="#F2994A" />
+                    <path d="M 285 100 C 280 100, 276 93, 276 83 C 276 72, 281 70, 285 70 C 289 70, 294 72, 294 83 C 294 93, 290 100, 285 100 Z" fill="#F2C94C" />
+                    <path d="M 285 68 C 285 63, 288 60, 291 60" stroke="#27AE60" strokeWidth="2" fill="none" />
+
+                    {/* Right Side: Plant Shop & Fence */}
+                    {/* Picket Fence */}
+                    <rect x="320" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                    <rect x="328" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                    <rect x="336" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                    <line x1="316" y1="78" x2="340" y2="78" stroke="#EAE3D2" strokeWidth="1.5" />
+                    <line x1="316" y1="90" x2="340" y2="90" stroke="#EAE3D2" strokeWidth="1.5" />
+
+                    {/* Plant Shop storefront */}
+                    <rect x="355" y="40" width="115" height="60" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="2.5" />
+                    <rect x="345" y="30" width="135" height="10" fill="#BE3144" rx="2" />
+                    {/* Roof stripes */}
+                    <line x1="360" y1="30" x2="360" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                    <line x1="385" y1="30" x2="385" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                    <line x1="410" y1="30" x2="410" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                    <line x1="435" y1="30" x2="435" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                    <line x1="460" y1="30" x2="460" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                    
+                    {/* Window with OPEN sign */}
+                    <rect x="370" y="55" width="28" height="20" fill="#4E6C50" opacity="0.1" />
+                    <rect x="370" y="55" width="28" height="20" fill="none" stroke="#4E6C50" strokeWidth="1.5" />
+                    <text x="374" y="68" fill="#BE3144" fontSize="8" fontWeight="900">OPEN</text>
+                    
+                    {/* Door */}
+                    <rect x="415" y="58" width="24" height="42" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" />
+                    <circle cx="421" cy="79" r="1.5" fill="#2F3E33" />
+                    
+                    {/* Street Lamp */}
+                    <line x1="478" y1="100" x2="478" y2="40" stroke="#2F3E33" strokeWidth="2.5" />
+                    <circle cx="478" cy="35" r="7" fill="#F2C94C" />
+                    <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
+                  </svg>
+                </div>
+                <div style={{ textAlign: "center", minWidth: "150px" }}>
+                  <div style={{ height: "45px" }}></div>
+                  <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "12px", fontWeight: 700, color: "#4E6C50" }}>
+                    Authorized Signatory
+                  </p>
                 </div>
               </div>
             </div>
@@ -1202,10 +1375,10 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{settings.businessName}</h3>
-                <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{settings.address}</p>
-                {settings.phone && <p style={{ margin: 0, fontSize: "11px" }}>Mob: {settings.phone}</p>}
-                <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>AGRIBIZ DEALERS</h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>Industrial Zone, Ganganagar</p>
+                <p style={{ margin: 0, fontSize: "11px" }}>Mob: +91 98765 43210</p>
+                <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: 08AAAAA1111A1Z1</p>
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -1278,9 +1451,9 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
             </div>
           </div>
         )}
-        
+
         {/* Bottom Actions Row */}
-        <div className="no-print preview-actions-row">
+        <div className="no-print preview-actions-row" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
           {selectedQuotation.status !== 'Converted' && (
             <button 
               className="btn btn-primary"
@@ -1299,6 +1472,105 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               <Edit2 size={15} /> Edit Quotation
             </button>
           )}
+          
+          {/* Status Actions */}
+          {selectedQuotation.status === 'Draft' && (
+            <>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Sent' });
+                  showToast('Quotation marked as Sent', 'success');
+                }}
+              >
+                Mark as Sent
+              </button>
+              <button 
+                className="btn btn-secondary"
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Approved' });
+                  showToast('Quotation Approved successfully', 'success');
+                }}
+              >
+                Approve
+              </button>
+            </>
+          )}
+          
+          {selectedQuotation.status === 'Sent' && (
+            <>
+              <button 
+                className="btn btn-secondary"
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Approved' });
+                  showToast('Quotation Approved successfully', 'success');
+                }}
+              >
+                Approve
+              </button>
+              <button 
+                className="btn btn-secondary"
+                style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Declined' });
+                  showToast('Quotation marked as Declined', 'info');
+                }}
+              >
+                Decline
+              </button>
+            </>
+          )}
+          
+          {selectedQuotation.status === 'Approved' && (
+            <>
+              <button 
+                className="btn btn-secondary"
+                style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Declined' });
+                  showToast('Quotation marked as Declined', 'info');
+                }}
+              >
+                Decline
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Draft' });
+                  showToast('Quotation reverted to Draft', 'info');
+                }}
+              >
+                Revert to Draft
+              </button>
+            </>
+          )}
+          
+          {selectedQuotation.status === 'Declined' && (
+            <>
+              <button 
+                className="btn btn-secondary"
+                style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Approved' });
+                  showToast('Quotation Approved successfully', 'success');
+                }}
+              >
+                Approve
+              </button>
+              <button 
+                className="btn btn-secondary"
+                onClick={() => {
+                  editQuotation({ ...selectedQuotation, status: 'Draft' });
+                  showToast('Quotation reverted to Draft', 'info');
+                }}
+              >
+                Revert to Draft
+              </button>
+            </>
+          )}
+
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteQuotation(selectedQuotation.id, selectedQuotation.quotationNumber)}>
             <Trash2 size={16} /> Delete Quotation
           </button>
@@ -1316,107 +1588,121 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     const currentGstRate = (items[0]?.productId ? products.find((p) => p.id === items[0].productId)?.gstRate : 18) ?? 18;
 
     return (
-      <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-        {/* ── Gradient Banner Header ── */}
-      <div style={{
-        background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, #34d399 100%)',
-        borderRadius: '16px',
-        padding: '20px 28px',
-        marginBottom: '24px',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        boxShadow: '0 8px 32px rgba(16,185,129,0.25)',
-        position: 'relative',
-        overflow: 'hidden',
-      }}>
-        {/* decorative circle */}
-        <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button type="button" onClick={() => {
-            setIsCreatingInvoice(false);
-            setEditingInvoiceId(null);
-            setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
-          }} style={{
-            background: 'rgba(255,255,255,0.15)',
-            border: '1px solid rgba(255,255,255,0.25)',
-            color: '#fff',
-            borderRadius: '10px',
-            padding: '8px 14px',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            fontSize: '13px',
-            fontWeight: 600,
-            backdropFilter: 'blur(8px)',
-            transition: 'background 0.2s',
+      <div style={{ animation: 'fadeIn 0.2s ease-out', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <form onSubmit={handleSaveInvoice}>
+          
+          {/* Section 1 & 2: Designed Banner Header */}
+          <div className="creator-banner-header" style={{
+            background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, #34d399 100%)',
+            boxShadow: '0 8px 32px rgba(16,185,129,0.25)',
+            marginBottom: '24px',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
-            <ArrowLeft size={15} /> {editingInvoiceId ? 'Back' : 'Cancel'}
-          </button>
-          <div>
-            <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-              {editingInvoiceId ? 'Edit Invoice' : 'New Invoice'}
+            {/* decorative circles for aesthetic premium feeling */}
+            <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', zIndex: 1 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setIsCreatingInvoice(false);
+                  setEditingInvoiceId(null);
+                  setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  color: '#fff',
+                  borderRadius: '10px',
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s',
+                  height: '42px',
+                }}
+              >
+                <ArrowLeft size={16} /> Cancel
+              </button>
+              <div>
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  New Invoice
+                </span>
+                <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
+                  Create Sales Invoice
+                </h1>
+              </div>
             </div>
-            <div style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2 }}>
-              {editingInvoiceId ? 'Update Billing Record' : 'Create Sales Invoice'}
+
+            <div style={{
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '12px',
+              padding: '10px 18px',
+              textAlign: 'right',
+              backdropFilter: 'blur(8px)',
+              zIndex: 1,
+            }} className="voucher-section-box">
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                Voucher Number
+              </span>
+              <span style={{ color: '#fff', fontSize: '16px', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginTop: '2px' }}>
+                {invoiceNumber}
+              </span>
             </div>
           </div>
-        </div>
-        <div style={{
-          background: 'rgba(255,255,255,0.12)',
-          border: '1px solid rgba(255,255,255,0.2)',
-          borderRadius: '12px',
-          padding: '10px 18px',
-          textAlign: 'right',
-          backdropFilter: 'blur(8px)',
-        }}>
-          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Voucher No</div>
-          <div style={{ color: '#fff', fontSize: '17px', fontWeight: 800, letterSpacing: '0.5px' }}>{invoiceNumber}</div>
-        </div>
-      </div>
 
-      <form onSubmit={handleSaveInvoice}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '1100px', margin: '0 auto' }}>
+          {/* Section 3: Customer Section */}
+          <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+              <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>1</span>
+              Customer &amp; Date
+            </h3>
 
-          {/* ── Step 1: Customer & Date ── */}
-          <div className="card" style={{ padding: '24px 28px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-              <div style={{
-                width: '32px', height: '32px', borderRadius: '10px',
-                background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: '#fff', fontSize: '14px', fontWeight: 800, flexShrink: 0,
-              }}>1</div>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Customer & Date</div>
-                <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Select customer and billing date</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+              {/* Customer Dropdown */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Customer *</label>
+                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                  <select
+                    className="form-control"
+                    style={{ flex: 1, minWidth: 0, height: '42px', fontSize: '13px' }}
+                    value={selectedCustomerId}
+                    onChange={(e) => setSelectedCustomerId(e.target.value)}
+                    required
+                  >
+                    <option value="">— Select Customer —</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setIsCustomerModalOpen(true)}
+                    style={{ height: '42px', padding: '0 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                  >
+                    <Plus size={16} /> <span className="hide-on-mobile-inline">New Customer</span>
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="form-row-1-auto-auto" style={{ gap: '12px', alignItems: 'end' }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Customer *</label>
-                <select className="form-control" value={selectedCustomerId} onChange={(e) => setSelectedCustomerId(e.target.value)} required>
-                  <option value="">— Select Customer —</option>
-                  {customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <button type="button" className="btn btn-secondary" onClick={() => setIsCustomerModalOpen(true)} style={{ whiteSpace: 'nowrap', height: '42px' }}>
-                <Plus size={15} /> New Customer
-              </button>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Billing Date *</label>
+              {/* Billing Date */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Billing Date *</label>
                 <input
                   type="date"
                   className="form-control"
-                  style={{ width: '160px' }}
+                  style={{ width: '100%', height: '42px', fontSize: '13px' }}
                   value={invoiceDate}
                   onChange={(e) => setInvoiceDate(e.target.value)}
                   required
@@ -1424,158 +1710,227 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               </div>
             </div>
 
-            {/* Active customer chip */}
+            {/* Active Customer Chip */}
             {activeCustomer && (
-              <div style={{
-                marginTop: '14px',
-                padding: '10px 16px',
-                borderRadius: '10px',
-                background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, transparent), color-mix(in srgb, var(--primary) 3%, transparent))',
-                border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                fontSize: '13px',
-              }}>
-                <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+              <div style={{ marginTop: '16px', padding: '12px', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
                   {activeCustomer.name.charAt(0).toUpperCase()}
                 </div>
-                <div>
-                  <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{activeCustomer.name}</div>
-                  <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{activeCustomer.phone} {activeCustomer.address ? `· ${activeCustomer.address}` : ''}</div>
+                <div style={{ flex: 1, minWidth: '150px' }}>
+                  <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{activeCustomer.name}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{activeCustomer.phone} {activeCustomer.address ? `· ${activeCustomer.address}` : ''}</div>
                 </div>
                 {activeCustomer.outstanding > 0 && (
-                  <div style={{ marginLeft: 'auto', background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', borderRadius: '8px', padding: '4px 10px', fontSize: '12px', fontWeight: 700 }}>
-                    ⚠ Due: {formatINR(activeCustomer.outstanding)}
+                  <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700 }}>
+                    Outstanding: {formatINR(activeCustomer.outstanding)}
                   </div>
                 )}
               </div>
             )}
           </div>
 
-          {/* ── Step 2: Products Table ── */}
-          <div className="card" style={{ padding: '24px 28px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '14px', fontWeight: 800,
-                }}>2</div>
-                <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Billed Products</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{items.length} line item{items.length !== 1 ? 's' : ''}</div>
-                </div>
-              </div>
-              <button type="button" className="btn btn-secondary" onClick={handleAddItemRow} style={{ fontSize: '13px' }}>
+          {/* Section 4: Product Section */}
+          <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
+                Billed Products
+              </h3>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleAddItemRow}
+                style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
                 <Plus size={14} /> Add Row
               </button>
             </div>
 
-            <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ background: 'var(--bg-app)' }}>
-                    <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '220px' }}>Product</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '90px' }}>Stock</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '120px' }}>Unit Price (₹)</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '80px' }}>Qty</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '80px' }}>Disc %</th>
-                    <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '110px' }}>Net Total</th>
-                    <th style={{ padding: '10px 12px', width: '44px' }}></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {items.map((item, index) => {
-                    const product = products.find((p) => p.id === item.productId);
-                    const calculations = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
-                    const isEven = index % 2 === 0;
-                    return (
-                      <tr key={index} style={{ background: isEven ? 'transparent' : 'color-mix(in srgb, var(--bg-app) 60%, transparent)', borderTop: '1px solid var(--border-color)', transition: 'background 0.15s' }}>
-                        <td style={{ padding: '8px 10px' }}>
-                          <select className="form-control" style={{ width: '100%', fontSize: '13px' }} value={item.productId} onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)} required>
-                            <option value="">— Choose Product —</option>
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id} disabled={p.stock <= 0}>
-                                {p.name} [{p.category}]{p.stock <= 0 ? ' (Out of Stock)' : ''}
-                              </option>
-                            ))}
-                          </select>
-                        </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, fontSize: '13px' }}>
-                          {product ? (
-                            <span style={{
-                              padding: '3px 8px', borderRadius: '20px', fontSize: '12px', fontWeight: 700,
-                              background: product.stock <= product.minStock ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
-                              color: product.stock <= product.minStock ? 'var(--color-danger)' : 'var(--color-success-dark)',
-                            }}>
-                              {product.stock}
-                            </span>
-                          ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
-                        </td>
-                        <td style={{ padding: '8px 10px' }}>
-                          <input type="number" className="form-control" style={{ textAlign: 'right', fontSize: '13px' }} placeholder="0.00" min="0" step="any" value={item.price || ''} onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)} required />
-                        </td>
-                        <td style={{ padding: '8px 10px' }}>
-                          <input type="number" className="form-control" style={{ textAlign: 'center', fontSize: '13px' }} placeholder="1" min="1" value={item.quantity || ''} onChange={(e) => handleUpdateItemRow(index, 'quantity', parseInt(e.target.value) || 0)} required />
-                        </td>
-                        <td style={{ padding: '8px 10px' }}>
+            <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+              {/* Desktop table header row */}
+              <div className="billed-items-header-row">
+                <div>Product *</div>
+                <div style={{ textAlign: 'center' }}>Stock</div>
+                <div style={{ textAlign: 'right' }}>Unit Price (₹) *</div>
+                <div style={{ textAlign: 'center' }}>Qty *</div>
+                <div style={{ textAlign: 'center' }}>Disc %</div>
+                <div style={{ textAlign: 'right' }}>Net Total</div>
+                <div></div>
+              </div>
+
+              <div className="billed-items-list">
+                {items.map((item, index) => {
+                  const product = products.find((p) => p.id === item.productId);
+                  const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+                  return (
+                    <div key={index} className="billed-item-card">
+                      {/* Mobile card header with Item number and delete action */}
+                      <div className="mobile-item-header">
+                        <span className="mobile-item-title">Item #{index + 1}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItemRow(index)}
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                          title="Remove row"
+                        >
+                          <Trash2 size={16} style={{ color: 'var(--color-danger)' }} />
+                        </button>
+                      </div>
+
+                      {/* Product Selector */}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span className="mobile-field-label">Product *</span>
+                        <select
+                          className="form-control"
+                          style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                          value={item.productId}
+                          onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
+                          required
+                        >
+                          <option value="">— Choose Product —</option>
+                          {products.map((p) => (
+                            <option key={p.id} value={p.id} disabled={p.stock <= 0}>
+                              {p.name} [{p.category}]{p.stock <= 0 ? ' (Out of Stock)' : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      {/* Stock & Unit Price grid row */}
+                      <div className="mobile-grid-2">
+                        <div>
+                          <span className="mobile-field-label">Stock</span>
+                          <div style={{
+                            height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)',
+                            borderRadius: '8px', fontWeight: 600, fontSize: '13px'
+                          }}>
+                            {product ? (
+                              <span style={{
+                                padding: '2px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700,
+                                background: product.stock <= product.minStock ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                                color: product.stock <= product.minStock ? 'var(--color-danger)' : 'var(--color-success-dark)',
+                              }}>
+                                {product.stock}
+                              </span>
+                            ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="mobile-field-label">Unit Price (₹) *</span>
+                          <input
+                            type="number"
+                            className="form-control"
+                            style={{ textAlign: 'right', height: '40px', fontSize: '13px' }}
+                            placeholder="0.00"
+                            min="0"
+                            step="any"
+                            value={item.price || ''}
+                            onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)}
+                            required
+                          />
+                        </div>
+                      </div>
+
+                      {/* Qty & Discount grid row */}
+                      <div className="mobile-grid-2">
+                        <div>
+                          <span className="mobile-field-label">Qty *</span>
+                          <input
+                            type="number"
+                            className="form-control"
+                            style={{ textAlign: 'center', height: '40px', fontSize: '13px' }}
+                            placeholder="1"
+                            min="1"
+                            value={item.quantity || ''}
+                            onChange={(e) => handleUpdateItemRow(index, 'quantity', parseInt(e.target.value) || 0)}
+                            required
+                          />
+                        </div>
+                        <div>
+                          <span className="mobile-field-label">Disc %</span>
                           <div style={{ position: 'relative' }}>
                             <Percent size={11} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
-                            <input type="number" className="form-control" style={{ textAlign: 'center', paddingRight: '22px', fontSize: '13px' }} placeholder="0" min="0" max="100" value={item.discount || ''} onChange={(e) => handleUpdateItemRow(index, 'discount', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} />
+                            <input
+                              type="number"
+                              className="form-control"
+                              style={{ textAlign: 'center', paddingRight: '22px', height: '40px', fontSize: '13px' }}
+                              placeholder="0"
+                              min="0"
+                              max="100"
+                              value={item.discount || ''}
+                              onChange={(e) => handleUpdateItemRow(index, 'discount', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                            />
                           </div>
-                        </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, fontSize: '14px', color: 'var(--primary-dark)', whiteSpace: 'nowrap' }}>
-                          {formatINR(calculations.total).replace('₹', '')}
-                        </td>
-                        <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                          <button type="button" onClick={() => handleRemoveItemRow(index)} title="Remove row" style={{
+                        </div>
+                      </div>
+
+                      {/* Net Total display */}
+                      <div className="mobile-total-row">
+                        <span className="mobile-total-label">Net Total:</span>
+                        <span className="mobile-total-value">
+                          {formatINR(calcs.total)}
+                        </span>
+                      </div>
+
+                      {/* Desktop-only delete button */}
+                      <div style={{ display: 'flex', justifyContent: 'center' }} className="desktop-delete-btn-col">
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveItemRow(index)}
+                          title="Remove row"
+                          style={{
                             background: 'none', border: 'none', cursor: 'pointer',
-                            color: 'var(--text-muted)', borderRadius: '6px', padding: '4px 6px',
-                            transition: 'color 0.2s, background 0.2s',
+                            color: 'var(--text-muted)', borderRadius: '6px', padding: '6px',
+                            transition: 'all 0.2s',
                           }}
-                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+                          onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; }}
+                          onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 
-          {/* ── Step 3: Payment + Summary ── */}
-          <div className="invoice-creator-container" style={{ gap: '20px', alignItems: 'start' }}>
+          {/* Grid layout for Payment & Summary side-by-side on desktop, stacked on mobile */}
+          <div className="invoice-creator-container" style={{ gap: '20px', alignItems: 'start', marginBottom: '24px' }}>
+            
+            {/* Section 5: Payment Section */}
+            <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>3</span>
+                Payment &amp; Notes
+              </h3>
 
-            {/* Payment Details */}
-            <div className="card" style={{ padding: '24px 28px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                <div style={{
-                  width: '32px', height: '32px', borderRadius: '10px',
-                  background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  color: '#fff', fontSize: '14px', fontWeight: 800,
-                }}>3</div>
-                <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Payment & Notes</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Record collection and remarks</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Amount Collected (₹)</label>
+                  <input
+                    type="number"
+                    className="form-control"
+                    placeholder="0.00"
+                    min="0"
+                    max={totals.grandTotal}
+                    value={amountPaid || ''}
+                    onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    style={{ height: '42px', fontSize: '13px' }}
+                  />
                 </div>
-              </div>
 
-              <div className={amountPaid > 0 ? "form-row" : ""} style={{ gap: '16px', marginBottom: '16px' }}>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Amount Collected (₹)</label>
-                  <input type="number" className="form-control" placeholder="0.00" min="0" max={totals.grandTotal} value={amountPaid || ''} onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))} />
-                </div>
                 {amountPaid > 0 && (
-                  <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Payment Method *</label>
-                    <select className="form-control" value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Payment Method *</label>
+                    <select
+                      className="form-control"
+                      value={paymentMethod}
+                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      style={{ height: '42px', fontSize: '13px' }}
+                    >
                       <option value="UPI">UPI / GPay / PhonePe</option>
                       <option value="Cash">Cash</option>
                       <option value="Bank Transfer">Bank Transfer (IMPS/NEFT)</option>
@@ -1583,32 +1938,41 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                     </select>
                   </div>
                 )}
-              </div>
 
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Billing Remarks / Notes</label>
-                <textarea className="form-control" placeholder="Remarks printed on customer invoice..." rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} style={{ resize: 'vertical' }} />
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Billing Remarks / Notes</label>
+                  <textarea
+                    className="form-control"
+                    placeholder="Remarks printed on customer invoice..."
+                    rows={3}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    style={{ fontSize: '13px', resize: 'vertical' }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Glassy Billing Summary */}
+            {/* Section 6: Billing Summary */}
             <div style={{
-              borderRadius: '16px',
+              borderRadius: '12px',
               background: 'linear-gradient(145deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 90%, var(--primary) 10%) 100%)',
               border: '1.5px solid color-mix(in srgb, var(--primary) 20%, var(--border-color))',
-              padding: '24px',
+              padding: '20px',
               boxShadow: '0 8px 24px rgba(16,185,129,0.08)',
               display: 'flex',
               flexDirection: 'column',
-              gap: '10px',
+              gap: '12px',
+              width: '100%',
+              boxSizing: 'border-box',
             }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '10px', borderBottom: '1px solid var(--border-color)' }}>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-dark)', textTransform: 'uppercase', letterSpacing: '1px', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
                 Billing Summary
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                 <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-                <span style={{ fontWeight: 600 }}>{formatINR(totals.subtotal)}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.subtotal)}</span>
               </div>
 
               {totals.discountTotal > 0 && (
@@ -1621,22 +1985,22 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               {isCreatorInterState ? (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>IGST ({currentGstRate}%)</span>
-                  <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal)}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.gstTotal)}</span>
                 </div>
               ) : (
                 <>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>CGST ({currentGstRate / 2}%)</span>
-                    <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal / 2)}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.gstTotal / 2)}</span>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>SGST ({currentGstRate / 2}%)</span>
-                    <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal / 2)}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.gstTotal / 2)}</span>
                   </div>
                 </>
               )}
 
-              <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
+              <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 800 }}>
                 <span style={{ color: 'var(--text-primary)' }}>Grand Total</span>
@@ -1651,8 +2015,8 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
               )}
 
               <div style={{
-                display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 700,
-                padding: '10px 14px', borderRadius: '10px', marginTop: '4px',
+                display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700,
+                padding: '8px 12px', borderRadius: '8px', marginTop: '4px',
                 background: balanceDue > 0 ? 'rgba(239,68,68,0.08)' : 'rgba(16,185,129,0.08)',
                 color: balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)',
                 border: `1px solid ${balanceDue > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`,
@@ -1661,34 +2025,93 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                 <span>{formatINR(balanceDue)}</span>
               </div>
 
-              {/* Action buttons inside summary card */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                <button type="submit" className="btn btn-primary" style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '14px',
-                  fontWeight: 700,
-                  borderRadius: '10px',
-                  boxShadow: '0 4px 16px rgba(16,185,129,0.3)',
-                }} disabled={items.length === 0 || !items[0].productId}>
+              {/* Payment Status badge */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 700,
+                background: amountPaid === 0 
+                  ? 'rgba(239, 68, 68, 0.08)' 
+                  : amountPaid < totals.grandTotal 
+                    ? 'rgba(245, 158, 11, 0.08)' 
+                    : 'rgba(16, 185, 129, 0.08)',
+                color: amountPaid === 0 
+                  ? 'var(--color-danger)' 
+                  : amountPaid < totals.grandTotal 
+                    ? '#b45309' 
+                    : 'var(--color-success-dark)',
+                border: `1px solid ${
+                  amountPaid === 0 
+                    ? 'rgba(239, 68, 68, 0.2)' 
+                    : amountPaid < totals.grandTotal 
+                      ? 'rgba(245, 158, 11, 0.2)' 
+                      : 'rgba(16, 185, 129, 0.2)'
+                }`
+              }}>
+                <span>Payment Status</span>
+                <span>
+                  {amountPaid === 0 
+                    ? 'Pending' 
+                    : amountPaid < totals.grandTotal 
+                      ? 'Partially Paid' 
+                      : 'Fully Paid'}
+                </span>
+              </div>
+
+              {/* Section 7: Footer Buttons */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                <button
+                  type="submit"
+                  className="btn btn-primary"
+                  style={{
+                    width: '100%',
+                    height: '46px',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 16px rgba(16,185,129,0.25)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px'
+                  }}
+                  disabled={items.length === 0 || !items[0].productId}
+                >
                   {editingInvoiceId ? '✓ Update Invoice' : '✓ Save & Print Invoice'}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={() => {
-                  setIsCreatingInvoice(false);
-                  setEditingInvoiceId(null);
-                  setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
-                }} style={{ width: '100%', padding: '10px', fontSize: '13px', borderRadius: '10px' }}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    setIsCreatingInvoice(false);
+                    setEditingInvoiceId(null);
+                    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+                  }}
+                  style={{
+                    width: '100%',
+                    height: '42px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
                   Discard Draft
                 </button>
               </div>
             </div>
 
           </div>
-        </div>
-      </form>
+        </form>
 
-      <CustomerModal isOpen={isCustomerModalOpen} onClose={() => setIsCustomerModalOpen(false)} onSaveCallback={(c) => setSelectedCustomerId(c.id)} />
-    </div>
+        <CustomerModal isOpen={isCustomerModalOpen} onClose={() => setIsCustomerModalOpen(false)} onSaveCallback={(c) => setSelectedCustomerId(c.id)} />
+      </div>
     );
   }
 
@@ -1700,234 +2123,363 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     const currentGstRate = (items[0]?.productId ? products.find((p) => p.id === items[0].productId)?.gstRate : 18) ?? 18;
 
     return (
-      <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      <div style={{ animation: 'fadeIn 0.2s ease-out', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+        <form onSubmit={handleSaveQuotation}>
 
-        {/* ── Gradient Banner Header ── */}
-        <div className="creator-banner-header">
-          {/* decorative circles */}
-          <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+          {/* Section 1 & 2: Designed Banner Header */}
+          <div className="creator-banner-header" style={{
+            background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, #8b5cf6 100%)',
+            boxShadow: '0 8px 32px rgba(139,92,246,0.25)',
+            marginBottom: '24px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            {/* decorative circles for aesthetic premium feeling */}
+            <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button type="button" onClick={() => {
-              setIsCreatingQuotation(false);
-              setEditingQuotationId(null);
-              setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
-            }} style={{
-              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
-              color: '#fff', borderRadius: '10px', padding: '8px 14px',
-              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
-              fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(8px)',
-              transition: 'background 0.2s', flexShrink: 0,
-            }}>
-              <ArrowLeft size={15} /> {editingQuotationId ? 'Back' : 'Cancel'}
-            </button>
-            <div>
-              <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                {editingQuotationId ? 'Edit Quotation' : 'New Quotation'}
-              </div>
-              <div style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2 }}>
-                {editingQuotationId ? 'Update Quotation' : 'Create Sales Estimate'}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', zIndex: 1 }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setIsCreatingQuotation(false);
+                  setEditingQuotationId(null);
+                  setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+                }}
+                style={{
+                  background: 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.25)',
+                  color: '#fff',
+                  borderRadius: '10px',
+                  padding: '10px 18px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s',
+                  height: '42px',
+                }}
+              >
+                <ArrowLeft size={16} /> Cancel
+              </button>
+              <div>
+                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                  {editingQuotationId ? 'Edit Quotation' : 'New Quotation'}
+                </span>
+                <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
+                  {editingQuotationId ? 'Update Quotation' : 'Create Sales Estimate'}
+                </h1>
               </div>
             </div>
-          </div>
-          <div style={{
-            background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: '12px', padding: '10px 18px', textAlign: 'right', backdropFilter: 'blur(8px)',
-          }}>
-            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Estimate No</div>
-            <div style={{ color: '#fff', fontSize: '17px', fontWeight: 800, letterSpacing: '0.5px' }}>{quotationNumber}</div>
-          </div>
-        </div>
 
-        <form onSubmit={handleSaveQuotation}>
+            <div style={{
+              background: 'rgba(255,255,255,0.12)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '12px',
+              padding: '10px 18px',
+              textAlign: 'right',
+              backdropFilter: 'blur(8px)',
+              zIndex: 1,
+            }} className="voucher-section-box">
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                Estimate Number
+              </span>
+              <span style={{ color: '#fff', fontSize: '16px', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginTop: '2px' }}>
+                {quotationNumber}
+              </span>
+            </div>
+          </div>
+
           <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '1100px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+            
+            {/* Step 1: Customer & Dates */}
+            <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>1</span>
+                Customer &amp; Dates
+              </h3>
 
-            {/* ── Step 1: Customer & Dates ── */}
-            <div className="card" style={{ padding: '20px 16px', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-              {/* Section header */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800, flexShrink: 0 }}>1</div>
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Customer &amp; Dates</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Select customer, quote date and validity</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                {/* Customer selection */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Customer *</label>
+                  <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                    <select
+                      className="form-control"
+                      style={{ flex: 1, minWidth: 0, height: '42px', fontSize: '13px' }}
+                      value={selectedCustomerId}
+                      onChange={(e) => setSelectedCustomerId(e.target.value)}
+                      required
+                    >
+                      <option value="">— Select Customer —</option>
+                      {customers.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={() => setIsCustomerModalOpen(true)}
+                      style={{ height: '42px', padding: '0 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
+                    >
+                      <Plus size={16} /> <span className="hide-on-mobile-inline">New Customer</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Dates grid */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Quote Date *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      style={{ width: '100%', height: '42px', fontSize: '13px' }}
+                      value={invoiceDate}
+                      onChange={(e) => setInvoiceDate(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Valid Until *</label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      style={{ width: '100%', height: '42px', fontSize: '13px' }}
+                      value={validUntil}
+                      onChange={(e) => setValidUntil(e.target.value)}
+                      required
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Customer field — full width, button below it */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0 }}>Customer *</label>
-                  <select
-                    className="form-control"
-                    style={{ width: '100%', minWidth: 0 }}
-                    value={selectedCustomerId}
-                    onChange={(e) => setSelectedCustomerId(e.target.value)}
-                    required
-                  >
-                    <option value="">— Select Customer —</option>
-                    {customers.map((c) => (
-                      <option key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}</option>
-                    ))}
-                  </select>
-                </div>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setIsCustomerModalOpen(true)}
-                  style={{ alignSelf: 'flex-start', whiteSpace: 'nowrap' }}
-                >
-                  <Plus size={15} /> + New Customer
-                </button>
-              </div>
-
-              {/* Date fields — each full width, stacked */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0 }}>Quote Date *</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    style={{ width: '100%', minWidth: 0 }}
-                    value={invoiceDate}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    required
-                  />
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0 }}>Valid Until *</label>
-                  <input
-                    type="date"
-                    className="form-control"
-                    style={{ width: '100%', minWidth: 0 }}
-                    value={validUntil}
-                    onChange={(e) => setValidUntil(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Active customer chip */}
+              {/* Active Customer Chip */}
               {activeCustomer && (
-                <div style={{ marginTop: '14px', padding: '10px 14px', borderRadius: '10px', background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, transparent), color-mix(in srgb, var(--primary) 3%, transparent))', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', overflow: 'hidden' }}>
-                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+                <div style={{ marginTop: '16px', padding: '12px', borderRadius: '8px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '50%', backgroundColor: 'var(--primary)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '14px', flexShrink: 0 }}>
                     {activeCustomer.name.charAt(0).toUpperCase()}
                   </div>
-                  <div style={{ minWidth: 0, flex: 1 }}>
-                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeCustomer.name}</div>
-                    <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{activeCustomer.phone}</div>
+                  <div style={{ flex: 1, minWidth: '150px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>{activeCustomer.name}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{activeCustomer.phone} {activeCustomer.address ? `· ${activeCustomer.address}` : ''}</div>
                   </div>
                   {activeCustomer.outstanding > 0 && (
-                    <div style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
-                      Due: {formatINR(activeCustomer.outstanding)}
+                    <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700 }}>
+                      Outstanding: {formatINR(activeCustomer.outstanding)}
                     </div>
                   )}
                 </div>
               )}
             </div>
 
-            {/* ── Step 2: Quoted Products Table ── */}
-            <div className="card" style={{ padding: '24px 20px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800 }}>2</div>
-                  <div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Quoted Products</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{items.length} line item{items.length !== 1 ? 's' : ''}</div>
-                  </div>
-                </div>
-                <button type="button" className="btn btn-secondary" onClick={handleAddItemRow} style={{ fontSize: '13px' }}>
+            {/* Step 2: Quoted Products */}
+            <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
+                  Quoted Products
+                </h3>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleAddItemRow}
+                  style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
                   <Plus size={14} /> Add Row
                 </button>
               </div>
 
-              {/* Horizontally scrollable table — works on any screen width */}
-              <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
-                  <thead>
-                    <tr style={{ background: 'var(--bg-app)' }}>
-                      <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '200px' }}>Product</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '80px' }}>GST%</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '110px' }}>Unit Price (₹)</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '70px' }}>Qty</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '70px' }}>Disc%</th>
-                      <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '100px' }}>Total</th>
-                      <th style={{ padding: '10px 12px', width: '40px' }}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item, index) => {
-                      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
-                      const matchProd = products.find((p) => p.id === item.productId);
-                      const isEven = index % 2 === 0;
-                      return (
-                        <tr key={index} style={{ background: isEven ? 'transparent' : 'color-mix(in srgb, var(--bg-app) 60%, transparent)', borderTop: '1px solid var(--border-color)' }}>
-                          <td style={{ padding: '8px 10px' }}>
-                            <select className="form-control" style={{ width: '100%', fontSize: '13px' }} value={item.productId} onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)} required>
-                              <option value="">— Choose —</option>
-                              {products.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>
-                              ))}
-                            </select>
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                            {matchProd ? `${matchProd.gstRate}%` : '—'}
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <input type="number" className="form-control" style={{ textAlign: 'right', fontSize: '13px' }} value={item.price || ''} onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)} placeholder="0.00" min="0" step="any" required />
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <input type="number" className="form-control" style={{ textAlign: 'center', fontSize: '13px' }} value={item.quantity || ''} onChange={(e) => handleUpdateItemRow(index, 'quantity', parseInt(e.target.value) || 0)} min="1" required />
-                          </td>
-                          <td style={{ padding: '8px 10px' }}>
-                            <input type="number" className="form-control" style={{ textAlign: 'center', fontSize: '13px' }} value={item.discount || ''} onChange={(e) => handleUpdateItemRow(index, 'discount', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} min="0" max="100" placeholder="0" />
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--primary-dark)', whiteSpace: 'nowrap' }}>
-                            {formatINR(calcs.total).replace('₹', '')}
-                          </td>
-                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
-                            <button type="button" onClick={() => handleRemoveItemRow(index)} title="Remove row" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', borderRadius: '6px', padding: '4px 6px', transition: 'color 0.2s, background 0.2s' }}
-                              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
+                {/* Desktop header row */}
+                <div className="billed-items-header-row" style={{ gridTemplateColumns: '3.5fr 1fr 1.5fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+                  <div>Product *</div>
+                  <div style={{ textAlign: 'center' }}>GST %</div>
+                  <div style={{ textAlign: 'right' }}>Unit Price (₹) *</div>
+                  <div style={{ textAlign: 'center' }}>Qty *</div>
+                  <div style={{ textAlign: 'center' }}>Disc %</div>
+                  <div style={{ textAlign: 'right' }}>Net Total</div>
+                  <div></div>
+                </div>
+
+                <div className="billed-items-list">
+                  {items.map((item, index) => {
+                    const product = products.find((p) => p.id === item.productId);
+                    const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+                    return (
+                      <div key={index} className="billed-item-card" style={{ gridTemplateColumns: '3.5fr 1fr 1.5fr 1.5fr 1fr 1.5fr 0.5fr' }}>
+                        {/* Mobile item header */}
+                        <div className="mobile-item-header">
+                          <span className="mobile-item-title">Item #{index + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItemRow(index)}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
+                            title="Remove row"
+                          >
+                            <Trash2 size={16} style={{ color: 'var(--color-danger)' }} />
+                          </button>
+                        </div>
+
+                        {/* Product dropdown */}
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <span className="mobile-field-label">Product *</span>
+                          <select
+                            className="form-control"
+                            style={{ width: '100%', height: '40px', fontSize: '13px' }}
+                            value={item.productId}
+                            onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
+                            required
+                          >
+                            <option value="">— Choose Product —</option>
+                            {products.map((p) => (
+                              <option key={p.id} value={p.id}>
+                                {p.name} (Stock: {p.stock})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* GST & Unit Price grid row */}
+                        <div className="mobile-grid-2">
+                          <div>
+                            <span className="mobile-field-label">GST %</span>
+                            <div style={{
+                              height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)',
+                              borderRadius: '8px', fontWeight: 600, fontSize: '13px', color: 'var(--text-secondary)'
+                            }}>
+                              {product ? `${product.gstRate}%` : '—'}
+                            </div>
+                          </div>
+                          <div>
+                            <span className="mobile-field-label">Unit Price (₹) *</span>
+                            <input
+                              type="number"
+                              className="form-control"
+                              style={{ textAlign: 'right', height: '40px', fontSize: '13px' }}
+                              placeholder="0.00"
+                              min="0"
+                              step="any"
+                              value={item.price || ''}
+                              onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)}
+                              required
+                            />
+                          </div>
+                        </div>
+
+                        {/* Qty & Discount grid row */}
+                        <div className="mobile-grid-2">
+                          <div>
+                            <span className="mobile-field-label">Qty *</span>
+                            <input
+                              type="number"
+                              className="form-control"
+                              style={{ textAlign: 'center', height: '40px', fontSize: '13px' }}
+                              placeholder="1"
+                              min="1"
+                              value={item.quantity || ''}
+                              onChange={(e) => handleUpdateItemRow(index, 'quantity', parseInt(e.target.value) || 0)}
+                              required
+                            />
+                          </div>
+                          <div>
+                            <span className="mobile-field-label">Disc %</span>
+                            <div style={{ position: 'relative' }}>
+                              <Percent size={11} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                              <input
+                                type="number"
+                                className="form-control"
+                                style={{ textAlign: 'center', paddingRight: '22px', height: '40px', fontSize: '13px' }}
+                                placeholder="0"
+                                min="0"
+                                max="100"
+                                value={item.discount || ''}
+                                onChange={(e) => handleUpdateItemRow(index, 'discount', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Net Total display */}
+                        <div className="mobile-total-row">
+                          <span className="mobile-total-label">Net Total:</span>
+                          <span className="mobile-total-value">
+                            {formatINR(calcs.total)}
+                          </span>
+                        </div>
+
+                        {/* Desktop-only delete button */}
+                        <div style={{ display: 'flex', justifyContent: 'center' }} className="desktop-delete-btn-col">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveItemRow(index)}
+                            title="Remove row"
+                            style={{
+                              background: 'none', border: 'none', cursor: 'pointer',
+                              color: 'var(--text-muted)', borderRadius: '6px', padding: '6px',
+                              transition: 'all 0.2s',
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
-            {/* ── Step 3: Notes + Summary (same invoice-creator-container → collapses to 1-col on mobile) ── */}
-            <div className="invoice-creator-container" style={{ gap: '20px', alignItems: 'start' }}>
-
-              {/* Remarks */}
-              <div className="card" style={{ padding: '24px 20px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800 }}>3</div>
-                  <div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Remarks & Terms</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Printed on the estimate</div>
-                  </div>
-                </div>
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Internal Remarks / Terms</label>
-                  <textarea className="form-control" style={{ height: '130px', resize: 'vertical' }} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="E.g., Validity extensions, special dealer terms, packaging notes..." />
+            {/* Step 3: Notes & Terms + Summary */}
+            <div className="invoice-creator-container" style={{ gap: '20px', alignItems: 'start', marginBottom: '24px' }}>
+              
+              {/* Remarks card */}
+              <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                  <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>3</span>
+                  Remarks &amp; Terms
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Internal Remarks / Terms</label>
+                  <textarea
+                    className="form-control"
+                    style={{ fontSize: '13px', resize: 'vertical', minHeight: '130px' }}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="E.g., Validity extensions, special dealer terms, packaging notes..."
+                  />
                 </div>
               </div>
 
-              {/* Estimate Summary + Save */}
-              <div style={{ borderRadius: '16px', background: 'linear-gradient(145deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 90%, var(--primary) 10%) 100%)', border: '1.5px solid color-mix(in srgb, var(--primary) 20%, var(--border-color))', padding: '24px', boxShadow: '0 8px 24px rgba(16,185,129,0.08)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '10px', borderBottom: '1px solid var(--border-color)' }}>
+              {/* Estimate Summary card */}
+              <div style={{
+                borderRadius: '12px',
+                background: 'linear-gradient(145deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 90%, var(--primary) 10%) 100%)',
+                border: '1.5px solid color-mix(in srgb, var(--primary) 20%, var(--border-color))',
+                padding: '20px',
+                boxShadow: '0 8px 24px rgba(16,185,129,0.08)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '12px',
+                width: '100%',
+                boxSizing: 'border-box',
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--primary-dark)', textTransform: 'uppercase', letterSpacing: '1px', paddingBottom: '8px', borderBottom: '1px solid var(--border-color)' }}>
                   Estimate Summary
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
-                  <span style={{ fontWeight: 600 }}>{formatINR(totals.subtotal)}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.subtotal)}</span>
                 </div>
 
                 {totals.discountTotal > 0 && (
@@ -1940,38 +2492,66 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                 {isCreatorInterState ? (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                     <span style={{ color: 'var(--text-secondary)' }}>IGST ({currentGstRate}%)</span>
-                    <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal)}</span>
+                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.gstTotal)}</span>
                   </div>
                 ) : (
                   <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>CGST ({currentGstRate / 2}%)</span>
-                      <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal / 2)}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.gstTotal / 2)}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                       <span style={{ color: 'var(--text-secondary)' }}>SGST ({currentGstRate / 2}%)</span>
-                      <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal / 2)}</span>
+                      <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.gstTotal / 2)}</span>
                     </div>
                   </>
                 )}
 
-                <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
+                <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 800 }}>
                   <span style={{ color: 'var(--text-primary)' }}>Grand Total</span>
                   <span style={{ color: 'var(--primary-dark)' }}>{formatINR(totals.grandTotal)}</span>
                 </div>
 
-                {/* Save / Discard buttons */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
-                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 700, borderRadius: '10px', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}>
+                {/* Footer Buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    style={{
+                      width: '100%',
+                      height: '46px',
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 16px rgba(16,185,129,0.25)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
                     {editingQuotationId ? '✓ Update Quotation' : '✓ Save Quotation'}
                   </button>
-                  <button type="button" className="btn btn-secondary" onClick={() => {
-                    setIsCreatingQuotation(false);
-                    setEditingQuotationId(null);
-                    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
-                  }} style={{ width: '100%', padding: '10px', fontSize: '13px', borderRadius: '10px' }}>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => {
+                      setIsCreatingQuotation(false);
+                      setEditingQuotationId(null);
+                      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+                    }}
+                    style={{
+                      width: '100%',
+                      height: '42px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
                     Discard Draft
                   </button>
                 </div>
@@ -2148,7 +2728,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
       {/* Top Filter and Action Button */}
       <div className="filters-row-unified">
         <div className="filters-group-one">
-          <div className="search-input-wrapper">
+          <div className="search-input-wrapper sales-search-wrapper">
             <Search size={16} className="search-input-icon" />
             <input 
               type="text" 
@@ -2158,8 +2738,8 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
             />
           </div>
 
-          {/* Segmented Filter Control */}
-          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0, overflowX: 'auto' }}>
+          {/* Desktop Segmented Filter Control */}
+          <div className="desktop-status-filters" style={{ backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0, overflowX: 'auto' }}>
             {(salesActiveTab === 'invoices' 
               ? ['All', 'Paid', 'Partial', 'Unpaid'] 
               : ['All', 'Draft', 'Sent', 'Approved', 'Declined', 'Converted']
@@ -2191,6 +2771,27 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                 </button>
               );
             })}
+          </div>
+
+          {/* Mobile Status Select Dropdown */}
+          <div className="mobile-status-select-wrapper">
+            <select
+              className="filter-select status-select-field"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              {(salesActiveTab === 'invoices' 
+                ? ['All', 'Paid', 'Partial', 'Unpaid'] 
+                : ['All', 'Draft', 'Sent', 'Approved', 'Declined', 'Converted']
+              ).map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
@@ -2327,7 +2928,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <Eye size={14} /> View Details
+                                    <Eye size={14} /> View
                                   </button>
                                   <button 
                                     className="dropdown-item" 
@@ -2336,11 +2937,11 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <Edit2 size={14} /> Edit Invoice
+                                    <Edit2 size={14} /> Edit
                                   </button>
                                   <button 
-                                    className="dropdown-item" 
-                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                    className="dropdown-item danger" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
                                     onClick={() => { handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -2394,18 +2995,18 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
                                 onClick={() => { setViewInvoice(inv.id || inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
                               >
-                                <Eye size={14} /> View Details
+                                <Eye size={14} /> View
                               </button>
                               <button 
                                 className="dropdown-item" 
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
                                 onClick={() => { handleStartEditInvoice(inv); setActiveMenuInvoiceId(null); }}
                               >
-                                <Edit2 size={14} /> Edit Invoice
+                                <Edit2 size={14} /> Edit
                               </button>
                               <button 
-                                className="dropdown-item" 
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                className="dropdown-item danger" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
                                 onClick={() => { handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
                               >
                                 <Trash2 size={14} /> Delete
@@ -2537,7 +3138,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <Eye size={14} /> View Details
+                                    <Eye size={14} /> View
                                   </button>
                                   {q.status !== 'Converted' && (
                                     <button 
@@ -2547,7 +3148,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                     >
-                                      <Edit2 size={14} /> Edit Estimate
+                                      <Edit2 size={14} /> Edit
                                     </button>
                                   )}
                                   {q.status !== 'Converted' && (
@@ -2563,12 +3164,12 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                     >
-                                      <Store size={14} /> Convert Invoice
+                                      <Store size={14} /> Convert
                                     </button>
                                   )}
                                   <button 
-                                    className="dropdown-item" 
-                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                    className="dropdown-item danger" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
                                     onClick={() => { handleDeleteQuotation(q.id, q.quotationNumber); setActiveMenuQuotationId(null); }}
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
@@ -2622,7 +3223,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
                                 onClick={() => { setViewQuotation(q.id || q.quotationNumber); setActiveMenuQuotationId(null); }}
                               >
-                                <Eye size={14} /> View Details
+                                <Eye size={14} /> View
                               </button>
                               {q.status !== 'Converted' && (
                                 <button 
@@ -2630,7 +3231,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                   style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
                                   onClick={() => { handleStartEditQuotation(q); setActiveMenuQuotationId(null); }}
                                 >
-                                  <Edit2 size={14} /> Edit Estimate
+                                  <Edit2 size={14} /> Edit
                                 </button>
                               )}
                               {q.status !== 'Converted' && (
@@ -2644,12 +3245,12 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                                     setActiveMenuQuotationId(null);
                                   }}
                                 >
-                                  <Store size={14} /> Convert Invoice
+                                  <Store size={14} /> Convert
                                 </button>
                               )}
                               <button 
-                                className="dropdown-item" 
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                className="dropdown-item danger" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
                                 onClick={() => { handleDeleteQuotation(q.id, q.quotationNumber); setActiveMenuQuotationId(null); }}
                               >
                                 <Trash2 size={14} /> Delete

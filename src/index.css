@@ -1324,7 +1324,7 @@ select option {
   padding: 7px 32px 7px 12px;
   border-radius: 999px;
   border: 1.5px solid var(--border-color);
-  background: linear-gradient(135deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 92%, var(--primary) 8%) 100%);
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 14px, linear-gradient(135deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 92%, var(--primary) 8%) 100%);
   outline: none;
   font-size: 12px;
   font-weight: 500;
@@ -1337,6 +1337,10 @@ select option {
   -webkit-appearance: none;
   -moz-appearance: none;
   white-space: nowrap;
+}
+
+body.dark-theme .filter-select {
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 12px center / 14px, linear-gradient(135deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 92%, var(--primary) 8%) 100%) !important;
 }
 
 .filter-select:hover {
@@ -3918,7 +3922,8 @@ body.dark-theme select.form-control {
   }
 
   .template-select-field {
-    padding: 6px 8px !important;
+    padding: 6px 28px 6px 12px !important;
+    background-position: right 8px center !important;
     font-size: 12px !important;
     height: 36px !important;
   }
@@ -4035,6 +4040,206 @@ body.dark-theme select.form-control {
     justify-content: center !important;
     font-size: 13px !important;
     padding: 10px !important;
+  }
+}
+
+/* ── Billed Items Responsive Layout for New Invoice Creation Form ── */
+.billed-items-header-row {
+  display: grid;
+  grid-template-columns: 3.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.5fr;
+  gap: 12px;
+  padding: 10px 12px;
+  background-color: var(--bg-app);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.billed-items-list {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-card);
+}
+
+.billed-item-card {
+  display: grid;
+  grid-template-columns: 3.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.5fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border-bottom: 1px solid var(--border-color);
+  transition: all 0.2s ease;
+}
+
+.billed-item-card:hover {
+  background-color: color-mix(in srgb, var(--bg-app) 40%, transparent);
+}
+
+.mobile-item-header {
+  display: none;
+}
+
+.mobile-item-title {
+  display: none;
+}
+
+.mobile-field-label {
+  display: none;
+}
+
+.mobile-grid-2 {
+  display: contents;
+}
+
+.mobile-total-row {
+  display: contents;
+}
+
+.desktop-delete-btn-col {
+  display: block;
+}
+
+/* Mobile viewport adjustments */
+@media (max-width: 768px) {
+  .billed-items-header-row {
+    display: none !important;
+  }
+  
+  .billed-items-list {
+    background-color: transparent !important;
+    gap: 16px !important;
+    padding: 12px 8px !important;
+  }
+
+  .billed-item-card {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    padding: 16px !important;
+    border-radius: 12px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    box-shadow: var(--shadow-sm) !important;
+    margin-bottom: 0 !important;
+  }
+
+  .mobile-item-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    border-bottom: 1px dashed var(--border-color) !important;
+    padding-bottom: 8px !important;
+    margin-bottom: 4px !important;
+    width: 100% !important;
+  }
+
+  .mobile-item-title {
+    display: block !important;
+    font-weight: 700 !important;
+    font-size: 14px !important;
+    color: var(--primary-dark) !important;
+  }
+
+  .mobile-field-label {
+    display: block !important;
+    font-size: 11px !important;
+    font-weight: 600 !important;
+    color: var(--text-muted) !important;
+    margin-bottom: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+  }
+
+  .mobile-grid-2 {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+
+  .mobile-total-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background-color: var(--bg-app) !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+    width: 100% !important;
+    margin-top: 4px !important;
+  }
+
+  .mobile-total-label {
+    display: block !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    color: var(--text-secondary) !important;
+  }
+
+  .mobile-total-value {
+    display: block !important;
+    font-weight: 800 !important;
+    font-size: 15px !important;
+    color: var(--primary-dark) !important;
+  }
+
+  .desktop-delete-btn-col {
+    display: none !important;
+  }
+}
+
+/* Status Filters Responsive Layout (Desktop/Mobile) */
+.mobile-status-select-wrapper {
+  display: none;
+}
+
+.desktop-status-filters {
+  display: flex;
+}
+
+@media (max-width: 640px) {
+  .desktop-status-filters {
+    display: none !important;
+  }
+  
+  .mobile-status-select-wrapper {
+    display: block !important;
+    width: 50% !important;
+    flex: 1 1 50% !important;
+    box-sizing: border-box !important;
+  }
+  
+  .sales-search-wrapper {
+    width: 50% !important;
+    flex: 1 1 50% !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-status-select-wrapper .status-select-field {
+    width: 100% !important;
+    height: 38px !important;
+    font-size: 13px !important;
+    padding: 8px 32px 8px 12px !important;
+  }
+}
+
+/* Recycle Bin Filters Grid layout */
+.recycle-bin-filters-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  width: 100%;
+}
+.recycle-bin-filter-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+@media (max-width: 640px) {
+  .recycle-bin-filters-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
 }
 

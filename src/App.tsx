@@ -11,6 +11,7 @@ import { Payments } from './pages/Payments';
 import { Expenses } from './pages/Expenses';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
+import { RecycleBin } from './pages/RecycleBin';
 
 const AppContent: React.FC = () => {
   const { currentTab } = useApp();
@@ -37,6 +38,8 @@ const AppContent: React.FC = () => {
         return <Reports />;
       case 'settings':
         return <Settings />;
+      case 'recycle_bin':
+        return <RecycleBin />;
       default:
         return <Dashboard />;
     }
