@@ -1194,6 +1194,7 @@ select option {
   overflow-x: auto;
   border: 1px solid var(--border-color);
   border-radius: 8px;
+  min-height: 210px; /* Prevents actions dropdown from being cut off vertically when there are few rows */
 }
 
 .data-table {
@@ -1469,6 +1470,14 @@ select option {
   grid-template-columns: 1fr auto auto;
   gap: 12px;
 }
+
+/* Quotation form: 2-col date grid that collapses to 1-col on mobile */
+.quot-dates-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
 
 .form-label {
   display: block;
@@ -2063,6 +2072,10 @@ body.dark-theme select.form-control {
     grid-template-columns: 1fr;
   }
 
+  .quot-dates-grid {
+    grid-template-columns: 1fr;
+  }
+
   .report-sidebar-layout {
     grid-template-columns: 1fr;
   }
@@ -2158,7 +2171,7 @@ body.dark-theme select.form-control {
 
   .form-row {
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 12px;
   }
 
   .form-row-three,
@@ -2167,7 +2180,7 @@ body.dark-theme select.form-control {
   .form-row-2-1-1,
   .form-row-1-auto-auto {
     grid-template-columns: 1fr;
-    gap: 0;
+    gap: 12px;
   }
 
   .print-addresses {
@@ -3824,6 +3837,205 @@ body.dark-theme select.form-control {
   color: #ffffff;
   border-color: var(--primary);
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+}
+/* Invoice Detail Nav Panel & Actions (Desktop default, mobile override) */
+.invoice-detail-nav-panel {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  background-color: var(--bg-card);
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+}
+
+.invoice-detail-top-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.template-selector-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.template-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.desktop-only-text {
+  display: inline;
+}
+
+.action-buttons-grid {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .invoice-detail-nav-panel {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+
+  .invoice-detail-top-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+    gap: 8px !important;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 12px;
+  }
+
+  .desktop-only-text {
+    display: none !important;
+  }
+
+  .back-to-invoices-btn {
+    padding: 6px 12px !important;
+    font-size: 13px !important;
+    height: 36px !important;
+  }
+
+  .template-selector-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+  }
+
+  .template-label {
+    font-size: 12px !important;
+  }
+
+  .template-select-field {
+    padding: 6px 8px !important;
+    font-size: 12px !important;
+    height: 36px !important;
+  }
+
+  .action-buttons-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    width: 100% !important;
+  }
+
+  .action-buttons-grid button {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Make the third button (Print Receipt) span both columns on mobile */
+  .action-buttons-grid button:nth-child(3) {
+    grid-column: span 2 !important;
+  }
+}
+
+/* Custom Dropdown Menu Card & Items Styles */
+.dropdown-menu-card {
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1) !important;
+  border-radius: 12px !important;
+  padding: 6px !important;
+  gap: 3px !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.dropdown-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 8px 14px !important;
+  background: none !important;
+  border: none !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  color: var(--text-primary) !important;
+  border-radius: 8px !important;
+  transition: all var(--transition-fast, 0.15s ease) !important;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-app) !important;
+  color: var(--primary-dark) !important;
+}
+
+.dropdown-item.danger {
+  color: var(--color-danger) !important;
+}
+
+.dropdown-item.danger:hover {
+  background-color: var(--color-danger-bg, #fef2f2) !important;
+  color: var(--color-danger-dark, #b91c1c) !important;
+}
+
+/* Creator Forms Responsive Banner Header */
+.creator-banner-header {
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, #8b5cf6 100%);
+  border-radius: 16px;
+  padding: 20px 28px;
+  margin-bottom: 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 8px 32px rgba(139,92,246,0.25);
+  position: relative;
+  overflow: hidden;
+}
+
+.preview-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  width: 100%;
+}
+
+@media (max-width: 640px) {
+  .creator-banner-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 16px !important;
+    padding: 16px 20px !important;
+  }
+  
+  .creator-banner-header > div:first-child {
+    flex-direction: row !important;
+    align-items: center !important;
+    gap: 12px !important;
+  }
+  
+  .creator-banner-header > div:last-child {
+    text-align: left !important;
+    align-self: flex-start !important;
+    width: 100% !important;
+  }
+
+  .preview-actions-row {
+    flex-direction: column !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+  }
+  
+  .preview-actions-row .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    font-size: 13px !important;
+    padding: 10px !important;
+  }
 }
 
 

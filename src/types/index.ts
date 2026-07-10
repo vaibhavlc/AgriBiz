@@ -62,6 +62,36 @@ export interface Invoice {
   notes?: string;
 }
 
+export interface QuotationItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  price: number;
+  discount: number;
+  gstRate: number;
+  gstAmount: number;
+  subtotal: number;
+  total: number;
+}
+
+export interface Quotation {
+  id: string;
+  quotationNumber: string;
+  date: string;
+  validUntil: string;
+  customerId: string;
+  customerName: string;
+  items: QuotationItem[];
+  subtotal: number;
+  discountTotal: number;
+  gstTotal: number;
+  grandTotal: number;
+  status: 'Draft' | 'Sent' | 'Approved' | 'Declined' | 'Converted';
+  convertedInvoiceId?: string;
+  notes?: string;
+}
+
+
 export interface PurchaseItem {
   productId: string;
   productName: string;

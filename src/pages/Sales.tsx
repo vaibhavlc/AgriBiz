@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { formatINR, formatDate } from '../utils/dummyData';
-import type { Invoice } from '../types';
+import type { Invoice, Quotation } from '../types';
 import {
   Plus,
   Search,
@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
+  Calendar,
 } from 'lucide-react';
 
 interface InvoiceItemLocal {
@@ -34,17 +35,28 @@ interface InvoiceItemLocal {
 export const Sales: React.FC = () => {
   const {
     invoices,
+    quotations,
     customers,
     products,
     addInvoice,
     editInvoice,
     deleteInvoice,
+    addQuotation,
+    editQuotation,
+    deleteQuotation,
+    convertQuotationToInvoice,
     searchQuery,
     setSearchQuery,
     currentInvoiceId,
     setViewInvoice,
+    currentQuotationId,
+    setViewQuotation,
     isCreatingInvoice,
     setIsCreatingInvoice,
+    isCreatingQuotation,
+    setIsCreatingQuotation,
+    salesActiveTab,
+    setSalesActiveTab,
     showToast,
     settings,
     setViewCustomer,
@@ -58,9 +70,27 @@ export const Sales: React.FC = () => {
   const totalOutstanding = invoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
   const invoiceCount = invoices.length;
 
+  const totalQuoted = quotations.filter(q => q.status !== 'Declined').reduce((sum, q) => sum + q.grandTotal, 0);
+  const approvedQuoted = quotations.filter(q => q.status === 'Approved' || q.status === 'Converted').reduce((sum, q) => sum + q.grandTotal, 0);
+  const openQuotedCount = quotations.filter(q => q.status === 'Draft' || q.status === 'Sent').length;
+  const totalQuotedCount = quotations.length;
+
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<{ id: string; invoiceNumber: string } | null>(null);
   const [activeMenuInvoiceId, setActiveMenuInvoiceId] = useState<string | null>(null);
+
+  const [editingQuotationId, setEditingQuotationId] = useState<string | null>(null);
+  const [deletingQuotation, setDeletingQuotation] = useState<{ id: string; quotationNumber: string } | null>(null);
+  const [activeMenuQuotationId, setActiveMenuQuotationId] = useState<string | null>(null);
+
+  // Local state for quotation validity
+  const [validUntil, setValidUntil] = useState('2026-07-31');
+
+  // Convert Quotation to Invoice Modal State
+  const [isConvertModalOpen, setIsConvertModalOpen] = useState(false);
+  const [convertQuotationId, setConvertQuotationId] = useState<string | null>(null);
+  const [convertAmountPaid, setConvertAmountPaid] = useState(0);
+  const [convertPaymentMethod, setConvertPaymentMethod] = useState('UPI');
 
   // Local state for invoice creator - defaults to 1 pre-filled required row
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
@@ -84,7 +114,7 @@ export const Sales: React.FC = () => {
 
   // Toggle thermal printer style class on document body
   useEffect(() => {
-    if (currentInvoiceId && printTemplate === 'Thermal') {
+    if ((currentInvoiceId || currentQuotationId) && printTemplate === 'Thermal') {
       document.body.classList.add('print-thermal-mode');
     } else {
       document.body.classList.remove('print-thermal-mode');
@@ -92,7 +122,7 @@ export const Sales: React.FC = () => {
     return () => {
       document.body.classList.remove('print-thermal-mode');
     };
-  }, [printTemplate, currentInvoiceId]);
+  }, [printTemplate, currentInvoiceId, currentQuotationId]);
 
   useEffect(() => {
     if (salesFormPresetCustomerId) {
@@ -512,6 +542,112 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     setDeletingInvoice({ id, invoiceNumber: invoiceNo });
   };
 
+  const handleSaveQuotation = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!selectedCustomerId) {
+      showToast('Please select a customer first.', 'error');
+      return;
+    }
+
+    if (items.some((item) => !item.productId || item.quantity <= 0 || item.price < 0)) {
+      showToast('Please ensure all items have valid products, quantities, and prices.', 'error');
+      return;
+    }
+
+    const customer = customers.find((c) => c.id === selectedCustomerId);
+    if (!customer) return;
+
+    const quotationItems = items.map((item) => {
+      const product = products.find((p) => p.id === item.productId)!;
+      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+      return {
+        productId: item.productId,
+        productName: product.name,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+        gstRate: calcs.gstRate,
+        gstAmount: calcs.gstAmount,
+        subtotal: calcs.subtotal,
+        total: calcs.total,
+      };
+    });
+
+    if (editingQuotationId) {
+      const originalQuotation = quotations.find((q) => q.id === editingQuotationId);
+      if (!originalQuotation) return;
+
+      editQuotation({
+        ...originalQuotation,
+        date: invoiceDate,
+        validUntil,
+        customerId: selectedCustomerId,
+        customerName: customer.name,
+        items: quotationItems,
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        gstTotal: totals.gstTotal,
+        grandTotal: totals.grandTotal,
+        notes: notes.trim() || undefined,
+      });
+
+      showToast(`Quotation ${originalQuotation.quotationNumber} updated successfully!`);
+
+      // Reset states
+      setEditingQuotationId(null);
+      setSelectedCustomerId('');
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setNotes('');
+      setIsCreatingQuotation(false);
+      setViewQuotation(originalQuotation.id);
+    } else {
+      const newQuotation = addQuotation({
+        date: invoiceDate,
+        validUntil,
+        customerId: selectedCustomerId,
+        customerName: customer.name,
+        items: quotationItems,
+        subtotal: totals.subtotal,
+        discountTotal: totals.discountTotal,
+        gstTotal: totals.gstTotal,
+        grandTotal: totals.grandTotal,
+        status: 'Draft',
+        notes: notes.trim() || undefined,
+      });
+
+      showToast(`Quotation created successfully for ${customer.name}!`);
+
+      // Reset states
+      setSelectedCustomerId('');
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setNotes('');
+      setIsCreatingQuotation(false);
+      setViewQuotation(newQuotation.id);
+    }
+  };
+
+  const handleStartEditQuotation = (q: Quotation) => {
+    setEditingQuotationId(q.id);
+    setSelectedCustomerId(q.customerId);
+    setInvoiceDate(q.date);
+    setValidUntil(q.validUntil);
+    setNotes(q.notes || '');
+    setItems(
+      q.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+      }))
+    );
+    setIsCreatingQuotation(true);
+  };
+
+  const handleDeleteQuotation = (id: string, quotationNo: string) => {
+    setDeletingQuotation({ id, quotationNumber: quotationNo });
+  };
+
   // --- Filtering & Sorting ---
 
   const filteredInvoices = invoices.filter((inv) => {
@@ -539,14 +675,48 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     return 0;
   });
 
+  const filteredQuotations = quotations.filter((q) => {
+    const matchesSearch =
+      q.quotationNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      q.customerName.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesStatus = statusFilter === 'All' || q.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const sortedQuotations = [...filteredQuotations].sort((a, b) => {
+    if (sortBy === 'date-desc') {
+      return new Date(b.date).getTime() - new Date(a.date).getTime();
+    }
+    if (sortBy === 'date-asc') {
+      return new Date(a.date).getTime() - new Date(b.date).getTime();
+    }
+    if (sortBy === 'amount-desc') {
+      return b.grandTotal - a.grandTotal;
+    }
+    if (sortBy === 'amount-asc') {
+      return a.grandTotal - b.grandTotal;
+    }
+    return 0;
+  });
+
   // Pagination
-  const totalPages = Math.ceil(sortedInvoices.length / itemsPerPage);
+  const totalPages = salesActiveTab === 'invoices' 
+    ? Math.ceil(sortedInvoices.length / itemsPerPage)
+    : Math.ceil(sortedQuotations.length / itemsPerPage);
+
   const paginatedInvoices = sortedInvoices.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
+  const paginatedQuotations = sortedQuotations.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   const selectedInvoice = invoices.find((inv) => inv.id === currentInvoiceId || inv.invoiceNumber === currentInvoiceId);
+  const selectedQuotation = quotations.find((q) => q.id === currentQuotationId || q.quotationNumber === currentQuotationId);
 
   // --- RENDERING ---
 
@@ -874,6 +1044,263 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteInvoice(selectedInvoice.id || selectedInvoice.invoiceNumber, selectedInvoice.invoiceNumber)}>
             <Trash2 size={16} /> Delete & Reset Stock
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (selectedQuotation) {
+    const customerDetail = customers.find((c) => c.id === selectedQuotation.customerId);
+    const isInterState = customerDetail && customerDetail.state && settings.state && customerDetail.state !== settings.state;
+    const quotationTotals = {
+      subtotal: selectedQuotation.subtotal,
+      discountTotal: selectedQuotation.discountTotal,
+      gstTotal: selectedQuotation.gstTotal,
+      grandTotal: selectedQuotation.grandTotal,
+    };
+
+    return (
+      <div style={{ animation: "fadeIn 0.2s ease-out" }}>
+        {/* Navigation Action header */}
+        <div className="invoice-detail-nav-panel no-print">
+          <div className="invoice-detail-top-row">
+            <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewQuotation(null)}>
+              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Quotations</span>
+            </button>
+            <div className="template-selector-group">
+              <span className="template-label">Template:</span>
+              <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
+                <option value="A5">Standard A5</option>
+                <option value="Thermal">Thermal roll</option>
+              </select>
+            </div>
+          </div>
+          <div className="action-buttons-grid">
+            <button className="btn btn-secondary" onClick={() => window.print()} title="Print paper voucher">
+              <Printer size={16} /> Print Estimate
+            </button>
+          </div>
+        </div>
+
+        {/* Invoice Page Container */}
+        {printTemplate === 'A5' ? (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div className="printable-invoice-card a5-layout">
+              {/* Header section */}
+              <div className="invoice-header-grid">
+                <div>
+                  <h2 className="invoice-brand-title">{settings.businessName}</h2>
+                  <p className="invoice-brand-subtitle">{settings.address}</p>
+                  <p className="invoice-brand-subtitle">GSTIN: {settings.gstin}</p>
+                  {settings.phone && <p className="invoice-brand-subtitle">Phone: {settings.phone}</p>}
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <h1 className="invoice-main-tag text-quotation" style={{ color: "var(--primary)" }}>SALES ESTIMATE</h1>
+                  <div style={{ marginTop: "12px", display: "grid", gridTemplateColumns: "1fr auto", gap: "6px 12px", fontSize: "13px" }}>
+                    <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Estimate No:</span>
+                    <strong style={{ color: "var(--text-primary)" }}>{selectedQuotation.quotationNumber}</strong>
+                    <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Date:</span>
+                    <span style={{ color: "var(--text-primary)" }}>{formatDate(selectedQuotation.date)}</span>
+                    <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Valid Until:</span>
+                    <span style={{ color: "var(--text-primary)" }}>{formatDate(selectedQuotation.validUntil)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bill To section */}
+              <div className="invoice-customer-card" style={{ marginTop: "24px" }}>
+                <h4 className="invoice-detail-header">ESTIMATE FOR:</h4>
+                {customerDetail ? (
+                  <>
+                    <h3 className="invoice-customer-name">{customerDetail.name}</h3>
+                    <div className="invoice-customer-details-grid">
+                      {customerDetail.phone && <span className="invoice-customer-sub">Phone: {customerDetail.phone}</span>}
+                      {customerDetail.address && <span className="invoice-customer-sub">Address: {customerDetail.address}</span>}
+                      {customerDetail.gstin && <span className="invoice-customer-sub">GSTIN: {customerDetail.gstin}</span>}
+                      {customerDetail.state && <span className="invoice-customer-sub">State: {customerDetail.state}</span>}
+                    </div>
+                  </>
+                ) : (
+                  <h3 className="invoice-customer-name">Walk-in Customer</h3>
+                )}
+              </div>
+
+              {/* Items Table */}
+              <table className="invoice-table" style={{ marginTop: "24px" }}>
+                <thead>
+                  <tr>
+                    <th>Item Description</th>
+                    <th style={{ textAlign: "center" }}>GST %</th>
+                    <th style={{ textAlign: "right" }}>Rate (₹)</th>
+                    <th style={{ textAlign: "center" }}>Qty</th>
+                    <th style={{ textAlign: "center" }}>Disc %</th>
+                    <th style={{ textAlign: "right" }}>Amount (₹)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedQuotation.items.map((item, index) => (
+                    <tr key={index}>
+                      <td style={{ fontWeight: 600 }}>{item.productName}</td>
+                      <td style={{ textAlign: "center" }}>{item.gstRate}%</td>
+                      <td style={{ textAlign: "right" }}>{formatINR(item.price).replace("₹", "")}</td>
+                      <td style={{ textAlign: "center", fontWeight: 700 }}>{item.quantity}</td>
+                      <td style={{ textAlign: "center" }}>{item.discount}%</td>
+                      <td style={{ textAlign: "right", fontWeight: 700 }}>{formatINR(item.total).replace("₹", "")}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              {/* Footer Summary Grid */}
+              <div className="invoice-totals-section" style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: "30px", marginTop: "24px" }}>
+                <div style={{ fontSize: "12px", color: "var(--text-muted)", lineHeight: 1.6 }}>
+                  <h4 style={{ fontWeight: 700, color: "var(--text-secondary)", marginBottom: "4px" }}>Terms & Conditions:</h4>
+                  <p style={{ margin: 0 }}>1. This is a commercial sales estimate, not a tax invoice.</p>
+                  <p style={{ margin: 0 }}>2. Prices are valid until the validity date specified above.</p>
+                </div>
+                <div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                      <span style={{ color: "var(--text-secondary)" }}>Subtotal:</span>
+                      <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.subtotal)}</span>
+                    </div>
+                    {quotationTotals.discountTotal > 0 && (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px", color: "var(--color-success-dark)" }}>
+                        <span>Discount (−):</span>
+                        <span style={{ fontWeight: 600 }}>−{formatINR(quotationTotals.discountTotal)}</span>
+                      </div>
+                    )}
+                    {isInterState ? (
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                        <span style={{ color: "var(--text-secondary)" }}>IGST ({selectedQuotation.items[0]?.gstRate || 18}%):</span>
+                        <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.gstTotal)}</span>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>CGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%):</span>
+                          <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.gstTotal / 2)}</span>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: "14px" }}>
+                          <span style={{ color: "var(--text-secondary)" }}>SGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%):</span>
+                          <span style={{ fontWeight: 600 }}>{formatINR(quotationTotals.gstTotal / 2)}</span>
+                        </div>
+                      </>
+                    )}
+                    <div style={{ borderTop: "1.5px solid var(--border-color)", margin: "6px 0" }}></div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: "15px", fontWeight: 800, color: "var(--text-primary)" }}>Grand Total:</span>
+                      <span style={{ fontSize: "20px", fontWeight: 900, color: "var(--primary)" }}>{formatINR(quotationTotals.grandTotal)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div className="print-invoice-layout thermal">
+              <div style={{ textAlign: "center", marginBottom: "12px" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{settings.businessName}</h3>
+                <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{settings.address}</p>
+                {settings.phone && <p style={{ margin: 0, fontSize: "11px" }}>Mob: {settings.phone}</p>}
+                <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Est No: <strong>{selectedQuotation.quotationNumber}</strong></span>
+                  <span>Date: {formatDate(selectedQuotation.date)}</span>
+                </div>
+                <div>Customer: <strong>{customerDetail?.name || "Walk-in"}</strong></div>
+                {customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ fontSize: "11px" }}>
+                <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
+                  <span>ITEM</span>
+                  <span style={{ textAlign: "center" }}>QTY</span>
+                  <span style={{ textAlign: "right" }}>AMT(₹)</span>
+                </div>
+                <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
+                {selectedQuotation.items.map((item, index) => (
+                  <div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}>
+                    <div>
+                      <span style={{ fontWeight: "bold" }}>{item.productName}</span>
+                      <div style={{ fontSize: "10px", color: "#555" }}>Rate: ₹{item.price} | GST: {item.gstRate}%</div>
+                    </div>
+                    <span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
+                    <span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Total Taxable</span>
+                  <span>₹{quotationTotals.subtotal.toFixed(2)}</span>
+                </div>
+                {quotationTotals.discountTotal > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Discount (-)</span>
+                    <span>₹{quotationTotals.discountTotal.toFixed(2)}</span>
+                  </div>
+                )}
+                {isInterState ? (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>IGST ({selectedQuotation.items[0]?.gstRate || 18}%)</span>
+                    <span>₹{quotationTotals.gstTotal.toFixed(2)}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>CGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</span>
+                      <span>₹{(quotationTotals.gstTotal / 2).toFixed(2)}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span>SGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</span>
+                      <span>₹{(quotationTotals.gstTotal / 2).toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
+                  <span>GRAND TOTAL EST</span>
+                  <span>₹{quotationTotals.grandTotal.toFixed(2)}</span>
+                </div>
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div>THANK YOU!</div>
+                {selectedQuotation.notes && <div style={{ fontStyle: "italic" }}>"{selectedQuotation.notes}"</div>}
+                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by AgriBiz POS software</div>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Bottom Actions Row */}
+        <div className="no-print preview-actions-row">
+          {selectedQuotation.status !== 'Converted' && (
+            <button 
+              className="btn btn-primary"
+              style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', border: 'none' }}
+              onClick={() => {
+                setConvertQuotationId(selectedQuotation.id);
+                setConvertAmountPaid(selectedQuotation.grandTotal);
+                setIsConvertModalOpen(true);
+              }}
+            >
+              <Store size={15} /> Convert to Invoice
+            </button>
+          )}
+          {selectedQuotation.status !== 'Converted' && (
+            <button className="btn btn-secondary" onClick={() => handleStartEditQuotation(selectedQuotation)}>
+              <Edit2 size={15} /> Edit Quotation
+            </button>
+          )}
+          <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteQuotation(selectedQuotation.id, selectedQuotation.quotationNumber)}>
+            <Trash2 size={16} /> Delete Quotation
           </button>
         </div>
       </div>
@@ -1265,69 +1692,478 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
     );
   }
 
+  if (isCreatingQuotation) {
+    const originalQuotation = editingQuotationId ? quotations.find((q) => q.id === editingQuotationId) : null;
+    const quotationNumber = originalQuotation ? originalQuotation.quotationNumber : `QT-${(quotations.length + 1).toString().padStart(3, '0')}`;
+    const activeCustomer = customers.find((c) => c.id === selectedCustomerId);
+    const isCreatorInterState = activeCustomer && activeCustomer.state && settings.state && activeCustomer.state !== settings.state;
+    const currentGstRate = (items[0]?.productId ? products.find((p) => p.id === items[0].productId)?.gstRate : 18) ?? 18;
 
-  // 3. INVOICES TABLE LIST VIEW (DEFAULT)
+    return (
+      <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+
+        {/* ── Gradient Banner Header ── */}
+        <div className="creator-banner-header">
+          {/* decorative circles */}
+          <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button type="button" onClick={() => {
+              setIsCreatingQuotation(false);
+              setEditingQuotationId(null);
+              setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+            }} style={{
+              background: 'rgba(255,255,255,0.15)', border: '1px solid rgba(255,255,255,0.25)',
+              color: '#fff', borderRadius: '10px', padding: '8px 14px',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px',
+              fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(8px)',
+              transition: 'background 0.2s', flexShrink: 0,
+            }}>
+              <ArrowLeft size={15} /> {editingQuotationId ? 'Back' : 'Cancel'}
+            </button>
+            <div>
+              <div style={{ color: 'rgba(255,255,255,0.75)', fontSize: '12px', fontWeight: 500, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                {editingQuotationId ? 'Edit Quotation' : 'New Quotation'}
+              </div>
+              <div style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2 }}>
+                {editingQuotationId ? 'Update Quotation' : 'Create Sales Estimate'}
+              </div>
+            </div>
+          </div>
+          <div style={{
+            background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '12px', padding: '10px 18px', textAlign: 'right', backdropFilter: 'blur(8px)',
+          }}>
+            <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>Estimate No</div>
+            <div style={{ color: '#fff', fontSize: '17px', fontWeight: 800, letterSpacing: '0.5px' }}>{quotationNumber}</div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSaveQuotation}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', maxWidth: '1100px', width: '100%', margin: '0 auto', boxSizing: 'border-box' }}>
+
+            {/* ── Step 1: Customer & Dates ── */}
+            <div className="card" style={{ padding: '20px 16px', borderRadius: '16px', border: '1px solid var(--border-color)', overflow: 'hidden', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
+              {/* Section header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800, flexShrink: 0 }}>1</div>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Customer &amp; Dates</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Select customer, quote date and validity</div>
+                </div>
+              </div>
+
+              {/* Customer field — full width, button below it */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Customer *</label>
+                  <select
+                    className="form-control"
+                    style={{ width: '100%', minWidth: 0 }}
+                    value={selectedCustomerId}
+                    onChange={(e) => setSelectedCustomerId(e.target.value)}
+                    required
+                  >
+                    <option value="">— Select Customer —</option>
+                    {customers.map((c) => (
+                      <option key={c.id} value={c.id}>{c.name}{c.phone ? ` (${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}</option>
+                    ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setIsCustomerModalOpen(true)}
+                  style={{ alignSelf: 'flex-start', whiteSpace: 'nowrap' }}
+                >
+                  <Plus size={15} /> + New Customer
+                </button>
+              </div>
+
+              {/* Date fields — each full width, stacked */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Quote Date *</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ width: '100%', minWidth: 0 }}
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    required
+                  />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label className="form-label" style={{ margin: 0 }}>Valid Until *</label>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ width: '100%', minWidth: 0 }}
+                    value={validUntil}
+                    onChange={(e) => setValidUntil(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Active customer chip */}
+              {activeCustomer && (
+                <div style={{ marginTop: '14px', padding: '10px 14px', borderRadius: '10px', background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 6%, transparent), color-mix(in srgb, var(--primary) 3%, transparent))', border: '1px solid color-mix(in srgb, var(--primary) 20%, transparent)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', overflow: 'hidden' }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: '14px', flexShrink: 0 }}>
+                    {activeCustomer.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeCustomer.name}</div>
+                    <div style={{ color: 'var(--text-muted)', fontSize: '12px' }}>{activeCustomer.phone}</div>
+                  </div>
+                  {activeCustomer.outstanding > 0 && (
+                    <div style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--color-danger)', borderRadius: '8px', padding: '4px 8px', fontSize: '12px', fontWeight: 700, flexShrink: 0, whiteSpace: 'nowrap' }}>
+                      Due: {formatINR(activeCustomer.outstanding)}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* ── Step 2: Quoted Products Table ── */}
+            <div className="card" style={{ padding: '24px 20px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800 }}>2</div>
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Quoted Products</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{items.length} line item{items.length !== 1 ? 's' : ''}</div>
+                  </div>
+                </div>
+                <button type="button" className="btn btn-secondary" onClick={handleAddItemRow} style={{ fontSize: '13px' }}>
+                  <Plus size={14} /> Add Row
+                </button>
+              </div>
+
+              {/* Horizontally scrollable table — works on any screen width */}
+              <div style={{ overflowX: 'auto', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ background: 'var(--bg-app)' }}>
+                      <th style={{ padding: '10px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '200px' }}>Product</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '80px' }}>GST%</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '110px' }}>Unit Price (₹)</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '70px' }}>Qty</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'center', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '70px' }}>Disc%</th>
+                      <th style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, color: 'var(--text-muted)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', minWidth: '100px' }}>Total</th>
+                      <th style={{ padding: '10px 12px', width: '40px' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => {
+                      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+                      const matchProd = products.find((p) => p.id === item.productId);
+                      const isEven = index % 2 === 0;
+                      return (
+                        <tr key={index} style={{ background: isEven ? 'transparent' : 'color-mix(in srgb, var(--bg-app) 60%, transparent)', borderTop: '1px solid var(--border-color)' }}>
+                          <td style={{ padding: '8px 10px' }}>
+                            <select className="form-control" style={{ width: '100%', fontSize: '13px' }} value={item.productId} onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)} required>
+                              <option value="">— Choose —</option>
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>{p.name} (Stock: {p.stock})</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                            {matchProd ? `${matchProd.gstRate}%` : '—'}
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <input type="number" className="form-control" style={{ textAlign: 'right', fontSize: '13px' }} value={item.price || ''} onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)} placeholder="0.00" min="0" step="any" required />
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <input type="number" className="form-control" style={{ textAlign: 'center', fontSize: '13px' }} value={item.quantity || ''} onChange={(e) => handleUpdateItemRow(index, 'quantity', parseInt(e.target.value) || 0)} min="1" required />
+                          </td>
+                          <td style={{ padding: '8px 10px' }}>
+                            <input type="number" className="form-control" style={{ textAlign: 'center', fontSize: '13px' }} value={item.discount || ''} onChange={(e) => handleUpdateItemRow(index, 'discount', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))} min="0" max="100" placeholder="0" />
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'right', fontWeight: 700, color: 'var(--primary-dark)', whiteSpace: 'nowrap' }}>
+                            {formatINR(calcs.total).replace('₹', '')}
+                          </td>
+                          <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                            <button type="button" onClick={() => handleRemoveItemRow(index)} title="Remove row" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)', borderRadius: '6px', padding: '4px 6px', transition: 'color 0.2s, background 0.2s' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.background = 'rgba(239,68,68,0.08)'; }}
+                              onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'none'; }}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ── Step 3: Notes + Summary (same invoice-creator-container → collapses to 1-col on mobile) ── */}
+            <div className="invoice-creator-container" style={{ gap: '20px', alignItems: 'start' }}>
+
+              {/* Remarks */}
+              <div className="card" style={{ padding: '24px 20px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '10px', background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: '14px', fontWeight: 800 }}>3</div>
+                  <div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Remarks & Terms</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Printed on the estimate</div>
+                  </div>
+                </div>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Internal Remarks / Terms</label>
+                  <textarea className="form-control" style={{ height: '130px', resize: 'vertical' }} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="E.g., Validity extensions, special dealer terms, packaging notes..." />
+                </div>
+              </div>
+
+              {/* Estimate Summary + Save */}
+              <div style={{ borderRadius: '16px', background: 'linear-gradient(145deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 90%, var(--primary) 10%) 100%)', border: '1.5px solid color-mix(in srgb, var(--primary) 20%, var(--border-color))', padding: '24px', boxShadow: '0 8px 24px rgba(16,185,129,0.08)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-dark)', textTransform: 'uppercase', letterSpacing: '0.5px', paddingBottom: '10px', borderBottom: '1px solid var(--border-color)' }}>
+                  Estimate Summary
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+                  <span style={{ fontWeight: 600 }}>{formatINR(totals.subtotal)}</span>
+                </div>
+
+                {totals.discountTotal > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--color-success-dark)' }}>
+                    <span>Discount (−)</span>
+                    <span style={{ fontWeight: 600 }}>−{formatINR(totals.discountTotal)}</span>
+                  </div>
+                )}
+
+                {isCreatorInterState ? (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                    <span style={{ color: 'var(--text-secondary)' }}>IGST ({currentGstRate}%)</span>
+                    <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal)}</span>
+                  </div>
+                ) : (
+                  <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>CGST ({currentGstRate / 2}%)</span>
+                      <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal / 2)}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                      <span style={{ color: 'var(--text-secondary)' }}>SGST ({currentGstRate / 2}%)</span>
+                      <span style={{ fontWeight: 600 }}>{formatINR(totals.gstTotal / 2)}</span>
+                    </div>
+                  </>
+                )}
+
+                <div style={{ height: '1px', background: 'var(--border-color)', margin: '4px 0' }} />
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 800 }}>
+                  <span style={{ color: 'var(--text-primary)' }}>Grand Total</span>
+                  <span style={{ color: 'var(--primary-dark)' }}>{formatINR(totals.grandTotal)}</span>
+                </div>
+
+                {/* Save / Discard buttons */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' }}>
+                  <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '14px', fontWeight: 700, borderRadius: '10px', boxShadow: '0 4px 16px rgba(16,185,129,0.3)' }}>
+                    {editingQuotationId ? '✓ Update Quotation' : '✓ Save Quotation'}
+                  </button>
+                  <button type="button" className="btn btn-secondary" onClick={() => {
+                    setIsCreatingQuotation(false);
+                    setEditingQuotationId(null);
+                    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+                  }} style={{ width: '100%', padding: '10px', fontSize: '13px', borderRadius: '10px' }}>
+                    Discard Draft
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </form>
+
+        <CustomerModal isOpen={isCustomerModalOpen} onClose={() => setIsCustomerModalOpen(false)} onSaveCallback={(c) => setSelectedCustomerId(c.id)} />
+      </div>
+    );
+  }
+
+
+  // 3. INVOICES / QUOTATIONS TABLE LIST VIEW (DEFAULT)
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-      {/* Sales KPI Cards */}
-      <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Sales</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-              {formatINR(totalSales)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Total billing revenue
-            </span>
-          </div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Collected</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
-              {formatINR(totalCollected)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Cash and digital collection
-            </span>
-          </div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Outstanding Dues</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
-              {formatINR(totalOutstanding)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Accounts receivable dues
-            </span>
-          </div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Voucher Count</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
-              {invoiceCount} invoices
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Total sales transactions
-            </span>
-          </div>
-        </div>
+      {/* Segmented Tab Control */}
+      <div className="no-print" style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        borderBottom: '1px solid var(--border-color)', 
+        marginBottom: '24px',
+        paddingBottom: '2px'
+      }}>
+        <button
+          type="button"
+          onClick={() => {
+            setSalesActiveTab('invoices');
+            setStatusFilter('All');
+            setCurrentPage(1);
+          }}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: 700,
+            border: 'none',
+            background: 'none',
+            color: salesActiveTab === 'invoices' ? 'var(--primary)' : 'var(--text-secondary)',
+            borderBottom: salesActiveTab === 'invoices' ? '3px solid var(--primary)' : '3px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <FileText size={16} /> Sales Invoices
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setSalesActiveTab('quotations');
+            setStatusFilter('All');
+            setCurrentPage(1);
+          }}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: 700,
+            border: 'none',
+            background: 'none',
+            color: salesActiveTab === 'quotations' ? 'var(--primary)' : 'var(--text-secondary)',
+            borderBottom: salesActiveTab === 'quotations' ? '3px solid var(--primary)' : '3px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <Calendar size={16} /> Estimates & Quotations
+        </button>
       </div>
 
-      {/* Top Filter and New button */}
+      {/* KPI Cards section */}
+      {salesActiveTab === 'invoices' ? (
+        <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Sales</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
+                {formatINR(totalSales)}
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Total billing revenue
+              </span>
+            </div>
+          </div>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Collected</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
+                {formatINR(totalCollected)}
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Cash and digital collection
+              </span>
+            </div>
+          </div>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Outstanding Dues</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
+                {formatINR(totalOutstanding)}
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Accounts receivable dues
+              </span>
+            </div>
+          </div>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Voucher Count</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
+                {invoiceCount} invoices
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Total sales transactions
+              </span>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Estimates</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
+                {formatINR(totalQuoted)}
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Active quoted value
+              </span>
+            </div>
+          </div>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Approved Value</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
+                {formatINR(approvedQuoted)}
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Estimates won or converted
+              </span>
+            </div>
+          </div>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Open Quotations</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-warning-dark, #b45309)' }}>
+                {openQuotedCount} drafts
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Drafts and sent estimates
+              </span>
+            </div>
+          </div>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Estimate Count</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
+                {totalQuotedCount} estimates
+              </span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
+                Total quotations logged
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Top Filter and Action Button */}
       <div className="filters-row-unified">
         <div className="filters-group-one">
           <div className="search-input-wrapper">
             <Search size={16} className="search-input-icon" />
-            <input type="text" placeholder="Search invoice or customer..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <input 
+              type="text" 
+              placeholder={salesActiveTab === 'invoices' ? "Search invoice or customer..." : "Search quotation or customer..."} 
+              value={searchQuery} 
+              onChange={(e) => setSearchQuery(e.target.value)} 
+            />
           </div>
 
           {/* Segmented Filter Control */}
-          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0 }}>
-            {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => {
+          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0, overflowX: 'auto' }}>
+            {(salesActiveTab === 'invoices' 
+              ? ['All', 'Paid', 'Partial', 'Unpaid'] 
+              : ['All', 'Draft', 'Sent', 'Approved', 'Declined', 'Converted']
+            ).map((status) => {
               const isActive = statusFilter === status;
               return (
                 <button
@@ -1351,7 +2187,7 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                     setCurrentPage(1);
                   }}
                 >
-                  {status === 'All' ? 'All' : status}
+                  {status}
                 </button>
               );
             })}
@@ -1382,346 +2218,492 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
             </span>
           </div>
 
-          {/* New Invoice Button — same row */}
-          <button className="btn btn-primary" onClick={handleStartNewInvoice}>
-            <Plus size={16} /> New Invoice
-          </button>
+          {/* Action button */}
+          {salesActiveTab === 'invoices' ? (
+            <button className="btn btn-primary" onClick={handleStartNewInvoice}>
+              <Plus size={16} /> New Invoice
+            </button>
+          ) : (
+            <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' }} onClick={() => {
+              setSelectedCustomerId('');
+              setInvoiceDate(new Date().toISOString().split('T')[0]);
+              setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
+              setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+              setNotes('');
+              setIsCreatingQuotation(true);
+            }}>
+              <Plus size={16} /> New Quotation
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Invoices List Table - optimized to 7 columns to completely eliminate horizontal scrolling */}
+      {/* Main List Card Container */}
       <div className="card">
-        {sortedInvoices.length === 0 ? (
-          <div className="empty-state">
-            <FileText size={48} className="empty-state-icon" />
-            <h4 className="empty-state-title">No Invoices Found</h4>
-            <p className="empty-state-text" style={{ maxWidth: '320px', margin: '8px auto 0 auto' }}>
-              Create a billing voucher by clicking 'New Invoice' to sell implements and parts.
-            </p>
-          </div>
-        ) : (
-          <div>
-            {/* Desktop View */}
-            <div className="desktop-only-table">
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th style={{ whiteSpace: 'nowrap' }}>Inv No</th>
-                      <th style={{ maxWidth: '160px', overflow: 'hidden', textOverflow: 'ellipsis' }}>Customer</th>
-                      <th style={{ whiteSpace: 'nowrap' }}>Date</th>
-                      <th style={{ whiteSpace: 'nowrap' }}>Total (₹)</th>
-                      <th style={{ whiteSpace: 'nowrap' }}>Paid (₹)</th>
-                      <th style={{ whiteSpace: 'nowrap' }}>Due (₹)</th>
-                      <th style={{ whiteSpace: 'nowrap' }}>Status</th>
-                      <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {paginatedInvoices.map((inv) => (
-                      <tr key={inv.id}>
-                        <td 
-                          style={{ 
-                            fontWeight: 700, 
-                            color: 'var(--primary-color, var(--primary-dark))', 
-                            whiteSpace: 'nowrap', 
-                            cursor: 'pointer' 
-                          }}
-                          onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
-                          title="Click to view details"
-                          onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-                        >
-                          {inv.invoiceNumber}
-                        </td>
-                        <td 
-                          style={{ 
-                            fontWeight: 600, 
-                            color: 'var(--primary-color, var(--primary-dark))', 
-                            cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                          }}
-                          onClick={() => {
-                            if (inv.customerId) {
-                              setViewCustomer(inv.customerId);
-                              setCurrentTab('customers');
-                            } else {
-                              // If customer ID is missing, try matching by name
-                              const matchedCustomer = customers.find(c => c.name === inv.customerName);
-                              if (matchedCustomer) {
-                                setViewCustomer(matchedCustomer.id);
-                                setCurrentTab('customers');
-                              } else {
-                                showToast(`Customer profile not found for: ${inv.customerName}`, 'info');
-                              }
-                            }
-                          }}
-                          title={inv.customerName}
-                          onMouseEnter={(e) => { e.currentTarget.style.textDecoration = 'underline'; }}
-                          onMouseLeave={(e) => { e.currentTarget.style.textDecoration = 'none'; }}
-                        >
-                          {inv.customerName}
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>{formatDate(inv.date)}</td>
-                        <td style={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
-                        <td style={{ color: 'var(--color-success-dark)', fontWeight: 600, whiteSpace: 'nowrap' }}>{formatINR(inv.amountPaid).replace('₹', '')}</td>
-                        <td style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                          {formatINR(inv.balanceDue).replace('₹', '')}
-                        </td>
-                        <td style={{ whiteSpace: 'nowrap' }}>
-                          <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                            {inv.paymentStatus}
-                          </span>
-                        </td>
-                        <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
-                          <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id);
-                            }}
-                            title="Actions"
-                          >
-                            <MoreVertical size={16} />
-                          </button>
-                          
-                          {activeMenuInvoiceId === inv.id && (
-                            <>
-                              {/* Overlay to close the menu on clicking outside */}
-                              <div 
-                                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} 
-                                onClick={() => setActiveMenuInvoiceId(null)}
-                              />
-                              
-                              {/* Dropdown Menu */}
-                              <div className="card" style={{
-                                position: 'absolute',
-                                right: '100%',
-                                top: '50%',
-                                transform: 'translateY(-50%)',
-                                marginRight: '8px',
-                                zIndex: 999,
-                                minWidth: '130px',
-                                padding: '6px 0',
-                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '2px',
-                                backgroundColor: 'var(--card-bg, #ffffff)',
-                                border: '1px solid var(--border-color)',
-                              }}>
-                                <button 
-                                  className="dropdown-item" 
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                    fontSize: '13px',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                  }}
-                                  onClick={() => {
-                                    setViewInvoice(inv.id || inv.invoiceNumber);
-                                    setActiveMenuInvoiceId(null);
-                                  }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                                >
-                                  <Eye size={14} /> View Details
-                                </button>
-                                <button 
-                                  className="dropdown-item" 
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                    fontSize: '13px',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                  }}
-                                  onClick={() => {
-                                    handleStartEditInvoice(inv);
-                                    setActiveMenuInvoiceId(null);
-                                  }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                                >
-                                  <Edit2 size={14} /> Edit Invoice
-                                </button>
-                                <button 
-                                  className="dropdown-item text-danger" 
-                                  style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '8px',
-                                    width: '100%',
-                                    padding: '8px 12px',
-                                    background: 'none',
-                                    border: 'none',
-                                    textAlign: 'left',
-                                    cursor: 'pointer',
-                                    fontSize: '13px',
-                                    fontWeight: 500,
-                                    color: 'var(--text-primary)',
-                                  }}
-                                  onClick={() => {
-                                    handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber);
-                                    setActiveMenuInvoiceId(null);
-                                  }}
-                                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
-                                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-                                >
-                                  <Trash2 size={14} /> Delete
-                                </button>
-                              </div>
-                            </>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+        {salesActiveTab === 'invoices' ? (
+          sortedInvoices.length === 0 ? (
+            <div className="empty-state">
+              <FileText size={48} className="empty-state-icon" />
+              <h4 className="empty-state-title">No Invoices Found</h4>
+              <p className="empty-state-text" style={{ maxWidth: '320px', margin: '8px auto 0 auto' }}>
+                Create a billing voucher by clicking 'New Invoice' to sell implements and parts.
+              </p>
             </div>
+          ) : (
+            <div>
+              {/* Invoices Desktop Table */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper" style={{ overflow: 'visible' }}>
+                  <table className="data-table" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ whiteSpace: 'nowrap' }}>Inv No</th>
+                        <th>Customer</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Date</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Paid (₹)</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Due (₹)</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Status</th>
+                        <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedInvoices.map((inv) => (
+                        <tr key={inv.id}>
+                          <td 
+                            style={{ fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
+                            title="View details"
+                          >
+                            {inv.invoiceNumber}
+                          </td>
+                          <td 
+                            style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}
+                            onClick={() => {
+                              if (inv.customerId) {
+                                setViewCustomer(inv.customerId);
+                                setCurrentTab('customers');
+                              }
+                            }}
+                          >
+                            {inv.customerName}
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{formatDate(inv.date)}</td>
+                          <td style={{ fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
+                          <td style={{ color: 'var(--color-success-dark)', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'right' }}>{formatINR(inv.amountPaid).replace('₹', '')}</td>
+                          <td style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600, whiteSpace: 'nowrap', textAlign: 'right' }}>
+                            {formatINR(inv.balanceDue).replace('₹', '')}
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              {inv.paymentStatus}
+                            </span>
+                          </td>
+                          <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id);
+                              }}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                            {activeMenuInvoiceId === inv.id && (
+                              <>
+                                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuInvoiceId(null)} />
+                                <div className="card" style={{
+                                  position: 'absolute', right: '100%', top: '0', marginRight: '8px', zIndex: 999,
+                                  minWidth: '130px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
+                                  backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                  <button 
+                                    className="dropdown-item" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                    onClick={() => { setViewInvoice(inv.id || inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                  >
+                                    <Eye size={14} /> View Details
+                                  </button>
+                                  <button 
+                                    className="dropdown-item" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                    onClick={() => { handleStartEditInvoice(inv); setActiveMenuInvoiceId(null); }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                  >
+                                    <Edit2 size={14} /> Edit Invoice
+                                  </button>
+                                  <button 
+                                    className="dropdown-item" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                    onClick={() => { handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                  >
+                                    <Trash2 size={14} /> Delete
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
 
-            {/* Mobile View */}
-            <div className="mobile-card-list">
-              {paginatedInvoices.map((inv) => (
-                <div key={inv.id} className="mobile-list-card">
-                  <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">
+              {/* Invoices Mobile list */}
+              <div className="mobile-card-list">
+                {paginatedInvoices.map((inv) => (
+                  <div key={inv.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">
+                          <button type="button" className="table-link-btn bill-link" onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}>
+                            {inv.invoiceNumber}
+                          </button>
+                        </h4>
+                        <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+                      </div>
+                      <div style={{ position: 'relative' }}>
                         <button
                           type="button"
-                          className="table-link-btn bill-link"
-                          onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={(e) => { e.stopPropagation(); setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id); }}
                         >
-                          {inv.invoiceNumber}
+                          <MoreVertical size={16} />
                         </button>
-                      </h4>
-                      <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+                        {activeMenuInvoiceId === inv.id && (
+                          <>
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuInvoiceId(null)} />
+                            <div className="card" style={{
+                              position: 'absolute', right: '0', top: '100%', marginTop: '4px', zIndex: 999,
+                              minWidth: '140px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
+                              backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)'
+                            }}>
+                              <button 
+                                className="dropdown-item" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                onClick={() => { setViewInvoice(inv.id || inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
+                              >
+                                <Eye size={14} /> View Details
+                              </button>
+                              <button 
+                                className="dropdown-item" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                onClick={() => { handleStartEditInvoice(inv); setActiveMenuInvoiceId(null); }}
+                              >
+                                <Edit2 size={14} /> Edit Invoice
+                              </button>
+                              <button 
+                                className="dropdown-item" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                onClick={() => { handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber); setActiveMenuInvoiceId(null); }}
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={(e) => { e.stopPropagation(); setActiveMenuInvoiceId(activeMenuInvoiceId === inv.id ? null : inv.id); }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {activeMenuInvoiceId === inv.id && (
-                        <>
-                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuInvoiceId(null)} />
-                          <div className="card" style={{
-                            position: 'absolute', right: '0', top: '100%', marginTop: '4px',
-                            zIndex: 999, minWidth: '150px', padding: '6px 0',
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                            display: 'flex', flexDirection: 'column', gap: '2px',
-                            backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
-                          }}>
-                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
-                              onClick={() => { setViewInvoice(inv.id || inv.invoiceNumber); setActiveMenuInvoiceId(null); }}>
-                              <Eye size={14} /> View Details
-                            </button>
-                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
-                              onClick={() => { handleStartEditInvoice(inv); setActiveMenuInvoiceId(null); }}>
-                              <Edit2 size={14} /> Edit Invoice
-                            </button>
-                            <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
-                              onClick={() => { handleDeleteInvoice(inv.id || inv.invoiceNumber, inv.invoiceNumber); setActiveMenuInvoiceId(null); }}>
-                              <Trash2 size={14} /> Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(inv.date)}</span>
+                      <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>{inv.paymentStatus}</span>
                     </div>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Billing Date</span>
-                    <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Status</span>
-                    <span className="mobile-list-card-val">
-                      <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                        {inv.paymentStatus}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px' }}>
+                      <span>Total: {formatINR(inv.grandTotal)}</span>
+                      <span style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
+                        Due: {formatINR(inv.balanceDue)}
                       </span>
-                    </span>
+                    </div>
                   </div>
+                ))}
+              </div>
 
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Grand Total</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
-                      {formatINR(inv.grandTotal)}
-                    </span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Paid Amount</span>
-                    <span className="mobile-list-card-val" style={{ color: 'var(--color-success-dark)', fontWeight: 600 }}>
-                      {formatINR(inv.amountPaid)}
-                    </span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Due Amount</span>
-                    <span className="mobile-list-card-val" style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)', fontWeight: 600 }}>
-                      {formatINR(inv.balanceDue)}
-                    </span>
+              {/* Invoices Pagination */}
+              {totalPages > 1 && (
+                <div className="pagination-row">
+                  <span>
+                    Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
+                    <strong>{Math.min(currentPage * itemsPerPage, filteredInvoices.length)}</strong> of{' '}
+                    <strong>{filteredInvoices.length}</strong> invoices
+                  </span>
+                  <div className="pagination-btn-group">
+                    <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
+                      <ChevronRight size={16} />
+                    </button>
                   </div>
                 </div>
-              ))}
+              )}
             </div>
-
-            {/* Pagination Controls */}
-            {totalPages > 1 && (
-              <div className="pagination-row">
-                <span>
-                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
-                  <strong>{Math.min(currentPage * itemsPerPage, filteredInvoices.length)}</strong> of{' '}
-                  <strong>{filteredInvoices.length}</strong> invoices
-                </span>
-                <div className="pagination-btn-group">
-                  <button
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                    title="Previous Page"
-                  >
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button
-                    disabled={currentPage === totalPages}
-                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                    title="Next Page"
-                  >
-                    <ChevronRight size={16} />
-                  </button>
+          )
+        ) : (
+          sortedQuotations.length === 0 ? (
+            <div className="empty-state">
+              <Calendar size={48} className="empty-state-icon" />
+              <h4 className="empty-state-title">No Quotations Found</h4>
+              <p className="empty-state-text" style={{ maxWidth: '320px', margin: '8px auto 0 auto' }}>
+                Log commercial sales estimates and quotations by clicking 'New Quotation'.
+              </p>
+            </div>
+          ) : (
+            <div>
+              {/* Quotations Desktop Table */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper" style={{ overflow: 'visible' }}>
+                  <table className="data-table" style={{ width: '100%' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ whiteSpace: 'nowrap' }}>Est No</th>
+                        <th>Customer</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Date</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Valid Until</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>Status</th>
+                        <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {paginatedQuotations.map((q) => (
+                        <tr key={q.id}>
+                          <td 
+                            style={{ fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap', cursor: 'pointer' }}
+                            onClick={() => setViewQuotation(q.id || q.quotationNumber)}
+                            title="View details"
+                          >
+                            {q.quotationNumber}
+                          </td>
+                          <td 
+                            style={{ fontWeight: 600, color: 'var(--primary)', cursor: 'pointer', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '160px' }}
+                            onClick={() => {
+                              if (q.customerId) {
+                                setViewCustomer(q.customerId);
+                                setCurrentTab('customers');
+                              }
+                            }}
+                          >
+                            {q.customerName}
+                          </td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{formatDate(q.date)}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}>{formatDate(q.validUntil)}</td>
+                          <td style={{ fontWeight: 700, whiteSpace: 'nowrap', textAlign: 'right' }}>{formatINR(q.grandTotal).replace('₹', '')}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            <span className={`badge ${
+                              q.status === 'Converted' ? 'badge-success' : 
+                              q.status === 'Approved' ? 'badge-info' : 
+                              q.status === 'Declined' ? 'badge-danger' : 
+                              'badge-secondary'
+                            }`}>
+                              {q.status}
+                            </span>
+                          </td>
+                          <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setActiveMenuQuotationId(activeMenuQuotationId === q.id ? null : q.id);
+                              }}
+                            >
+                              <MoreVertical size={16} />
+                            </button>
+                            {activeMenuQuotationId === q.id && (
+                              <>
+                                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuQuotationId(null)} />
+                                <div className="card" style={{
+                                  position: 'absolute', right: '100%', top: '0', marginRight: '8px', zIndex: 999,
+                                  minWidth: '140px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
+                                  backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                                  boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)'
+                                }}>
+                                  <button 
+                                    className="dropdown-item" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                    onClick={() => { setViewQuotation(q.id || q.quotationNumber); setActiveMenuQuotationId(null); }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                  >
+                                    <Eye size={14} /> View Details
+                                  </button>
+                                  {q.status !== 'Converted' && (
+                                    <button 
+                                      className="dropdown-item" 
+                                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                      onClick={() => { handleStartEditQuotation(q); setActiveMenuQuotationId(null); }}
+                                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    >
+                                      <Edit2 size={14} /> Edit Estimate
+                                    </button>
+                                  )}
+                                  {q.status !== 'Converted' && (
+                                    <button 
+                                      className="dropdown-item" 
+                                      style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#10b981' }}
+                                      onClick={() => {
+                                        setConvertQuotationId(q.id);
+                                        setConvertAmountPaid(q.grandTotal);
+                                        setIsConvertModalOpen(true);
+                                        setActiveMenuQuotationId(null);
+                                      }}
+                                      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
+                                      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                    >
+                                      <Store size={14} /> Convert Invoice
+                                    </button>
+                                  )}
+                                  <button 
+                                    className="dropdown-item" 
+                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                    onClick={() => { handleDeleteQuotation(q.id, q.quotationNumber); setActiveMenuQuotationId(null); }}
+                                    onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
+                                    onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+                                  >
+                                    <Trash2 size={14} /> Delete
+                                  </button>
+                                </div>
+                              </>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            )}
-          </div>
+
+              {/* Quotations Mobile list */}
+              <div className="mobile-card-list">
+                {paginatedQuotations.map((q) => (
+                  <div key={q.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">
+                          <button type="button" className="table-link-btn bill-link" onClick={() => setViewQuotation(q.id || q.quotationNumber)}>
+                            {q.quotationNumber}
+                          </button>
+                        </h4>
+                        <span className="mobile-list-card-subtitle">{q.customerName}</span>
+                      </div>
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={(e) => { e.stopPropagation(); setActiveMenuQuotationId(activeMenuQuotationId === q.id ? null : q.id); }}
+                        >
+                          <MoreVertical size={16} />
+                        </button>
+                        {activeMenuQuotationId === q.id && (
+                          <>
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuQuotationId(null)} />
+                            <div className="card" style={{
+                              position: 'absolute', right: '0', top: '100%', marginTop: '4px', zIndex: 999,
+                              minWidth: '140px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
+                              backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)'
+                            }}>
+                              <button 
+                                className="dropdown-item" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                onClick={() => { setViewQuotation(q.id || q.quotationNumber); setActiveMenuQuotationId(null); }}
+                              >
+                                <Eye size={14} /> View Details
+                              </button>
+                              {q.status !== 'Converted' && (
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                  onClick={() => { handleStartEditQuotation(q); setActiveMenuQuotationId(null); }}
+                                >
+                                  <Edit2 size={14} /> Edit Estimate
+                                </button>
+                              )}
+                              {q.status !== 'Converted' && (
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: '#10b981' }}
+                                  onClick={() => {
+                                    setConvertQuotationId(q.id);
+                                    setConvertAmountPaid(q.grandTotal);
+                                    setIsConvertModalOpen(true);
+                                    setActiveMenuQuotationId(null);
+                                  }}
+                                >
+                                  <Store size={14} /> Convert Invoice
+                                </button>
+                              )}
+                              <button 
+                                className="dropdown-item" 
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-danger)' }}
+                                onClick={() => { handleDeleteQuotation(q.id, q.quotationNumber); setActiveMenuQuotationId(null); }}
+                              >
+                                <Trash2 size={14} /> Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '8px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(q.date)}</span>
+                      <span className={`badge ${
+                        q.status === 'Converted' ? 'badge-success' : 
+                        q.status === 'Approved' ? 'badge-info' : 
+                        q.status === 'Declined' ? 'badge-danger' : 
+                        'badge-secondary'
+                      }`}>{q.status}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px' }}>
+                      <span>Total Value: {formatINR(q.grandTotal)}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>
+                        Valid: {formatDate(q.validUntil)}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Quotations Pagination */}
+              {totalPages > 1 && (
+                <div className="pagination-row">
+                  <span>
+                    Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
+                    <strong>{Math.min(currentPage * itemsPerPage, filteredQuotations.length)}</strong> of{' '}
+                    <strong>{filteredQuotations.length}</strong> estimates
+                  </span>
+                  <div className="pagination-btn-group">
+                    <button disabled={currentPage === 1} onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}>
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button disabled={currentPage === totalPages} onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}>
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )
         )}
       </div>
 
+      {/* PORTAL MODALS */}
+
+      {/* Delete Invoice modal */}
       {deletingInvoice && createPortal(
         <div className="modal-overlay" style={{ zIndex: 1000 }}>
           <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
@@ -1757,6 +2739,105 @@ We have downloaded the PDF invoice to your device. Please attach it in the chat.
                   Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Delete Quotation modal */}
+      {deletingQuotation && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+              <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                <AlertTriangle size={28} />
+              </div>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Quotation</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
+              </p>
+              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingQuotation(null)}>
+                  Cancel
+                </button>
+                <button
+                  className="btn btn-primary"
+                  style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                  onClick={() => {
+                    deleteQuotation(deletingQuotation.id);
+                    showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
+                    setDeletingQuotation(null);
+                    setViewQuotation(null);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* Convert Quotation to Invoice Modal */}
+      {isConvertModalOpen && convertQuotationId && createPortal(
+        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+          <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+              Create a sales invoice from this quotation. Please confirm payment collection details.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label className="form-label">Amount Collected (₹)</label>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  value={convertAmountPaid || ''} 
+                  onChange={(e) => setConvertAmountPaid(parseFloat(e.target.value) || 0)} 
+                  placeholder="0.00" 
+                />
+              </div>
+              {convertAmountPaid > 0 && (
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Payment Method</label>
+                  <select 
+                    className="form-control" 
+                    value={convertPaymentMethod} 
+                    onChange={(e) => setConvertPaymentMethod(e.target.value)}
+                  >
+                    <option value="UPI">UPI / GPay / PhonePe</option>
+                    <option value="Cash">Cash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Cheque">Cheque</option>
+                  </select>
+                </div>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setIsConvertModalOpen(false); setConvertQuotationId(null); }}>
+                Cancel
+              </button>
+              <button 
+                className="btn btn-primary" 
+                style={{ flex: 1 }} 
+                onClick={() => {
+                  try {
+                    const invoiceId = convertQuotationToInvoice(convertQuotationId, convertAmountPaid, convertPaymentMethod);
+                    showToast("Quotation converted to Invoice successfully!");
+                    setIsConvertModalOpen(false);
+                    setConvertQuotationId(null);
+                    setSalesActiveTab('invoices');
+                    setViewInvoice(invoiceId);
+                    setViewQuotation(null);
+                  } catch (err: any) {
+                    showToast(err.message || "Failed to convert quotation", "error");
+                  }
+                }}
+              >
+                Convert
+              </button>
             </div>
           </div>
         </div>,

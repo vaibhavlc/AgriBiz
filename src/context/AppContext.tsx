@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense } from '../types';
+import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation } from '../types';
 import {
   initialProducts,
   initialCustomers,
@@ -16,15 +16,18 @@ interface AppContextType {
   customers: Customer[];
   suppliers: Supplier[];
   invoices: Invoice[];
+  quotations: Quotation[];
   purchases: Purchase[];
   payments: Payment[];
   settings: BusinessSettings;
   currentTab: string;
   currentInvoiceId: string | null;
+  currentQuotationId: string | null;
   currentPurchaseId: string | null;
   currentCustomerId: string | null;
   currentSupplierId: string | null;
   isCreatingInvoice: boolean;
+  isCreatingQuotation: boolean;
   isEnteringPurchase: boolean;
   isEditingProduct: Product | null;
   isEditingCustomer: Customer | null;
@@ -36,14 +39,19 @@ interface AppContextType {
 
   setCurrentTab: (tab: string) => void;
   setViewInvoice: (id: string | null) => void;
+  setViewQuotation: (id: string | null) => void;
   setViewPurchase: (id: string | null) => void;
   setViewCustomer: (id: string | null) => void;
   setViewSupplier: (id: string | null) => void;
   setIsCreatingInvoice: (val: boolean) => void;
+  setIsCreatingQuotation: (val: boolean) => void;
   setIsEnteringPurchase: (val: boolean) => void;
   setIsEditingProduct: (product: Product | null) => void;
   setIsEditingCustomer: (customer: Customer | null) => void;
   setIsEditingSupplier: (supplier: Supplier | null) => void;
+
+  salesActiveTab: 'invoices' | 'quotations';
+  setSalesActiveTab: (tab: 'invoices' | 'quotations') => void;
 
   addProduct: (product: Omit<Product, 'id'>) => Product;
   editProduct: (product: Product) => void;
@@ -60,6 +68,12 @@ interface AppContextType {
   addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => Invoice;
   editInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
+
+  addQuotation: (quotation: Omit<Quotation, 'id' | 'quotationNumber'>) => Quotation;
+  editQuotation: (quotation: Quotation) => void;
+  deleteQuotation: (id: string) => void;
+  convertQuotationToInvoice: (quotationId: string, amountPaid: number, paymentMethod: string) => string;
+
 
   addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => Purchase;
   editPurchase: (purchase: Purchase) => void;
@@ -109,6 +123,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return local ? JSON.parse(local) : initialInvoices;
   });
 
+  const [quotations, setQuotations] = useState<Quotation[]>(() => {
+    const local = localStorage.getItem('agribiz_quotations');
+    return local ? JSON.parse(local) : [];
+  });
+
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
     const local = localStorage.getItem('agribiz_purchases');
     return local ? JSON.parse(local) : initialPurchases;
@@ -132,16 +151,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // UI State
   const [currentTab, setCurrentTab] = useState<string>('dashboard');
   const [currentInvoiceId, setViewInvoice] = useState<string | null>(null);
+  const [currentQuotationId, setViewQuotation] = useState<string | null>(null);
   const [currentPurchaseId, setViewPurchase] = useState<string | null>(null);
   const [currentCustomerId, setViewCustomer] = useState<string | null>(null);
   const [currentSupplierId, setViewSupplier] = useState<string | null>(null);
   const [isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
+  const [isCreatingQuotation, setIsCreatingQuotation] = useState<boolean>(false);
   const [isEnteringPurchase, setIsEnteringPurchase] = useState<boolean>(false);
   const [isEditingProduct, setIsEditingProduct] = useState<Product | null>(null);
   const [isEditingCustomer, setIsEditingCustomer] = useState<Customer | null>(null);
   const [isEditingSupplier, setIsEditingSupplier] = useState<Supplier | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const [salesActiveTab, setSalesActiveTab] = useState<'invoices' | 'quotations'>('invoices');
 
   const [paymentFormPreset, setPaymentFormPreset] = useState<{ contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null>(null);
   const [salesFormPresetCustomerId, setSalesFormPresetCustomerId] = useState<string | null>(null);
@@ -173,6 +196,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [invoices]);
 
   useEffect(() => {
+    localStorage.setItem('agribiz_quotations', JSON.stringify(quotations));
+  }, [quotations]);
+
+  useEffect(() => {
     localStorage.setItem('agribiz_purchases', JSON.stringify(purchases));
   }, [purchases]);
 
@@ -194,7 +221,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = (p: Omit<Product, 'id'>) => {
     const newProduct: Product = {
       ...p,
-      id: `P${Date.now().toString().slice(-4)}`,
+      id: `P-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
     setProducts((prev) => [...prev, newProduct]);
     return newProduct;
@@ -211,7 +238,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addCustomer = (c: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => {
     const newCustomer: Customer = {
       ...c,
-      id: `C${Date.now().toString().slice(-4)}`,
+      id: `C-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       outstanding: c.outstanding || 0,
     };
     setCustomers((prev) => [...prev, newCustomer]);
@@ -229,7 +256,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addSupplier = (s: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => {
     const newSupplier: Supplier = {
       ...s,
-      id: `S${Date.now().toString().slice(-4)}`,
+      id: `S-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       outstanding: s.outstanding || 0,
     };
     setSuppliers((prev) => [...prev, newSupplier]);
@@ -249,7 +276,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const count = invoices.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const invoiceNumber = `${settings.invoicePrefix}${formattedCount}`;
-    const id = `INV-${Date.now().toString().slice(-4)}`;
+    const id = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const newInvoice: Invoice = {
       ...inv,
@@ -289,7 +316,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Payments effect: Log payment if customer paid an amount
     if (inv.amountPaid > 0) {
       const newPayment: Payment = {
-        id: `PAY-${Date.now().toString().slice(-4)}`,
+        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         date: inv.date,
         type: 'CustomerReceipt',
         contactId: inv.customerId,
@@ -449,12 +476,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     );
   };
 
+  // Quotations
+  const addQuotation = (q: Omit<Quotation, 'id' | 'quotationNumber'>): Quotation => {
+    const count = quotations.length + 1;
+    const formattedCount = count.toString().padStart(3, '0');
+    const quotationNumber = `QT-${formattedCount}`;
+    const id = `QT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+
+    const newQuotation: Quotation = {
+      ...q,
+      id,
+      quotationNumber,
+    };
+
+    setQuotations((prev) => [newQuotation, ...prev]);
+    return newQuotation;
+  };
+
+  const editQuotation = (q: Quotation) => {
+    setQuotations((prev) => prev.map((item) => (item.id === q.id ? q : item)));
+  };
+
+  const deleteQuotation = (id: string) => {
+    setQuotations((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const convertQuotationToInvoice = (quotationId: string, amountPaid: number, paymentMethod: string): string => {
+    const quotation = quotations.find((q) => q.id === quotationId);
+    if (!quotation) {
+      throw new Error(`Quotation not found: ${quotationId}`);
+    }
+
+    const invoiceItems = quotation.items.map((item) => ({
+      productId: item.productId,
+      productName: item.productName,
+      quantity: item.quantity,
+      price: item.price,
+      discount: item.discount,
+      gstRate: item.gstRate,
+      gstAmount: item.gstAmount,
+      subtotal: item.subtotal,
+      total: item.total,
+    }));
+
+    const todayDate = new Date().toISOString().split('T')[0];
+
+    const newInvoice = addInvoice({
+      date: todayDate,
+      customerId: quotation.customerId,
+      customerName: quotation.customerName,
+      items: invoiceItems,
+      subtotal: quotation.subtotal,
+      discountTotal: quotation.discountTotal,
+      gstTotal: quotation.gstTotal,
+      grandTotal: quotation.grandTotal,
+      amountPaid: amountPaid,
+      balanceDue: Math.max(0, quotation.grandTotal - amountPaid),
+      paymentStatus: amountPaid >= quotation.grandTotal ? 'Paid' : amountPaid > 0 ? 'Partial' : 'Unpaid',
+      paymentMethod: amountPaid > 0 ? paymentMethod : '',
+      notes: `Converted from Quotation ${quotation.quotationNumber}.` + (quotation.notes ? `\nOriginal Notes: ${quotation.notes}` : ''),
+    });
+
+    setQuotations((prev) =>
+      prev.map((q) =>
+        q.id === quotationId
+          ? { ...q, status: 'Converted', convertedInvoiceId: newInvoice.id }
+          : q
+      )
+    );
+
+    return newInvoice.id;
+  };
+
   // Purchases (Supplier Inward)
   const addPurchase = (pur: Omit<Purchase, 'id' | 'purchaseNumber'>): Purchase => {
     const count = purchases.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const purchaseNumber = `PUR-${settings.invoicePrefix.replace('AB-', '')}${formattedCount}`;
-    const id = `PUR-${Date.now().toString().slice(-4)}`;
+    const id = `PUR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 
     const newPurchase: Purchase = {
       ...pur,
@@ -494,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Payments effect: Log payment if supplier was paid
     if (pur.amountPaid > 0) {
       const newPayment: Payment = {
-        id: `PAY-${Date.now().toString().slice(-4)}`,
+        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         date: pur.date,
         type: 'SupplierPayment',
         contactId: pur.supplierId,
@@ -638,7 +737,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addPayment = (pay: Omit<Payment, 'id'>) => {
     const newPayment: Payment = {
       ...pay,
-      id: `PAY-${Date.now().toString().slice(-4)}`,
+      id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
 
     setPayments((prev) => [newPayment, ...prev]);
@@ -772,7 +871,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addExpense = (exp: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
       ...exp,
-      id: `EXP-${Date.now().toString().slice(-4)}`,
+      id: `EXP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
     setExpenses((prev) => [newExpense, ...prev]);
     return newExpense;
@@ -791,6 +890,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('agribiz_customers');
     localStorage.removeItem('agribiz_suppliers');
     localStorage.removeItem('agribiz_invoices');
+    localStorage.removeItem('agribiz_quotations');
     localStorage.removeItem('agribiz_purchases');
     localStorage.removeItem('agribiz_payments');
     localStorage.removeItem('agribiz_settings');
@@ -800,6 +900,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCustomers(initialCustomers);
     setSuppliers(initialSuppliers);
     setInvoices(initialInvoices);
+    setQuotations([]);
     setPurchases(initialPurchases);
     setPayments(initialPayments);
     setSettings(initialSettings);
@@ -807,14 +908,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setCurrentTab('dashboard');
     setViewInvoice(null);
+    setViewQuotation(null);
     setViewPurchase(null);
     setViewCustomer(null);
     setViewSupplier(null);
     setIsCreatingInvoice(false);
+    setIsCreatingQuotation(false);
     setIsEnteringPurchase(false);
     setIsEditingProduct(null);
     setIsEditingCustomer(null);
     setIsEditingSupplier(null);
+    setSalesActiveTab('invoices');
   };
 
   return (
@@ -824,15 +928,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         customers,
         suppliers,
         invoices,
+        quotations,
         purchases,
         payments,
         settings,
         currentTab,
         currentInvoiceId,
+        currentQuotationId,
         currentPurchaseId,
         currentCustomerId,
         currentSupplierId,
         isCreatingInvoice,
+        isCreatingQuotation,
         isEnteringPurchase,
         isEditingProduct,
         isEditingCustomer,
@@ -844,14 +951,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         setCurrentTab,
         setViewInvoice,
+        setViewQuotation,
         setViewPurchase,
         setViewCustomer,
         setViewSupplier,
         setIsCreatingInvoice,
+        setIsCreatingQuotation,
         setIsEnteringPurchase,
         setIsEditingProduct,
         setIsEditingCustomer,
         setIsEditingSupplier,
+
+        salesActiveTab,
+        setSalesActiveTab,
 
         addProduct,
         editProduct,
@@ -868,6 +980,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addInvoice,
         editInvoice,
         deleteInvoice,
+
+        addQuotation,
+        editQuotation,
+        deleteQuotation,
+        convertQuotationToInvoice,
 
         addPurchase,
         editPurchase,
