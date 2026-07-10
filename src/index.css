@@ -1750,10 +1750,45 @@ body.dark-theme select.form-control {
   font-size: 12px;
 }
 
+
 /* Animations */
+@keyframes searchBlinkHighlight {
+  0%, 100% {
+    box-shadow: none;
+    border-color: var(--border-color);
+  }
+  50% {
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.3);
+    border-color: var(--primary);
+    transform: scale(1.02);
+  }
+}
+
+.search-blink-highlight {
+  animation: searchBlinkHighlight 1.5s infinite ease-in-out;
+  transition: all 0.3s ease;
+  z-index: 10;
+  position: relative;
+}
+
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(4px); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes tabSlideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tab-content-enter {
+  animation: tabSlideFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes modalEnter {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import {
@@ -178,7 +178,6 @@ const ProgressBar = ({
     </div>
   );
 };
-
 export const Dashboard: React.FC = () => {
   const {
     products,
@@ -189,6 +188,7 @@ export const Dashboard: React.FC = () => {
     payments,
     expenses,
     setCurrentTab,
+    searchQuery,
     setSearchQuery,
     setIsCreatingInvoice,
     setIsEnteringPurchase,
@@ -201,6 +201,88 @@ export const Dashboard: React.FC = () => {
   const [activeKpiTab, setActiveKpiTab] = useState<'financial' | 'payments' | 'gst' | 'inventory'>('financial');
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'sales' | 'profit' | 'inventory' | 'entities'>('sales');
   const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+  const lastRedirectQuery = useRef('');
+
+  // Search Highlight Helper
+  const shouldBlink = (keywords: string[]): boolean => {
+    if (!searchQuery) return false;
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+    if (normalizedQuery.length < 2) return false;
+    return keywords.some(kw => normalizedQuery.includes(kw) || kw.includes(normalizedQuery));
+  };
+
+  // Auto-redirect KPI Tab based on search query keywords
+  useEffect(() => {
+    if (!searchQuery) {
+      lastRedirectQuery.current = '';
+      return;
+    }
+    const query = searchQuery.trim().toLowerCase();
+    if (query.length < 2) {
+      lastRedirectQuery.current = '';
+      return;
+    }
+
+    if (query === lastRedirectQuery.current) return;
+
+    const tabKeywords: Record<'financial' | 'payments' | 'gst' | 'inventory', string[]> = {
+      financial: [
+        'sales', 'sale', 'revenue', 'taxable', 'purchases', 'purchase', 
+        'buying', 'procurement', 'expenses', 'expense', 'spend', 'cost', 
+        'profit', 'net', 'earnings', 'income', 'margin', 'gross', 'cogs', 
+        'stock cost', 'financial'
+      ],
+      payments: [
+        'collected', 'collection', 'receipt', 'payment', 'receivables', 
+        'receivable', 'due', 'outstanding', 'customer outstanding', 'payables', 
+        'payable', 'supplier outstanding', 'pending', 'uncollected', 
+        'collections', 'book dues'
+      ],
+      gst: [
+        'gst', 'tax', 'cgst', 'sgst', 'igst', 'liability', 'ledger'
+      ],
+      inventory: [
+        'stock', 'inventory', 'items', 'products', 'stock value', 'valuation', 
+        'low stock', 'out of stock', 'customers', 'suppliers', 'invoices', 
+        'transactions', 'logs', 'entries'
+      ]
+    };
+
+    for (const [tab, keywords] of Object.entries(tabKeywords)) {
+      const isMatch = keywords.some(kw => query.includes(kw) || kw.includes(query));
+      if (isMatch) {
+        lastRedirectQuery.current = query;
+        if (activeKpiTab !== tab) {
+          setActiveKpiTab(tab as any);
+        }
+        break;
+      }
+    }
+  }, [searchQuery, activeKpiTab]);
+
+  // Center active KPI tab in header scroll container
+  useEffect(() => {
+    const activeBtn = document.getElementById(`kpi-tab-button-${activeKpiTab}`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [activeKpiTab]);
+
+  // Center active Analysis tab in header scroll container
+  useEffect(() => {
+    const activeBtn = document.getElementById(`analysis-tab-button-${activeAnalysisTab}`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [activeAnalysisTab]);
+
+  // Center active duration pill in horizontal scroll container
+  useEffect(() => {
+    const activeBtn = document.getElementById(`duration-pill-button-${filterType}`);
+    if (activeBtn) {
+      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, [filterType]);
 
   // Simulated Reload
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -593,6 +675,7 @@ export const Dashboard: React.FC = () => {
           ].map((opt) => (
             <button
               key={opt.value}
+              id={`duration-pill-button-${opt.value}`}
               className={`pill-filter-btn ${filterType === opt.value ? 'active' : ''}`}
               onClick={() => setFilterType(opt.value)}
             >
@@ -659,28 +742,42 @@ export const Dashboard: React.FC = () => {
         </div>
       )}
 
-      {/* 23 KPI Summary Cards divided into tab panels */}
       <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '16px', gap: '16px', overflowX: 'auto', paddingBottom: '4px' }}>
+        <div 
+          style={{ 
+            display: 'flex', 
+            borderBottom: '1px solid var(--border-color)', 
+            marginBottom: '16px', 
+            gap: '16px', 
+            overflowX: 'auto', 
+            paddingBottom: '4px',
+            scrollBehavior: 'smooth'
+          }}
+          className="no-scrollbar"
+        >
           <button 
+            id="kpi-tab-button-financial"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'financial' ? 800 : 500, color: activeKpiTab === 'financial' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'financial' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('financial')}
           >
             Financial Health
           </button>
           <button 
+            id="kpi-tab-button-payments"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'payments' ? 800 : 500, color: activeKpiTab === 'payments' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'payments' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('payments')}
           >
             Collections & Book dues
           </button>
           <button 
+            id="kpi-tab-button-gst"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'gst' ? 800 : 500, color: activeKpiTab === 'gst' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'gst' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('gst')}
           >
             GST Ledger
           </button>
           <button 
+            id="kpi-tab-button-inventory"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'inventory' ? 800 : 500, color: activeKpiTab === 'inventory' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'inventory' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('inventory')}
           >
@@ -690,8 +787,11 @@ export const Dashboard: React.FC = () => {
 
         {/* Tab 1: Financial Health */}
         {activeKpiTab === 'financial' && (
-          <div className="grid-cols-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            <div className="kpi-card" onClick={() => setCurrentTab('sales')}>
+          <div className="grid-cols-4 tab-content-enter">
+            <div 
+              className={`kpi-card${shouldBlink(['sales', 'sale', 'billing', 'turnover']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('sales')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total Sales Billing</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.totalSales} isCurrency /></span>
@@ -700,7 +800,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
             </div>
             
-            <div className="kpi-card" onClick={() => setCurrentTab('sales')}>
+            <div 
+              className={`kpi-card${shouldBlink(['sales', 'sale', 'revenue', 'taxable']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('sales')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Taxable Sales Revenue</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.totalSalesBase} isCurrency /></span>
@@ -709,7 +812,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('purchases')}>
+            <div 
+              className={`kpi-card${shouldBlink(['purchases', 'purchase', 'buying', 'procurement']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('purchases')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total Purchases Billing</span>
                 <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}><AnimatedCounter value={stats.totalPurchases} isCurrency /></span>
@@ -718,7 +824,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container amber"><TrendingDown size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('expenses')}>
+            <div 
+              className={`kpi-card${shouldBlink(['expenses', 'expense', 'spend', 'cost']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('expenses')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total Expenses Spends</span>
                 <span className="kpi-value" style={{ color: 'var(--color-danger)' }}><AnimatedCounter value={stats.totalExpenses} isCurrency /></span>
@@ -727,7 +836,7 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
             </div>
 
-            <div className="kpi-card">
+            <div className={`kpi-card${shouldBlink(['profit', 'gross', 'margin']) ? ' search-blink-highlight' : ''}`}>
               <div className="kpi-info">
                 <span className="kpi-label">Gross Sales Profit</span>
                 <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.grossProfit} isCurrency /></span>
@@ -736,7 +845,7 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><DollarSign size={20} /></div>
             </div>
 
-            <div className="kpi-card">
+            <div className={`kpi-card${shouldBlink(['profit', 'net', 'earnings', 'income']) ? ' search-blink-highlight' : ''}`}>
               <div className="kpi-info">
                 <span className="kpi-label">Net Operating Profit</span>
                 <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.netProfit} isCurrency /></span>
@@ -745,7 +854,7 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><DollarSign size={20} /></div>
             </div>
 
-            <div className="kpi-card">
+            <div className={`kpi-card${shouldBlink(['profit', 'margin', 'gross']) ? ' search-blink-highlight' : ''}`}>
               <div className="kpi-info">
                 <span className="kpi-label">Gross Profit Margin</span>
                 <span className="kpi-value" style={{ color: 'var(--color-info)' }}><AnimatedCounter value={stats.grossProfitMargin} isPercent /></span>
@@ -754,7 +863,7 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container blue"><Percent size={20} /></div>
             </div>
 
-            <div className="kpi-card">
+            <div className={`kpi-card${shouldBlink(['cogs', 'cost', 'stock cost']) ? ' search-blink-highlight' : ''}`}>
               <div className="kpi-info">
                 <span className="kpi-label">COGS (Stock Cost)</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.cogs} isCurrency /></span>
@@ -767,8 +876,11 @@ export const Dashboard: React.FC = () => {
 
         {/* Tab 2: Collections & Outstanding */}
         {activeKpiTab === 'payments' && (
-          <div className="grid-cols-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            <div className="kpi-card" onClick={() => setCurrentTab('payments')}>
+          <div className="grid-cols-4 tab-content-enter">
+            <div 
+              className={`kpi-card${shouldBlink(['collected', 'collection', 'receipt', 'payment']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('payments')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total Amount Collected</span>
                 <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.collectedAmount} isCurrency /></span>
@@ -777,7 +889,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><ArrowDownLeft size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('sales')}>
+            <div 
+              className={`kpi-card${shouldBlink(['receivables', 'receivable', 'due', 'outstanding', 'customer']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('sales')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Outstanding Receivables</span>
                 <span className="kpi-value" style={{ color: 'var(--color-danger)' }}><AnimatedCounter value={stats.receivables} isCurrency /></span>
@@ -786,7 +901,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container rose"><Users size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('suppliers')}>
+            <div 
+              className={`kpi-card${shouldBlink(['payables', 'payable', 'due', 'outstanding', 'supplier']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('suppliers')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Outstanding Payables</span>
                 <span className="kpi-value" style={{ color: 'var(--color-danger)' }}><AnimatedCounter value={stats.payables} isCurrency /></span>
@@ -795,7 +913,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container rose"><Truck size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('sales')}>
+            <div 
+              className={`kpi-card${shouldBlink(['pending', 'uncollected', 'collection']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('sales')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Pending Billing Collection</span>
                 <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}><AnimatedCounter value={stats.pendingCollection} isCurrency /></span>
@@ -808,8 +929,11 @@ export const Dashboard: React.FC = () => {
 
         {/* Tab 3: GST Ledger */}
         {activeKpiTab === 'gst' && (
-          <div className="grid-cols-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            <div className="kpi-card" onClick={() => setCurrentTab('reports')}>
+          <div className="grid-cols-4 tab-content-enter">
+            <div 
+              className={`kpi-card${shouldBlink(['gst', 'tax', 'collected', 'cgst', 'sgst']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('reports')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total GST Collected</span>
                 <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.gstCollected} isCurrency /></span>
@@ -818,7 +942,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('reports')}>
+            <div 
+              className={`kpi-card${shouldBlink(['gst', 'tax', 'paid', 'cgst', 'sgst']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('reports')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total GST Paid</span>
                 <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}><AnimatedCounter value={stats.gstPaid} isCurrency /></span>
@@ -827,7 +954,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container amber"><TrendingDown size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('reports')}>
+            <div 
+              className={`kpi-card${shouldBlink(['gst', 'tax', 'liability', 'cgst', 'sgst']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('reports')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total GST Liability</span>
                 <span className="kpi-value" style={{ color: stats.gstLiability > 0 ? 'var(--color-danger)' : 'inherit' }}><AnimatedCounter value={stats.gstLiability} isCurrency /></span>
@@ -836,7 +966,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container blue"><FileText size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('reports')}>
+            <div 
+              className={`kpi-card${shouldBlink(['gst', 'tax', 'cgst', 'sgst', 'share']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('reports')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">CGST / SGST Share</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.gstCollected / 2} isCurrency /></span>
@@ -846,11 +979,13 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
-
         {/* Tab 4: Inventory & Counts */}
         {activeKpiTab === 'inventory' && (
-          <div className="grid-cols-4" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            <div className="kpi-card" onClick={() => setCurrentTab('inventory')}>
+          <div className="grid-cols-4 tab-content-enter">
+            <div 
+              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products', 'stock value', 'valuation']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('inventory')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Current Stock Value</span>
                 <span className="kpi-value" style={{ color: 'var(--primary-dark)' }}><AnimatedCounter value={stats.stockValue} isCurrency /></span>
@@ -859,7 +994,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><ShoppingBag size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('inventory')}>
+            <div 
+              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('inventory')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total Items in Stock</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.totalInventoryItems} /></span>
@@ -868,7 +1006,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container blue"><Package size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('inventory')}>
+            <div 
+              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products', 'low stock']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('inventory')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Low Stock Products</span>
                 <span className="kpi-value" style={{ color: stats.lowStockCount > 0 ? 'var(--color-danger)' : 'inherit' }}><AnimatedCounter value={stats.lowStockCount} /></span>
@@ -877,7 +1018,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('inventory')}>
+            <div 
+              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products', 'out of stock']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('inventory')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Out of Stock Products</span>
                 <span className="kpi-value" style={{ color: stats.outOfStockCount > 0 ? 'var(--color-danger)' : 'inherit' }}><AnimatedCounter value={stats.outOfStockCount} /></span>
@@ -886,7 +1030,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('customers')}>
+            <div 
+              className={`kpi-card${shouldBlink(['customers', 'customer', 'clients', 'client']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('customers')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Active Customers</span>
                 <span className="kpi-value"><AnimatedCounter value={customers.length} /></span>
@@ -895,7 +1042,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container blue"><Users size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('suppliers')}>
+            <div 
+              className={`kpi-card${shouldBlink(['suppliers', 'supplier', 'vendors', 'vendor']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('suppliers')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Active Suppliers</span>
                 <span className="kpi-value"><AnimatedCounter value={suppliers.length} /></span>
@@ -904,7 +1054,10 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container blue"><Truck size={20} /></div>
             </div>
 
-            <div className="kpi-card" onClick={() => setCurrentTab('sales')}>
+            <div 
+              className={`kpi-card${shouldBlink(['invoices', 'invoice', 'sales']) ? ' search-blink-highlight' : ''}`}
+              onClick={() => setCurrentTab('sales')}
+            >
               <div className="kpi-info">
                 <span className="kpi-label">Total Invoices Raised</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.invoicesCount} /></span>
@@ -913,7 +1066,7 @@ export const Dashboard: React.FC = () => {
               <div className="kpi-icon-container emerald"><FileText size={20} /></div>
             </div>
 
-            <div className="kpi-card">
+            <div className={`kpi-card${shouldBlink(['transactions', 'logs', 'entries']) ? ' search-blink-highlight' : ''}`}>
               <div className="kpi-info">
                 <span className="kpi-label">Total Transactions Logs</span>
                 <span className="kpi-value"><AnimatedCounter value={stats.totalTransactions} /></span>
@@ -923,6 +1076,7 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
         )}
+
       </div>
 
       {/* Quick Actions Panel */}
@@ -1015,6 +1169,7 @@ export const Dashboard: React.FC = () => {
             ].map((tab) => (
               <button
                 key={tab.id}
+                id={`analysis-tab-button-${tab.id}`}
                 style={{ 
                   padding: '8px 16px', 
                   border: 'none', 
@@ -1039,14 +1194,13 @@ export const Dashboard: React.FC = () => {
             {/* Tab A: Sales & Purchases */}
             {activeAnalysisTab === 'sales' && (
               <div 
-                className="card" 
+                className={`card${shouldBlink(['sales', 'purchases', 'billing', 'trend', 'chart', 'bar']) ? ' search-blink-highlight' : ''} tab-content-enter`}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
                   width: '100%', 
                   minWidth: 0,
-                  boxSizing: 'border-box',
-                  animation: 'fadeIn 0.2s ease-out' 
+                  boxSizing: 'border-box'
                 }}
               >
                 <div style={{ marginBottom: '16px' }}>
@@ -1068,7 +1222,7 @@ export const Dashboard: React.FC = () => {
             {/* Tab B: Product Profitability */}
             {activeAnalysisTab === 'profit' && (
               <div 
-                className="card" 
+                className={`card${shouldBlink(['profitable', 'highest profit', 'revenue', 'products']) ? ' search-blink-highlight' : ''} tab-content-enter`}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
@@ -1077,8 +1231,7 @@ export const Dashboard: React.FC = () => {
                   gap: '24px', 
                   width: '100%', 
                   minWidth: 0,
-                  boxSizing: 'border-box',
-                  animation: 'fadeIn 0.2s ease-out' 
+                  boxSizing: 'border-box'
                 }}
               >
                 <div>
@@ -1134,14 +1287,13 @@ export const Dashboard: React.FC = () => {
             {/* Tab C: Stock Status */}
             {activeAnalysisTab === 'inventory' && (
               <div 
-                className="card" 
+                className={`card${shouldBlink(['stock', 'inventory', 'fast-moving', 'registered']) ? ' search-blink-highlight' : ''} tab-content-enter`}
                 style={{ 
                   padding: '16px', 
                   borderRadius: '12px', 
                   width: '100%', 
                   minWidth: 0,
-                  boxSizing: 'border-box',
-                  animation: 'fadeIn 0.2s ease-out' 
+                  boxSizing: 'border-box'
                 }}
               >
                 <div>
@@ -1209,16 +1361,19 @@ export const Dashboard: React.FC = () => {
             {/* Tab D: Directories & Accounts */}
             {activeAnalysisTab === 'entities' && (
               <div 
+                className="tab-content-enter"
                 style={{ 
                   display: 'flex', 
                   flexDirection: 'column', 
                   gap: '20px', 
                   width: '100%', 
-                  minWidth: 0,
-                  animation: 'fadeIn 0.2s ease-out' 
+                  minWidth: 0
                 }}
               >
-                <div className="card" style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+                <div 
+                  className={`card${shouldBlink(['customer', 'outstanding', 'receivable', 'dues']) ? ' search-blink-highlight' : ''}`}
+                  style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Top Customer Outstanding Balances</h4>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>Receivable Dues</span>
@@ -1258,7 +1413,10 @@ export const Dashboard: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="card" style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+                <div 
+                  className={`card${shouldBlink(['supplier', 'outstanding', 'payables', 'bills']) ? ' search-blink-highlight' : ''}`}
+                  style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
                     <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Top Outstanding Payables to Suppliers</h4>
                     <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>Supplier Bills</span>
@@ -1304,7 +1462,7 @@ export const Dashboard: React.FC = () => {
 
         {/* Right Side: Recent Activity Feed */}
         <div 
-          className="card" 
+          className={`card${shouldBlink(['activity', 'feed', 'logs', 'recent']) ? ' search-blink-highlight' : ''}`}
           style={{ 
             padding: '16px', 
             borderRadius: '12px', 
