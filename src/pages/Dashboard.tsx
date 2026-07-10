@@ -139,7 +139,6 @@ const BarChart = ({
     </div>
   );
 };
-
 // Custom Horizontal Progress Bar
 const ProgressBar = ({
   label,
@@ -147,16 +146,28 @@ const ProgressBar = ({
   max,
   formatVal,
   color = 'var(--primary)',
+  onClick,
 }: {
   label: string;
   value: number;
   max: number;
   formatVal: (v: number) => string;
   color?: string;
+  onClick?: () => void;
 }) => {
   const percentage = max > 0 ? Math.min(100, (value / max) * 100) : 0;
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+    <div 
+      onClick={onClick}
+      style={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: '6px', 
+        width: '100%',
+        cursor: onClick ? 'pointer' : 'default'
+      }}
+      className={onClick ? 'hover-scale-subtle' : ''}
+    >
       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
         <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{label}</span>
         <span style={{ color: 'var(--text-muted)' }}>{formatVal(value)} ({percentage.toFixed(1)}%)</span>
@@ -178,6 +189,7 @@ export const Dashboard: React.FC = () => {
     payments,
     expenses,
     setCurrentTab,
+    setSearchQuery,
     setIsCreatingInvoice,
     setIsEnteringPurchase,
     showToast,
@@ -433,7 +445,7 @@ export const Dashboard: React.FC = () => {
 
   // 5. Recent Activity Logs builder
   const recentActivities = useMemo(() => {
-    const logs: { id: string; time: string; type: string; details: string; icon: string; bg: string }[] = [];
+    const logs: { id: string; time: string; type: string; details: string; icon: string; bg: string; targetTab: string; targetQuery: string }[] = [];
 
     // Map Invoices
     stats.filteredInvoices.slice(0, 4).forEach((inv) => {
@@ -444,6 +456,8 @@ export const Dashboard: React.FC = () => {
         details: `Sales Invoice ${inv.invoiceNumber} raised for ${inv.customerName} - Total ${formatINR(inv.grandTotal)}`,
         icon: '💵',
         bg: 'var(--color-success-bg)',
+        targetTab: 'sales',
+        targetQuery: inv.invoiceNumber,
       });
     });
 
@@ -456,6 +470,8 @@ export const Dashboard: React.FC = () => {
         details: `Supplier Bill ${pur.purchaseNumber} recorded for ${pur.supplierName} - Value ${formatINR(pur.grandTotal)}`,
         icon: '📦',
         bg: 'rgba(59, 130, 246, 0.1)',
+        targetTab: 'purchases',
+        targetQuery: pur.purchaseNumber,
       });
     });
 
@@ -468,6 +484,8 @@ export const Dashboard: React.FC = () => {
         details: `Payment of ${formatINR(pay.amount)} logged via ${pay.paymentMethod} for ${pay.contactName}`,
         icon: pay.type === 'CustomerReceipt' ? '📥' : '📤',
         bg: pay.type === 'CustomerReceipt' ? 'var(--color-success-bg)' : 'var(--color-danger-bg)',
+        targetTab: 'payments',
+        targetQuery: pay.contactName,
       });
     });
 
@@ -480,6 +498,8 @@ export const Dashboard: React.FC = () => {
         details: `Operational spend of ${formatINR(exp.amount)} under ${exp.category} paid to ${exp.payee}`,
         icon: '🧾',
         bg: 'var(--color-danger-bg)',
+        targetTab: 'expenses',
+        targetQuery: exp.category,
       });
     });
 
@@ -529,10 +549,10 @@ export const Dashboard: React.FC = () => {
           marginBottom: '24px' 
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-          <div>
-            <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Intelligence Dashboard</h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>Real-time summaries calculated directly from local transactions ledger.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', width: '100%' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>Business Intelligence Dashboard</h2>
+            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>Real-time summaries calculated from local ledger.</p>
           </div>
           
           <button 
@@ -540,8 +560,21 @@ export const Dashboard: React.FC = () => {
             onClick={triggerRefresh}
             title="Recalculate metrics"
             disabled={isRefreshing}
+            style={{ 
+              flexShrink: 0, 
+              width: '36px', 
+              height: '36px', 
+              borderRadius: '50%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              padding: 0,
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-color)',
+              color: 'var(--text-secondary)'
+            }}
           >
-            <RefreshCw size={15} className={isRefreshing ? 'animate-spin' : ''} />
+            <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
           </button>
         </div>
 
@@ -572,34 +605,53 @@ export const Dashboard: React.FC = () => {
       {/* Custom range date-picker */}
       {filterType === 'custom' && (
         <div 
-          className="card" 
           style={{ 
-            padding: '12px 16px', 
+            backgroundColor: 'var(--bg-card)', 
+            border: '1px solid var(--border-color)', 
+            padding: '10px 12px', 
             marginBottom: '20px', 
             display: 'flex', 
-            gap: '12px', 
-            flexWrap: 'wrap', 
-            alignItems: 'center',
+            gap: '10px', 
             borderRadius: '10px',
-            animation: 'fadeIn 0.2s ease-out'
+            animation: 'fadeIn 0.2s ease-out',
+            width: '100%',
+            boxSizing: 'border-box'
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>Start Date:</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Start Date</span>
             <input 
               type="date" 
               className="filter-select" 
-              style={{ padding: '6px 10px' }}
+              style={{ 
+                padding: '8px 10px', 
+                fontSize: '12px', 
+                width: '100%', 
+                boxSizing: 'border-box',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-app)',
+                color: 'var(--text-primary)'
+              }}
               value={customRange.start}
               onChange={(e) => setCustomRange({ ...customRange, start: e.target.value })}
             />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px' }}>
-            <span style={{ color: 'var(--text-muted)' }}>End Date:</span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
+            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>End Date</span>
             <input 
               type="date" 
               className="filter-select" 
-              style={{ padding: '6px 10px' }}
+              style={{ 
+                padding: '8px 10px', 
+                fontSize: '12px', 
+                width: '100%', 
+                boxSizing: 'border-box',
+                borderRadius: '6px',
+                border: '1px solid var(--border-color)',
+                backgroundColor: 'var(--bg-app)',
+                color: 'var(--text-primary)'
+              }}
               value={customRange.end}
               onChange={(e) => setCustomRange({ ...customRange, end: e.target.value })}
             />
@@ -1043,6 +1095,10 @@ export const Dashboard: React.FC = () => {
                           max={stats.grossProfit} 
                           formatVal={(v) => formatINR(v)}
                           color="var(--primary)" 
+                          onClick={() => {
+                            setSearchQuery(prod.name);
+                            setCurrentTab('inventory');
+                          }}
                         />
                       ))
                     )}
@@ -1063,6 +1119,10 @@ export const Dashboard: React.FC = () => {
                           max={stats.totalSales} 
                           formatVal={(v) => formatINR(v)}
                           color="#3b82f6" 
+                          onClick={() => {
+                            setSearchQuery(prod.name);
+                            setCurrentTab('inventory');
+                          }}
                         />
                       ))
                     )}
@@ -1100,6 +1160,10 @@ export const Dashboard: React.FC = () => {
                             max={totalQty} 
                             formatVal={(v) => `${v} units`}
                             color="var(--primary)" 
+                            onClick={() => {
+                              setSearchQuery(prod.name);
+                              setCurrentTab('inventory');
+                            }}
                           />
                         );
                       })
@@ -1113,6 +1177,10 @@ export const Dashboard: React.FC = () => {
                     {products.slice(-4).reverse().map((prod) => (
                       <div 
                         key={prod.id} 
+                        onClick={() => {
+                          setSearchQuery(prod.name);
+                          setCurrentTab('inventory');
+                        }}
                         style={{ 
                           display: 'flex', 
                           justifyContent: 'space-between', 
@@ -1121,8 +1189,10 @@ export const Dashboard: React.FC = () => {
                           backgroundColor: 'var(--bg-app)', 
                           borderRadius: '8px', 
                           border: '1px solid var(--border-color)',
-                          gap: '12px'
+                          gap: '12px',
+                          cursor: 'pointer'
                         }}
+                        className="hover-scale-subtle"
                       >
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prod.name}</div>
@@ -1160,6 +1230,10 @@ export const Dashboard: React.FC = () => {
                       outstandingCustomers.map((cust) => (
                         <div 
                           key={cust.id} 
+                          onClick={() => {
+                            setSearchQuery(cust.name);
+                            setCurrentTab('customers');
+                          }}
                           style={{ 
                             display: 'flex', 
                             justifyContent: 'space-between', 
@@ -1168,8 +1242,10 @@ export const Dashboard: React.FC = () => {
                             backgroundColor: 'var(--bg-app)', 
                             border: '1px solid var(--border-color)', 
                             borderRadius: '8px',
-                            gap: '12px' 
+                            gap: '12px',
+                            cursor: 'pointer'
                           }}
+                          className="hover-scale-subtle"
                         >
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cust.name}</div>
@@ -1194,6 +1270,10 @@ export const Dashboard: React.FC = () => {
                       outstandingSuppliers.map((supp) => (
                         <div 
                           key={supp.id} 
+                          onClick={() => {
+                            setSearchQuery(supp.name);
+                            setCurrentTab('suppliers');
+                          }}
                           style={{ 
                             display: 'flex', 
                             justifyContent: 'space-between', 
@@ -1202,8 +1282,10 @@ export const Dashboard: React.FC = () => {
                             backgroundColor: 'var(--bg-app)', 
                             border: '1px solid var(--border-color)', 
                             borderRadius: '8px',
-                            gap: '12px' 
+                            gap: '12px',
+                            cursor: 'pointer'
                           }}
+                          className="hover-scale-subtle"
                         >
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{supp.name}</div>
@@ -1243,7 +1325,23 @@ export const Dashboard: React.FC = () => {
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No recent activities logged in this period.</p>
             ) : (
               recentActivities.map((act) => (
-                <div key={act.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', width: '100%' }}>
+                <div 
+                  key={act.id} 
+                  onClick={() => {
+                    if (act.targetTab && act.targetQuery) {
+                      setSearchQuery(act.targetQuery);
+                      setCurrentTab(act.targetTab);
+                    }
+                  }}
+                  style={{ 
+                    display: 'flex', 
+                    gap: '12px', 
+                    alignItems: 'flex-start', 
+                    width: '100%',
+                    cursor: (act.targetTab && act.targetQuery) ? 'pointer' : 'default'
+                  }}
+                  className={(act.targetTab && act.targetQuery) ? 'hover-scale-subtle' : ''}
+                >
                   <div 
                     style={{ 
                       padding: '6px', 
