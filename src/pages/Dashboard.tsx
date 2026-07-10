@@ -53,88 +53,88 @@ const BarChart = ({
 }) => {
   const maxVal = Math.max(...data.map((d) => Math.max(d.value1, d.value2, 1)));
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '16px', fontSize: '11px', flexWrap: 'wrap' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '12px' }}>
+      <div 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'flex-end', 
+          gap: '12px', 
+          fontSize: '10px', 
+          flexWrap: 'wrap', 
+          rowGap: '6px' 
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: color1 }} />
+          <span style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: color1 }} />
           <span style={{ color: 'var(--text-secondary)' }}>{label1}</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-          <span style={{ width: '12px', height: '12px', borderRadius: '3px', backgroundColor: color2 }} />
+          <span style={{ width: '10px', height: '10px', borderRadius: '3px', backgroundColor: color2 }} />
           <span style={{ color: 'var(--text-secondary)' }}>{label2}</span>
         </div>
       </div>
-      <div style={{ width: '100%', overflowX: 'auto', paddingBottom: '4px', scrollbarWidth: 'none' }} className="no-scrollbar">
-        <div 
-          style={{ 
-            display: 'flex', 
-            height: '220px', 
-            alignItems: 'flex-end', 
-            gap: '12px', 
-            borderBottom: '1px solid var(--border-color)', 
-            paddingBottom: '8px',
-            paddingTop: '20px',
-            minWidth: '400px'
-          }}
-        >
-          {data.map((d, idx) => {
-            const h1 = (d.value1 / maxVal) * 100;
-            const h2 = (d.value2 / maxVal) * 100;
-            return (
-              <div 
-                key={idx} 
-                style={{ 
-                  flex: 1, 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  height: '100%', 
-                  justifyContent: 'flex-end', 
-                  position: 'relative' 
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-end', gap: '4px', width: '100%', height: '100%' }}>
-                  <div 
-                    style={{ 
-                      flex: 1, 
-                      height: `${Math.max(1, h1)}%`, 
-                      backgroundColor: color1, 
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'height 0.3s ease-out',
-                      opacity: d.value1 > 0 ? 0.9 : 0.2
-                    }}
-                    title={`${label1}: ${formatINR(d.value1)}`}
-                  />
-                  <div 
-                    style={{ 
-                      flex: 1, 
-                      height: `${Math.max(1, h2)}%`, 
-                      backgroundColor: color2, 
-                      borderRadius: '4px 4px 0 0',
-                      transition: 'height 0.3s ease-out',
-                      opacity: d.value2 > 0 ? 0.9 : 0.2
-                    }}
-                    title={`${label2}: ${formatINR(d.value2)}`}
-                  />
-                </div>
-                <span 
+      
+      <div 
+        style={{ 
+          display: 'flex', 
+          height: 'var(--chart-height, 220px)', 
+          alignItems: 'flex-end', 
+          gap: '8px', 
+          borderBottom: '1px solid var(--border-color)', 
+          paddingBottom: '8px',
+          paddingTop: '20px',
+          width: '100%'
+        }}
+      >
+        {data.map((d, idx) => {
+          const h1 = (d.value1 / maxVal) * 100;
+          const h2 = (d.value2 / maxVal) * 100;
+          // Strip year for compact labels
+          const cleanLabel = d.label.replace(/,?\s*\d{4}/, '');
+          
+          return (
+            <div 
+              key={idx} 
+              style={{ 
+                flex: 1, 
+                display: 'flex', 
+                flexDirection: 'column', 
+                alignItems: 'center', 
+                height: '100%', 
+                justifyContent: 'flex-end', 
+                position: 'relative' 
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'flex-end', gap: '3px', width: '100%', height: '100%', justifyContent: 'center' }}>
+                <div 
                   style={{ 
-                    fontSize: '9px', 
-                    color: 'var(--text-muted)', 
-                    marginTop: '8px', 
-                    whiteSpace: 'nowrap', 
-                    overflow: 'hidden', 
-                    textOverflow: 'ellipsis', 
-                    maxWidth: '50px',
-                    textAlign: 'center' 
+                    width: '38%', 
+                    height: `${Math.max(1.5, h1)}%`, 
+                    backgroundColor: color1, 
+                    borderRadius: '3px 3px 0 0',
+                    transition: 'height 0.3s ease-out',
+                    opacity: d.value1 > 0 ? 0.9 : 0.2
                   }}
-                >
-                  {d.label}
-                </span>
+                  title={`${label1}: ${formatINR(d.value1)}`}
+                />
+                <div 
+                  style={{ 
+                    width: '38%', 
+                    height: `${Math.max(1.5, h2)}%`, 
+                    backgroundColor: color2, 
+                    borderRadius: '3px 3px 0 0',
+                    transition: 'height 0.3s ease-out',
+                    opacity: d.value2 > 0 ? 0.9 : 0.2
+                  }}
+                  title={`${label2}: ${formatINR(d.value2)}`}
+                />
               </div>
-            );
-          })}
-        </div>
+              <span className="chart-x-axis-label">
+                {cleanLabel}
+              </span>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
@@ -936,195 +936,314 @@ export const Dashboard: React.FC = () => {
         </div>
       </div>
 
+
       {/* Main Analysis Blocks divided into tab panels */}
       <div className="dashboard-main-layout">
         {/* Left Side: Dynamic Analytics Tabs */}
-        <div>
-          <div style={{ display: 'flex', borderBottom: '1px solid var(--border-color)', marginBottom: '16px', gap: '16px', overflowX: 'auto', paddingBottom: '6px', scrollbarWidth: 'none', WebkitOverflowScrolling: 'touch' }} className="no-scrollbar">
-            <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'sales' ? 800 : 500, color: activeAnalysisTab === 'sales' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'sales' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-              onClick={() => setActiveAnalysisTab('sales')}
-            >
-              Sales & Purchases
-            </button>
-            <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'profit' ? 800 : 500, color: activeAnalysisTab === 'profit' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'profit' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-              onClick={() => setActiveAnalysisTab('profit')}
-            >
-              Product Profitability
-            </button>
-            <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'inventory' ? 800 : 500, color: activeAnalysisTab === 'inventory' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'inventory' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-              onClick={() => setActiveAnalysisTab('inventory')}
-            >
-              Stock Status
-            </button>
-            <button 
-              style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeAnalysisTab === 'entities' ? 800 : 500, color: activeAnalysisTab === 'entities' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeAnalysisTab === 'entities' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
-              onClick={() => setActiveAnalysisTab('entities')}
-            >
-              Directories Accounts
-            </button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, width: '100%' }}>
+          {/* Tabs Navigation Bar */}
+          <div 
+            style={{ 
+              display: 'flex', 
+              borderBottom: '1px solid var(--border-color)', 
+              gap: '12px', 
+              overflowX: 'auto', 
+              paddingBottom: '8px', 
+              scrollbarWidth: 'none', 
+              WebkitOverflowScrolling: 'touch',
+              width: '100%'
+            }}
+            className="no-scrollbar"
+          >
+            {[
+              { id: 'sales', label: 'Sales & Purchases' },
+              { id: 'profit', label: 'Product Profitability' },
+              { id: 'inventory', label: 'Stock Status' },
+              { id: 'entities', label: 'Directories & Accounts' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                style={{ 
+                  padding: '8px 16px', 
+                  border: 'none', 
+                  background: 'none', 
+                  fontSize: '13px', 
+                  fontWeight: activeAnalysisTab === tab.id ? 800 : 500, 
+                  color: activeAnalysisTab === tab.id ? 'var(--primary-dark)' : 'var(--text-muted)', 
+                  borderBottom: activeAnalysisTab === tab.id ? '2px solid var(--primary)' : 'none', 
+                  cursor: 'pointer', 
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setActiveAnalysisTab(tab.id as any)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
 
-          {/* Analysis Tab A: Sales & Purchases */}
-          {activeAnalysisTab === 'sales' && (
-            <div className="card" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-              <div className="card-title" style={{ marginBottom: '16px' }}>
-                <span>Sales Billing vs Purchase Billing Trend</span>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Latest active periods</span>
-              </div>
-              <BarChart 
-                data={chartData} 
-                label1="Total Sales (₹)" 
-                label2="Total Purchases (₹)" 
-                color1="var(--primary)" 
-                color2="#3b82f6" 
-              />
-            </div>
-          )}
-
-          {/* Analysis Tab B: Product Profitability */}
-          {activeAnalysisTab === 'profit' && (
-            <div className="card" style={{ animation: 'fadeIn 0.2s ease-out', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Top Highly Profitable Products</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {productPerformance.highestProfit.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No sales data available in selected period.</p>
-                  ) : (
-                    productPerformance.highestProfit.map((prod, idx) => (
-                      <ProgressBar 
-                        key={idx} 
-                        label={prod.name} 
-                        value={prod.profit} 
-                        max={stats.grossProfit} 
-                        formatVal={(v) => formatINR(v)}
-                        color="var(--primary)" 
-                      />
-                    ))
-                  )}
+          {/* Active Tab Panel Content */}
+          <div style={{ width: '100%', minWidth: 0 }}>
+            {/* Tab A: Sales & Purchases */}
+            {activeAnalysisTab === 'sales' && (
+              <div 
+                className="card" 
+                style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  width: '100%', 
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                  animation: 'fadeIn 0.2s ease-out' 
+                }}
+              >
+                <div style={{ marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Sales Billing vs Purchase Billing Trend</h4>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Latest active periods</p>
+                </div>
+                <div style={{ width: '100%', minWidth: 0 }}>
+                  <BarChart 
+                    data={chartData} 
+                    label1="Total Sales (₹)" 
+                    label2="Total Purchases (₹)" 
+                    color1="var(--primary)" 
+                    color2="#3b82f6" 
+                  />
                 </div>
               </div>
+            )}
 
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Highest Revenue Generating Products</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {productPerformance.highestRevenue.length === 0 ? (
-                    <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No sales data available in selected period.</p>
-                  ) : (
-                    productPerformance.highestRevenue.map((prod, idx) => (
-                      <ProgressBar 
-                        key={idx} 
-                        label={prod.name} 
-                        value={prod.revenue} 
-                        max={stats.totalSales} 
-                        formatVal={(v) => formatINR(v)}
-                        color="#3b82f6" 
-                      />
-                    ))
-                  )}
+            {/* Tab B: Product Profitability */}
+            {activeAnalysisTab === 'profit' && (
+              <div 
+                className="card" 
+                style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '24px', 
+                  width: '100%', 
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                  animation: 'fadeIn 0.2s ease-out' 
+                }}
+              >
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Top Highly Profitable Products</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+                    {productPerformance.highestProfit.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No sales data available in selected period.</p>
+                    ) : (
+                      productPerformance.highestProfit.map((prod, idx) => (
+                        <ProgressBar 
+                          key={idx} 
+                          label={prod.name} 
+                          value={prod.profit} 
+                          max={stats.grossProfit} 
+                          formatVal={(v) => formatINR(v)}
+                          color="var(--primary)" 
+                        />
+                      ))
+                    )}
+                  </div>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Highest Revenue Generating Products</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+                    {productPerformance.highestRevenue.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No sales data available in selected period.</p>
+                    ) : (
+                      productPerformance.highestRevenue.map((prod, idx) => (
+                        <ProgressBar 
+                          key={idx} 
+                          label={prod.name} 
+                          value={prod.revenue} 
+                          max={stats.totalSales} 
+                          formatVal={(v) => formatINR(v)}
+                          color="#3b82f6" 
+                        />
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Analysis Tab C: Stock Status */}
-          {activeAnalysisTab === 'inventory' && (
-            <div className="card" style={{ animation: 'fadeIn 0.2s ease-out' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Fast-Moving Products (Quantity Sold)</h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                {productPerformance.bestSelling.length === 0 ? (
-                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No sales registered.</p>
-                ) : (
-                  productPerformance.bestSelling.map((prod, idx) => {
-                    const totalQty = productPerformance.bestSelling.reduce((sum, p) => sum + p.sold, 0);
-                    return (
-                      <ProgressBar 
-                        key={idx} 
-                        label={prod.name} 
-                        value={prod.sold} 
-                        max={totalQty} 
-                        formatVal={(v) => `${v} units`}
-                        color="var(--primary)" 
-                      />
-                    );
-                  })
-                )}
-              </div>
+            {/* Tab C: Stock Status */}
+            {activeAnalysisTab === 'inventory' && (
+              <div 
+                className="card" 
+                style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  width: '100%', 
+                  minWidth: 0,
+                  boxSizing: 'border-box',
+                  animation: 'fadeIn 0.2s ease-out' 
+                }}
+              >
+                <div>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Fast-Moving Products (Quantity Sold)</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
+                    {productPerformance.bestSelling.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>No sales registered.</p>
+                    ) : (
+                      productPerformance.bestSelling.map((prod, idx) => {
+                        const totalQty = productPerformance.bestSelling.reduce((sum, p) => sum + p.sold, 0);
+                        return (
+                          <ProgressBar 
+                            key={idx} 
+                            label={prod.name} 
+                            value={prod.sold} 
+                            max={totalQty} 
+                            formatVal={(v) => `${v} units`}
+                            color="var(--primary)" 
+                          />
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
 
-              <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '16px' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)' }}>Recently Registered Stock Items</h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {products.slice(-4).reverse().map((prod) => (
-                    <div key={prod.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', backgroundColor: 'var(--bg-app)', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 600 }}>{prod.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Category: {prod.category} • SKU: {prod.sku}</div>
+                <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Recently Registered Stock Items</h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                    {products.slice(-4).reverse().map((prod) => (
+                      <div 
+                        key={prod.id} 
+                        style={{ 
+                          display: 'flex', 
+                          justifyContent: 'space-between', 
+                          alignItems: 'center', 
+                          padding: '10px 12px', 
+                          backgroundColor: 'var(--bg-app)', 
+                          borderRadius: '8px', 
+                          border: '1px solid var(--border-color)',
+                          gap: '12px'
+                        }}
+                      >
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prod.name}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Category: {prod.category} • SKU: {prod.sku}</div>
+                        </div>
+                        <span className="badge badge-secondary" style={{ fontSize: '11px', flexShrink: 0 }}>{prod.stock} units</span>
                       </div>
-                      <span className="badge badge-secondary" style={{ fontSize: '11px' }}>{prod.stock} left</span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
 
-          {/* Analysis Tab D: Directories Accounts */}
-          {activeAnalysisTab === 'entities' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', animation: 'fadeIn 0.2s ease-out' }}>
-              <div className="card">
-                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Top Customer Outstanding Balances</span>
-                  <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-danger)' }}>Receivable Dues</span>
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {outstandingCustomers.map((cust) => (
-                    <div key={cust.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 700 }}>{cust.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Phone: {cust.phone}</div>
-                      </div>
-                      <div style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: '13px' }}>{formatINR(cust.outstanding)}</div>
-                    </div>
-                  ))}
+            {/* Tab D: Directories & Accounts */}
+            {activeAnalysisTab === 'entities' && (
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '20px', 
+                  width: '100%', 
+                  minWidth: 0,
+                  animation: 'fadeIn 0.2s ease-out' 
+                }}
+              >
+                <div className="card" style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Top Customer Outstanding Balances</h4>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>Receivable Dues</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {outstandingCustomers.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No outstanding dues.</p>
+                    ) : (
+                      outstandingCustomers.map((cust) => (
+                        <div 
+                          key={cust.id} 
+                          style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            padding: '10px 12px', 
+                            backgroundColor: 'var(--bg-app)', 
+                            border: '1px solid var(--border-color)', 
+                            borderRadius: '8px',
+                            gap: '12px' 
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{cust.name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>Phone: {cust.phone}</div>
+                          </div>
+                          <div style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '13px', flexShrink: 0 }}>{formatINR(cust.outstanding)}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
-              </div>
 
-              <div className="card">
-                <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 12px 0', color: 'var(--text-primary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span>Top Outstanding Payables to Suppliers</span>
-                  <span style={{ fontSize: '11px', fontWeight: 500, color: 'var(--color-danger)' }}>Supplier Bills</span>
-                </h4>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {outstandingSuppliers.map((supp) => (
-                    <div key={supp.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', backgroundColor: 'var(--bg-card)', border: '1px solid var(--border-color)', borderRadius: '8px' }}>
-                      <div>
-                        <div style={{ fontSize: '13px', fontWeight: 700 }}>{supp.name}</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Phone: {supp.phone}</div>
-                      </div>
-                      <div style={{ fontWeight: 700, color: 'var(--color-danger)', fontSize: '13px' }}>{formatINR(supp.outstanding)}</div>
-                    </div>
-                  ))}
+                <div className="card" style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Top Outstanding Payables to Suppliers</h4>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>Supplier Bills</span>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {outstandingSuppliers.length === 0 ? (
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No outstanding payables.</p>
+                    ) : (
+                      outstandingSuppliers.map((supp) => (
+                        <div 
+                          key={supp.id} 
+                          style={{ 
+                            display: 'flex', 
+                            justifyContent: 'space-between', 
+                            alignItems: 'center', 
+                            padding: '10px 12px', 
+                            backgroundColor: 'var(--bg-app)', 
+                            border: '1px solid var(--border-color)', 
+                            borderRadius: '8px',
+                            gap: '12px' 
+                          }}
+                        >
+                          <div style={{ minWidth: 0, flex: 1 }}>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{supp.name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>Phone: {supp.phone}</div>
+                          </div>
+                          <div style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '13px', flexShrink: 0 }}>{formatINR(supp.outstanding)}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
-        {/* Right Side: Activity Log Feed */}
-        <div className="card" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-            <Activity size={18} style={{ color: 'var(--primary)' }} />
-            <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0 }}>Recent Activity Feed</h3>
+        {/* Right Side: Recent Activity Feed */}
+        <div 
+          className="card" 
+          style={{ 
+            padding: '16px', 
+            borderRadius: '12px', 
+            display: 'flex', 
+            flexDirection: 'column', 
+            width: '100%', 
+            boxSizing: 'border-box',
+            minWidth: 0
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+            <Activity size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+            <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Recent Activity Feed</h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
             {recentActivities.length === 0 ? (
-              <p style={{ fontSize: '13px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No recent activities logged in this period.</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No recent activities logged in this period.</p>
             ) : (
               recentActivities.map((act) => (
-                <div key={act.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                <div key={act.id} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start', width: '100%' }}>
                   <div 
                     style={{ 
                       padding: '6px', 
@@ -1133,14 +1252,15 @@ export const Dashboard: React.FC = () => {
                       fontSize: '14px',
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
+                      justifyContent: 'center',
+                      flexShrink: 0
                     }}
                   >
                     {act.icon}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{act.type}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4 }}>{act.details}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{act.type}</div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', lineHeight: 1.4, wordBreak: 'break-word' }}>{act.details}</div>
                     <div style={{ fontSize: '9px', color: 'var(--text-muted)', marginTop: '4px' }}>Date: {new Date(act.time).toLocaleDateString()}</div>
                   </div>
                 </div>
