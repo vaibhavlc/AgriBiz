@@ -914,7 +914,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {settings.showBankDetails && settings.bankName && (
                   <div style={{ marginBottom: "8px" }}>
                     <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
                       <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
                       </div>
@@ -1005,9 +1005,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
 
                         {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedInvoice.items.length > 3 ? "4px" : "12px", width: "100%", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedInvoice.items.length > 3 ? "2px" : "12px", width: "100%", flexShrink: 0 }}>
               {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height={selectedInvoice.items.length > 3 ? "40" : "55"} style={{ display: "block", maxWidth: "360px" }}>
+              <svg viewBox="0 0 500 80" width="100%" height={selectedInvoice.items.length > 3 ? "30" : "55"} style={{ display: "block", maxWidth: "360px" }}>
                 {/* Ground line */}
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
                 
@@ -1070,13 +1070,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             {/* Signatures Row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: selectedInvoice.items.length > 3 ? "2px" : "10px", width: "100%", flexShrink: 0 }}>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedInvoice.items.length > 3 ? "14px" : "30px" }}></div>
+                <div style={{ height: selectedInvoice.items.length > 3 ? "6px" : "30px" }}></div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
                   Receiver's Signature
                 </p>
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedInvoice.items.length > 3 ? "14px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div style={{ height: selectedInvoice.items.length > 3 ? "6px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {settings.signature ? (
                     <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedInvoice.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}
@@ -1290,7 +1290,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   {settings.showBankDetails && settings.bankName && (
                     <div style={{ marginBottom: "8px" }}>
                       <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
                         <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
                         </div>
@@ -1371,9 +1371,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
 
                           {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedQuotation.items.length > 3 ? "4px" : "12px", width: "100%", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedQuotation.items.length > 3 ? "2px" : "12px", width: "100%", flexShrink: 0 }}>
               {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height={selectedQuotation.items.length > 3 ? "40" : "55"} style={{ display: "block", maxWidth: "360px" }}>
+              <svg viewBox="0 0 500 80" width="100%" height={selectedQuotation.items.length > 3 ? "30" : "55"} style={{ display: "block", maxWidth: "360px" }}>
                 {/* Ground line */}
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
                 
@@ -1436,13 +1436,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             {/* Signatures Row */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: selectedQuotation.items.length > 3 ? "2px" : "10px", width: "100%", flexShrink: 0 }}>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedQuotation.items.length > 3 ? "14px" : "30px" }}></div>
+                <div style={{ height: selectedQuotation.items.length > 3 ? "6px" : "30px" }}></div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
                   Receiver's Signature
                 </p>
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedQuotation.items.length > 3 ? "14px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div style={{ height: selectedQuotation.items.length > 3 ? "6px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {settings.signature ? (
                     <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedQuotation.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}

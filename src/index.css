@@ -4873,7 +4873,7 @@ body.dark-theme select.form-control {
 }
 /* ---- Dense layout for prints with >3 items ---- */
 .invoice-print-container.dense-layout {
-  padding: 12px 18px 20px 18px !important;
+  padding: 10px 18px 10px 18px !important;
 }
 
 .invoice-print-container.dense-layout .invoice-header-bar {
@@ -4891,12 +4891,12 @@ body.dark-theme select.form-control {
 }
 
 .invoice-print-container.dense-layout .invoice-table th {
-  padding: 4px 8px;
+  padding: 2.5px 8px;
   font-size: 9.5px;
 }
 
 .invoice-print-container.dense-layout .invoice-table td {
-  padding: 4px 8px;
+  padding: 2.5px 8px;
   font-size: 9.5px;
 }
 
@@ -4909,13 +4909,13 @@ body.dark-theme select.form-control {
 }
 
 .invoice-print-container.dense-layout .invoice-terms-title {
-  font-size: 8.5px;
-  margin-bottom: 2px;
+  font-size: 8.0px;
+  margin-bottom: 1px;
 }
 
 .invoice-print-container.dense-layout .invoice-terms-text {
-  font-size: 8.5px;
-  line-height: 1.35;
+  font-size: 7.8px;
+  line-height: 1.25;
 }
 
 .invoice-print-container.dense-layout .print-watermark-logo {
