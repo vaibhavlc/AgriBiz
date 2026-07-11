@@ -1000,7 +1000,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             </table>
 
             {/* Terms and Summary block */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: '8px' }}>
               <div style={{ flex: 1, maxWidth: '55%' }}>
                 {selectedPurchase.notes && (
                   <div style={{ marginBottom: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
