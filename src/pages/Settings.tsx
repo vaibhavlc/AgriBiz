@@ -64,7 +64,7 @@ export const Settings: React.FC = () => {
   const [purchasePrefix, setPurchasePrefix] = useState(settings.purchasePrefix || '');
   const [quotationPrefix, setQuotationPrefix] = useState(settings.quotationPrefix || '');
   const [financialYear, setFinancialYear] = useState(settings.financialYear || '');
-  const [defaultTerms, setDefaultTerms] = useState(settings.defaultTerms || '');
+  const [defaultTerms, _setDefaultTerms] = useState(settings.defaultTerms || '');
   const [invoiceTerms, setInvoiceTerms] = useState(settings.invoiceTerms || initialSettings.invoiceTerms || '');
   const [quotationTerms, setQuotationTerms] = useState(settings.quotationTerms || initialSettings.quotationTerms || '');
   const [purchaseTerms, setPurchaseTerms] = useState(settings.purchaseTerms || initialSettings.purchaseTerms || '');
