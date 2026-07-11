@@ -893,6 +893,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     Method: {selectedInvoice.paymentMethod}
                   </p>
                 )}
+                {selectedInvoice.referenceNumber && (
+                  <p className="invoice-customer-sub" style={{ marginTop: "3px", fontWeight: 600 }}>
+                    {selectedInvoice.paymentMethod === 'Cheque' ? 'Cheque No.' : 'Txn / UTR No.'}: {selectedInvoice.referenceNumber}
+                  </p>
+                )}
+                {selectedInvoice.dueDate && selectedInvoice.balanceDue > 0 && (
+                  <p className="invoice-customer-sub" style={{ marginTop: "3px", fontWeight: 600, color: 'var(--color-danger)' }}>
+                    Due By: {formatDate(selectedInvoice.dueDate)}
+                  </p>
+                )}
               </div>
             </div>
 
