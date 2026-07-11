@@ -252,7 +252,7 @@ select option {
 /* ---- Animated gradient border ring ---- */
 .prem-logo-anim-ring {
   position: relative;
-  width: 100%;
+  width: 80px;
   aspect-ratio: 1 / 1;
   border-radius: 18px;
   padding: 3px;
@@ -354,8 +354,7 @@ body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
   height: 100%;
   object-fit: contain;
   margin: 0;
-  padding: 0;
-
+  padding: 4px;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
