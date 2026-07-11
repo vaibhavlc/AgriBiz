@@ -914,13 +914,34 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {settings.showBankDetails && settings.bankName && (
                   <div style={{ marginBottom: "8px" }}>
                     <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                    <p className="invoice-terms-text">
-                      Bank: {settings.bankName} | A/c Name: {settings.accountHolderName}
-                      <br />
-                      A/c No: {settings.accountNumber} | IFSC: {settings.ifscCode}
-                      {settings.branchName && <><br />Branch: {settings.branchName}</>}
-                      {settings.upiId && <><br />UPI ID: {settings.upiId}</>}
-                    </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "4px" }}>
+                      <div style={{ display: "flex", gap: "16px" }}>
+                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
+                        </div>
+                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: "16px" }}>
+                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
+                        </div>
+                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                        </div>
+                      </div>
+                      {(settings.branchName || settings.upiId) && (
+                        <div style={{ display: "flex", gap: "16px" }}>
+                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            {settings.branchName ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}</> : null}
+                          </div>
+                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            {settings.upiId ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}</> : null}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
                 {settings.showTerms && (settings.invoiceTerms || settings.defaultTerms) && (
@@ -1082,39 +1103,134 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
                 </svg>
               </div>
-              <div style={{ display: "flex", gap: "28px", alignItems: "flex-end", flexShrink: 0 }}>
-                <div style={{ textAlign: "center", minWidth: "110px" }}>
-                  <div style={{ height: selectedInvoice.items.length > 3 ? "25px" : "35px" }}></div>
-                  <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                    Receiver's Signature
-                  </p>
-                </div>
-                <div style={{ textAlign: "center", minWidth: "110px" }}>
-                  <div style={{ height: selectedInvoice.items.length > 3 ? "25px" : "35px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                    {settings.signature ? (
-                      <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedInvoice.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
-                    ) : null}
+              {/* Bottom Footer block containing SVG, Signatures, and Footer message */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", flexShrink: 0, marginTop: "auto" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div style={{ flex: 1, maxWidth: "45%" }}>
+                    {/* Custom Inline SVG Illustration */}
+                    <svg viewBox="0 0 500 110" width="100%" height={selectedInvoice.items.length > 3 ? "40" : "60"} style={{ display: "block" }}>
+                      {/* Ground line */}
+                      <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
+                      
+                      {/* Left Side: Sun & Cloud */}
+                      <circle cx="50" cy="20" r="7" fill="#F2C94C" opacity="0.35" />
+                      <path d="M 45 20 Q 50 14 55 20" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                      <path d="M 38 18 Q 42 12 47 18" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                      <path d="M 80 18 C 75 18, 72 14, 78 10 C 84 6, 92 10, 92 14 C 98 14, 98 18, 92 18 Z" fill="#EAE3D2" opacity="0.3" />
+
+                      {/* Left Side: Tractor & Plow */}
+                      {/* Tractor Body */}
+                      <rect x="110" y="65" width="38" height="22" fill="#4E6C50" rx="3" />
+                      <rect x="120" y="52" width="24" height="14" fill="none" stroke="#4E6C50" strokeWidth="2" rx="1.5" />
+                      <rect x="122" y="54" width="20" height="10" fill="#FCFAF6" rx="1" />
+                      {/* Engine front */}
+                      <rect x="148" y="70" width="20" height="17" fill="#4E6C50" />
+                      <line x1="168" y1="72" x2="168" y2="85" stroke="#EAE3D2" strokeWidth="1.5" />
+                      {/* Exhaust pipe */}
+                      <line x1="154" y1="70" x2="154" y2="48" stroke="#2F3E33" strokeWidth="1.5" />
+                      {/* Smoke puffs */}
+                      <circle cx="154" cy="42" r="2.5" fill="#EAE3D2" opacity="0.4" />
+                      <circle cx="157" cy="36" r="3.5" fill="#EAE3D2" opacity="0.25" />
+                      
+                      {/* Wheels */}
+                      <circle cx="120" cy="86" r="11" fill="#2F3E33" />
+                      <circle cx="120" cy="86" r="4.5" fill="#EAE3D2" />
+                      
+                      <circle cx="158" cy="89" r="8" fill="#2F3E33" />
+                      <circle cx="158" cy="89" r="3" fill="#EAE3D2" />
+
+                      {/* Plow attachment */}
+                      <path d="M 110 78 L 94 78 L 90 94 M 94 94 L 98 78" fill="none" stroke="#2F3E33" strokeWidth="1.5" />
+                      <line x1="90" y1="94" x2="82" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+                      <line x1="95" y1="94" x2="87" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+
+                      {/* Middle: Crops & Bags */}
+                      {/* Tall Corn Stalk */}
+                      <path d="M 200 100 Q 198 60 202 45" fill="none" stroke="#27AE60" strokeWidth="2.5" />
+                      <path d="M 200 80 Q 185 75 190 70" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                      <path d="M 201 65 Q 215 60 210 55" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                      <ellipse cx="204" cy="72" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" />
+                      <ellipse cx="197" cy="57" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" />
+
+                      {/* Stack of Bags */}
+                      <rect x="225" y="76" width="24" height="24" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                      <line x1="225" y1="88" x2="249" y2="88" stroke="#4E6C50" strokeWidth="1.5" />
+                      <text x="229" y="85" fill="#2F3E33" fontSize="6" fontWeight="900">SEED</text>
+                      
+                      <rect x="242" y="81" width="24" height="19" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                      <line x1="242" y1="91" x2="266" y2="91" stroke="#4E6C50" strokeWidth="1.5" />
+                      <text x="246" y="89" fill="#2F3E33" fontSize="5" fontWeight="900">FERT</text>
+
+                      {/* Pumpkin */}
+                      <path d="M 282 100 C 275 100, 268 93, 268 83 C 268 72, 278 68, 285 68 C 292 68, 302 72, 302 83 C 302 93, 295 100, 288 100 Z" fill="#F2994A" />
+                      <path d="M 285 100 C 280 100, 276 93, 276 83 C 276 72, 281 70, 285 70 C 289 70, 294 72, 294 83 C 294 93, 290 100, 285 100 Z" fill="#F2C94C" />
+                      <path d="M 285 68 C 285 63, 288 60, 291 60" stroke="#27AE60" strokeWidth="2" fill="none" />
+
+                      {/* Right Side: Plant Shop & Fence */}
+                      {/* Picket Fence */}
+                      <rect x="320" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                      <rect x="328" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                      <rect x="336" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                      <line x1="316" y1="78" x2="340" y2="78" stroke="#EAE3D2" strokeWidth="1.5" />
+                      <line x1="316" y1="90" x2="340" y2="90" stroke="#EAE3D2" strokeWidth="1.5" />
+
+                      {/* Plant Shop storefront */}
+                      <rect x="355" y="40" width="115" height="60" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="2.5" />
+                      <rect x="345" y="30" width="135" height="10" fill="#BE3144" rx="2" />
+                      {/* Roof stripes */}
+                      <line x1="360" y1="30" x2="360" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="385" y1="30" x2="385" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="410" y1="30" x2="410" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="435" y1="30" x2="435" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="460" y1="30" x2="460" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      
+                      {/* Window with OPEN sign */}
+                      <rect x="370" y="55" width="28" height="20" fill="#4E6C50" opacity="0.1" />
+                      <rect x="370" y="55" width="28" height="20" fill="none" stroke="#4E6C50" strokeWidth="1.5" />
+                      <text x="374" y="68" fill="#BE3144" fontSize="8" fontWeight="900">OPEN</text>
+                      
+                      {/* Door */}
+                      <rect x="415" y="58" width="24" height="42" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" />
+                      <circle cx="421" cy="79" r="1.5" fill="#2F3E33" />
+                      
+                      {/* Street Lamp */}
+                      <line x1="478" y1="100" x2="478" y2="40" stroke="#2F3E33" strokeWidth="2.5" />
+                      <circle cx="478" cy="35" r="7" fill="#F2C94C" />
+                      <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
+                    </svg>
                   </div>
-                  <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                    Authorized Signatory
-                  </p>
+                  <div style={{ display: "flex", gap: "28px", alignItems: "flex-end", flexShrink: 0 }}>
+                    <div style={{ textAlign: "center", minWidth: "110px" }}>
+                      <div style={{ height: selectedInvoice.items.length > 3 ? "25px" : "35px" }}></div>
+                      <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                        Receiver's Signature
+                      </p>
+                    </div>
+                    <div style={{ textAlign: "center", minWidth: "110px" }}>
+                      <div style={{ height: selectedInvoice.items.length > 3 ? "25px" : "35px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                        {settings.signature ? (
+                          <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedInvoice.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                        ) : null}
+                      </div>
+                      <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                        Authorized Signatory
+                      </p>
+                    </div>
+                  </div>
                 </div>
+                {settings.footerMessage && (
+                  <div style={{
+                    textAlign: "center",
+                    fontSize: selectedInvoice.items.length > 3 ? "9px" : "10px",
+                    color: "var(--text-muted)",
+                    borderTop: "1px dashed var(--border-color)",
+                    paddingTop: selectedInvoice.items.length > 3 ? "4px" : "8px",
+                    width: "100%"
+                  }}>
+                    {settings.footerMessage}
+                  </div>
+                )}
               </div>
-              {settings.footerMessage && (
-                <div style={{
-                  position: "absolute",
-                  bottom: selectedInvoice.items.length > 3 ? "10px" : "14px",
-                  left: selectedInvoice.items.length > 3 ? "20px" : "24px",
-                  right: selectedInvoice.items.length > 3 ? "20px" : "24px",
-                  textAlign: "center",
-                  fontSize: selectedInvoice.items.length > 3 ? "9px" : "10px",
-                  color: "var(--text-muted)",
-                  borderTop: "1px dashed var(--border-color)",
-                  paddingTop: selectedInvoice.items.length > 3 ? "4px" : "8px"
-                }}>
-                  {settings.footerMessage}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -1306,13 +1422,34 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   {settings.showBankDetails && settings.bankName && (
                     <div style={{ marginBottom: "8px" }}>
                       <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                      <p className="invoice-terms-text">
-                        Bank: {settings.bankName} | A/c Name: {settings.accountHolderName}
-                        <br />
-                        A/c No: {settings.accountNumber} | IFSC: {settings.ifscCode}
-                        {settings.branchName && <><br />Branch: {settings.branchName}</>}
-                        {settings.upiId && <><br />UPI ID: {settings.upiId}</>}
-                      </p>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "4px" }}>
+                        <div style={{ display: "flex", gap: "16px" }}>
+                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
+                          </div>
+                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", gap: "16px" }}>
+                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
+                          </div>
+                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                          </div>
+                        </div>
+                        {(settings.branchName || settings.upiId) && (
+                          <div style={{ display: "flex", gap: "16px" }}>
+                            <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                              {settings.branchName ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}</> : null}
+                            </div>
+                            <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                              {settings.upiId ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}</> : null}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                   {settings.showTerms && (settings.quotationTerms || settings.defaultTerms) && (
@@ -1464,40 +1601,134 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
                   </svg>
                 </div>
-                <div style={{ display: "flex", gap: "28px", alignItems: "flex-end", flexShrink: 0 }}>
-                  <div style={{ textAlign: "center", minWidth: "110px" }}>
-                    <div style={{ height: selectedQuotation.items.length > 3 ? "25px" : "35px" }}></div>
-                    <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                      Receiver's Signature
-                    </p>
+              {/* Bottom Footer block containing SVG, Signatures, and Footer message */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", flexShrink: 0, marginTop: "auto" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end" }}>
+                  <div style={{ flex: 1, maxWidth: "45%" }}>
+                    {/* Custom Inline SVG Illustration */}
+                    <svg viewBox="0 0 500 110" width="100%" height={selectedQuotation.items.length > 3 ? "40" : "60"} style={{ display: "block" }}>
+                      {/* Ground line */}
+                      <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
+                      
+                      {/* Left Side: Sun & Cloud */}
+                      <circle cx="50" cy="20" r="7" fill="#F2C94C" opacity="0.35" />
+                      <path d="M 45 20 Q 50 14 55 20" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                      <path d="M 38 18 Q 42 12 47 18" stroke="#F2C94C" strokeWidth="1" fill="none" opacity="0.4" />
+                      <path d="M 80 18 C 75 18, 72 14, 78 10 C 84 6, 92 10, 92 14 C 98 14, 98 18, 92 18 Z" fill="#EAE3D2" opacity="0.3" />
+
+                      {/* Left Side: Tractor & Plow */}
+                      {/* Tractor Body */}
+                      <rect x="110" y="65" width="38" height="22" fill="#4E6C50" rx="3" />
+                      <rect x="120" y="52" width="24" height="14" fill="none" stroke="#4E6C50" strokeWidth="2" rx="1.5" />
+                      <rect x="122" y="54" width="20" height="10" fill="#FCFAF6" rx="1" />
+                      {/* Engine front */}
+                      <rect x="148" y="70" width="20" height="17" fill="#4E6C50" />
+                      <line x1="168" y1="72" x2="168" y2="85" stroke="#EAE3D2" strokeWidth="1.5" />
+                      {/* Exhaust pipe */}
+                      <line x1="154" y1="70" x2="154" y2="48" stroke="#2F3E33" strokeWidth="1.5" />
+                      {/* Smoke puffs */}
+                      <circle cx="154" cy="42" r="2.5" fill="#EAE3D2" opacity="0.4" />
+                      <circle cx="157" cy="36" r="3.5" fill="#EAE3D2" opacity="0.25" />
+                      
+                      {/* Wheels */}
+                      <circle cx="120" cy="86" r="11" fill="#2F3E33" />
+                      <circle cx="120" cy="86" r="4.5" fill="#EAE3D2" />
+                      
+                      <circle cx="158" cy="89" r="8" fill="#2F3E33" />
+                      <circle cx="158" cy="89" r="3" fill="#EAE3D2" />
+
+                      {/* Plow attachment */}
+                      <path d="M 110 78 L 94 78 L 90 94 M 94 94 L 98 78" fill="none" stroke="#2F3E33" strokeWidth="1.5" />
+                      <line x1="90" y1="94" x2="82" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+                      <line x1="95" y1="94" x2="87" y2="99" stroke="#2F3E33" strokeWidth="1.5" />
+
+                      {/* Middle: Crops & Bags */}
+                      {/* Tall Corn Stalk */}
+                      <path d="M 200 100 Q 198 60 202 45" fill="none" stroke="#27AE60" strokeWidth="2.5" />
+                      <path d="M 200 80 Q 185 75 190 70" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                      <path d="M 201 65 Q 215 60 210 55" fill="none" stroke="#27AE60" strokeWidth="1.5" />
+                      <ellipse cx="204" cy="72" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" />
+                      <ellipse cx="197" cy="57" rx="3" ry="6" fill="#F2C94C" stroke="#27AE60" strokeWidth="1" />
+
+                      {/* Stack of Bags */}
+                      <rect x="225" y="76" width="24" height="24" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                      <line x1="225" y1="88" x2="249" y2="88" stroke="#4E6C50" strokeWidth="1.5" />
+                      <text x="229" y="85" fill="#2F3E33" fontSize="6" fontWeight="900">SEED</text>
+                      
+                      <rect x="242" y="81" width="24" height="19" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="1.5" rx="3" />
+                      <line x1="242" y1="91" x2="266" y2="91" stroke="#4E6C50" strokeWidth="1.5" />
+                      <text x="246" y="89" fill="#2F3E33" fontSize="5" fontWeight="900">FERT</text>
+
+                      {/* Pumpkin */}
+                      <path d="M 282 100 C 275 100, 268 93, 268 83 C 268 72, 278 68, 285 68 C 292 68, 302 72, 302 83 C 302 93, 295 100, 288 100 Z" fill="#F2994A" />
+                      <path d="M 285 100 C 280 100, 276 93, 276 83 C 276 72, 281 70, 285 70 C 289 70, 294 72, 294 83 C 294 93, 290 100, 285 100 Z" fill="#F2C94C" />
+                      <path d="M 285 68 C 285 63, 288 60, 291 60" stroke="#27AE60" strokeWidth="2" fill="none" />
+
+                      {/* Right Side: Plant Shop & Fence */}
+                      {/* Picket Fence */}
+                      <rect x="320" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                      <rect x="328" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                      <rect x="336" y="70" width="4" height="30" fill="#EAE3D2" rx="0.5" />
+                      <line x1="316" y1="78" x2="340" y2="78" stroke="#EAE3D2" strokeWidth="1.5" />
+                      <line x1="316" y1="90" x2="340" y2="90" stroke="#EAE3D2" strokeWidth="1.5" />
+
+                      {/* Plant Shop storefront */}
+                      <rect x="355" y="40" width="115" height="60" fill="#FCFAF6" stroke="#4E6C50" strokeWidth="2.5" />
+                      <rect x="345" y="30" width="135" height="10" fill="#BE3144" rx="2" />
+                      {/* Roof stripes */}
+                      <line x1="360" y1="30" x2="360" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="385" y1="30" x2="385" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="410" y1="30" x2="410" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="435" y1="30" x2="435" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      <line x1="460" y1="30" x2="460" y2="40" stroke="#4E6C50" strokeWidth="1.5" />
+                      
+                      {/* Window with OPEN sign */}
+                      <rect x="370" y="55" width="28" height="20" fill="#4E6C50" opacity="0.1" />
+                      <rect x="370" y="55" width="28" height="20" fill="none" stroke="#4E6C50" strokeWidth="1.5" />
+                      <text x="374" y="68" fill="#BE3144" fontSize="8" fontWeight="900">OPEN</text>
+                      
+                      {/* Door */}
+                      <rect x="415" y="58" width="24" height="42" fill="#EAE3D2" stroke="#4E6C50" strokeWidth="1.5" />
+                      <circle cx="421" cy="79" r="1.5" fill="#2F3E33" />
+                      
+                      {/* Street Lamp */}
+                      <line x1="478" y1="100" x2="478" y2="40" stroke="#2F3E33" strokeWidth="2.5" />
+                      <circle cx="478" cy="35" r="7" fill="#F2C94C" />
+                      <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
+                    </svg>
                   </div>
-                  <div style={{ textAlign: "center", minWidth: "110px" }}>
-                    <div style={{ height: selectedQuotation.items.length > 3 ? "25px" : "35px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                      {settings.signature ? (
-                        <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedQuotation.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
-                      ) : null}
+                  <div style={{ display: "flex", gap: "28px", alignItems: "flex-end", flexShrink: 0 }}>
+                    <div style={{ textAlign: "center", minWidth: "110px" }}>
+                      <div style={{ height: selectedQuotation.items.length > 3 ? "25px" : "35px" }}></div>
+                      <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                        Receiver's Signature
+                      </p>
                     </div>
-                    <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                      Authorized Signatory
-                    </p>
+                    <div style={{ textAlign: "center", minWidth: "110px" }}>
+                      <div style={{ height: selectedQuotation.items.length > 3 ? "25px" : "35px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                        {settings.signature ? (
+                          <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedQuotation.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                        ) : null}
+                      </div>
+                      <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                        Authorized Signatory
+                      </p>
+                    </div>
                   </div>
                 </div>
+                {settings.footerMessage && (
+                  <div style={{
+                    textAlign: "center",
+                    fontSize: selectedQuotation.items.length > 3 ? "9px" : "10px",
+                    color: "var(--text-muted)",
+                    borderTop: "1px dashed var(--border-color)",
+                    paddingTop: selectedQuotation.items.length > 3 ? "4px" : "8px",
+                    width: "100%"
+                  }}>
+                    {settings.footerMessage}
+                  </div>
+                )}
               </div>
-              {settings.footerMessage && (
-                <div style={{
-                  position: "absolute",
-                  bottom: selectedQuotation.items.length > 3 ? "10px" : "14px",
-                  left: selectedQuotation.items.length > 3 ? "20px" : "24px",
-                  right: selectedQuotation.items.length > 3 ? "20px" : "24px",
-                  textAlign: "center",
-                  fontSize: selectedQuotation.items.length > 3 ? "9px" : "10px",
-                  color: "var(--text-muted)",
-                  borderTop: "1px dashed var(--border-color)",
-                  paddingTop: selectedQuotation.items.length > 3 ? "4px" : "8px"
-                }}>
-                  {settings.footerMessage}
-                </div>
-              )}
             </div>
           </div>
         ) : (
