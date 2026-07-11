@@ -100,6 +100,8 @@ export const Sales: React.FC = () => {
   ]);
   const [amountPaid, setAmountPaid] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('UPI');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
 
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
@@ -421,6 +423,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
     setAmountPaid(0);
     setPaymentMethod('UPI');
+    setReferenceNumber('');
+    setDueDate('');
     setNotes('');
     setIsCreatingInvoice(true);
   };
@@ -439,6 +443,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     );
     setAmountPaid(inv.amountPaid);
     setPaymentMethod(inv.paymentMethod || 'UPI');
+    setReferenceNumber(inv.referenceNumber || '');
+    setDueDate(inv.dueDate || '');
     setNotes(inv.notes || '');
     setIsCreatingInvoice(true);
   };
@@ -524,6 +530,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         balanceDue,
         paymentStatus,
         paymentMethod: amountPaid > 0 ? paymentMethod : '',
+        referenceNumber: (amountPaid > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
+        dueDate: (balanceDue > 0 && dueDate) ? dueDate : undefined,
         notes: notes.trim() || undefined,
       });
 
@@ -534,6 +542,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setAmountPaid(0);
+      setPaymentMethod('UPI');
+      setReferenceNumber('');
+      setDueDate('');
       setNotes('');
       setIsCreatingInvoice(false);
       setViewInvoice(originalInvoice.id);
@@ -551,6 +562,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         balanceDue,
         paymentStatus,
         paymentMethod: amountPaid > 0 ? paymentMethod : '',
+        referenceNumber: (amountPaid > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
+        dueDate: (balanceDue > 0 && dueDate) ? dueDate : undefined,
         notes: notes.trim() || undefined,
       });
 
@@ -560,6 +573,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setAmountPaid(0);
+      setPaymentMethod('UPI');
+      setReferenceNumber('');
+      setDueDate('');
       setNotes('');
       setIsCreatingInvoice(false);
       setViewInvoice(newInvoice.id);
@@ -2019,7 +2035,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <select
                       className="form-control"
                       value={paymentMethod}
-                      onChange={(e) => setPaymentMethod(e.target.value)}
+                      onChange={(e) => { setPaymentMethod(e.target.value); setReferenceNumber(''); }}
                       style={{ height: '42px', fontSize: '13px' }}
                     >
                       <option value="UPI">UPI / GPay / PhonePe</option>
@@ -2027,6 +2043,37 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       <option value="Bank Transfer">Bank Transfer (IMPS/NEFT)</option>
                       <option value="Cheque">Cheque</option>
                     </select>
+                  </div>
+                )}
+
+                {amountPaid > 0 && paymentMethod !== 'Cash' && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
+                      {paymentMethod === 'Cheque' ? 'Cheque No.' : paymentMethod === 'UPI' ? 'Transaction / UTR No.' : 'Transfer Reference No.'}
+                    </label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder={paymentMethod === 'Cheque' ? 'Enter cheque number...' : 'Enter transaction / reference number...'}
+                      value={referenceNumber}
+                      onChange={(e) => setReferenceNumber(e.target.value)}
+                      style={{ height: '42px', fontSize: '13px' }}
+                    />
+                  </div>
+                )}
+
+                {totals.grandTotal > amountPaid && amountPaid >= 0 && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
+                      Due Date <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '11px' }}>(Expected date to clear balance)</span>
+                    </label>
+                    <input
+                      type="date"
+                      className="form-control"
+                      value={dueDate}
+                      onChange={(e) => setDueDate(e.target.value)}
+                      style={{ height: '42px', fontSize: '13px' }}
+                    />
                   </div>
                 )}
 

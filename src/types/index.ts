@@ -59,6 +59,8 @@ export interface Invoice {
   balanceDue: number;
   paymentStatus: 'Paid' | 'Partial' | 'Unpaid';
   paymentMethod: string;
+  referenceNumber?: string;  // UPI txn ID / Cheque No / Transfer ref
+  dueDate?: string;          // Expected date to clear balance due
   notes?: string;
 }
 
