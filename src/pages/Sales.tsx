@@ -795,7 +795,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container ${selectedInvoice.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className="print-watermark-logo">
@@ -914,30 +914,38 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {settings.showBankDetails && settings.bankName && (
                   <div style={{ marginBottom: "8px" }}>
                     <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
-                      </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
-                      </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
-                      </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
-                      </div>
-                      {settings.branchName && (
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}
-                        </div>
-                      )}
-                      {settings.upiId && (
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}
-                        </div>
-                      )}
-                    </div>
+                    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9.5px", color: "var(--text-muted)", marginTop: "4px" }}>
+                      <tbody>
+                        <tr>
+                          <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>Bank:</td>
+                          <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.bankName}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>A/c Name:</td>
+                          <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.accountHolderName}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>A/c No:</td>
+                          <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.accountNumber}</td>
+                        </tr>
+                        <tr>
+                          <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>IFSC:</td>
+                          <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.ifscCode}</td>
+                        </tr>
+                        {settings.branchName && (
+                          <tr>
+                            <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>Branch:</td>
+                            <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.branchName}</td>
+                          </tr>
+                        )}
+                        {settings.upiId && (
+                          <tr>
+                            <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>UPI ID:</td>
+                            <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.upiId}</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 )}
                 {settings.showTerms && (settings.invoiceTerms || settings.defaultTerms) && (
@@ -1004,10 +1012,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
             </div>
 
-                        {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedInvoice.items.length > 3 ? "4px" : "12px", width: "100%", flexShrink: 0 }}>
+                                    {/* Flexible Spacer to absorb extra height when item count is small */}
+            <div style={{ flex: 1, minHeight: "8px" }}></div>
+
+            {/* SVG Illustration centered */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "4px", width: "100%", flexShrink: 0 }}>
               {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height={selectedInvoice.items.length > 3 ? "40" : "55"} style={{ display: "block", maxWidth: "360px" }}>
+              <svg viewBox="0 0 500 80" width="100%" height="45" style={{ display: "block", maxWidth: "360px" }}>
                 {/* Ground line */}
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
                 
@@ -1068,20 +1079,20 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
 
             {/* Signatures Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: selectedInvoice.items.length > 3 ? "2px" : "10px", width: "100%", flexShrink: 0 }}>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedInvoice.items.length > 3 ? "14px" : "30px" }}></div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "8px", width: "100%", flexShrink: 0 }}>
+              <div style={{ textAlign: "center", minWidth: "120px" }}>
+                <div style={{ height: "16px" }}></div>
+                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap", margin: 0 }}>
                   Receiver's Signature
                 </p>
               </div>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedInvoice.items.length > 3 ? "14px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+              <div style={{ textAlign: "center", minWidth: "120px" }}>
+                <div style={{ height: "16px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {settings.signature ? (
-                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedInvoice.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "20px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}
                 </div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap", margin: 0 }}>
                   Authorized Signatory
                 </p>
               </div>
@@ -1176,7 +1187,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container ${selectedQuotation.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className="print-watermark-logo">
@@ -1290,30 +1301,38 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   {settings.showBankDetails && settings.bankName && (
                     <div style={{ marginBottom: "8px" }}>
                       <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
-                        </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
-                        </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
-                        </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
-                        </div>
-                        {settings.branchName && (
-                          <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}
-                          </div>
-                        )}
-                        {settings.upiId && (
-                          <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}
-                          </div>
-                        )}
-                      </div>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "9.5px", color: "var(--text-muted)", marginTop: "4px" }}>
+                        <tbody>
+                          <tr>
+                            <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>Bank:</td>
+                            <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.bankName}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>A/c Name:</td>
+                            <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.accountHolderName}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>A/c No:</td>
+                            <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.accountNumber}</td>
+                          </tr>
+                          <tr>
+                            <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>IFSC:</td>
+                            <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.ifscCode}</td>
+                          </tr>
+                          {settings.branchName && (
+                            <tr>
+                              <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>Branch:</td>
+                              <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.branchName}</td>
+                            </tr>
+                          )}
+                          {settings.upiId && (
+                            <tr>
+                              <td style={{ width: "70px", padding: "1.5px 0", fontWeight: 700, color: "#2F3E33", verticalAlign: "top" }}>UPI ID:</td>
+                              <td style={{ padding: "1.5px 0", verticalAlign: "top" }}>{settings.upiId}</td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
                   )}
                   {settings.showTerms && (settings.quotationTerms || settings.defaultTerms) && (
@@ -1370,10 +1389,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
               </div>
 
-                          {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedQuotation.items.length > 3 ? "4px" : "12px", width: "100%", flexShrink: 0 }}>
+                                      {/* Flexible Spacer to absorb extra height when item count is small */}
+            <div style={{ flex: 1, minHeight: "8px" }}></div>
+
+            {/* SVG Illustration centered */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "4px", width: "100%", flexShrink: 0 }}>
               {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height={selectedQuotation.items.length > 3 ? "40" : "55"} style={{ display: "block", maxWidth: "360px" }}>
+              <svg viewBox="0 0 500 80" width="100%" height="45" style={{ display: "block", maxWidth: "360px" }}>
                 {/* Ground line */}
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
                 
@@ -1434,31 +1456,31 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
 
             {/* Signatures Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: selectedQuotation.items.length > 3 ? "2px" : "10px", width: "100%", flexShrink: 0 }}>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedQuotation.items.length > 3 ? "14px" : "30px" }}></div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "8px", width: "100%", flexShrink: 0 }}>
+              <div style={{ textAlign: "center", minWidth: "120px" }}>
+                <div style={{ height: "16px" }}></div>
+                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap", margin: 0 }}>
                   Receiver's Signature
                 </p>
               </div>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedQuotation.items.length > 3 ? "14px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+              <div style={{ textAlign: "center", minWidth: "120px" }}>
+                <div style={{ height: "16px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {settings.signature ? (
-                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedQuotation.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "20px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}
                 </div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap", margin: 0 }}>
                   Authorized Signatory
                 </p>
               </div>
             </div>
-              {settings.footerMessage && (
+            {settings.footerMessage && (
                 <div style={{
                   textAlign: "center",
-                  fontSize: selectedQuotation.items.length > 3 ? "9px" : "10px",
+                  fontSize: "9px",
                   color: "var(--text-muted)",
                   borderTop: "1px dashed var(--border-color)",
-                  paddingTop: selectedQuotation.items.length > 3 ? "4px" : "8px",
+                  paddingTop: "6px",
                   marginTop: "8px",
                   width: "100%",
                   flexShrink: 0
