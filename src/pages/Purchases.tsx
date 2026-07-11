@@ -1000,7 +1000,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             </table>
 
             {/* Terms and Summary block */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: '4px' }}>
               <div style={{ flex: 1, maxWidth: '55%' }}>
                 {selectedPurchase.notes && (
                   <div style={{ marginBottom: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
@@ -1093,7 +1093,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             </div>
 
             {/* Custom SVG Illustration and signature */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '6px' }}>
               <div style={{ flex: 1, maxWidth: '45%' }}>
                 <svg viewBox="0 0 500 110" width="100%" height="40" style={{ display: "block" }}>
                   {/* Ground line */}
