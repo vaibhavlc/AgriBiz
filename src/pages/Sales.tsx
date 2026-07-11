@@ -795,7 +795,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container ${selectedInvoice.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className="print-watermark-logo">
@@ -1005,9 +1005,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
 
                         {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedInvoice.items.length > 3 ? "2px" : "12px", width: "100%", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "2px", width: "100%", flexShrink: 0 }}>
               {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height={selectedInvoice.items.length > 3 ? "30" : "55"} style={{ display: "block", maxWidth: "360px" }}>
+              <svg viewBox="0 0 500 80" width="100%" height="30" style={{ display: "block", maxWidth: "360px" }}>
                 {/* Ground line */}
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
                 
@@ -1068,17 +1068,17 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
 
             {/* Signatures Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: selectedInvoice.items.length > 3 ? "2px" : "10px", width: "100%", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "2px", width: "100%", flexShrink: 0 }}>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedInvoice.items.length > 3 ? "6px" : "30px" }}></div>
+                <div style={{ height: "6px" }}></div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
                   Receiver's Signature
                 </p>
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedInvoice.items.length > 3 ? "6px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div style={{ height: "6px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {settings.signature ? (
-                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedInvoice.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "22px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}
                 </div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
@@ -1089,10 +1089,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             {settings.footerMessage && (
                 <div style={{
                   textAlign: "center",
-                  fontSize: selectedInvoice.items.length > 3 ? "9px" : "10px",
+                  fontSize: "9px",
                   color: "var(--text-muted)",
                   borderTop: "1px dashed var(--border-color)",
-                  paddingTop: selectedInvoice.items.length > 3 ? "4px" : "8px",
+                  paddingTop: "4px",
                   marginTop: "8px",
                   width: "100%",
                   flexShrink: 0
@@ -1176,7 +1176,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container ${selectedQuotation.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className="print-watermark-logo">
@@ -1371,9 +1371,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
 
                           {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: selectedQuotation.items.length > 3 ? "2px" : "12px", width: "100%", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "center", marginTop: "2px", width: "100%", flexShrink: 0 }}>
               {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height={selectedQuotation.items.length > 3 ? "30" : "55"} style={{ display: "block", maxWidth: "360px" }}>
+              <svg viewBox="0 0 500 80" width="100%" height="30" style={{ display: "block", maxWidth: "360px" }}>
                 {/* Ground line */}
                 <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
                 
@@ -1434,17 +1434,17 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
 
             {/* Signatures Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: selectedQuotation.items.length > 3 ? "2px" : "10px", width: "100%", flexShrink: 0 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "2px", width: "100%", flexShrink: 0 }}>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedQuotation.items.length > 3 ? "6px" : "30px" }}></div>
+                <div style={{ height: "6px" }}></div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
                   Receiver's Signature
                 </p>
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: selectedQuotation.items.length > 3 ? "6px" : "30px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                <div style={{ height: "6px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
                   {settings.signature ? (
-                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedQuotation.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "22px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}
                 </div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
@@ -1455,10 +1455,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               {settings.footerMessage && (
                 <div style={{
                   textAlign: "center",
-                  fontSize: selectedQuotation.items.length > 3 ? "9px" : "10px",
+                  fontSize: "9px",
                   color: "var(--text-muted)",
                   borderTop: "1px dashed var(--border-color)",
-                  paddingTop: selectedQuotation.items.length > 3 ? "4px" : "8px",
+                  paddingTop: "4px",
                   marginTop: "8px",
                   width: "100%",
                   flexShrink: 0
