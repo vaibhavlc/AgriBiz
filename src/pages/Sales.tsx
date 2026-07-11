@@ -915,28 +915,23 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <div style={{ marginBottom: "8px" }}>
                     <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
                     <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
                       </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
                       </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
-                      </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                        {settings.upiId && (
+                          <>
+                            <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI:</span> {settings.upiId}
+                          </>
+                        )}
                       </div>
-                      {settings.branchName && (
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}
-                        </div>
-                      )}
-                      {settings.upiId && (
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -1291,28 +1286,23 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <div style={{ marginBottom: "8px" }}>
                       <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
                       <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
                         </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
                         </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
-                        </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                          {settings.upiId && (
+                            <>
+                              <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
+                              <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI:</span> {settings.upiId}
+                            </>
+                          )}
                         </div>
-                        {settings.branchName && (
-                          <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}
-                          </div>
-                        )}
-                        {settings.upiId && (
-                          <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
