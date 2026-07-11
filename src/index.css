@@ -4542,151 +4542,187 @@ body.dark-theme select.form-control {
   }
 }
 
-/* ── Billed Items Responsive Layout for New Invoice Creation Form ── */
-.billed-items-header-row {
-  display: grid;
-  grid-template-columns: 3.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.5fr;
-  gap: 12px;
-  padding: 10px 12px;
+/* ── Billed Items Table – Invoice Creation Form ── */
+.billed-items-table-wrap {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.billed-items-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.billed-items-table thead tr {
   background-color: var(--bg-app);
-  font-weight: 700;
+  border-bottom: 1.5px solid var(--border-color);
+}
+
+.billed-items-table thead th {
+  padding: 10px 12px;
   font-size: 11px;
+  font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid var(--border-color);
+  white-space: nowrap;
 }
 
-.billed-items-list {
+.billed-items-table thead th:first-child { text-align: left; }
+.billed-items-table thead th.col-center { text-align: center; }
+.billed-items-table thead th.col-right  { text-align: right; }
+
+.billed-items-table tbody tr {
+  border-bottom: 1px solid var(--border-color);
+  transition: background 0.15s ease;
+}
+
+.billed-items-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.billed-items-table tbody tr:hover {
+  background-color: color-mix(in srgb, var(--bg-app) 50%, transparent);
+}
+
+.billed-items-table tbody td {
+  padding: 10px 12px;
+  vertical-align: middle;
+}
+
+.billed-items-table tbody td.col-center { text-align: center; }
+.billed-items-table tbody td.col-right  { text-align: right; }
+
+.billed-items-table .stock-badge {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.billed-items-table .stock-ok   { background: rgba(16,185,129,0.1); color: var(--color-success-dark); }
+.billed-items-table .stock-low  { background: rgba(239,68,68,0.1);  color: var(--color-danger); }
+
+.billed-items-table .row-total {
+  font-weight: 800;
+  font-size: 13px;
+  color: var(--primary-dark);
+  white-space: nowrap;
+}
+
+.billed-items-table .delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 6px;
+  color: var(--text-muted);
+  transition: all 0.18s;
   display: flex;
-  flex-direction: column;
-  background-color: var(--bg-card);
-}
-
-.billed-item-card {
-  display: grid;
-  grid-template-columns: 3.5fr 1fr 1.5fr 1fr 1fr 1.5fr 0.5fr;
-  gap: 12px;
   align-items: center;
-  padding: 12px;
-  border-bottom: 1px solid var(--border-color);
-  transition: all 0.2s ease;
+  justify-content: center;
 }
 
-.billed-item-card:hover {
-  background-color: color-mix(in srgb, var(--bg-app) 40%, transparent);
+.billed-items-table .delete-btn:hover {
+  color: var(--color-danger);
+  background: rgba(239,68,68,0.08);
 }
 
-.mobile-item-header {
-  display: none;
+.billed-items-table input.form-control,
+.billed-items-table select.form-control {
+  height: 38px !important;
+  font-size: 13px !important;
+  padding: 4px 8px !important;
 }
 
-.mobile-item-title {
-  display: none;
-}
-
-.mobile-field-label {
-  display: none;
-}
-
-.mobile-grid-2 {
-  display: contents;
-}
-
-.mobile-total-row {
-  display: contents;
-}
-
-.desktop-delete-btn-col {
-  display: block;
-}
-
-/* Mobile viewport adjustments */
+/* Mobile: collapse table into cards */
 @media (max-width: 768px) {
-  .billed-items-header-row {
-    display: none !important;
-  }
-  
-  .billed-items-list {
-    background-color: transparent !important;
-    gap: 16px !important;
-    padding: 12px 8px !important;
+  .billed-items-table-wrap {
+    border: none;
+    border-radius: 0;
+    background: transparent;
   }
 
-  .billed-item-card {
-    display: flex !important;
-    flex-direction: column !important;
-    gap: 12px !important;
-    padding: 16px !important;
-    border-radius: 12px !important;
-    border: 1.5px solid var(--border-color) !important;
-    background-color: var(--bg-card) !important;
-    box-shadow: var(--shadow-sm) !important;
-    margin-bottom: 0 !important;
+  .billed-items-table thead { display: none; }
+
+  .billed-items-table,
+  .billed-items-table tbody,
+  .billed-items-table tr,
+  .billed-items-table td {
+    display: block;
+    width: 100%;
   }
 
-  .mobile-item-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    border-bottom: 1px dashed var(--border-color) !important;
-    padding-bottom: 8px !important;
-    margin-bottom: 4px !important;
-    width: 100% !important;
+  .billed-items-table tbody tr {
+    border: 1.5px solid var(--border-color);
+    border-radius: 12px;
+    margin-bottom: 14px;
+    padding: 14px;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
   }
 
-  .mobile-item-title {
-    display: block !important;
-    font-weight: 700 !important;
-    font-size: 14px !important;
-    color: var(--primary-dark) !important;
+  .billed-items-table tbody td {
+    padding: 6px 0;
+    text-align: left !important;
+    border: none;
+    position: relative;
   }
 
-  .mobile-field-label {
-    display: block !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    color: var(--text-muted) !important;
-    margin-bottom: 4px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
+  .billed-items-table tbody td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
   }
 
-  .mobile-grid-2 {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
-    gap: 12px !important;
-    width: 100% !important;
+  .billed-items-table tbody td.td-rownum { display: none; }
+
+  .billed-items-table tbody td.td-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-app);
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-top: 4px;
   }
 
-  .mobile-total-row {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    background-color: var(--bg-app) !important;
-    padding: 8px 12px !important;
-    border-radius: 8px !important;
-    width: 100% !important;
-    margin-top: 4px !important;
+  .billed-items-table tbody td.td-total::before {
+    margin-bottom: 0;
+    color: var(--text-secondary);
   }
 
-  .mobile-total-label {
-    display: block !important;
-    font-weight: 700 !important;
-    font-size: 12px !important;
-    color: var(--text-secondary) !important;
+  .billed-items-table tbody td.td-delete {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: auto;
+    padding: 0;
   }
 
-  .mobile-total-value {
-    display: block !important;
-    font-weight: 800 !important;
-    font-size: 15px !important;
-    color: var(--primary-dark) !important;
+  .billed-items-table tbody td.td-delete::before { display: none; }
+
+  .billed-items-table .stock-badge { margin-top: 4px; }
+
+  /* two-col grid for price + qty on mobile */
+  .billed-items-table tbody td.td-price,
+  .billed-items-table tbody td.td-qty,
+  .billed-items-table tbody td.td-disc {
+    display: inline-block;
+    width: calc(50% - 6px);
+    vertical-align: top;
+    padding: 6px 4px;
   }
 
-  .desktop-delete-btn-col {
-    display: none !important;
-  }
+  .billed-items-table tbody td.td-disc { width: 100%; }
 }
 
 /* Status Filters Responsive Layout (Desktop/Mobile) */
