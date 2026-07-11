@@ -193,6 +193,7 @@ export const Dashboard: React.FC = () => {
     setIsCreatingInvoice,
     setIsEnteringPurchase,
     showToast,
+    settings,
   } = useApp();
 
   // Filters State
@@ -631,10 +632,23 @@ export const Dashboard: React.FC = () => {
           marginBottom: '24px' 
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '16px', width: '100%' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>Business Intelligence Dashboard</h2>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>Real-time summaries calculated from local ledger.</p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px', width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: 1, minWidth: 0 }}>
+            {settings.showLogo && settings.logo && (
+              <img 
+                src={settings.logo} 
+                alt="Business Logo" 
+                style={{ width: '56px', height: '56px', objectFit: 'contain', borderRadius: '10px', flexShrink: 0 }} 
+              />
+            )}
+            <div style={{ minWidth: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+                {settings.businessName || 'Business Intelligence Dashboard'}
+              </h2>
+              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
+                Welcome back, {settings.ownerName || 'Partner'} • Real-time summaries calculated from local ledger.
+              </p>
+            </div>
           </div>
           
           <button 

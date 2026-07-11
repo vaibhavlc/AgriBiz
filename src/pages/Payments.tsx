@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatINR, formatDate } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
 import {
   Plus,
@@ -35,6 +35,7 @@ export const Payments: React.FC = () => {
     setCurrentTab,
     paymentFormPreset,
     setPaymentFormPreset,
+    settings,
   } = useApp();
 
   const upiIn = payments.filter((p) => p.type === 'CustomerReceipt' && p.paymentMethod === 'UPI').reduce((s, p) => s + p.amount, 0);
@@ -932,12 +933,33 @@ export const Payments: React.FC = () => {
         {selectedReceipt && (
           <div>
             {/* Printable Area */}
-            <div className="printable-invoice-card" style={{ padding: '24px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
-              <div style={{ textAlign: 'center', borderBottom: '2px solid var(--primary)', paddingBottom: '16px', marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 800 }}>AGRIBIZ SEEDS & IMPLEMENTS</h2>
-                <p style={{ fontSize: '11px', color: '#64748b' }}>
-                  Pipariya complex, MP • contact@agribizstore.com
-                </p>
+            <div className="printable-invoice-card" style={{ padding: '24px', border: '1px solid var(--border-color)', boxShadow: 'none', position: 'relative', overflow: 'hidden' }}>
+              {/* Dynamic Logo Watermark in Center */}
+              {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+                <div className="print-watermark-logo">
+                  <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+                </div>
+              )}
+              <div style={{ textAlign: 'center', borderBottom: '2px solid var(--primary)', paddingBottom: '16px', marginBottom: '20px', position: 'relative', zIndex: 2 }}>
+                {settings.showLogo && settings.logo && (
+                  <img src={settings.logo} alt="Business Logo" style={{ maxHeight: '100px', maxWidth: '240px', objectFit: 'contain', margin: 0, padding: 0 }} />
+                )}
+                <h2 style={{ fontSize: '18px', fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h2>
+                {settings.showAddress && (
+                  <p style={{ fontSize: '11px', color: '#64748b', margin: '4px 0 0 0' }}>
+                    {getFullAddress(settings)}
+                  </p>
+                )}
+                {settings.showContact && (
+                  <p style={{ fontSize: '11px', color: '#64748b', margin: '2px 0 0 0' }}>
+                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
+                  </p>
+                )}
+                {settings.showGstin && settings.gstin && (
+                  <p style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', margin: '2px 0 0 0' }}>
+                    GSTIN: {settings.gstin}
+                  </p>
+                )}
                 <h3 style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginTop: '10px', color: 'var(--primary-dark)' }}>
                   {selectedReceipt.type === 'CustomerReceipt' ? 'Receipt Voucher' : 'Payment Outflow Voucher'}
                 </h3>

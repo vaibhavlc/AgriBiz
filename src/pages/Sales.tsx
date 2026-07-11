@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
-import { formatINR, formatDate } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import type { Invoice, Quotation } from '../types';
 import {
   Plus,
@@ -795,7 +795,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className="print-invoice-layout invoice-print-container">
+            <div className={`print-invoice-layout invoice-print-container ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? 'has-custom-watermark' : ''}`}>
+              {/* Dynamic Logo Watermark in Center */}
+              {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+                <div className="print-watermark-logo">
+                  <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+                </div>
+              )}
               {/* Elegant leafy branch corner watermark */}
               <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
                 <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -808,24 +814,41 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
               {/* Header: Logo, Company Info, Invoice Title */}
               <div className="invoice-header-bar">
-              <div style={{ display: "flex", alignItems: "flex-start" }}>
-                <div className="invoice-logo-pill">
-                  <Store size={22} className="invoice-logo-icon" />
-                  <span style={{ fontSize: "9px", fontWeight: 900 }}>AGRI</span>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                  {settings.showLogo && settings.logo && (
+                    <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                      <img 
+                        src={settings.logo} 
+                        alt="Business Logo" 
+                        style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                      />
+                    </div>
+                  )}
+                  <div>
+                    <h2 className="invoice-company-name">{settings.businessName}</h2>
+                    {settings.showAddress && (
+                      <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                    )}
+                    {settings.showContact && (
+                      <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
+                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                        {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
+                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                        {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
+                        {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                      </p>
+                    )}
+                    {settings.showGstin && settings.gstin && (
+                      <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <h2 className="invoice-company-name">AgriBiz Dealers</h2>
-                  <p className="invoice-company-sub">Main Market Road, Agri Industrial Zone, Ganganagar</p>
-                  <p className="invoice-company-sub">Email: support@agribiz.com | Mob: +91 98765 43210</p>
-                  <p className="invoice-company-gst">GSTIN: 08AAAAA1111A1Z1</p>
+                <div style={{ textAlign: "right" }}>
+                  <h1 className="invoice-main-title">INVOICE</h1>
+                  <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
+                  <p className="invoice-date-text">Date: {formatDate(selectedInvoice.date)}</p>
                 </div>
               </div>
-              <div style={{ textAlign: "right" }}>
-                <h1 className="invoice-main-title">INVOICE</h1>
-                <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
-                <p className="invoice-date-text">Date: {formatDate(selectedInvoice.date)}</p>
-              </div>
-            </div>
 
             {/* Billed To and Payment details */}
             <div className="invoice-billing-details">
@@ -888,22 +911,26 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             {/* Bottom summary and remarks */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
               <div style={{ flex: 1, maxWidth: "55%" }}>
-                <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
-                <p className="invoice-terms-text">
-                  {selectedInvoice.notes || "Goods once sold are subject to standard industrial dealer warranties."}
-                  <br />
-                  1. Warranty is managed directly by equipment manufacturer.
-                  <br />
-                  2. Delayed payment will attract interest @1.5% per month.
-                </p>
-                <div style={{ marginTop: "16px" }}>
-                  <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
-                  <p className="invoice-terms-text">
-                    Bank: HDFC Bank | A/c No: 501004455667788
-                    <br />
-                    IFSC: HDFC0001234 | Branch: Agri Market
-                  </p>
-                </div>
+                {settings.showTerms && (
+                  <>
+                    <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                    <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
+                      {selectedInvoice.notes || settings.defaultTerms || "Goods once sold are subject to standard industrial dealer warranties."}
+                    </p>
+                  </>
+                )}
+                {settings.showBankDetails && settings.bankName && (
+                  <div style={{ marginTop: "16px" }}>
+                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
+                    <p className="invoice-terms-text">
+                      Bank: {settings.bankName} | A/c Name: {settings.accountHolderName}
+                      <br />
+                      A/c No: {settings.accountNumber} | IFSC: {settings.ifscCode}
+                      {settings.branchName && <><br />Branch: {settings.branchName}</>}
+                      {settings.upiId && <><br />UPI ID: {settings.upiId}</>}
+                    </p>
+                  </div>
+                )}
               </div>
               <div style={{ minWidth: "280px" }}>
                 <table className="invoice-summary-table">
@@ -1056,20 +1083,34 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </p>
               </div>
             </div>
+            {settings.footerMessage && (
+              <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "24px", borderTop: "1px dashed var(--border-color)", paddingTop: "12px" }}>
+                {settings.footerMessage}
+              </div>
+            )}
           </div>
         </div>
       ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
-              <div style={{ textAlign: "center", marginBottom: "12px" }}><h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>AGRIBIZ DEALERS</h3><p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>Industrial Zone, Ganganagar</p><p style={{ margin: 0, fontSize: "11px" }}>Mob: +91 98765 43210</p><p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: 08AAAAA1111A1Z1</p></div>
+              <div style={{ textAlign: "center", marginBottom: "12px" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
+                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
+                {settings.showContact && (
+                  <p style={{ margin: 0, fontSize: "11px" }}>
+                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
+                  </p>
+                )}
+                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
+              </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Bill No: <strong>{selectedInvoice.invoiceNumber}</strong></span><span>Date: {formatDate(selectedInvoice.date)}</span></div><div>Customer: <strong>{customerDetail?.name || "Walk-in"}</strong></div>{customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>ITEM</span><span style={{ textAlign: "center" }}>QTY</span><span style={{ textAlign: "right" }}>AMT(₹)</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>Rate: ₹{item.price} | GST: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
+              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>ITEM</span><span style={{ textAlign: "center" }}>QTY</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Total Taxable</span><span>₹{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Discount (-)</span><span>₹{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>₹{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>₹{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>₹{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>GRAND TOTAL</span><span>₹{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>CASH COLLECTED</span><span>₹{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>BALANCE DUE</span><span>₹{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Total Taxable</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Discount (-)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>GRAND TOTAL</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>CASH COLLECTED</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>BALANCE DUE</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>THANK YOU! VISIT AGAIN.</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by AgriBiz POS software</div></div>
+              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || "THANK YOU! VISIT AGAIN."}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div></div>
             </div>
           </div>
         )}
@@ -1123,7 +1164,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className="print-invoice-layout invoice-print-container">
+            <div className={`print-invoice-layout invoice-print-container ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? 'has-custom-watermark' : ''}`}>
+              {/* Dynamic Logo Watermark in Center */}
+              {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+                <div className="print-watermark-logo">
+                  <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+                </div>
+              )}
               {/* Elegant leafy branch corner watermark */}
               <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
                 <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -1136,16 +1183,33 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
               {/* Header: Logo, Company Info, Title */}
               <div className="invoice-header-bar">
-                <div style={{ display: "flex", alignItems: "flex-start" }}>
-                  <div className="invoice-logo-pill">
-                    <Store size={22} className="invoice-logo-icon" />
-                    <span style={{ fontSize: "9px", fontWeight: 900 }}>AGRI</span>
-                  </div>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                  {settings.showLogo && settings.logo && (
+                    <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                      <img 
+                        src={settings.logo} 
+                        alt="Business Logo" 
+                        style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                      />
+                    </div>
+                  )}
                   <div>
-                    <h2 className="invoice-company-name">AgriBiz Dealers</h2>
-                    <p className="invoice-company-sub">Main Market Road, Agri Industrial Zone, Ganganagar</p>
-                    <p className="invoice-company-sub">Email: support@agribiz.com | Mob: +91 98765 43210</p>
-                    <p className="invoice-company-gst">GSTIN: 08AAAAA1111A1Z1</p>
+                    <h2 className="invoice-company-name">{settings.businessName}</h2>
+                    {settings.showAddress && (
+                      <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                    )}
+                    {settings.showContact && (
+                      <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
+                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                        {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
+                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                        {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
+                        {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                      </p>
+                    )}
+                    {settings.showGstin && settings.gstin && (
+                      <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                    )}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
@@ -1211,22 +1275,26 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               {/* Bottom summary and remarks */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
                 <div style={{ flex: 1, maxWidth: "55%" }}>
-                  <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
-                  <p className="invoice-terms-text">
-                    {selectedQuotation.notes || "This is a commercial sales estimate, not a tax invoice."}
-                    <br />
-                    1. Prices are valid until the validity date specified above.
-                    <br />
-                    2. Warranty is managed directly by equipment manufacturer.
-                  </p>
-                  <div style={{ marginTop: "16px" }}>
-                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
-                    <p className="invoice-terms-text">
-                      Bank: HDFC Bank | A/c No: 501004455667788
-                      <br />
-                      IFSC: HDFC0001234 | Branch: Agri Market
-                    </p>
-                  </div>
+                  {settings.showTerms && (
+                    <>
+                      <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                      <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
+                        {selectedQuotation.notes || settings.defaultTerms || "This is a commercial sales estimate, not a tax invoice."}
+                      </p>
+                    </>
+                  )}
+                  {settings.showBankDetails && settings.bankName && (
+                    <div style={{ marginTop: "16px" }}>
+                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
+                      <p className="invoice-terms-text">
+                        Bank: {settings.bankName} | A/c Name: {settings.accountHolderName}
+                        <br />
+                        A/c No: {settings.accountNumber} | IFSC: {settings.ifscCode}
+                        {settings.branchName && <><br />Branch: {settings.branchName}</>}
+                        {settings.upiId && <><br />UPI ID: {settings.upiId}</>}
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <div style={{ minWidth: "280px" }}>
                   <table className="invoice-summary-table">
@@ -1369,16 +1437,25 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </p>
                 </div>
               </div>
+              {settings.footerMessage && (
+                <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "24px", borderTop: "1px dashed var(--border-color)", paddingTop: "12px" }}>
+                  {settings.footerMessage}
+                </div>
+              )}
             </div>
           </div>
         ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>AGRIBIZ DEALERS</h3>
-                <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>Industrial Zone, Ganganagar</p>
-                <p style={{ margin: 0, fontSize: "11px" }}>Mob: +91 98765 43210</p>
-                <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: 08AAAAA1111A1Z1</p>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
+                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
+                {settings.showContact && (
+                  <p style={{ margin: 0, fontSize: "11px" }}>
+                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
+                  </p>
+                )}
+                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
@@ -1444,9 +1521,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div>THANK YOU!</div>
+                <div>{settings.footerMessage || "THANK YOU!"}</div>
                 {selectedQuotation.notes && <div style={{ fontStyle: "italic" }}>"{selectedQuotation.notes}"</div>}
-                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by AgriBiz POS software</div>
+                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div>
               </div>
             </div>
           </div>

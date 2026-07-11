@@ -221,6 +221,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem('agribiz_settings', JSON.stringify(settings));
     // Apply body theme class
     document.body.className = settings.theme === 'dark' ? 'dark-theme' : 'light-theme';
+    // Update browser tab title dynamically
+    document.title = settings.businessName || 'AgriBiz';
   }, [settings]);
 
   useEffect(() => {
@@ -254,7 +256,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: item.name,
         module: 'Product',
         deletedAt: new Date().toISOString(),
-        deletedBy: 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Kunal Chaudhari',
         originalData: item,
       };
       setRecycleBin((prev) => [binItem, ...prev]);
@@ -285,7 +287,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: item.name,
         module: 'Customer',
         deletedAt: new Date().toISOString(),
-        deletedBy: 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Kunal Chaudhari',
         originalData: item,
       };
       setRecycleBin((prev) => [binItem, ...prev]);
@@ -316,7 +318,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: item.name,
         module: 'Supplier',
         deletedAt: new Date().toISOString(),
-        deletedBy: 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Kunal Chaudhari',
         originalData: item,
       };
       setRecycleBin((prev) => [binItem, ...prev]);
@@ -397,7 +399,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: inv.invoiceNumber,
       module: 'Invoice',
       deletedAt: new Date().toISOString(),
-      deletedBy: 'Kunal Chaudhari',
+      deletedBy: settings.ownerName || 'Kunal Chaudhari',
       originalData: inv,
     };
     setRecycleBin((prev) => [binItem, ...prev]);
@@ -570,7 +572,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: item.quotationNumber,
         module: 'Quotation',
         deletedAt: new Date().toISOString(),
-        deletedBy: 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Kunal Chaudhari',
         originalData: item,
       };
       setRecycleBin((prev) => [binItem, ...prev]);
@@ -694,7 +696,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: pur.purchaseNumber,
       module: 'Purchase',
       deletedAt: new Date().toISOString(),
-      deletedBy: 'Kunal Chaudhari',
+      deletedBy: settings.ownerName || 'Kunal Chaudhari',
       originalData: pur,
     };
     setRecycleBin((prev) => [binItem, ...prev]);
@@ -928,7 +930,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: `Payment - ₹${pay.amount} (${pay.paymentMethod})`,
       module: 'Payment',
       deletedAt: new Date().toISOString(),
-      deletedBy: 'Kunal Chaudhari',
+      deletedBy: settings.ownerName || 'Kunal Chaudhari',
       originalData: pay,
     };
     setRecycleBin((prev) => [binItem, ...prev]);
@@ -989,7 +991,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: `${exp.category} - ${exp.payee}`,
         module: 'Expense',
         deletedAt: new Date().toISOString(),
-        deletedBy: 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Kunal Chaudhari',
         originalData: exp,
       };
       setRecycleBin((prev) => [binItem, ...prev]);

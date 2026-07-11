@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
-import { formatINR, formatDate } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
 import {
@@ -839,7 +839,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
         {/* Voucher layout */}
         <div className="invoice-mockup-wrapper">
-          <div className="print-invoice-layout invoice-print-container">
+          <div className={`print-invoice-layout invoice-print-container ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? 'has-custom-watermark' : ''}`}>
+            {/* Dynamic Logo Watermark in Center */}
+            {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+              <div className="print-watermark-logo">
+                <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+              </div>
+            )}
             {/* Elegant leafy branch corner watermark */}
             <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
               <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
@@ -852,15 +858,32 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
             {/* Header: Logo, Company Info, Invoice Title */}
             <div className="invoice-header-bar">
-              <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-                <div className="invoice-logo-pill">
-                  <Store size={22} className="invoice-logo-icon" />
-                  <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.5px' }}>AGRI</span>
-                </div>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                {settings.showLogo && settings.logo ? (
+                  <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                    <img 
+                      src={settings.logo} 
+                      alt="Business Logo" 
+                      style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                    />
+                  </div>
+                ) : (
+                  <div className="invoice-logo-pill">
+                    <Store size={22} className="invoice-logo-icon" />
+                    <span style={{ fontSize: '9px', fontWeight: 900, letterSpacing: '0.5px' }}>AGRI</span>
+                  </div>
+                )}
                 <div>
                   <h2 className="invoice-company-name">{settings.businessName}</h2>
-                  <p className="invoice-company-sub">{settings.address}</p>
-                  <p className="invoice-company-gst">GSTIN: {settings.gstin} (Recipient)</p>
+                  {settings.showAddress && <p className="invoice-company-sub">{getFullAddress(settings)}</p>}
+                  {settings.showContact && (
+                    <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
+                      {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                      {settings.email && settings.phone && <span style={{ opacity: 0.5 }}>|</span>}
+                      {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                    </p>
+                  )}
+                  {settings.showGstin && settings.gstin && <p className="invoice-company-gst">GSTIN: {settings.gstin} (Recipient)</p>}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>

@@ -52,6 +52,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   } = useApp();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const card = e.currentTarget;
+    const rect = card.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    card.style.setProperty('--glow-x', `${x}%`);
+    card.style.setProperty('--glow-y', `${y}%`);
+  };
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebar-collapsed') === 'true'; } catch { return false; }
+  });
+  const [navTooltip, setNavTooltip] = useState<{ label: string; top: number } | null>(null);
+  const toggleSidebarCollapse = () => {
+    setIsSidebarCollapsed(prev => {
+      const next = !prev;
+      try { localStorage.setItem('sidebar-collapsed', String(next)); } catch {}
+      return next;
+    });
+  };
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
@@ -157,7 +176,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       case 'recycle_bin':
         return 'Recycle Bin';
       default:
-        return 'AgriBiz';
+        return settings.businessName || 'AgriBiz';
     }
   };
 
@@ -198,70 +217,37 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     }
   };
 
-  const renderSidebarSection = (title: string, items: typeof operationsItems) => (
-    <div style={{ marginBottom: '12px' }}>
-      <h4 className="sidebar-section-heading" style={{
-        fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
-        letterSpacing: '1.2px', color: 'var(--text-muted)',
-        paddingLeft: '16px', marginBottom: '6px', fontFamily: 'var(--font-display)'
-      }}>
-        {title}
-      </h4>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-        {items.map((item) => {
-          const isActive = currentTab === item.id;
-          const isDark = settings.theme === 'dark';
-          
-          // Theme-aware active item styles
-          const activeBg = isDark ? 'rgba(255, 255, 255, 0.05)' : item.glow;
-          const activeColor = isDark ? '#ffffff' : item.color;
-          const inactiveColor = isDark ? 'rgba(255, 255, 255, 0.5)' : '#64748b';
-          const iconInactiveColor = isDark ? 'rgba(255, 255, 255, 0.4)' : '#64748b';
-
-          return (
-            <a
-              key={item.id}
-              className={`sidebar-item ${isActive ? 'active' : ''}`}
-              onClick={() => handleTabChange(item.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: '12px',
-                padding: '8px 16px', borderRadius: '10px', fontSize: '13px',
-                fontWeight: isActive ? 600 : 500, cursor: 'pointer',
-                color: isActive ? activeColor : inactiveColor,
-                transition: 'all 0.25s cubic-bezier(0.16, 1, 0.3, 1)', textDecoration: 'none',
-                backgroundColor: isActive ? activeBg : 'transparent',
-                borderLeft: isActive ? `3px solid ${item.color}` : '3px solid transparent',
-                paddingLeft: isActive ? '13px' : '16px'
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = isDark ? 'rgba(255, 255, 255, 0.03)' : '#f1f5f9';
-                  e.currentTarget.style.color = isDark ? '#ffffff' : '#0f172a';
-                  e.currentTarget.style.transform = 'translateX(4px) scale(1.01)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = inactiveColor;
-                  e.currentTarget.style.transform = 'none';
-                }
-              }}
+  const renderNavGroup = (title: string, items: typeof operationsItems) => (
+    <div className="prem-nav-group">
+      <div className="prem-nav-group-label">{title}</div>
+      {items.map((item) => {
+        const isActive = currentTab === item.id;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            className={`prem-nav-item${isActive ? ' active' : ''}`}
+            onClick={() => handleTabChange(item.id)}
+            onMouseEnter={(e) => {
+              if (isSidebarCollapsed) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setNavTooltip({ label: item.label, top: rect.top + rect.height / 2 });
+              }
+            }}
+            onMouseLeave={() => setNavTooltip(null)}
+            style={{ '--prem-nav-active-color': item.color, '--prem-icon-active-bg': item.glow } as React.CSSProperties}
+            title={isSidebarCollapsed ? item.label : undefined}
+          >
+            <span
+              className="prem-nav-icon"
+              style={{ color: isActive ? item.color : undefined }}
             >
-              <span style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                width: '28px', height: '28px', borderRadius: '8px',
-                backgroundColor: isActive ? item.glow : 'transparent',
-                color: isActive ? item.color : iconInactiveColor,
-                transition: 'all 0.25s ease'
-              }}>
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </a>
-          );
-        })}
-      </div>
+              {item.icon}
+            </span>
+            <span className="prem-nav-label">{item.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 
@@ -442,61 +428,83 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       )}
 
       {/* Sidebar navigation */}
-      <aside className={`sidebar ${isMobileSidebarOpen ? 'open' : ''}`} style={{
-        background: settings.theme === 'dark' ? 'linear-gradient(180deg, #0b0f19 0%, #111827 100%)' : '#ffffff',
-        borderRight: `1px solid ${settings.theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}`,
-      }}>
-        {/* Header */}
-        <div className="sidebar-header" style={{ 
-          padding: '16px 20px', 
-          borderBottom: `1px solid ${settings.theme === 'dark' ? 'rgba(255, 255, 255, 0.06)' : '#e2e8f0'}`, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: '12px' 
-        }}>
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%)',
-              padding: '10px',
-              borderRadius: '12px',
-              color: '#34d399',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid rgba(52, 211, 153, 0.25)',
-              boxShadow: '0 4px 15px rgba(5, 150, 105, 0.1)',
-              animation: 'pulseGlow 2.5s infinite alternate'
-            }}
-          >
-            <Store size={22} />
+      <aside
+        className={`sidebar no-print${isMobileSidebarOpen ? ' open' : ''}${isSidebarCollapsed ? ' collapsed' : ''}`}
+        style={{
+          background: settings.theme === 'dark'
+            ? 'linear-gradient(180deg, #070a13 0%, #0f1420 100%)'
+            : 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
+          borderRight: `1px solid ${settings.theme === 'dark' ? 'rgba(255,255,255,0.055)' : '#e8edf2'}`,
+        }}
+      >
+        {/* ── Logo-only branding area ── */}
+        <div
+          className="prem-workspace-card prem-logo-only"
+          onMouseMove={handleGlowMove}
+          onClick={() => handleTabChange('settings')}
+          role="button"
+          tabIndex={0}
+          title="Go to Settings"
+        >
+          {/* Animated border ring + logo */}
+          <div className="prem-logo-anim-ring">
+            <div className="prem-logo-frame prem-logo-large">
+              {settings.showLogo && settings.logo ? (
+                <img src={settings.logo} alt={settings.businessName || 'Logo'} />
+              ) : (
+                <div className="prem-logo-fallback">
+                  <Store size={32} />
+                </div>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="sidebar-logo-text" style={{ fontSize: '20px', margin: 0, fontWeight: 850 }}>AgriBiz</h1>
-            <p className="sidebar-logo-sub" style={{ fontSize: '10px', margin: '2px 0 0 0', opacity: 0.6 }}>Dealer Ledger</p>
-          </div>
+
+          {/* Mobile close button */}
           {isMobileSidebarOpen && (
             <button
-              onClick={() => setIsMobileSidebarOpen(false)}
-              style={{
-                marginLeft: 'auto',
-                background: 'none',
-                border: 'none',
-                color: settings.theme === 'dark' ? '#ffffff' : '#0f172a',
-                cursor: 'pointer',
-              }}
+              type="button"
+              className="prem-mobile-close"
+              onClick={(e) => { e.stopPropagation(); setIsMobileSidebarOpen(false); }}
+              title="Close menu"
             >
-              <X size={20} />
+              <X size={16} />
             </button>
           )}
         </div>
 
-        {/* Menu Items */}
-        <nav className="sidebar-menu" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '12px 16px', overflowY: 'hidden' }}>
-          {renderSidebarSection('Operations', operationsItems)}
-          {renderSidebarSection('Directories', directoriesItems)}
-          {renderSidebarSection('Admin', adminItems)}
+        {/* ── Navigation Menu ── */}
+        <nav className="prem-nav-menu" aria-label="Main navigation">
+          {renderNavGroup('Operations', operationsItems)}
+          {renderNavGroup('Directories', directoriesItems)}
+          {renderNavGroup('Admin', adminItems)}
         </nav>
 
+        {/* ── Tooltip portal for collapsed mode ── */}
+        {isSidebarCollapsed && navTooltip && createPortal(
+          <div
+            className="prem-nav-tooltip"
+            style={{ top: navTooltip.top }}
+            aria-hidden="true"
+          >
+            {navTooltip.label}
+          </div>,
+          document.body
+        )}
+
+        {/* ── Collapse Toggle Footer ── */}
+        <div className="prem-sidebar-footer no-print">
+          <button
+            type="button"
+            className="prem-collapse-btn"
+            onClick={toggleSidebarCollapse}
+            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            <span className="prem-collapse-icon">
+              <ChevronDown size={14} style={{ transform: 'rotate(90deg)' }} />
+            </span>
+            <span className="prem-collapse-label">Collapse sidebar</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content Area */}
@@ -512,10 +520,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <Menu size={20} />
             </button>
             <div className="header-brand-container">
-              <div className="header-brand-logo">
-                <Store size={18} />
-              </div>
-              <span className="brand-name">AgriBiz</span>
+              {settings.showLogo && settings.logo ? (
+                <img src={settings.logo} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', marginRight: '8px', borderRadius: '6px' }} />
+              ) : (
+                <div className="header-brand-logo">
+                  <Store size={18} />
+                </div>
+              )}
+              <span className="brand-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{settings.businessName || 'AgriBiz'}</span>
               <span className="brand-badge desktop-only">{getPageTitle()}</span>
             </div>
           </div>
@@ -633,11 +645,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 title="User Profile options"
               >
                 <div className="avatar-wrapper">
-                  <div className="avatar-circle">KC</div>
+                  <div className="avatar-circle">
+                    {settings.ownerName ? settings.ownerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'KC'}
+                  </div>
                   <span className={`status-indicator ${userStatus}`}></span>
                 </div>
                 <div className="profile-details">
-                  <span className="profile-username">Kunal C.</span>
+                  <span className="profile-username">
+                    {settings.ownerName ? settings.ownerName.split(' ')[0] + ' ' + (settings.ownerName.split(' ')[1] ? settings.ownerName.split(' ')[1][0] + '.' : '') : 'Kunal C.'}
+                  </span>
                   <span className="profile-status">{userStatus.charAt(0).toUpperCase() + userStatus.slice(1)}</span>
                 </div>
                 <ChevronDown size={14} className="profile-chevron" style={{ color: 'var(--text-secondary)' }} />
@@ -646,8 +662,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {isProfileDropdownOpen && (
                 <div className="profile-dropdown">
                   <div className="profile-dropdown-user">
-                    <div className="profile-dropdown-name">Kunal Chaudhari</div>
-                    <div className="profile-dropdown-role">Owner • AgriBiz Dealer</div>
+                    <div className="profile-dropdown-name">{settings.ownerName || 'Kunal Chaudhari'}</div>
+                    <div className="profile-dropdown-role">Owner • {settings.businessName || 'AgriBiz'}</div>
                   </div>
                   
                   <button

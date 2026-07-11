@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatINR, formatDate } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -28,6 +28,7 @@ export const Expenses: React.FC = () => {
     searchQuery,
     setSearchQuery,
     showToast,
+    settings,
   } = useApp();
 
   // Search/Filters
@@ -1114,10 +1115,15 @@ export const Expenses: React.FC = () => {
       }}>
         {/* Header Block */}
         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '20px' }}>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#2F3E33' }}>AgriBiz Seed & Implements Store</h1>
-            <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#555555' }}>Krishi Mandi Complex, Pipariya, Madhya Pradesh - 461775</p>
-            <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555555', fontWeight: 600 }}>GSTIN: 23AAACA9876C1Z9</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {settings.showLogo && settings.logo && (
+              <img src={settings.logo} alt="Logo" style={{ maxHeight: '90px', objectFit: 'contain', borderRadius: '4px', margin: 0, padding: 0 }} />
+            )}
+            <div>
+              <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
+              {settings.showAddress && <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#555555' }}>{getFullAddress(settings)}</p>}
+              {settings.showGstin && settings.gstin && <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>}
+            </div>
           </div>
           <div style={{ textAlign: 'right' }}>
             <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#555555', textTransform: 'uppercase' }}>

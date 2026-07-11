@@ -133,15 +133,61 @@ export interface Payment {
 }
 
 export interface BusinessSettings {
+  // Business Information
   businessName: string;
-  address: string;
-  phone: string;
-  email: string;
+  ownerName: string;
   gstin: string;
-  state?: string;
+  panNumber: string;
+  businessType?: string;
+  phone: string;
+  alternatePhone?: string;
+  email: string;
+  website?: string;
+
+  // Business Address
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  taluka?: string;
+  district: string;
+  state: string;
+  pincode: string;
+
+  // Branding
+  logo?: string;
+  watermarkLogo?: string;
+
+  // Banking Details
+  bankName?: string;
+  accountHolderName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+  branchName?: string;
+  upiId?: string;
+
+  // Invoice Configuration
   invoicePrefix: string;
+  purchasePrefix: string;
+  quotationPrefix: string;
   financialYear: string;
+  defaultTerms?: string;
+  footerMessage?: string;
+
+  // Print Preferences
+  showLogo: boolean;
+  showGstin: boolean;
+  showAddress: boolean;
+  showContact: boolean;
+  showBankDetails: boolean;
+  showTerms: boolean;
+
+  // Application Preferences
   theme: 'light' | 'dark';
+  currencySymbol: string;
+  dateFormat: string;
+
+  // Legacy fallback to prevent TS issues in other files before refactoring
+  address: string;
 }
 
 export interface Expense {

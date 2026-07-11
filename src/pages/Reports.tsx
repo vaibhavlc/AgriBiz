@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
-import { formatINR, formatDate } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import {
   TrendingUp,
   TrendingDown,
@@ -3768,10 +3768,15 @@ export const Reports: React.FC = () => {
         }}>
           {/* Header Block */}
           <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '16px' }}>
-            <div>
-              <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
-              <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{settings.address}</p>
-              <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {settings.showLogo && settings.logo && (
+                <img src={settings.logo} alt="Logo" style={{ maxHeight: '90px', objectFit: 'contain', borderRadius: '4px', margin: 0, padding: 0 }} />
+              )}
+              <div>
+                <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
+                {settings.showAddress && <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{getFullAddress(settings)}</p>}
+                {settings.showGstin && settings.gstin && <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>}
+              </div>
             </div>
             <div style={{ textAlign: 'right' }}>
               <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#555555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>

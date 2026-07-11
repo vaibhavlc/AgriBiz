@@ -1,24 +1,88 @@
 import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense } from '../types';
 
-// Helper to format currency in Indian Rupees (INR)
-export const formatINR = (amount: number): string => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+// Helper to format currency dynamically based on settings
+export const formatCurrency = (amount: number, symbol?: string): string => {
+  let currencySym = symbol;
+  if (!currencySym) {
+    try {
+      const localSettings = localStorage.getItem('agribiz_settings');
+      if (localSettings) {
+        const parsed = JSON.parse(localSettings);
+        currencySym = parsed.currencySymbol;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  if (!currencySym) currencySym = '₹';
+
+  const formattedValue = new Intl.NumberFormat('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+
+  return `${currencySym}${formattedValue}`;
 };
 
-// Helper to format dates consistently
+// Keep formatINR as an alias for backward compatibility
+export const formatINR = (amount: number): string => {
+  return formatCurrency(amount);
+};
+
+// Helper to format dates consistently based on settings
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: 'short',
-    year: 'numeric',
-  });
+  
+  let dateFormat = 'DD/MM/YYYY';
+  try {
+    const localSettings = localStorage.getItem('agribiz_settings');
+    if (localSettings) {
+      const parsed = JSON.parse(localSettings);
+      if (parsed.dateFormat) {
+        dateFormat = parsed.dateFormat;
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
+  const day = String(date.getDate()).padStart(2, '0');
+  const monthNumeric = String(date.getMonth() + 1).padStart(2, '0');
+  const monthShort = date.toLocaleDateString('en-IN', { month: 'short' });
+  const year = date.getFullYear();
+
+  if (dateFormat === 'YYYY-MM-DD') {
+    return `${year}-${monthNumeric}-${day}`;
+  }
+  if (dateFormat === 'DD-MM-YYYY') {
+    return `${day}-${monthNumeric}-${year}`;
+  }
+  if (dateFormat === 'MM/DD/YYYY') {
+    return `${monthNumeric}/${day}/${year}`;
+  }
+  // Default fallback to DD MMM YYYY (e.g. 10 Jul 2026)
+  return `${day} ${monthShort} ${year}`;
+};
+
+// Helper to format split address fields dynamically
+export const getFullAddress = (settings: any): string => {
+  if (!settings) return '';
+  if (!settings.addressLine1) return settings.address || '';
+  const parts = [
+    settings.addressLine1,
+    settings.addressLine2,
+    settings.city,
+    settings.taluka ? `Taluka: ${settings.taluka}` : '',
+    settings.district,
+    settings.state,
+  ].filter(p => p && p.trim() !== '');
+
+  let addr = parts.join(', ');
+  if (settings.pincode && settings.pincode.trim() !== '') {
+    addr += ` - ${settings.pincode}`;
+  }
+  return addr;
 };
 
 export const initialProducts: Product[] = [
@@ -553,15 +617,61 @@ export const initialPayments: Payment[] = [
 ];
 
 export const initialSettings: BusinessSettings = {
+  // Business Information
   businessName: 'AgriBiz Seeds & Implements Store',
-  address: 'Shop No. 12-14, Krishi Mandi Complex, Pipariya, Madhya Pradesh - 461775',
-  phone: '+91 94250 98765',
-  email: 'contact@agribizstore.com',
+  ownerName: 'Vaibhav Patel',
   gstin: '23AAACA9876C1Z9',
+  panNumber: 'ABCDE1234F',
+  businessType: 'Partnership',
+  phone: '+91 94250 98765',
+  alternatePhone: '+91 76543 21098',
+  email: 'contact@agribizstore.com',
+  website: 'www.agribizstore.com',
+
+  // Business Address
+  addressLine1: 'Shop No. 12-14, Krishi Mandi Complex',
+  addressLine2: 'Mandi Area',
+  city: 'Pipariya',
+  taluka: 'Pipariya',
+  district: 'Hoshangabad',
   state: 'Madhya Pradesh',
+  pincode: '461775',
+
+  // Branding
+  logo: '',
+  watermarkLogo: '',
+
+  // Banking Details
+  bankName: 'State Bank of India',
+  accountHolderName: 'AgriBiz Seeds & Implements',
+  accountNumber: '39485761029',
+  ifscCode: 'SBIN0000452',
+  branchName: 'Pipariya Main Branch',
+  upiId: 'agribiz@sbi',
+
+  // Invoice Configuration
   invoicePrefix: 'AB-2026-',
+  purchasePrefix: 'PUR-2026-',
+  quotationPrefix: 'EST-2026-',
   financialYear: '2026-2027',
+  defaultTerms: '1. All rates are subject to change without prior notice.\n2. Goods once sold will not be taken back.\n3. Interest @ 18% p.a. will be charged if payment is not made within 15 days.',
+  footerMessage: 'Thank you for your business! Visit again.',
+
+  // Print Preferences
+  showLogo: true,
+  showGstin: true,
+  showAddress: true,
+  showContact: true,
+  showBankDetails: true,
+  showTerms: true,
+
+  // Application Preferences
   theme: 'light',
+  currencySymbol: '₹',
+  dateFormat: 'DD/MM/YYYY',
+
+  // Legacy fallback address
+  address: 'Shop No. 12-14, Krishi Mandi Complex, Pipariya, Madhya Pradesh - 461775',
 };
 
 export const initialExpenses: Expense[] = [
