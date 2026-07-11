@@ -556,7 +556,8 @@ body.dark-theme .prem-nav-item:hover .prem-nav-icon {
 /* ---- Sidebar Floating Edge Collapse Toggle ---- */
 .prem-edge-collapse-btn {
   position: absolute;
-  top: 38px; /* Perfectly aligned next to the logo card */
+  top: 50%;
+  transform: translateY(-50%);
   width: 24px;
   height: 24px;
   border-radius: 50%;
