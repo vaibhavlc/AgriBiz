@@ -1106,7 +1106,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               )}
             </div>
           </div>
-        </div>
       ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
