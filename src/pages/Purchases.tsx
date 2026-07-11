@@ -679,6 +679,7 @@ export const Purchases: React.FC = () => {
         gstAmount: calc.gstAmount,
         subtotal: calc.subtotal,
         total: calc.total,
+        discount: item.discount,
       };
     });
 
@@ -975,24 +976,24 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <table className="invoice-table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px', textAlign: 'center' }}>SR</th>
-                  <th style={{ textAlign: 'left' }}>Product Inward Details</th>
+                  <th style={{ width: '40px', textAlign: 'center' }}>Sr</th>
+                  <th style={{ textAlign: 'left' }}>Product / Description</th>
                   <th style={{ width: '80px', textAlign: 'center' }}>GST</th>
-                  <th style={{ width: '90px', textAlign: 'right' }}>Cost (₹)</th>
+                  <th style={{ width: '90px', textAlign: 'right' }}>Price (₹)</th>
                   <th style={{ width: '60px', textAlign: 'center' }}>Qty</th>
-                  <th style={{ width: '110px', textAlign: 'right' }}>Total (₹)</th>
+                  <th style={{ width: '70px', textAlign: 'right' }}>Disc (%)</th>
+                  <th style={{ width: '100px', textAlign: 'right' }}>Total (₹)</th>
                 </tr>
               </thead>
               <tbody>
                 {selectedPurchase.items.map((item, index) => (
                   <tr key={index}>
                     <td style={{ textAlign: 'center' }}>{index + 1}</td>
-                    <td>
-                      <strong>{item.productName}</strong>
-                    </td>
+                    <td style={{ fontWeight: 600 }}>{item.productName}</td>
                     <td style={{ textAlign: 'center' }}>{item.gstRate}%</td>
                     <td style={{ textAlign: 'right' }}>{item.price.toFixed(2)}</td>
                     <td style={{ textAlign: 'center' }}>{item.quantity}</td>
+                    <td style={{ textAlign: 'right' }}>{item.discount || 0}%</td>
                     <td style={{ textAlign: 'right' }}>{item.total.toFixed(2)}</td>
                   </tr>
                 ))}

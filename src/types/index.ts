@@ -101,6 +101,7 @@ export interface PurchaseItem {
   gstAmount: number;
   subtotal: number;
   total: number;
+  discount?: number;
 }
 
 export interface Purchase {
