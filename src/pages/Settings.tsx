@@ -1091,7 +1091,7 @@ export const Settings: React.FC = () => {
           <div style={{
             display: 'flex',
             alignItems: 'center',
-            justify-content: 'space-between',
+            justifyContent: 'space-between',
             gap: '16px',
             marginTop: '24px',
             padding: '16px 24px',
