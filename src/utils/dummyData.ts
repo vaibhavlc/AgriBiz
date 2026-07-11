@@ -655,6 +655,9 @@ export const initialSettings: BusinessSettings = {
   quotationPrefix: 'EST-2026-',
   financialYear: '2026-2027',
   defaultTerms: '1. All rates are subject to change without prior notice.\n2. Goods once sold will not be taken back.\n3. Interest @ 18% p.a. will be charged if payment is not made within 15 days.',
+  invoiceTerms: '1. Goods once sold will not be taken back or exchanged.\n2. Warranty is as per the manufacturer\'s terms and conditions only.\n3. Interest @ 18% p.a. will be charged if payment is not made within 15 days of invoice date.',
+  quotationTerms: '1. This quotation is valid for 15 days from the date of issue.\n2. Prices are subject to change without prior notice.\n3. GST and transportation charges are extra unless mentioned otherwise.',
+  purchaseTerms: '1. Goods received in good condition and as per the purchase order.\n2. Payment is due within 30 days from the date of this bill.\n3. Any discrepancy must be reported within 7 days of delivery.',
   footerMessage: 'Thank you for your business! Visit again.',
 
   // Print Preferences

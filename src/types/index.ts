@@ -156,6 +156,7 @@ export interface BusinessSettings {
   // Branding
   logo?: string;
   watermarkLogo?: string;
+  signature?: string;
 
   // Banking Details
   bankName?: string;
@@ -171,6 +172,9 @@ export interface BusinessSettings {
   quotationPrefix: string;
   financialYear: string;
   defaultTerms?: string;
+  invoiceTerms?: string;
+  quotationTerms?: string;
+  purchaseTerms?: string;
   footerMessage?: string;
 
   // Print Preferences

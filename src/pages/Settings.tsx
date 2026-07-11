@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Store,
@@ -16,7 +16,7 @@ import {
   Upload,
   Trash2,
 } from 'lucide-react';
-import { getFullAddress } from '../utils/dummyData';
+import { getFullAddress, initialSettings } from '../utils/dummyData';
 
 export const Settings: React.FC = () => {
   const { settings, updateSettings, resetToDefault } = useApp();
@@ -47,6 +47,9 @@ export const Settings: React.FC = () => {
   // Branding
   const [logo, setLogo] = useState(settings.logo || '');
   const [watermarkLogo, setWatermarkLogo] = useState(settings.watermarkLogo || '');
+  const [savedSignature, setSavedSignature] = useState(settings.signature || '');
+  const [isDrawing, setIsDrawing] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Banking Details
   const [bankName, setBankName] = useState(settings.bankName || '');
@@ -62,6 +65,9 @@ export const Settings: React.FC = () => {
   const [quotationPrefix, setQuotationPrefix] = useState(settings.quotationPrefix || '');
   const [financialYear, setFinancialYear] = useState(settings.financialYear || '');
   const [defaultTerms, setDefaultTerms] = useState(settings.defaultTerms || '');
+  const [invoiceTerms, setInvoiceTerms] = useState(settings.invoiceTerms || initialSettings.invoiceTerms || '');
+  const [quotationTerms, setQuotationTerms] = useState(settings.quotationTerms || initialSettings.quotationTerms || '');
+  const [purchaseTerms, setPurchaseTerms] = useState(settings.purchaseTerms || initialSettings.purchaseTerms || '');
   const [footerMessage, setFooterMessage] = useState(settings.footerMessage || '');
 
   // Print Preferences
@@ -120,6 +126,9 @@ export const Settings: React.FC = () => {
       quotationPrefix,
       financialYear,
       defaultTerms,
+      invoiceTerms,
+      quotationTerms,
+      purchaseTerms,
       footerMessage,
       showLogo,
       showGstin,
@@ -131,6 +140,7 @@ export const Settings: React.FC = () => {
       dateFormat,
       theme: settings.theme,
       address: legacyAddress,
+      signature: savedSignature,
     });
 
     setSavedSuccess(true);
@@ -176,6 +186,152 @@ export const Settings: React.FC = () => {
 
   const handleRemoveWatermarkLogo = () => {
     setWatermarkLogo('');
+  };
+
+  const getEventCoords = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
+    canvas: HTMLCanvasElement
+  ) => {
+    const rect = canvas.getBoundingClientRect();
+    if ('touches' in e) {
+      if (e.touches.length === 0) return { x: 0, y: 0 };
+      return {
+        x: (e.touches[0].clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.touches[0].clientY - rect.top) * (canvas.height / rect.height),
+      };
+    } else {
+      return {
+        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.clientY - rect.top) * (canvas.height / rect.height),
+      };
+    }
+  };
+
+  const startDrawing = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
+    if (e.cancelable) e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+
+    const coords = getEventCoords(e, canvas);
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#1E3A8A'; // Professional dark blue ink
+    ctx.beginPath();
+    ctx.moveTo(coords.x, coords.y);
+    setIsDrawing(true);
+  };
+
+  const draw = (
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+  ) => {
+    if (!isDrawing) return;
+    if (e.cancelable) e.preventDefault();
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const coords = getEventCoords(e, canvas);
+    ctx.lineTo(coords.x, coords.y);
+    ctx.stroke();
+  };
+
+  const stopDrawing = () => {
+    setIsDrawing(false);
+  };
+
+  const clearSignaturePad = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  };
+
+  const trimCanvas = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return canvas;
+
+    const width = canvas.width;
+    const height = canvas.height;
+    const imgData = ctx.getImageData(0, 0, width, height);
+    const data = imgData.data;
+
+    let minX = width;
+    let minY = height;
+    let maxX = 0;
+    let maxY = 0;
+    let found = false;
+
+    // Scan all pixels to find the bounding box of non-transparent pixels (alpha > 0)
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const alpha = data[(y * width + x) * 4 + 3];
+        if (alpha > 0) {
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+          found = true;
+        }
+      }
+    }
+
+    if (!found) {
+      return canvas;
+    }
+
+    // Add 5px padding around the cropped signature area
+    const padding = 5;
+    const cropX = Math.max(0, minX - padding);
+    const cropY = Math.max(0, minY - padding);
+    const cropWidth = Math.min(width - cropX, (maxX - minX) + (padding * 2));
+    const cropHeight = Math.min(height - cropY, (maxY - minY) + (padding * 2));
+
+    const trimmedCanvas = document.createElement('canvas');
+    trimmedCanvas.width = cropWidth;
+    trimmedCanvas.height = cropHeight;
+    const trimmedCtx = trimmedCanvas.getContext('2d');
+    if (!trimmedCtx) return canvas;
+
+    trimmedCtx.drawImage(
+      canvas,
+      cropX, cropY, cropWidth, cropHeight,
+      0, 0, cropWidth, cropHeight
+    );
+
+    return trimmedCanvas;
+  };
+
+  const handleSaveSignature = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // Automatically crop transparent boundaries
+    const trimmedCanvas = trimCanvas(canvas);
+    const base64Data = trimmedCanvas.toDataURL('image/png');
+    setSavedSignature(base64Data);
+    updateSettings({
+      ...settings,
+      signature: base64Data
+    });
+  };
+
+  const handleRemoveSignature = () => {
+    setSavedSignature('');
+    updateSettings({
+      ...settings,
+      signature: undefined
+    });
   };
 
   const handleReset = () => {
@@ -537,6 +693,54 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
 
+                {/* E-Signature Drawing Card */}
+                <div className="card">
+                  <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    <FileText size={20} style={{ color: 'var(--primary)' }} />
+                    <span>Authorized Signatory E-Signature</span>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
+                    {savedSignature ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '12px', width: '240px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+                          <img src={savedSignature} alt="E-Signature Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                        </div>
+                        <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm" style={{ color: 'var(--color-danger)' }}>
+                          <Trash2 size={14} /> Remove Signature
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
+                        <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                          Draw your signature inside the box below in blue ink (automatically cropped to boundaries on save):
+                        </div>
+                        <div style={{ position: 'relative', border: '2px dashed var(--border-color)', borderRadius: '12px', backgroundColor: '#fff', overflow: 'hidden', height: '120px' }}>
+                          <canvas
+                            ref={canvasRef}
+                            onMouseDown={startDrawing}
+                            onMouseMove={draw}
+                            onMouseUp={stopDrawing}
+                            onMouseLeave={stopDrawing}
+                            onTouchStart={startDrawing}
+                            onTouchMove={draw}
+                            onTouchEnd={stopDrawing}
+                            style={{ width: '100%', height: '100%', cursor: 'crosshair', display: 'block', touchAction: 'none' }}
+                          />
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                          <button type="button" onClick={clearSignaturePad} className="btn btn-secondary btn-sm">
+                            Clear Pad
+                          </button>
+                          <button type="button" onClick={handleSaveSignature} className="btn btn-primary btn-sm">
+                            Save Signature
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
                 {/* Print Preferences */}
                 <div className="card">
                   <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
@@ -726,15 +930,54 @@ export const Settings: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="form-group" style={{ marginTop: '12px' }}>
-                    <label className="form-label">Default Terms & Conditions</label>
-                    <textarea
-                      className="form-control"
-                      rows={3}
-                      value={defaultTerms}
-                      onChange={(e) => setDefaultTerms(e.target.value)}
-                      placeholder="Add terms line by line..."
-                    />
+                  {/* Bill-Type Specific Terms & Conditions */}
+                  <div className="card" style={{ marginTop: '16px', padding: '16px', border: '1px solid var(--border-color)', borderRadius: '12px', background: 'var(--bg-app)' }}>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <FileText size={16} style={{ color: 'var(--primary)' }} />
+                      Terms & Conditions (per Bill Type)
+                    </div>
+
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: 600 }}>📄 Sales Invoice Terms</label>
+                        <textarea
+                          className="form-control"
+                          rows={3}
+                          value={invoiceTerms}
+                          onChange={(e) => setInvoiceTerms(e.target.value)}
+                          placeholder="e.g. Goods once sold will not be taken back. Warranty as per manufacturer terms."
+                          style={{ fontSize: '13px' }}
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: 600 }}>📋 Quotation / Estimate Terms</label>
+                        <textarea
+                          className="form-control"
+                          rows={3}
+                          value={quotationTerms}
+                          onChange={(e) => setQuotationTerms(e.target.value)}
+                          placeholder="e.g. This quotation is valid for 15 days. Prices are subject to change without notice."
+                          style={{ fontSize: '13px' }}
+                        />
+                      </div>
+
+                      <div className="form-group" style={{ margin: 0 }}>
+                        <label className="form-label" style={{ fontWeight: 600 }}>🧾 Purchase Bill Terms</label>
+                        <textarea
+                          className="form-control"
+                          rows={3}
+                          value={purchaseTerms}
+                          onChange={(e) => setPurchaseTerms(e.target.value)}
+                          placeholder="e.g. Payment due within 30 days. Goods received in good condition."
+                          style={{ fontSize: '13px' }}
+                        />
+                      </div>
+                    </div>
+
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px' }}>
+                      These terms will automatically appear on their respective bill printouts.
+                    </div>
                   </div>
 
                   <div className="form-group">

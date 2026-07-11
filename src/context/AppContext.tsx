@@ -145,7 +145,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [settings, setSettings] = useState<BusinessSettings>(() => {
     const local = localStorage.getItem('agribiz_settings');
-    return local ? JSON.parse(local) : initialSettings;
+    return local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {

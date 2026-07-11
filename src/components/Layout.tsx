@@ -22,6 +22,8 @@ import {
   Menu,
   Bell,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   User,
   LogOut,
   MoreHorizontal,
@@ -409,7 +411,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   return (
-    <div className="app-container">
+    <div className="app-container" style={{ position: 'relative' }}>
       {/* Sidebar Backdrop Blur Overlay on Mobile */}
       {isMobileSidebarOpen && (
         <div 
@@ -446,17 +448,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           tabIndex={0}
           title="Go to Settings"
         >
-          {/* Animated border ring + logo */}
-          <div className="prem-logo-anim-ring">
-            <div className="prem-logo-frame prem-logo-large">
-              {settings.showLogo && settings.logo ? (
-                <img src={settings.logo} alt={settings.businessName || 'Logo'} />
-              ) : (
-                <div className="prem-logo-fallback">
-                  <Store size={32} />
-                </div>
-              )}
-            </div>
+          {/* Glass logo frame */}
+          <div className="prem-logo-frame prem-logo-large">
+            {settings.showLogo && settings.logo ? (
+              <img src={settings.logo} alt={settings.businessName || 'Logo'} />
+            ) : (
+              <div className="prem-logo-fallback">
+                <Store size={32} />
+              </div>
+            )}
           </div>
 
           {/* Mobile close button */}
@@ -491,21 +491,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           document.body
         )}
 
-        {/* ── Collapse Toggle Footer ── */}
-        <div className="prem-sidebar-footer no-print">
-          <button
-            type="button"
-            className="prem-collapse-btn"
-            onClick={toggleSidebarCollapse}
-            title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            <span className="prem-collapse-icon">
-              <ChevronDown size={14} style={{ transform: 'rotate(90deg)' }} />
-            </span>
-            <span className="prem-collapse-label">Collapse sidebar</span>
-          </button>
-        </div>
       </aside>
+
+      {/* Edge Collapse Toggle Button */}
+      <button
+        type="button"
+        className="prem-edge-collapse-btn no-print"
+        onClick={toggleSidebarCollapse}
+        title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        style={{
+          left: isSidebarCollapsed ? '60px' : '252px',
+        }}
+      >
+        {isSidebarCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+      </button>
 
       {/* Main Content Area */}
       <div className="main-wrapper">

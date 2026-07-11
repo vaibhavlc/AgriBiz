@@ -806,6 +806,56 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
       balanceDue: selectedPurchase.balanceDue,
     };
 
+    // Parse structured notes for print formatting
+    let supplierInvoiceNo = '';
+    let supplierInvoiceDt = '';
+    let purchaseTypeVal = '';
+    let purchaseStatusVal = '';
+    let dueDtVal = '';
+    let transportVal = '₹0';
+    let loadingVal = '₹0';
+    let otherVal = '₹0';
+    let txnRefVal = '';
+    let remarksVal = '';
+
+    if (selectedPurchase.notes) {
+      const invRefMatch = selectedPurchase.notes.match(/Invoice Ref:\s*(.*?)\s*\(Date:\s*(.*?)\)/);
+      if (invRefMatch) {
+        supplierInvoiceNo = invRefMatch[1];
+        supplierInvoiceDt = invRefMatch[2];
+      }
+
+      const typeStatusMatch = selectedPurchase.notes.match(/Type:\s*(.*?)\s*\|\s*Status:\s*(.*?)(?:\r?\n|$)/);
+      if (typeStatusMatch) {
+        purchaseTypeVal = typeStatusMatch[1];
+        purchaseStatusVal = typeStatusMatch[2];
+      }
+
+      const dueMatch = selectedPurchase.notes.match(/Payment Due Date:\s*(.*?)(?:\r?\n|$)/);
+      if (dueMatch) {
+        dueDtVal = dueMatch[1];
+      }
+
+      const chargesMatch = selectedPurchase.notes.match(/Charges:\s*Transport\s*₹([\d.]+),\s*Loading\s*₹([\d.]+),\s*Other\s*₹([\d.]+)/);
+      if (chargesMatch) {
+        transportVal = `₹${chargesMatch[1]}`;
+        loadingVal = `₹${chargesMatch[2]}`;
+        otherVal = `₹${chargesMatch[3]}`;
+      }
+
+      const txnMatch = selectedPurchase.notes.match(/Txn Reference:\s*(.*?)(?:\r?\n|$)/);
+      if (txnMatch) {
+        txnRefVal = txnMatch[1];
+      }
+
+      const remarksMatch = selectedPurchase.notes.match(/Remarks:\s*([\s\S]*)/);
+      if (remarksMatch) {
+        remarksVal = remarksMatch[1];
+      } else {
+        remarksVal = selectedPurchase.notes;
+      }
+    }
+
     return (
       <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
         <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px", backgroundColor: "var(--bg-card)", padding: "16px", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
@@ -839,7 +889,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
         {/* Voucher layout */}
         <div className="invoice-mockup-wrapper">
-          <div className={`print-invoice-layout invoice-print-container ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? 'has-custom-watermark' : ''}`}>
+          <div className={`print-invoice-layout invoice-print-container ${selectedPurchase.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
             {/* Dynamic Logo Watermark in Center */}
             {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
               <div className="print-watermark-logo">
@@ -952,10 +1002,57 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             {/* Terms and Summary block */}
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: 'auto' }}>
               <div style={{ flex: 1, maxWidth: '55%' }}>
-                <h4 className="invoice-terms-title">Voucher Details & Notes:</h4>
-                <p className="invoice-terms-text">
-                  {selectedPurchase.notes || "No additional comments recorded."}
-                </p>
+                {(settings.purchaseTerms || settings.defaultTerms) && (
+                  <>
+                    <h4 className="invoice-terms-title">TERMS & CONDITIONS:</h4>
+                    <p className="invoice-terms-text" style={{ whiteSpace: 'pre-wrap' }}>
+                      {settings.purchaseTerms || settings.defaultTerms}
+                    </p>
+                  </>
+                )}
+                {selectedPurchase.notes && (
+                  <div style={{ marginTop: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
+                    <h4 className="invoice-terms-title" style={{ borderBottom: '1px dashed rgba(78, 108, 80, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>VOUCHER DETAILS:</h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: selectedPurchase.items.length > 3 ? '9px' : '10.5px' }}>
+                      {supplierInvoiceNo && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Invoice Ref:</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{supplierInvoiceNo} {supplierInvoiceDt && `(Date: ${supplierInvoiceDt})`}</span>
+                        </div>
+                      )}
+                      {purchaseTypeVal && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Type | Status:</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{purchaseTypeVal} | {purchaseStatusVal}</span>
+                        </div>
+                      )}
+                      {dueDtVal && purchaseTypeVal === 'Credit' && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Payment Due Date:</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{dueDtVal}</span>
+                        </div>
+                      )}
+                      {(transportVal !== '₹0' || loadingVal !== '₹0' || otherVal !== '₹0') && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Charges:</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>Transport {transportVal}, Loading {loadingVal}, Other {otherVal}</span>
+                        </div>
+                      )}
+                      {txnRefVal && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Txn Reference:</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{txnRefVal}</span>
+                        </div>
+                      )}
+                      {remarksVal && remarksVal.trim() !== '' && !remarksVal.startsWith('Invoice Ref:') && (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '2.5px' }}>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Remarks:</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33', whiteSpace: 'pre-wrap', textAlign: 'right' }}>{remarksVal}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <div style={{ flex: 1, maxWidth: '42%' }}>
                 <table className="invoice-summary-table">
@@ -997,8 +1094,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
             {/* Custom SVG Illustration and signature */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px' }}>
-              <div style={{ flex: 1, maxWidth: '70%' }}>
-                <svg viewBox="0 0 500 110" width="100%" height="60" style={{ display: "block" }}>
+              <div style={{ flex: 1, maxWidth: '45%' }}>
+                <svg viewBox="0 0 500 110" width="100%" height={selectedPurchase.items.length > 3 ? "40" : "60"} style={{ display: "block" }}>
                   {/* Ground line */}
                   <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
                   
@@ -1089,11 +1186,23 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
                 </svg>
               </div>
-              <div style={{ textAlign: 'center', minWidth: '150px' }}>
-                <div style={{ height: '35px' }}></div>
-                <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '4px', fontSize: '11px', fontWeight: 700, color: '#4E6C50' }}>
-                  Authorized Signatory
-                </p>
+              <div style={{ display: 'flex', gap: '28px', alignItems: 'flex-end', flexShrink: 0 }}>
+                <div style={{ textAlign: 'center', minWidth: '110px' }}>
+                  <div style={{ height: selectedPurchase.items.length > 3 ? '25px' : '35px' }}></div>
+                  <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
+                    Receiver's Signature
+                  </p>
+                </div>
+                <div style={{ textAlign: 'center', minWidth: '110px' }}>
+                  <div style={{ height: selectedPurchase.items.length > 3 ? '25px' : '35px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                    {settings.signature ? (
+                      <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedPurchase.items.length > 3 ? '22px' : '30px', maxWidth: '100px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                    ) : null}
+                  </div>
+                  <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
+                    Authorized Signatory
+                  </p>
+                </div>
               </div>
             </div>
           </div>

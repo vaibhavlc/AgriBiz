@@ -180,29 +180,24 @@ select option {
   align-items: center;
   justify-content: center;
   padding: 14px 14px;
-  border-bottom: 1px solid var(--border-sidebar);
+  border-bottom: none;
   cursor: pointer;
   overflow: hidden;
   transition: background 0.3s ease;
   flex-shrink: 0;
 }
 
-.prem-workspace-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at var(--glow-x, 60%) var(--glow-y, 40%), rgba(16, 185, 129, 0.08) 0%, transparent 65%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
+.prem-workspace-card.prem-logo-only {
+  padding: 14px 18px;
+  transition: padding 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.prem-workspace-card:hover::before {
-  opacity: 1;
+.sidebar.collapsed .prem-workspace-card.prem-logo-only {
+  padding: 11px;
 }
 
 .prem-workspace-card:hover {
-  background: rgba(16, 185, 129, 0.03);
+  background: rgba(0, 0, 0, 0.02);
 }
 
 /* Logo frame */
@@ -213,11 +208,13 @@ select option {
   height: 42px;
   border-radius: 11px;
   overflow: hidden;
-  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
-  border: 1.5px solid rgba(16, 185, 129, 0.2);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
   box-shadow:
-    0 2px 8px rgba(16, 185, 129, 0.12),
-    0 0 0 3px rgba(16, 185, 129, 0.04),
+    0 2px 8px rgba(16, 185, 129, 0.08),
+    0 0 0 3px rgba(16, 185, 129, 0.03),
     inset 0 1px 2px rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
@@ -225,128 +222,41 @@ select option {
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.prem-workspace-card:hover .prem-logo-frame {
-  transform: scale(1.06) translateY(-1px);
-  box-shadow:
-    0 6px 20px rgba(16, 185, 129, 0.22),
-    0 0 0 4px rgba(16, 185, 129, 0.08),
-    inset 0 1px 2px rgba(255, 255, 255, 0.9);
-  border-color: rgba(16, 185, 129, 0.4);
-}
-
-/* Logo-only: frame fills the card width */
-.prem-workspace-card.prem-logo-only {
-  padding: 22px;
-}
-
-/* Large logo variant — fills full sidebar card width */
+/* Large logo variant — flat image directly on sidebar at the edge */
 .prem-logo-frame.prem-logo-large {
-  width: 100%;
-  height: 100%;
-  aspect-ratio: 1 / 1;
-  border-radius: 14px;
-  border: none;
-  box-shadow: none;
-}
-
-/* ---- Animated gradient border ring ---- */
-.prem-logo-anim-ring {
   position: relative;
-  width: 80px;
-  aspect-ratio: 1 / 1;
-  border-radius: 18px;
-  padding: 3px;
-  background: conic-gradient(
-    from 0deg,
-    #10b981,
-    #3b82f6,
-    #8b5cf6,
-    #ec4899,
-    #f59e0b,
-    #ef4444,
-    #10b981
-  );
-  animation: logoBorderSpin 3.5s linear infinite;
-  box-shadow:
-    0 0 18px rgba(16, 185, 129, 0.25),
-    0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: box-shadow 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  width: 100%;
+  height: 80px;
+  border-radius: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1), width 0.35s cubic-bezier(0.16, 1, 0.3, 1), height 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: visible;
 }
 
-.prem-workspace-card:hover .prem-logo-anim-ring {
-  transform: scale(1.03) translateY(-2px);
-  box-shadow:
-    0 0 28px rgba(16, 185, 129, 0.35),
-    0 8px 28px rgba(0, 0, 0, 0.15);
-  animation-duration: 1.8s;
+/* Glass shine reflection sweep overlay - disabled for flat logo */
+.prem-logo-frame.prem-logo-large::after {
+  display: none;
 }
 
-@keyframes logoBorderSpin {
-  from { --logo-angle: 0deg; }
-  to   { --logo-angle: 360deg; }
-}
-
-/* Use property animation if supported, fallback to rotate trick */
-@supports (background: conic-gradient(from 1deg, red, red)) {
-  .prem-logo-anim-ring {
-    background: conic-gradient(
-      from var(--logo-angle, 0deg),
-      #10b981 0%,
-      #3b82f6 18%,
-      #8b5cf6 36%,
-      #ec4899 54%,
-      #f59e0b 72%,
-      #ef4444 88%,
-      #10b981 100%
-    );
-  }
-
-  @property --logo-angle {
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
-  }
-
-  @keyframes logoBorderSpin {
-    from { --logo-angle: 0deg; }
-    to   { --logo-angle: 360deg; }
-  }
-}
-
-/* Fallback for browsers that don't support @property */
-@supports not (background: conic-gradient(from 1deg, red, red)) {
-  .prem-logo-anim-ring {
-    animation: logoBorderSpinFallback 3.5s linear infinite;
-  }
-
-  @keyframes logoBorderSpinFallback {
-    from { filter: hue-rotate(0deg); }
-    to   { filter: hue-rotate(360deg); }
-  }
+.sidebar.collapsed .prem-logo-frame.prem-logo-large {
+  width: 50px;
+  height: 50px;
+  border-radius: 12px;
 }
 
 .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
-  transform: scale(1.025) translateY(-2px);
-  box-shadow:
-    0 10px 30px rgba(16, 185, 129, 0.22),
-    0 0 0 7px rgba(16, 185, 129, 0.08),
-    inset 0 1px 3px rgba(255, 255, 255, 0.9);
-  border-color: rgba(16, 185, 129, 0.45);
+  transform: scale(1.02);
+  box-shadow: none !important;
+  border-color: transparent !important;
 }
 
-body.dark-theme .prem-logo-frame.prem-logo-large {
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.45),
-    0 0 0 5px rgba(52, 211, 153, 0.06),
-    inset 0 1px 3px rgba(255, 255, 255, 0.03);
-}
-
-body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
-  box-shadow:
-    0 10px 32px rgba(0, 0, 0, 0.55),
-    0 0 0 7px rgba(52, 211, 153, 0.12),
-    inset 0 1px 3px rgba(255, 255, 255, 0.03);
-  border-color: rgba(52, 211, 153, 0.38);
+.prem-workspace-card.prem-logo-only:hover {
+  background: transparent !important;
+  cursor: default;
 }
 
 .prem-logo-frame img {
@@ -471,9 +381,8 @@ body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
 
 .prem-nav-menu::-webkit-scrollbar { display: none; }
 
-/* Section group */
 .prem-nav-group {
-  margin-bottom: 6px;
+  margin-bottom: 4px;
 }
 
 .prem-nav-group-label {
@@ -482,7 +391,7 @@ body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
   text-transform: uppercase;
   letter-spacing: 1.4px;
   color: var(--text-muted);
-  padding: 8px 12px 4px;
+  padding: 5px 12px 2px;
   white-space: nowrap;
   overflow: hidden;
   opacity: 1;
@@ -497,14 +406,13 @@ body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
   padding-bottom: 0;
 }
 
-/* Individual nav item */
 .prem-nav-item {
   position: relative;
   display: flex;
   align-items: center;
   gap: 11px;
   padding: 8px 10px;
-  border-radius: 10px;
+  border-radius: 8px;
   cursor: pointer;
   text-decoration: none;
   border: 1px solid transparent;
@@ -519,7 +427,7 @@ body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
   background: none;
   width: 100%;
   text-align: left;
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   font-family: var(--font-sans);
   color: var(--text-on-sidebar);
@@ -572,9 +480,9 @@ body.dark-theme .prem-nav-item.active {
 /* Icon capsule */
 .prem-nav-icon {
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -645,66 +553,42 @@ body.dark-theme .prem-nav-item:hover .prem-nav-icon {
   to   { opacity: 1; transform: translateY(-50%) translateX(0); }
 }
 
-/* ---- Sidebar Footer / Collapse Toggle ---- */
-.prem-sidebar-footer {
-  padding: 12px 10px;
-  border-top: 1px solid var(--border-sidebar);
-  flex-shrink: 0;
-}
-
-.prem-collapse-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 8px 10px;
-  border-radius: 9px;
-  border: 1px solid transparent;
-  background: none;
-  cursor: pointer;
-  color: var(--text-muted);
-  font-size: 12px;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  transition: all 0.22s ease;
-  font-family: var(--font-sans);
-}
-
-.prem-collapse-btn:hover {
-  background: var(--bg-sidebar-hover);
-  color: var(--text-primary);
-  border-color: var(--border-sidebar);
-}
-
-.prem-collapse-icon {
-  flex-shrink: 0;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
+/* ---- Sidebar Floating Edge Collapse Toggle ---- */
+.prem-edge-collapse-btn {
+  position: absolute;
+  top: 38px; /* Perfectly aligned next to the logo card */
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--bg-sidebar-hover);
-  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s ease;
+  cursor: pointer;
+  z-index: 150;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+  outline: none;
 }
 
-.prem-collapse-btn:hover .prem-collapse-icon {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--primary);
+.prem-edge-collapse-btn:hover {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
 }
 
-.sidebar.collapsed .prem-collapse-icon {
-  transform: rotate(180deg);
+body.dark-theme .prem-edge-collapse-btn {
+  background-color: #0f1420;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.6);
 }
 
-.prem-collapse-label {
-  opacity: 1;
-  transition: opacity 0.2s ease;
-}
-
-.sidebar.collapsed .prem-collapse-label {
-  opacity: 0;
+body.dark-theme .prem-edge-collapse-btn:hover {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: #ffffff;
 }
 
 /* ---- Mobile close button ---- */
@@ -733,12 +617,15 @@ body.dark-theme .prem-nav-item:hover .prem-nav-icon {
 
 /* ---- Dark mode specific overrides ---- */
 body.dark-theme .prem-logo-frame {
-  background: linear-gradient(135deg, #0d2818 0%, #0f2a1a 100%);
-  border-color: rgba(52, 211, 153, 0.18);
+  background: rgba(7, 10, 19, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-color: rgba(255, 255, 255, 0.06);
   box-shadow:
     0 2px 10px rgba(0, 0, 0, 0.35),
     0 0 0 3px rgba(52, 211, 153, 0.05),
-    inset 0 1px 2px rgba(255, 255, 255, 0.03);
+    inset 0 1px 1px rgba(255, 255, 255, 0.05),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.25);
 }
 
 body.dark-theme .prem-workspace-card:hover .prem-logo-frame {
@@ -755,11 +642,26 @@ body.dark-theme .prem-logo-fallback {
 }
 
 body.dark-theme .prem-workspace-card:hover {
-  background: rgba(52, 211, 153, 0.03);
+  background: rgba(255, 255, 255, 0.035);
 }
 
-body.dark-theme .prem-workspace-card::before {
-  background: radial-gradient(circle at var(--glow-x, 60%) var(--glow-y, 40%), rgba(52, 211, 153, 0.1) 0%, transparent 65%);
+body.dark-theme .prem-workspace-card.prem-logo-only:hover {
+  background: transparent !important;
+}
+
+body.dark-theme .prem-logo-frame.prem-logo-large {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+body.dark-theme .prem-logo-frame.prem-logo-large::after {
+  display: none;
+}
+
+body.dark-theme .prem-workspace-card:hover .prem-logo-frame.prem-logo-large {
+  box-shadow: none !important;
+  border: none !important;
 }
 
 body.dark-theme .prem-live-dot {
@@ -3844,7 +3746,7 @@ body.dark-theme select.form-control {
   border: 1.5px solid #EAE3D2 !important;
   border-radius: 12px !important;
   font-family: 'Outfit', 'Inter', sans-serif !important;
-  padding: 24px !important; /* Compact padding for A5 size */
+  padding: 24px 24px 38px 24px !important; /* Extra bottom padding for absolute footer */
   box-shadow: 0 15px 50px rgba(130, 76, 54, 0.08) !important;
   position: relative;
   overflow: hidden;
@@ -3910,6 +3812,23 @@ body.dark-theme select.form-control {
   margin-bottom: 16px;
   position: relative;
   z-index: 2;
+  gap: 20px;
+}
+
+.invoice-header-bar > div:first-child {
+  min-width: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.invoice-header-bar > div:first-child > div:last-child {
+  min-width: 0;
+}
+
+.invoice-header-bar > div:last-child {
+  flex-shrink: 0;
+  text-align: right;
 }
 
 .invoice-logo-pill {
@@ -3961,26 +3880,27 @@ body.dark-theme select.form-control {
 .invoice-main-title {
   font-family: var(--font-display);
   font-weight: 900;
-  font-size: 28px; /* Reduced slightly for A5 */
+  font-size: 15px; /* Reduced slightly for A5 */
   color: #4E6C50;
   margin: 0;
   letter-spacing: 1px;
   line-height: 1.15; /* Increased to prevent clipping */
   padding: 2px 0;
+  text-transform: uppercase;
 }
 
 .invoice-number-text {
-  font-size: 14px; /* Reduced for A5 */
+  font-size: 11.5px; /* Reduced for A5 */
   font-weight: 800;
   color: #2F3E33;
-  margin: 6px 0 0 0;
+  margin: 3px 0 0 0;
   font-family: 'Outfit', sans-serif;
 }
 
 .invoice-date-text {
-  font-size: 11px; /* Reduced for A5 */
+  font-size: 9.5px; /* Reduced for A5 */
   color: #6D8271;
-  margin: 3px 0 0 0;
+  margin: 2px 0 0 0;
 }
 
 .invoice-billing-details {
@@ -4950,4 +4870,55 @@ body.dark-theme select.form-control {
     margin-top: 10px;
   }
 }
+/* ---- Dense layout for prints with >3 items ---- */
+.invoice-print-container.dense-layout {
+  padding: 16px 20px 30px 20px !important;
+}
+
+.invoice-print-container.dense-layout .invoice-header-bar {
+  padding-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.invoice-print-container.dense-layout .invoice-billing-details {
+  margin-bottom: 10px;
+  padding: 8px 14px;
+}
+
+.invoice-print-container.dense-layout .invoice-table {
+  margin-bottom: 10px;
+}
+
+.invoice-print-container.dense-layout .invoice-table th {
+  padding: 5px 10px;
+  font-size: 9.5px;
+}
+
+.invoice-print-container.dense-layout .invoice-table td {
+  padding: 5px 10px;
+  font-size: 9.5px;
+}
+
+.invoice-print-container.dense-layout .invoice-summary-table {
+  font-size: 9.5px;
+}
+
+.invoice-print-container.dense-layout .invoice-summary-table td {
+  padding: 3px 0;
+}
+
+.invoice-print-container.dense-layout .invoice-terms-title {
+  font-size: 8.5px;
+  margin-bottom: 2px;
+}
+
+.invoice-print-container.dense-layout .invoice-terms-text {
+  font-size: 8.5px;
+  line-height: 1.35;
+}
+
+.invoice-print-container.dense-layout .print-watermark-logo {
+  opacity: 0.05;
+}
+
 /* End of stylesheet */

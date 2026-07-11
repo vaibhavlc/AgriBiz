@@ -795,7 +795,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? 'has-custom-watermark' : ''}`}>
+            <div className={`print-invoice-layout invoice-print-container ${selectedInvoice.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className="print-watermark-logo">
@@ -911,17 +911,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             {/* Bottom summary and remarks */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
               <div style={{ flex: 1, maxWidth: "55%" }}>
-                {settings.showTerms && (
-                  <>
-                    <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
-                    <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
-                      {selectedInvoice.notes || settings.defaultTerms || "Goods once sold are subject to standard industrial dealer warranties."}
-                    </p>
-                  </>
-                )}
                 {settings.showBankDetails && settings.bankName && (
-                  <div style={{ marginTop: "16px" }}>
-                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
+                  <div style={{ marginBottom: "8px" }}>
+                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
                     <p className="invoice-terms-text">
                       Bank: {settings.bankName} | A/c Name: {settings.accountHolderName}
                       <br />
@@ -930,6 +922,20 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       {settings.upiId && <><br />UPI ID: {settings.upiId}</>}
                     </p>
                   </div>
+                )}
+                {settings.showTerms && (settings.invoiceTerms || settings.defaultTerms) && (
+                  <>
+                    <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                    <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
+                      {settings.invoiceTerms || settings.defaultTerms}
+                    </p>
+                  </>
+                )}
+                {selectedInvoice.notes && (
+                  <>
+                    <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>NOTE:</h5>
+                    <p className="invoice-terms-text">{selectedInvoice.notes}</p>
+                  </>
                 )}
               </div>
               <div style={{ minWidth: "280px" }}>
@@ -983,9 +989,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
             {/* SVG Illustration and Signature */}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "20px" }}>
-              <div style={{ flex: 1, maxWidth: "70%" }}>
+              <div style={{ flex: 1, maxWidth: "45%" }}>
                 {/* Custom Inline SVG Illustration */}
-                <svg viewBox="0 0 500 110" width="100%" height="60" style={{ display: "block" }}>
+                <svg viewBox="0 0 500 110" width="100%" height={selectedInvoice.items.length > 3 ? "40" : "60"} style={{ display: "block" }}>
                   {/* Ground line */}
                   <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
                   
@@ -1076,18 +1082,40 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
                 </svg>
               </div>
-              <div style={{ textAlign: "center", minWidth: "150px" }}>
-                <div style={{ height: "45px" }}></div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "12px", fontWeight: 700, color: "#4E6C50" }}>
-                  Authorized Signatory
-                </p>
+              <div style={{ display: "flex", gap: "28px", alignItems: "flex-end", flexShrink: 0 }}>
+                <div style={{ textAlign: "center", minWidth: "110px" }}>
+                  <div style={{ height: selectedInvoice.items.length > 3 ? "25px" : "35px" }}></div>
+                  <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                    Receiver's Signature
+                  </p>
+                </div>
+                <div style={{ textAlign: "center", minWidth: "110px" }}>
+                  <div style={{ height: selectedInvoice.items.length > 3 ? "25px" : "35px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                    {settings.signature ? (
+                      <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedInvoice.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                    ) : null}
+                  </div>
+                  <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                    Authorized Signatory
+                  </p>
+                </div>
               </div>
+              {settings.footerMessage && (
+                <div style={{
+                  position: "absolute",
+                  bottom: selectedInvoice.items.length > 3 ? "10px" : "14px",
+                  left: selectedInvoice.items.length > 3 ? "20px" : "24px",
+                  right: selectedInvoice.items.length > 3 ? "20px" : "24px",
+                  textAlign: "center",
+                  fontSize: selectedInvoice.items.length > 3 ? "9px" : "10px",
+                  color: "var(--text-muted)",
+                  borderTop: "1px dashed var(--border-color)",
+                  paddingTop: selectedInvoice.items.length > 3 ? "4px" : "8px"
+                }}>
+                  {settings.footerMessage}
+                </div>
+              )}
             </div>
-            {settings.footerMessage && (
-              <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "24px", borderTop: "1px dashed var(--border-color)", paddingTop: "12px" }}>
-                {settings.footerMessage}
-              </div>
-            )}
           </div>
         </div>
       ) : (
@@ -1164,7 +1192,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? 'has-custom-watermark' : ''}`}>
+            <div className={`print-invoice-layout invoice-print-container ${selectedQuotation.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className="print-watermark-logo">
@@ -1213,7 +1241,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>SALES ESTIMATE</h1>
+                  <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>ESTIMATE</h1>
                   <h3 className="invoice-number-text">#{selectedQuotation.quotationNumber}</h3>
                   <p className="invoice-date-text">Date: {formatDate(selectedQuotation.date)}</p>
                 </div>
@@ -1275,17 +1303,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               {/* Bottom summary and remarks */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
                 <div style={{ flex: 1, maxWidth: "55%" }}>
-                  {settings.showTerms && (
-                    <>
-                      <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
-                      <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
-                        {selectedQuotation.notes || settings.defaultTerms || "This is a commercial sales estimate, not a tax invoice."}
-                      </p>
-                    </>
-                  )}
                   {settings.showBankDetails && settings.bankName && (
-                    <div style={{ marginTop: "16px" }}>
-                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>PAYMENT DETAILS:</h5>
+                    <div style={{ marginBottom: "8px" }}>
+                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
                       <p className="invoice-terms-text">
                         Bank: {settings.bankName} | A/c Name: {settings.accountHolderName}
                         <br />
@@ -1294,6 +1314,20 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         {settings.upiId && <><br />UPI ID: {settings.upiId}</>}
                       </p>
                     </div>
+                  )}
+                  {settings.showTerms && (settings.quotationTerms || settings.defaultTerms) && (
+                    <>
+                      <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                      <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
+                        {settings.quotationTerms || settings.defaultTerms}
+                      </p>
+                    </>
+                  )}
+                  {selectedQuotation.notes && (
+                    <>
+                      <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>NOTE:</h5>
+                      <p className="invoice-terms-text">{selectedQuotation.notes}</p>
+                    </>
                   )}
                 </div>
                 <div style={{ minWidth: "280px" }}>
@@ -1337,9 +1371,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
               {/* SVG Illustration and Signature */}
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "20px" }}>
-                <div style={{ flex: 1, maxWidth: "70%" }}>
+                <div style={{ flex: 1, maxWidth: "45%" }}>
                   {/* Custom Inline SVG Illustration */}
-                  <svg viewBox="0 0 500 110" width="100%" height="60" style={{ display: "block" }}>
+                  <svg viewBox="0 0 500 110" width="100%" height={selectedQuotation.items.length > 3 ? "40" : "60"} style={{ display: "block" }}>
                     {/* Ground line */}
                     <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
                     
@@ -1430,15 +1464,37 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <path d="M 474 35 Q 478 31 482 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
                   </svg>
                 </div>
-                <div style={{ textAlign: "center", minWidth: "150px" }}>
-                  <div style={{ height: "45px" }}></div>
-                  <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "12px", fontWeight: 700, color: "#4E6C50" }}>
-                    Authorized Signatory
-                  </p>
+                <div style={{ display: "flex", gap: "28px", alignItems: "flex-end", flexShrink: 0 }}>
+                  <div style={{ textAlign: "center", minWidth: "110px" }}>
+                    <div style={{ height: selectedQuotation.items.length > 3 ? "25px" : "35px" }}></div>
+                    <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                      Receiver's Signature
+                    </p>
+                  </div>
+                  <div style={{ textAlign: "center", minWidth: "110px" }}>
+                    <div style={{ height: selectedQuotation.items.length > 3 ? "25px" : "35px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+                      {settings.signature ? (
+                        <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedQuotation.items.length > 3 ? "22px" : "30px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
+                      ) : null}
+                    </div>
+                    <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
+                      Authorized Signatory
+                    </p>
+                  </div>
                 </div>
               </div>
               {settings.footerMessage && (
-                <div style={{ textAlign: "center", fontSize: "11px", color: "var(--text-muted)", marginTop: "24px", borderTop: "1px dashed var(--border-color)", paddingTop: "12px" }}>
+                <div style={{
+                  position: "absolute",
+                  bottom: selectedQuotation.items.length > 3 ? "10px" : "14px",
+                  left: selectedQuotation.items.length > 3 ? "20px" : "24px",
+                  right: selectedQuotation.items.length > 3 ? "20px" : "24px",
+                  textAlign: "center",
+                  fontSize: selectedQuotation.items.length > 3 ? "9px" : "10px",
+                  color: "var(--text-muted)",
+                  borderTop: "1px dashed var(--border-color)",
+                  paddingTop: selectedQuotation.items.length > 3 ? "4px" : "8px"
+                }}>
                   {settings.footerMessage}
                 </div>
               )}
