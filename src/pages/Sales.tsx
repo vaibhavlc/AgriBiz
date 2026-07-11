@@ -914,31 +914,27 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {settings.showBankDetails && settings.bankName && (
                   <div style={{ marginBottom: "8px" }}>
                     <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "4px" }}>
-                      <div style={{ display: "flex", gap: "16px" }}>
-                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
-                        </div>
-                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
-                        </div>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
                       </div>
-                      <div style={{ display: "flex", gap: "16px" }}>
-                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
-                        </div>
-                        <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
-                        </div>
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
                       </div>
-                      {(settings.branchName || settings.upiId) && (
-                        <div style={{ display: "flex", gap: "16px" }}>
-                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                            {settings.branchName ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}</> : null}
-                          </div>
-                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                            {settings.upiId ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}</> : null}
-                          </div>
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
+                      </div>
+                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                      </div>
+                      {settings.branchName && (
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}
+                        </div>
+                      )}
+                      {settings.upiId && (
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}
                         </div>
                       )}
                     </div>
@@ -1294,31 +1290,27 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   {settings.showBankDetails && settings.bankName && (
                     <div style={{ marginBottom: "8px" }}>
                       <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "2px", marginTop: "4px" }}>
-                        <div style={{ display: "flex", gap: "16px" }}>
-                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
-                          </div>
-                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
-                          </div>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "3px", marginTop: "4px" }}>
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}
                         </div>
-                        <div style={{ display: "flex", gap: "16px" }}>
-                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
-                          </div>
-                          <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
-                          </div>
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
                         </div>
-                        {(settings.branchName || settings.upiId) && (
-                          <div style={{ display: "flex", gap: "16px" }}>
-                            <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                              {settings.branchName ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}</> : null}
-                            </div>
-                            <div style={{ flex: 1, fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "normal" }}>
-                              {settings.upiId ? <><span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}</> : null}
-                            </div>
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
+                        </div>
+                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                        </div>
+                        {settings.branchName && (
+                          <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>Branch:</span> {settings.branchName}
+                          </div>
+                        )}
+                        {settings.upiId && (
+                          <div style={{ fontSize: "9.5px", color: "var(--text-muted)" }}>
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI ID:</span> {settings.upiId}
                           </div>
                         )}
                       </div>
