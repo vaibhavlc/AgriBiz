@@ -1002,16 +1002,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             {/* Terms and Summary block */}
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: '20px', marginTop: 'auto' }}>
               <div style={{ flex: 1, maxWidth: '55%' }}>
-                {(settings.purchaseTerms || settings.defaultTerms) && (
-                  <>
-                    <h4 className="invoice-terms-title">TERMS & CONDITIONS:</h4>
-                    <p className="invoice-terms-text" style={{ whiteSpace: 'pre-wrap' }}>
-                      {settings.purchaseTerms || settings.defaultTerms}
-                    </p>
-                  </>
-                )}
                 {selectedPurchase.notes && (
-                  <div style={{ marginTop: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
+                  <div style={{ marginBottom: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
                     <h4 className="invoice-terms-title" style={{ borderBottom: '1px dashed rgba(78, 108, 80, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>VOUCHER DETAILS:</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: selectedPurchase.items.length > 3 ? '9px' : '10.5px' }}>
                       {supplierInvoiceNo && (
@@ -1052,6 +1044,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       )}
                     </div>
                   </div>
+                )}
+                {(settings.purchaseTerms || settings.defaultTerms) && (
+                  <>
+                    <h4 className="invoice-terms-title">TERMS & CONDITIONS:</h4>
+                    <p className="invoice-terms-text" style={{ whiteSpace: 'pre-wrap' }}>
+                      {settings.purchaseTerms || settings.defaultTerms}
+                    </p>
+                  </>
                 )}
               </div>
               <div style={{ flex: 1, maxWidth: '42%' }}>
