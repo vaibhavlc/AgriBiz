@@ -889,7 +889,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
         {/* Voucher layout */}
         <div className="invoice-mockup-wrapper">
-          <div className={`print-invoice-layout invoice-print-container ${selectedPurchase.items.length > 3 ? "dense-layout" : ""} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+          <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
             {/* Dynamic Logo Watermark in Center */}
             {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
               <div className="print-watermark-logo">
@@ -1095,7 +1095,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             {/* Custom SVG Illustration and signature */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: '16px' }}>
               <div style={{ flex: 1, maxWidth: '45%' }}>
-                <svg viewBox="0 0 500 110" width="100%" height={selectedPurchase.items.length > 3 ? "40" : "60"} style={{ display: "block" }}>
+                <svg viewBox="0 0 500 110" width="100%" height="40" style={{ display: "block" }}>
                   {/* Ground line */}
                   <line x1="0" y1="100" x2="500" y2="100" stroke="#EAE3D2" strokeWidth="2.5" />
                   
@@ -1188,15 +1188,15 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               </div>
               <div style={{ display: 'flex', gap: '28px', alignItems: 'flex-end', flexShrink: 0 }}>
                 <div style={{ textAlign: 'center', minWidth: '110px' }}>
-                  <div style={{ height: selectedPurchase.items.length > 3 ? '25px' : '35px' }}></div>
+                  <div style={{ height: '25px' }}></div>
                   <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
                     Receiver's Signature
                   </p>
                 </div>
                 <div style={{ textAlign: 'center', minWidth: '110px' }}>
-                  <div style={{ height: selectedPurchase.items.length > 3 ? '25px' : '35px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+                  <div style={{ height: '25px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
                     {settings.signature ? (
-                      <img src={settings.signature} alt="E-Signature" style={{ maxHeight: selectedPurchase.items.length > 3 ? '22px' : '30px', maxWidth: '100px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                      <img src={settings.signature} alt="E-Signature" style={{ maxHeight: '22px', maxWidth: '100px', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                     ) : null}
                   </div>
                   <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
@@ -1205,6 +1205,20 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 </div>
               </div>
             </div>
+            {settings.footerMessage && (
+              <div style={{
+                textAlign: "center",
+                fontSize: "9px",
+                color: "var(--text-muted)",
+                borderTop: "1px dashed var(--border-color)",
+                paddingTop: "4px",
+                marginTop: "8px",
+                width: "100%",
+                flexShrink: 0
+              }}>
+                {settings.footerMessage}
+              </div>
+            )}
           </div>
         </div>
       </div>
