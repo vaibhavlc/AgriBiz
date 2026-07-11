@@ -913,15 +913,15 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ flex: 1, maxWidth: "55%" }}>
                 {settings.showBankDetails && settings.bankName && (
                   <div style={{ marginBottom: "8px" }}>
-                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
+                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px", fontSize: selectedInvoice.items.length > 3 ? "8px" : "11px" }}>BANK DETAILS:</h5>
                     <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: selectedInvoice.items.length > 3 ? "9px" : "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
                       </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: selectedInvoice.items.length > 3 ? "9px" : "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
                       </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                      <div style={{ fontSize: selectedInvoice.items.length > 3 ? "9px" : "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
                         <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
                         <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
@@ -937,16 +937,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 )}
                 {settings.showTerms && (settings.invoiceTerms || settings.defaultTerms) && (
                   <>
-                    <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
-                    <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
+                    <h5 className="invoice-terms-title" style={{ fontSize: selectedInvoice.items.length > 3 ? "8px" : "10.5px" }}>TERMS & CONDITIONS:</h5>
+                    <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap", fontSize: selectedInvoice.items.length > 3 ? "7.8px" : "10px", lineHeight: 1.25 }}>
                       {settings.invoiceTerms || settings.defaultTerms}
                     </p>
                   </>
                 )}
                 {selectedInvoice.notes && (
                   <>
-                    <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>NOTE:</h5>
-                    <p className="invoice-terms-text">{selectedInvoice.notes}</p>
+                    <h5 className="invoice-terms-title" style={{ marginTop: "8px", fontSize: selectedInvoice.items.length > 3 ? "8px" : "10.5px" }}>NOTE:</h5>
+                    <p className="invoice-terms-text" style={{ fontSize: selectedInvoice.items.length > 3 ? "7.8px" : "10px" }}>{selectedInvoice.notes}</p>
                   </>
                 )}
               </div>
@@ -1284,15 +1284,15 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ flex: 1, maxWidth: "55%" }}>
                   {settings.showBankDetails && settings.bankName && (
                     <div style={{ marginBottom: "8px" }}>
-                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
+                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px", fontSize: selectedQuotation.items.length > 3 ? "8px" : "11px" }}>BANK DETAILS:</h5>
                       <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: selectedQuotation.items.length > 3 ? "9px" : "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
                         </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: selectedQuotation.items.length > 3 ? "9px" : "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
                         </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                        <div style={{ fontSize: selectedQuotation.items.length > 3 ? "9px" : "11.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
                           <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
                           <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
@@ -1308,16 +1308,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   )}
                   {settings.showTerms && (settings.quotationTerms || settings.defaultTerms) && (
                     <>
-                      <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
-                      <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
+                      <h5 className="invoice-terms-title" style={{ fontSize: selectedQuotation.items.length > 3 ? "8px" : "10.5px" }}>TERMS & CONDITIONS:</h5>
+                      <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap", fontSize: selectedQuotation.items.length > 3 ? "7.8px" : "10px", lineHeight: 1.25 }}>
                         {settings.quotationTerms || settings.defaultTerms}
                       </p>
                     </>
                   )}
                   {selectedQuotation.notes && (
                     <>
-                      <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>NOTE:</h5>
-                      <p className="invoice-terms-text">{selectedQuotation.notes}</p>
+                      <h5 className="invoice-terms-title" style={{ marginTop: "8px", fontSize: selectedQuotation.items.length > 3 ? "8px" : "10.5px" }}>NOTE:</h5>
+                      <p className="invoice-terms-text" style={{ fontSize: selectedQuotation.items.length > 3 ? "7.8px" : "10px" }}>{selectedQuotation.notes}</p>
                     </>
                   )}
                 </div>
