@@ -520,7 +520,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </button>
             <div className="header-brand-container">
               {settings.showLogo && settings.logo ? (
-                <img src={settings.logo} alt="Logo" style={{ width: '32px', height: '32px', objectFit: 'contain', marginRight: '8px', borderRadius: '6px' }} />
+                <div className="header-logo-container">
+                  <img src={settings.logo} alt="Logo" />
+                </div>
               ) : (
                 <div className="header-brand-logo">
                   <Store size={18} />
