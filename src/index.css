@@ -3397,7 +3397,7 @@ body.dark-theme select.form-control {
   }
 }
 
-/* â”€â”€ Compact Modals on Small Viewports â”€â”€ */
+/* ── Compact Modals on Small Viewports ── */
 @media (max-width: 576px) {
   .modal-overlay {
     padding: 10px;
@@ -3413,29 +3413,44 @@ body.dark-theme select.form-control {
   }
 }
 
-/* â”€â”€ Dropdown Position Fixes on Mobile â”€â”€ */
-@media (max-width: 576px) {
+/* ── Dropdown Position Fixes on Mobile ── */
+@media (max-width: 768px) {
   .notification-dropdown {
     position: fixed !important;
-    top: 66px !important;
-    left: 10px !important;
-    right: 10px !important;
-    width: calc(100vw - 20px) !important;
+    top: 78px !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: calc(100vw - 32px) !important;
     max-width: none !important;
     z-index: 1001 !important;
     transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
     animation: slideDownFade 0.25s ease-out forwards !important;
   }
   .profile-dropdown {
     position: fixed !important;
-    top: 66px !important;
-    left: 10px !important;
-    right: 10px !important;
-    width: calc(100vw - 20px) !important;
+    top: 78px !important;
+    left: 16px !important;
+    right: 16px !important;
+    width: calc(100vw - 32px) !important;
     max-width: none !important;
     z-index: 1001 !important;
     transform: none !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
     animation: slideDownFade 0.25s ease-out forwards !important;
+  }
+}
+
+@keyframes slideDownFade {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
