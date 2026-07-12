@@ -21,7 +21,7 @@
   --bg-card: #ffffff;
   --card-bg: #ffffff;
   --bg-header: #ffffff;
-  --bg-header-glass: rgba(255, 255, 255, 0.95);
+  --bg-header-glass: rgba(255, 255, 255, 0.98);
   --bg-input: #ffffff;
   
   --border-color: #e2e8f0;
@@ -75,7 +75,7 @@ body.dark-theme {
   --bg-card: #111827;
   --card-bg: #111827;
   --bg-header: #111827;
-  --bg-header-glass: rgba(17, 24, 39, 0.95);
+  --bg-header-glass: rgba(17, 24, 39, 0.98);
   --bg-input: #1f2937;
   
   --border-color: #1f2937;
