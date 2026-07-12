@@ -715,6 +715,8 @@ body.dark-theme .prem-live-dot {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   height: 60px;
+  min-height: 60px;
+  max-height: 60px;
   padding: 0 24px;
   display: flex;
   justify-content: space-between;
@@ -725,6 +727,7 @@ body.dark-theme .prem-live-dot {
   box-shadow: var(--header-shadow);
   transition: all var(--transition-normal);
   animation: headerSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  overflow: hidden;
 }
 
 .header-left,
@@ -2609,9 +2612,12 @@ body.dark-theme select.form-control {
   }
 
   .profile-trigger {
-    padding: 4px !important;
+    padding: 4px 6px !important;
     background: none !important;
     box-shadow: none !important;
+    height: 44px !important;
+    display: flex !important;
+    align-items: center !important;
   }
 
   .profile-trigger .profile-details {
@@ -2620,6 +2626,19 @@ body.dark-theme select.form-control {
 
   .profile-trigger .profile-chevron {
     display: none !important;
+  }
+
+  .avatar-circle {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 11px !important;
+  }
+
+  .status-indicator {
+    width: 8px !important;
+    height: 8px !important;
+    bottom: 0px !important;
+    right: 0px !important;
   }
   
   .content-body {
