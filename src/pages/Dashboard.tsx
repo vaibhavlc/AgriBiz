@@ -641,12 +641,12 @@ export const Dashboard: React.FC = () => {
                 style={{ width: '56px', height: '56px', objectFit: 'contain', borderRadius: '10px', flexShrink: 0 }} 
               />
             )}
-            <div style={{ minWidth: 0 }}>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+            <div style={{ minWidth: 0, flex: 1 }}>
+              <h2 className="dashboard-title-text" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
                 {settings.businessName || 'Business Intelligence Dashboard'}
               </h2>
-              <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
-                Welcome back, {settings.ownerName || 'Partner'} • Real-time summaries calculated from local ledger.
+              <p className="dashboard-welcome-text" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
+                Welcome back, {settings.ownerName || 'Partner'}
               </p>
             </div>
           </div>

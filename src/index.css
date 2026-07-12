@@ -2683,6 +2683,14 @@ body.dark-theme select.form-control {
     bottom: 0px !important;
     right: 0px !important;
   }
+
+  .dashboard-title-text,
+  .dashboard-welcome-text {
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    display: block !important;
+  }
   
   .content-body {
     padding: 16px;
