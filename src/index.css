@@ -715,8 +715,6 @@ body.dark-theme .prem-live-dot {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   height: 60px;
-  min-height: 60px;
-  max-height: 60px;
   padding: 0 24px;
   display: flex;
   justify-content: space-between;
@@ -727,7 +725,6 @@ body.dark-theme .prem-live-dot {
   box-shadow: var(--header-shadow);
   transition: all var(--transition-normal);
   animation: headerSlideDown 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  overflow: hidden;
 }
 
 .header-left,
@@ -828,6 +825,10 @@ body.dark-theme .prem-live-dot {
   font-weight: 850;
   font-size: 18px;
   color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
 }
 
 .brand-badge {
@@ -2578,6 +2579,11 @@ body.dark-theme select.form-control {
     align-items: center;
   }
 
+  .brand-name {
+    max-width: 90px !important;
+    font-size: 15px !important;
+  }
+
   .header-middle {
     display: none !important;
   }
@@ -2612,12 +2618,13 @@ body.dark-theme select.form-control {
   }
 
   .profile-trigger {
-    padding: 4px 6px !important;
+    padding: 4px !important;
     background: none !important;
     box-shadow: none !important;
-    height: 44px !important;
+    height: 38px !important;
     display: flex !important;
     align-items: center !important;
+    justify-content: center !important;
   }
 
   .profile-trigger .profile-details {

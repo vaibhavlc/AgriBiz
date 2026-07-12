@@ -526,7 +526,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <Store size={18} />
                 </div>
               )}
-              <span className="brand-name" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '180px' }}>{settings.businessName || 'AgriBiz'}</span>
+              <span className="brand-name">{settings.businessName || 'AgriBiz'}</span>
               <span className="brand-badge desktop-only">{getPageTitle()}</span>
             </div>
           </div>
