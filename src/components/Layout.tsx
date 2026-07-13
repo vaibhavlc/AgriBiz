@@ -713,9 +713,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 className={`lang-selector-btn${isLangDropdownOpen ? ' active' : ''}`}
                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
                 title="Select Language"
-                style={{ padding: '9px 10px' }}
               >
-                <Globe size={16} className="lang-selector-globe" style={{ margin: 0 }} />
+                <Globe size={18} className="lang-selector-globe" style={{ margin: 0 }} />
               </button>
               {isLangDropdownOpen && (
                 <div className="lang-dropdown animate-fade-in-scale">

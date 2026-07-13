@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Store,
   Calendar,
+  TrendingUp,
 } from 'lucide-react';
 
 interface InvoiceItemLocal {
@@ -2688,7 +2689,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Segmented Tab Control */}
-      <div className="no-print" style={{ 
+      <div className="no-print sales-segmented-tabs" style={{ 
         display: 'flex', 
         gap: '8px', 
         borderBottom: '1px solid var(--border-color)', 
@@ -2758,6 +2759,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Total billing revenue
               </span>
             </div>
+            <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
           </div>
           <div className="kpi-card" style={{ cursor: 'default' }}>
             <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2769,6 +2771,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Cash and digital collection
               </span>
             </div>
+            <div className="kpi-icon-container emerald"><Plus size={20} /></div>
           </div>
           <div className="kpi-card" style={{ cursor: 'default' }}>
             <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2780,6 +2783,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Accounts receivable dues
               </span>
             </div>
+            <div className="kpi-icon-container amber"><AlertTriangle size={20} /></div>
           </div>
           <div className="kpi-card" style={{ cursor: 'default' }}>
             <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2791,6 +2795,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Total sales transactions
               </span>
             </div>
+            <div className="kpi-icon-container blue"><FileText size={20} /></div>
           </div>
         </div>
       ) : (
@@ -2805,6 +2810,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Active quoted value
               </span>
             </div>
+            <div className="kpi-icon-container blue"><FileText size={20} /></div>
           </div>
           <div className="kpi-card" style={{ cursor: 'default' }}>
             <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2816,6 +2822,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Estimates won or converted
               </span>
             </div>
+            <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
           </div>
           <div className="kpi-card" style={{ cursor: 'default' }}>
             <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2827,6 +2834,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Drafts and sent estimates
               </span>
             </div>
+            <div className="kpi-icon-container amber"><Calendar size={20} /></div>
           </div>
           <div className="kpi-card" style={{ cursor: 'default' }}>
             <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2838,6 +2846,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 Total quotations logged
               </span>
             </div>
+            <div className="kpi-icon-container blue"><FileText size={20} /></div>
           </div>
         </div>
       )}
@@ -2914,7 +2923,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         <div className="filters-group-two">
           {/* Sort Dropdown */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="sales-sort-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
               <ArrowUpDown size={13} />
             </span>
@@ -2929,11 +2938,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <option value="amount-desc">Amount: High to Low</option>
               <option value="amount-asc">Amount: Low to High</option>
             </select>
-            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
           </div>
 
           {/* Action button */}
@@ -3133,11 +3137,22 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px' }}>
                       <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(inv.date)}</span>
                       <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>{inv.paymentStatus}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Items:</span>
+                      {inv.items && inv.items.length > 0 ? (
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {inv.items[0].productName}
+                          {inv.items.length > 1 ? ` +${inv.items.length - 1}` : ''}
+                        </span>
+                      ) : (
+                        <span>No items</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '6px', paddingTop: '6px' }}>
                       <span>Total: {formatINR(inv.grandTotal)}</span>
                       <span style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
                         Due: {formatINR(inv.balanceDue)}
@@ -3377,7 +3392,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px' }}>
                       <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(q.date)}</span>
                       <span className={`badge ${
                         q.status === 'Converted' ? 'badge-success' : 
@@ -3386,7 +3401,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         'badge-secondary'
                       }`}>{q.status}</span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>Items:</span>
+                      {q.items && q.items.length > 0 ? (
+                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                          {q.items[0].productName}
+                          {q.items.length > 1 ? ` +${q.items.length - 1}` : ''}
+                        </span>
+                      ) : (
+                        <span>No items</span>
+                      )}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '6px', paddingTop: '6px' }}>
                       <span>Total Value: {formatINR(q.grandTotal)}</span>
                       <span style={{ color: 'var(--text-muted)' }}>
                         Valid: {formatDate(q.validUntil)}

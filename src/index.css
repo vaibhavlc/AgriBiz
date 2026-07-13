@@ -2315,7 +2315,8 @@ body.dark-theme select.form-control {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
+  width: 40px;
+  height: 40px;
   border-radius: 8px;
   border: none;
   background: transparent;
@@ -2339,7 +2340,7 @@ body.dark-theme .lang-selector-btn:hover {
 }
 
 .lang-selector-globe {
-  font-size: 16px;
+  font-size: 18px;
   flex-shrink: 0;
 }
 
@@ -3020,6 +3021,35 @@ body.dark-theme .lang-selector-btn:hover {
   }
   to {
     transform: translateX(0) translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .toast-container {
+    left: 16px;
+    right: auto !important;
+    top: 80px !important;
+    bottom: auto !important;
+    align-items: flex-start;
+  }
+
+  .toast {
+    min-width: 240px;
+    width: auto;
+    max-width: calc(100vw - 32px);
+    box-sizing: border-box;
+    animation: toastSlideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes toastSlideInLeft {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
     opacity: 1;
   }
 }
@@ -3846,46 +3876,99 @@ body.dark-theme .lang-selector-btn:hover {
 
 @media (max-width: 640px) {
   .filters-row-unified {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 8px;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
   }
 
-  .filters-group-one {
-    width: 100%;
-    gap: 8px;
-  }
-
+  .filters-group-one,
   .filters-group-two {
-    width: 100%;
-    gap: 8px;
-    justify-content: space-between;
+    display: contents !important;
   }
 
-  .filters-group-two > select,
-  .filters-group-two > div,
-  .filters-group-two > button,
-  .filters-group-two > .btn {
-    flex: 1;
-    min-width: 0;
-    width: 100%;
+  /* Equal sizing for all four elements (Search, Status Filter, Sort select, Action button) */
+  .sales-search-wrapper,
+  .mobile-status-select-wrapper,
+  .sales-sort-wrapper,
+  .filters-row-unified button.btn,
+  .filters-row-unified .btn {
+    width: 100% !important;
+    height: 40px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
   }
 
-  /* Make sure select wrapper input also behaves correctly */
-  .filters-group-two select.filter-select {
-    width: 100%;
-    padding: 8px 32px 8px 12px;
-    font-size: 13px;
+  /* Make sure internal input/select/button elements behave correctly */
+  .sales-search-wrapper input {
+    height: 40px !important;
+    line-height: 40px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    padding: 0 12px 0 36px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .mobile-status-select-wrapper select {
+    width: 100% !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    box-sizing: border-box !important;
+    padding: 0 28px 0 12px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .sales-sort-wrapper select {
+    width: 100% !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    box-sizing: border-box !important;
+    padding: 0 28px 0 36px !important; /* 36px left padding clears the Lucide sort icon */
+    font-size: 12px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .filters-row-unified button.btn,
+  .filters-row-unified .btn {
+    justify-content: center !important;
+    font-size: 13px !important;
+    border-radius: 10px !important;
+    height: 40px !important;
+    display: inline-flex !important;
+    width: 100% !important;
+  }
+
+  .sales-segmented-tabs {
+    display: flex !important;
+    gap: 8px !important;
+    width: 100% !important;
+    grid-column: span 2 !important; /* Spans across full width above grid */
   }
   
-  .filters-group-two .btn,
-  .filters-group-two button {
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    padding: 9px 16px;
-    font-size: 13px;
-    height: 38px;
+  .sales-segmented-tabs button {
+    flex: 1 !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 10px 8px !important;
+    font-size: 13px !important;
+    height: 42px !important;
+    box-sizing: border-box !important;
   }
 
   .segmented-control-inventory {
@@ -4973,22 +5056,6 @@ body.dark-theme .lang-selector-btn:hover {
   
   .mobile-status-select-wrapper {
     display: block !important;
-    width: 50% !important;
-    flex: 1 1 50% !important;
-    box-sizing: border-box !important;
-  }
-  
-  .sales-search-wrapper {
-    width: 50% !important;
-    flex: 1 1 50% !important;
-    box-sizing: border-box !important;
-  }
-
-  .mobile-status-select-wrapper .status-select-field {
-    width: 100% !important;
-    height: 38px !important;
-    font-size: 13px !important;
-    padding: 8px 32px 8px 12px !important;
   }
 }
 
