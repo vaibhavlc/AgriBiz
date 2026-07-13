@@ -81,6 +81,8 @@ export const Settings: React.FC = () => {
   // Application Preferences
   const [currencySymbol, setCurrencySymbol] = useState(settings.currencySymbol || '₹');
   const [dateFormat, setDateFormat] = useState(settings.dateFormat || 'DD/MM/YYYY');
+  const [showLowStockAlert, setShowLowStockAlert] = useState(settings.showLowStockAlert !== false);
+  const [showOutOfStockAlert, setShowOutOfStockAlert] = useState(settings.showOutOfStockAlert !== false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,6 +140,8 @@ export const Settings: React.FC = () => {
       showTerms,
       currencySymbol,
       dateFormat,
+      showLowStockAlert,
+      showOutOfStockAlert,
       theme: settings.theme,
       address: legacyAddress,
       signature: savedSignature,
@@ -1019,6 +1023,42 @@ export const Settings: React.FC = () => {
                     <div>
                       <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show Terms & Conditions</div>
                       <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prints default terms on invoice footer segments</div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Warning & Alert Preferences */}
+              <div className="card animate-fade-in">
+                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                  <Eye size={20} style={{ color: 'var(--primary)' }} />
+                  <span>Dashboard Alert Settings</span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={showLowStockAlert} 
+                      onChange={(e) => setShowLowStockAlert(e.target.checked)} 
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Below Safety Limit Warning</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Displays an alert when products fall below their minimum safety stock level</div>
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
+                    <input 
+                      type="checkbox" 
+                      checked={showOutOfStockAlert} 
+                      onChange={(e) => setShowOutOfStockAlert(e.target.checked)} 
+                      style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Completely Out of Stock Warning</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Displays an alert when products reach a stock count of zero</div>
                     </div>
                   </label>
                 </div>

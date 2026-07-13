@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Clock,
   X,
+  Settings,
 } from 'lucide-react';
 
 interface AnimatedCounterProps {
@@ -194,6 +195,7 @@ export const Dashboard: React.FC = () => {
     setIsEnteringPurchase,
     showToast,
     settings,
+    updateSettings,
   } = useApp();
 
   // Filters State
@@ -202,6 +204,7 @@ export const Dashboard: React.FC = () => {
   const [activeKpiTab, setActiveKpiTab] = useState<'financial' | 'payments' | 'gst' | 'inventory'>('financial');
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'sales' | 'profit' | 'inventory' | 'entities'>('sales');
   const [isAlertDismissed, setIsAlertDismissed] = useState(false);
+  const [isAlertSettingsOpen, setIsAlertSettingsOpen] = useState(false);
   const lastRedirectQuery = useRef('');
 
   // Search Highlight Helper
@@ -601,28 +604,97 @@ export const Dashboard: React.FC = () => {
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Alerts Panel */}
-      {stats.lowStockCount > 0 && !isAlertDismissed && (
-        <div className="stock-warning-alert">
-          <div className="stock-warning-left">
-            <AlertTriangle size={18} />
-            <span style={{ fontSize: '13px' }}>
-              <strong>Inventory Warning:</strong> {stats.lowStockCount} products are below safety limits, and {stats.outOfStockCount} products are completely out of stock.
-            </span>
+      {(() => {
+        const isLowStockActive = settings.showLowStockAlert !== false && stats.lowStockCount > 0;
+        const isOutOfStockActive = settings.showOutOfStockAlert !== false && stats.outOfStockCount > 0;
+        const shouldShowAlert = (isLowStockActive || isOutOfStockActive) && !isAlertDismissed;
+
+        if (!shouldShowAlert) return null;
+
+        return (
+          <div className="stock-warning-alert">
+            <div className="stock-warning-left">
+              <AlertTriangle size={18} />
+              <span style={{ fontSize: '13px' }}>
+                <strong>Inventory Warning:</strong>{' '}
+                {isLowStockActive && isOutOfStockActive ? (
+                  `${stats.lowStockCount} products are below safety limits, and ${stats.outOfStockCount} products are completely out of stock.`
+                ) : isLowStockActive ? (
+                  `${stats.lowStockCount} products are below safety limits.`
+                ) : (
+                  `${stats.outOfStockCount} products are completely out of stock.`
+                )}
+              </span>
+            </div>
+            <div className="stock-warning-right" style={{ position: 'relative' }}>
+              <button className="alert-action-btn" onClick={() => setCurrentTab('inventory')} style={{ fontSize: '12px', padding: '6px 12px' }}>
+                Reorder Stock
+              </button>
+              
+              <button 
+                type="button"
+                className="alert-settings-btn"
+                onClick={() => setIsAlertSettingsOpen(!isAlertSettingsOpen)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--color-danger-dark)',
+                  cursor: 'pointer',
+                  padding: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  borderRadius: '50%',
+                  transition: 'background-color 0.2s',
+                }}
+                title="Alert settings"
+              >
+                <Settings size={16} />
+              </button>
+
+              {isAlertSettingsOpen && (
+                <div className="alert-settings-popover">
+                  <div className="alert-settings-header">
+                    <span>Warning Settings</span>
+                    <button type="button" onClick={() => setIsAlertSettingsOpen(false)}>×</button>
+                  </div>
+                  <div className="alert-settings-body">
+                    <label className="alert-settings-option">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.showLowStockAlert !== false}
+                        onChange={(e) => updateSettings({
+                          ...settings,
+                          showLowStockAlert: e.target.checked
+                        })}
+                      />
+                      <span>Safety Limit Warning ({stats.lowStockCount})</span>
+                    </label>
+                    <label className="alert-settings-option">
+                      <input 
+                        type="checkbox" 
+                        checked={settings.showOutOfStockAlert !== false}
+                        onChange={(e) => updateSettings({
+                          ...settings,
+                          showOutOfStockAlert: e.target.checked
+                        })}
+                      />
+                      <span>Out of Stock Warning ({stats.outOfStockCount})</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              <button 
+                onClick={() => setIsAlertDismissed(true)} 
+                style={{ background: 'none', border: 'none', color: 'var(--color-danger-dark)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
+                title="Dismiss warning"
+              >
+                <X size={16} />
+              </button>
+            </div>
           </div>
-          <div className="stock-warning-right">
-            <button className="alert-action-btn" onClick={() => setCurrentTab('inventory')} style={{ fontSize: '12px', padding: '6px 12px' }}>
-              Reorder Stock
-            </button>
-            <button 
-              onClick={() => setIsAlertDismissed(true)} 
-              style={{ background: 'none', border: 'none', color: 'var(--color-danger-dark)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-              title="Dismiss warning"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-      )}
+        );
+      })()}
       {/* Date Filter & Title Toolbar */}
       <div 
         style={{ 

@@ -193,6 +193,10 @@ export interface BusinessSettings {
   currencySymbol: string;
   dateFormat: string;
 
+  // Alert Settings
+  showLowStockAlert?: boolean;
+  showOutOfStockAlert?: boolean;
+
   // Legacy fallback to prevent TS issues in other files before refactoring
   address: string;
 }

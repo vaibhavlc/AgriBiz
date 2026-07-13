@@ -182,12 +182,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           const nextIndex = currentIndex + 1;
           if (nextIndex < orderedTabs.length) {
             handleTabChange(orderedTabs[nextIndex]);
+          } else {
+            handleTabChange(orderedTabs[0]); // Wrap last -> first
           }
         } else {
           // Swiped Right -> Previous Tab
-          const prevIndex = currentIndex - 1;
-          if (prevIndex >= 0) {
-            handleTabChange(orderedTabs[prevIndex]);
+          if (currentIndex === orderedTabs.length - 1) {
+            // From last page on right swipe, go to first page
+            handleTabChange(orderedTabs[0]);
+          } else {
+            const prevIndex = currentIndex - 1;
+            if (prevIndex >= 0) {
+              handleTabChange(orderedTabs[prevIndex]);
+            } else {
+              handleTabChange(orderedTabs[orderedTabs.length - 1]); // Wrap first -> last
+            }
           }
         }
       }
