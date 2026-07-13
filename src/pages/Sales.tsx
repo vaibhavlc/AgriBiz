@@ -173,7 +173,7 @@ export const Sales: React.FC = () => {
         margin:       printTemplate === 'A5' ? 0 : 2,
         filename:     fileName,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
         jsPDF:        { 
           unit: 'mm', 
           format: printTemplate === 'A5' ? 'a5' : [80, 200], 

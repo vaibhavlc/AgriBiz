@@ -4413,17 +4413,17 @@ body.dark-theme .lang-selector-btn:hover {
   color: #EF4444;
 }
 
-@media (max-width: 640px) {
+@media screen and (max-width: 640px) {
   .invoice-mockup-wrapper {
     padding: 12px !important;
     border-radius: 12px !important;
   }
   
   .invoice-print-container {
-    padding: 16px !important;
-    width: 100% !important;
-    height: auto !important; /* Allow variable height on small screens */
-    max-width: 100% !important;
+    padding: 24px 24px 38px 24px !important;
+    width: 148mm !important;
+    height: 210mm !important;
+    box-sizing: border-box !important;
   }
   
   .invoice-logo-pill {
