@@ -158,17 +158,23 @@ export const Sales: React.FC = () => {
 
     const generatePDF = (html2pdfLib: any) => {
       const htmlElement = element as HTMLElement;
-      const originalZoom = htmlElement.style.zoom;
-      const originalTransform = htmlElement.style.transform;
-      const originalBorder = htmlElement.style.border;
-      const originalBoxShadow = htmlElement.style.boxShadow;
-      const originalBorderRadius = htmlElement.style.borderRadius;
       
-      htmlElement.style.setProperty('zoom', '1', 'important');
-      htmlElement.style.setProperty('transform', 'none', 'important');
-      htmlElement.style.setProperty('border', 'none', 'important');
-      htmlElement.style.setProperty('box-shadow', 'none', 'important');
-      htmlElement.style.setProperty('border-radius', '0', 'important');
+      // Clone the element to render in a separate, unconstrained desktop-sized layout behind the preview
+      const clone = htmlElement.cloneNode(true) as HTMLElement;
+      clone.style.setProperty('position', 'absolute', 'important');
+      clone.style.setProperty('left', '50%', 'important');
+      clone.style.setProperty('top', '50%', 'important');
+      clone.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+      clone.style.setProperty('z-index', '-1', 'important');
+      clone.style.setProperty('pointer-events', 'none', 'important');
+      clone.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+      clone.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+      clone.style.setProperty('zoom', '1', 'important');
+      clone.style.setProperty('box-shadow', 'none', 'important');
+      clone.style.setProperty('border', 'none', 'important');
+      clone.style.setProperty('border-radius', '0', 'important');
+      
+      htmlElement.parentNode?.appendChild(clone);
 
       const fileName = selectedInvoice 
         ? `${selectedInvoice.invoiceNumber}.pdf` 
@@ -186,21 +192,17 @@ export const Sales: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(element).set(opt).save().then(() => {
+      html2pdfLib().from(clone).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
-        htmlElement.style.border = originalBorder;
-        htmlElement.style.boxShadow = originalBoxShadow;
-        htmlElement.style.borderRadius = originalBorderRadius;
+        if (clone.parentNode) {
+          clone.parentNode.removeChild(clone);
+        }
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
-        htmlElement.style.border = originalBorder;
-        htmlElement.style.boxShadow = originalBoxShadow;
-        htmlElement.style.borderRadius = originalBorderRadius;
+        if (clone.parentNode) {
+          clone.parentNode.removeChild(clone);
+        }
       });
     };
 
@@ -271,17 +273,23 @@ export const Sales: React.FC = () => {
 
     const sharePDF = (html2pdfLib: any) => {
       const htmlElement = element as HTMLElement;
-      const originalZoom = htmlElement.style.zoom;
-      const originalTransform = htmlElement.style.transform;
-      const originalBorder = htmlElement.style.border;
-      const originalBoxShadow = htmlElement.style.boxShadow;
-      const originalBorderRadius = htmlElement.style.borderRadius;
       
-      htmlElement.style.setProperty('zoom', '1', 'important');
-      htmlElement.style.setProperty('transform', 'none', 'important');
-      htmlElement.style.setProperty('border', 'none', 'important');
-      htmlElement.style.setProperty('box-shadow', 'none', 'important');
-      htmlElement.style.setProperty('border-radius', '0', 'important');
+      // Clone the element to render in a separate, unconstrained desktop-sized layout behind the preview
+      const clone = htmlElement.cloneNode(true) as HTMLElement;
+      clone.style.setProperty('position', 'absolute', 'important');
+      clone.style.setProperty('left', '50%', 'important');
+      clone.style.setProperty('top', '50%', 'important');
+      clone.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
+      clone.style.setProperty('z-index', '-1', 'important');
+      clone.style.setProperty('pointer-events', 'none', 'important');
+      clone.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+      clone.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+      clone.style.setProperty('zoom', '1', 'important');
+      clone.style.setProperty('box-shadow', 'none', 'important');
+      clone.style.setProperty('border', 'none', 'important');
+      clone.style.setProperty('border-radius', '0', 'important');
+      
+      htmlElement.parentNode?.appendChild(clone);
 
       const opt = {
         margin:       0,
@@ -295,12 +303,10 @@ export const Sales: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
-        htmlElement.style.border = originalBorder;
-        htmlElement.style.boxShadow = originalBoxShadow;
-        htmlElement.style.borderRadius = originalBorderRadius;
+      html2pdfLib().from(clone).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
+        if (clone.parentNode) {
+          clone.parentNode.removeChild(clone);
+        }
         const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
         
         const nav = navigator as any;
@@ -344,11 +350,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       }).catch((err: any) => {
         console.error(err);
         showToast('Error generating PDF for WhatsApp sharing.', 'error');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
-        htmlElement.style.border = originalBorder;
-        htmlElement.style.boxShadow = originalBoxShadow;
-        htmlElement.style.borderRadius = originalBorderRadius;
+        if (clone.parentNode) {
+          clone.parentNode.removeChild(clone);
+        }
       });
     };
 
