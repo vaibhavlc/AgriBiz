@@ -2434,74 +2434,60 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </button>
               </div>
 
-              <div style={{ border: '1px solid var(--border-color)', borderRadius: '8px', overflow: 'hidden' }}>
-                {/* Desktop header row */}
-                <div className="billed-items-header-row" style={{ gridTemplateColumns: '3.5fr 1fr 1.5fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-                  <div>Product *</div>
-                  <div style={{ textAlign: 'center' }}>GST %</div>
-                  <div style={{ textAlign: 'right' }}>Unit Price (₹) *</div>
-                  <div style={{ textAlign: 'center' }}>Qty *</div>
-                  <div style={{ textAlign: 'center' }}>Disc %</div>
-                  <div style={{ textAlign: 'right' }}>Net Total</div>
-                  <div></div>
-                </div>
+              <div className="billed-items-table-wrap">
+                <table className="billed-items-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: '32px' }}>#</th>
+                      <th>Product</th>
+                      <th className="col-center" style={{ width: '80px' }}>GST %</th>
+                      <th className="col-right" style={{ width: '130px' }}>Unit Price (₹)</th>
+                      <th className="col-center" style={{ width: '90px' }}>Qty</th>
+                      <th className="col-center" style={{ width: '90px' }}>Disc %</th>
+                      <th className="col-right" style={{ width: '110px' }}>Net Total</th>
+                      <th style={{ width: '40px' }}></th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item, index) => {
+                      const product = products.find((p) => p.id === item.productId);
+                      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+                      return (
+                        <tr key={index}>
+                          {/* # */}
+                          <td className="td-rownum" style={{ color: 'var(--text-muted)', fontWeight: 700, fontSize: '12px' }}>{index + 1}</td>
 
-                <div className="billed-items-list">
-                  {items.map((item, index) => {
-                    const product = products.find((p) => p.id === item.productId);
-                    const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
-                    return (
-                      <div key={index} className="billed-item-card" style={{ gridTemplateColumns: '3.5fr 1fr 1.5fr 1.5fr 1fr 1.5fr 0.5fr' }}>
-                        {/* Mobile item header */}
-                        <div className="mobile-item-header">
-                          <span className="mobile-item-title">Item #{index + 1}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItemRow(index)}
-                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}
-                            title="Remove row"
-                          >
-                            <Trash2 size={16} style={{ color: 'var(--color-danger)' }} />
-                          </button>
-                        </div>
+                          {/* Product selector */}
+                          <td data-label="Product">
+                            <select
+                              className="form-control"
+                              style={{ width: '100%' }}
+                              value={item.productId}
+                              onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
+                              required
+                            >
+                              <option value="">Choose Product</option>
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name} (Stock: {p.stock})
+                                </option>
+                              ))}
+                            </select>
+                          </td>
 
-                        {/* Product dropdown */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <span className="mobile-field-label">Product *</span>
-                          <select
-                            className="form-control"
-                            style={{ width: '100%', height: '40px', fontSize: '13px' }}
-                            value={item.productId}
-                            onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
-                            required
-                          >
-                            <option value="">Choose Product</option>
-                            {products.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                {p.name} (Stock: {p.stock})
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* GST & Unit Price grid row */}
-                        <div className="mobile-grid-2">
-                          <div>
-                            <span className="mobile-field-label">GST %</span>
-                            <div style={{
-                              height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)',
-                              borderRadius: '8px', fontWeight: 600, fontSize: '13px', color: 'var(--text-secondary)'
-                            }}>
+                          {/* GST % */}
+                          <td className="col-center td-stock" data-label="GST %">
+                            <span className="stock-badge stock-ok" style={{ background: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)' }}>
                               {product ? `${product.gstRate}%` : '—'}
-                            </div>
-                          </div>
-                          <div>
-                            <span className="mobile-field-label">Unit Price (₹) *</span>
+                            </span>
+                          </td>
+
+                          {/* Unit Price */}
+                          <td className="td-price" data-label="Unit Price (₹)">
                             <input
                               type="number"
                               className="form-control"
-                              style={{ textAlign: 'right', height: '40px', fontSize: '13px' }}
+                              style={{ textAlign: 'right', width: '100%' }}
                               placeholder="0.00"
                               min="0"
                               step="any"
@@ -2509,32 +2495,30 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                               onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)}
                               required
                             />
-                          </div>
-                        </div>
+                          </td>
 
-                        {/* Qty & Discount grid row */}
-                        <div className="mobile-grid-2">
-                          <div>
-                            <span className="mobile-field-label">Qty *</span>
+                          {/* Qty */}
+                          <td className="td-qty col-center" data-label="Qty">
                             <input
                               type="number"
                               className="form-control"
-                              style={{ textAlign: 'center', height: '40px', fontSize: '13px' }}
+                              style={{ textAlign: 'center', width: '100%' }}
                               placeholder="1"
                               min="1"
                               value={item.quantity || ''}
                               onChange={(e) => handleUpdateItemRow(index, 'quantity', parseInt(e.target.value) || 0)}
                               required
                             />
-                          </div>
-                          <div>
-                            <span className="mobile-field-label">Disc %</span>
+                          </td>
+
+                          {/* Discount */}
+                          <td className="td-disc col-center" data-label="Disc %">
                             <div style={{ position: 'relative' }}>
-                              <Percent size={11} style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                              <Percent size={11} style={{ position: 'absolute', right: '7px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
                               <input
                                 type="number"
                                 className="form-control"
-                                style={{ textAlign: 'center', paddingRight: '22px', height: '40px', fontSize: '13px' }}
+                                style={{ textAlign: 'center', paddingRight: '22px', width: '100%' }}
                                 placeholder="0"
                                 min="0"
                                 max="100"
@@ -2542,38 +2526,29 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                                 onChange={(e) => handleUpdateItemRow(index, 'discount', Math.min(100, Math.max(0, parseFloat(e.target.value) || 0)))}
                               />
                             </div>
-                          </div>
-                        </div>
+                          </td>
 
-                        {/* Net Total display */}
-                        <div className="mobile-total-row">
-                          <span className="mobile-total-label">Net Total:</span>
-                          <span className="mobile-total-value">
-                            {formatINR(calcs.total)}
-                          </span>
-                        </div>
+                          {/* Net Total */}
+                          <td className="td-total col-right" data-label="Net Total">
+                            <span className="row-total">{formatINR(calcs.total)}</span>
+                          </td>
 
-                        {/* Desktop-only delete button */}
-                        <div style={{ display: 'flex', justifyContent: 'center' }} className="desktop-delete-btn-col">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveItemRow(index)}
-                            title="Remove row"
-                            style={{
-                              background: 'none', border: 'none', cursor: 'pointer',
-                              color: 'var(--text-muted)', borderRadius: '6px', padding: '6px',
-                              transition: 'all 0.2s',
-                            }}
-                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.backgroundColor = 'rgba(239,68,68,0.08)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.backgroundColor = 'transparent'; }}
-                          >
-                            <Trash2 size={15} />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                          {/* Delete */}
+                          <td className="td-delete">
+                            <button
+                              type="button"
+                              className="delete-btn"
+                              onClick={() => handleRemoveItemRow(index)}
+                              title="Remove row"
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             </div>
 
