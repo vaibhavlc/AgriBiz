@@ -4760,9 +4760,10 @@ body.dark-theme .lang-selector-btn:hover {
     box-sizing: border-box !important;
   }
 
-  /* Hide the print button completely on mobile */
+  /* Make the print button span both columns in the grid */
   .action-buttons-grid button:nth-child(3) {
-    display: none !important;
+    grid-column: span 2 !important;
+    display: flex !important;
   }
 }
 
