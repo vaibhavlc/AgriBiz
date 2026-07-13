@@ -157,20 +157,25 @@ export const Sales: React.FC = () => {
     showToast('Compiling high-definition PDF document...', 'info');
 
     const generatePDF = (html2pdfLib: any) => {
-      // Temporarily clear mobile zoom styling to ensure html2pdf captures native A5/Thermal dimensions
       const htmlElement = element as HTMLElement;
       const originalZoom = htmlElement.style.zoom;
       const originalTransform = htmlElement.style.transform;
+      const originalBorder = htmlElement.style.border;
+      const originalBoxShadow = htmlElement.style.boxShadow;
+      const originalBorderRadius = htmlElement.style.borderRadius;
       
       htmlElement.style.setProperty('zoom', '1', 'important');
       htmlElement.style.setProperty('transform', 'none', 'important');
+      htmlElement.style.setProperty('border', 'none', 'important');
+      htmlElement.style.setProperty('box-shadow', 'none', 'important');
+      htmlElement.style.setProperty('border-radius', '0', 'important');
 
       const fileName = selectedInvoice 
         ? `${selectedInvoice.invoiceNumber}.pdf` 
         : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
 
       const opt = {
-        margin:       printTemplate === 'A5' ? 0 : 2,
+        margin:       0,
         filename:     fileName,
         image:        { type: 'jpeg', quality: 0.98 },
         html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
@@ -185,11 +190,17 @@ export const Sales: React.FC = () => {
         showToast('PDF downloaded successfully!');
         htmlElement.style.zoom = originalZoom;
         htmlElement.style.transform = originalTransform;
+        htmlElement.style.border = originalBorder;
+        htmlElement.style.boxShadow = originalBoxShadow;
+        htmlElement.style.borderRadius = originalBorderRadius;
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
         htmlElement.style.zoom = originalZoom;
         htmlElement.style.transform = originalTransform;
+        htmlElement.style.border = originalBorder;
+        htmlElement.style.boxShadow = originalBoxShadow;
+        htmlElement.style.borderRadius = originalBorderRadius;
       });
     };
 
@@ -262,15 +273,21 @@ export const Sales: React.FC = () => {
       const htmlElement = element as HTMLElement;
       const originalZoom = htmlElement.style.zoom;
       const originalTransform = htmlElement.style.transform;
+      const originalBorder = htmlElement.style.border;
+      const originalBoxShadow = htmlElement.style.boxShadow;
+      const originalBorderRadius = htmlElement.style.borderRadius;
       
       htmlElement.style.setProperty('zoom', '1', 'important');
       htmlElement.style.setProperty('transform', 'none', 'important');
+      htmlElement.style.setProperty('border', 'none', 'important');
+      htmlElement.style.setProperty('box-shadow', 'none', 'important');
+      htmlElement.style.setProperty('border-radius', '0', 'important');
 
       const opt = {
-        margin:       printTemplate === 'A5' ? 0 : 2,
+        margin:       0,
         filename:     `${activeDoc.number}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
+        html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
         jsPDF:        { 
           unit: 'mm', 
           format: printTemplate === 'A5' ? 'a5' : [80, 200], 
@@ -281,6 +298,9 @@ export const Sales: React.FC = () => {
       html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
         htmlElement.style.zoom = originalZoom;
         htmlElement.style.transform = originalTransform;
+        htmlElement.style.border = originalBorder;
+        htmlElement.style.boxShadow = originalBoxShadow;
+        htmlElement.style.borderRadius = originalBorderRadius;
         const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
         
         const nav = navigator as any;
@@ -326,6 +346,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         showToast('Error generating PDF for WhatsApp sharing.', 'error');
         htmlElement.style.zoom = originalZoom;
         htmlElement.style.transform = originalTransform;
+        htmlElement.style.border = originalBorder;
+        htmlElement.style.boxShadow = originalBoxShadow;
+        htmlElement.style.borderRadius = originalBorderRadius;
       });
     };
 
@@ -821,11 +844,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               )}
               {/* Elegant leafy branch corner watermark */}
               <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
-                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10 90 Q 50 50 90 10" />
-                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#4E6C50" />
-                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#4E6C50" />
-                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#4E6C50" />
+                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#000000" />
+                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#000000" />
+                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#000000" />
                 </svg>
               </div>
 
@@ -1207,11 +1230,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               )}
               {/* Elegant leafy branch corner watermark */}
               <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
-                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M10 90 Q 50 50 90 10" />
-                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#4E6C50" />
-                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#4E6C50" />
-                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#4E6C50" />
+                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#000000" />
+                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#000000" />
+                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#000000" />
                 </svg>
               </div>
 
