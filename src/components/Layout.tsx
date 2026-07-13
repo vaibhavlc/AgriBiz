@@ -118,6 +118,90 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
+  // Touch swipe navigation for mobile
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.innerWidth > 1024) return;
+
+      const target = e.target as HTMLElement;
+      // Do not trigger swipe inside scrollable horizontal tables, modals, selectors, or input controls
+      if (
+        target.closest('.table-wrapper') ||
+        target.closest('.modal') ||
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('select') ||
+        target.closest('button') ||
+        target.closest('a') ||
+        target.closest('.pill-filter-bar') ||
+        target.closest('.prem-nav-menu')
+      ) {
+        return;
+      }
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (window.innerWidth > 1024) return;
+      if (touchStartX === 0 || touchStartY === 0) return;
+
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
+
+      // Reset coordinates
+      touchStartX = 0;
+      touchStartY = 0;
+
+      // Must be a horizontal swipe (X diff larger than Y diff) and above threshold (e.g. 75px)
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 75) {
+        const orderedTabs = [
+          'dashboard',
+          'sales',
+          'purchases',
+          'inventory',
+          'expenses',
+          'payments',
+          'customers',
+          'suppliers',
+          'reports',
+          'recycle_bin',
+          'settings'
+        ];
+        const currentIndex = orderedTabs.indexOf(currentTab);
+        if (currentIndex === -1) return;
+
+        if (diffX > 0) {
+          // Swiped Left -> Next Tab
+          const nextIndex = currentIndex + 1;
+          if (nextIndex < orderedTabs.length) {
+            handleTabChange(orderedTabs[nextIndex]);
+          }
+        } else {
+          // Swiped Right -> Previous Tab
+          const prevIndex = currentIndex - 1;
+          if (prevIndex >= 0) {
+            handleTabChange(orderedTabs[prevIndex]);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [currentTab]);
+
   const [notifications, setNotifications] = useState([
     {
       id: 1,
