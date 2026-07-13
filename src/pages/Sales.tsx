@@ -1796,7 +1796,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     onChange={(e) => setSelectedCustomerId(e.target.value)}
                     required
                   >
-                    <option value="">— Select Customer —</option>
+                    <option value="">Select Customer</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
@@ -1817,14 +1817,19 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               {/* Billing Date */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Billing Date *</label>
-                <input
-                  type="date"
-                  className="form-control"
-                  style={{ width: '100%', height: '42px', fontSize: '13px' }}
-                  value={invoiceDate}
-                  onChange={(e) => setInvoiceDate(e.target.value)}
-                  required
-                />
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                    <Calendar size={15} />
+                  </span>
+                  <input
+                    type="date"
+                    className="form-control"
+                    style={{ width: '100%', height: '42px', fontSize: '13px', paddingLeft: '36px' }}
+                    value={invoiceDate}
+                    onChange={(e) => setInvoiceDate(e.target.value)}
+                    required
+                  />
+                </div>
               </div>
             </div>
 
@@ -1896,7 +1901,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
                             required
                           >
-                            <option value="">— Choose Product —</option>
+                            <option value="">Choose Product</option>
                             {products.map((p) => (
                               <option key={p.id} value={p.id} disabled={p.stock <= 0}>
                                 {p.name} [{p.category}]{p.stock <= 0 ? ' (Out of Stock)' : ''}
@@ -1906,7 +1911,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         </td>
 
                         {/* Stock badge */}
-                        <td className="col-center" data-label="Stock">
+                        <td className="col-center td-stock" data-label="Stock">
                           {product ? (
                             <span className={`stock-badge ${product.stock <= product.minStock ? 'stock-low' : 'stock-ok'}`}>
                               {product.stock}
@@ -2047,13 +2052,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
                       Due Date <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '11px' }}>(Expected date to clear balance)</span>
                     </label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      value={dueDate}
-                      onChange={(e) => setDueDate(e.target.value)}
-                      style={{ height: '42px', fontSize: '13px' }}
-                    />
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
+                      <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                        <Calendar size={15} />
+                      </span>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        style={{ height: '42px', fontSize: '13px', paddingLeft: '36px', width: '100%' }}
+                      />
+                    </div>
                   </div>
                 )}
 
@@ -2333,7 +2343,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       onChange={(e) => setSelectedCustomerId(e.target.value)}
                       required
                     >
-                      <option value="">— Select Customer —</option>
+                      <option value="">Select Customer</option>
                       {customers.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
@@ -2355,25 +2365,35 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Quote Date *</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      style={{ width: '100%', height: '42px', fontSize: '13px' }}
-                      value={invoiceDate}
-                      onChange={(e) => setInvoiceDate(e.target.value)}
-                      required
-                    />
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                        <Calendar size={15} />
+                      </span>
+                      <input
+                        type="date"
+                        className="form-control"
+                        style={{ width: '100%', height: '42px', fontSize: '13px', paddingLeft: '36px' }}
+                        value={invoiceDate}
+                        onChange={(e) => setInvoiceDate(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Valid Until *</label>
-                    <input
-                      type="date"
-                      className="form-control"
-                      style={{ width: '100%', height: '42px', fontSize: '13px' }}
-                      value={validUntil}
-                      onChange={(e) => setValidUntil(e.target.value)}
-                      required
-                    />
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                        <Calendar size={15} />
+                      </span>
+                      <input
+                        type="date"
+                        className="form-control"
+                        style={{ width: '100%', height: '42px', fontSize: '13px', paddingLeft: '36px' }}
+                        value={validUntil}
+                        onChange={(e) => setValidUntil(e.target.value)}
+                        required
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -2455,7 +2475,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
                             required
                           >
-                            <option value="">— Choose Product —</option>
+                            <option value="">Choose Product</option>
                             {products.map((p) => (
                               <option key={p.id} value={p.id}>
                                 {p.name} (Stock: {p.stock})

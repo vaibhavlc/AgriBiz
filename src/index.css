@@ -4972,6 +4972,7 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   .billed-items-table tbody tr {
+    position: relative !important;
     border: 1.5px solid var(--border-color);
     border-radius: 12px;
     margin-bottom: 14px;
@@ -5027,17 +5028,22 @@ body.dark-theme .lang-selector-btn:hover {
 
   .billed-items-table .stock-badge { margin-top: 4px; }
 
-  /* two-col grid for price + qty on mobile */
+  /* two-col grid for mobile */
+  .billed-items-table tbody td.td-stock,
   .billed-items-table tbody td.td-price,
   .billed-items-table tbody td.td-qty,
   .billed-items-table tbody td.td-disc {
-    display: inline-block;
-    width: calc(50% - 6px);
-    vertical-align: top;
-    padding: 6px 4px;
+    display: inline-block !important;
+    width: calc(50% - 6px) !important;
+    vertical-align: top !important;
+    padding: 6px 4px !important;
+    box-sizing: border-box !important;
   }
 
-  .billed-items-table tbody td.td-disc { width: 100%; }
+  .billed-items-table tbody td.td-stock,
+  .billed-items-table tbody td.td-qty {
+    margin-right: 12px !important;
+  }
 }
 
 /* Status Filters Responsive Layout (Desktop/Mobile) */
