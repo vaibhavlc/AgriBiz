@@ -157,25 +157,6 @@ export const Sales: React.FC = () => {
     showToast('Compiling high-definition PDF document...', 'info');
 
     const generatePDF = (html2pdfLib: any) => {
-      const htmlElement = element as HTMLElement;
-      
-      // Clone the element to render in a separate, unconstrained desktop-sized layout behind the preview
-      const clone = htmlElement.cloneNode(true) as HTMLElement;
-      clone.style.setProperty('position', 'absolute', 'important');
-      clone.style.setProperty('left', '50%', 'important');
-      clone.style.setProperty('top', '50%', 'important');
-      clone.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
-      clone.style.setProperty('z-index', '-1', 'important');
-      clone.style.setProperty('pointer-events', 'none', 'important');
-      clone.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-      clone.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-      clone.style.setProperty('zoom', '1', 'important');
-      clone.style.setProperty('box-shadow', 'none', 'important');
-      clone.style.setProperty('border', 'none', 'important');
-      clone.style.setProperty('border-radius', '0', 'important');
-      
-      htmlElement.parentNode?.appendChild(clone);
-
       const fileName = selectedInvoice 
         ? `${selectedInvoice.invoiceNumber}.pdf` 
         : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
@@ -184,7 +165,24 @@ export const Sales: React.FC = () => {
         margin:       0,
         filename:     fileName,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          scrollX: 0, 
+          scrollY: 0,
+          onclone: (clonedDoc: Document) => {
+            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+            if (clonedEl) {
+              clonedEl.style.setProperty('zoom', '1', 'important');
+              clonedEl.style.setProperty('transform', 'none', 'important');
+              clonedEl.style.setProperty('border', 'none', 'important');
+              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+              clonedEl.style.setProperty('border-radius', '0', 'important');
+              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+            }
+          }
+        },
         jsPDF:        { 
           unit: 'mm', 
           format: printTemplate === 'A5' ? 'a5' : [80, 200], 
@@ -192,17 +190,11 @@ export const Sales: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(clone).set(opt).save().then(() => {
+      html2pdfLib().from(element).set(opt).save().then(() => {
         showToast('PDF downloaded successfully!');
-        if (clone.parentNode) {
-          clone.parentNode.removeChild(clone);
-        }
       }).catch((err: any) => {
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
-        if (clone.parentNode) {
-          clone.parentNode.removeChild(clone);
-        }
       });
     };
 
@@ -272,30 +264,28 @@ export const Sales: React.FC = () => {
     showToast('Compiling PDF for sharing...', 'info');
 
     const sharePDF = (html2pdfLib: any) => {
-      const htmlElement = element as HTMLElement;
-      
-      // Clone the element to render in a separate, unconstrained desktop-sized layout behind the preview
-      const clone = htmlElement.cloneNode(true) as HTMLElement;
-      clone.style.setProperty('position', 'absolute', 'important');
-      clone.style.setProperty('left', '50%', 'important');
-      clone.style.setProperty('top', '50%', 'important');
-      clone.style.setProperty('transform', 'translate(-50%, -50%)', 'important');
-      clone.style.setProperty('z-index', '-1', 'important');
-      clone.style.setProperty('pointer-events', 'none', 'important');
-      clone.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-      clone.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-      clone.style.setProperty('zoom', '1', 'important');
-      clone.style.setProperty('box-shadow', 'none', 'important');
-      clone.style.setProperty('border', 'none', 'important');
-      clone.style.setProperty('border-radius', '0', 'important');
-      
-      htmlElement.parentNode?.appendChild(clone);
-
       const opt = {
         margin:       0,
         filename:     `${activeDoc.number}.pdf`,
         image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true, scrollX: 0, scrollY: 0 },
+        html2canvas:  { 
+          scale: 2, 
+          useCORS: true, 
+          scrollX: 0, 
+          scrollY: 0,
+          onclone: (clonedDoc: Document) => {
+            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+            if (clonedEl) {
+              clonedEl.style.setProperty('zoom', '1', 'important');
+              clonedEl.style.setProperty('transform', 'none', 'important');
+              clonedEl.style.setProperty('border', 'none', 'important');
+              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+              clonedEl.style.setProperty('border-radius', '0', 'important');
+              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+            }
+          }
+        },
         jsPDF:        { 
           unit: 'mm', 
           format: printTemplate === 'A5' ? 'a5' : [80, 200], 
@@ -303,10 +293,7 @@ export const Sales: React.FC = () => {
         }
       };
       
-      html2pdfLib().from(clone).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
-        if (clone.parentNode) {
-          clone.parentNode.removeChild(clone);
-        }
+      html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
         const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
         
         const nav = navigator as any;
@@ -350,9 +337,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       }).catch((err: any) => {
         console.error(err);
         showToast('Error generating PDF for WhatsApp sharing.', 'error');
-        if (clone.parentNode) {
-          clone.parentNode.removeChild(clone);
-        }
       });
     };
 
