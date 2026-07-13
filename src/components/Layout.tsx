@@ -29,6 +29,7 @@ import {
   MoreHorizontal,
   TrendingDown,
   Trash2,
+  Globe,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -77,6 +78,46 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>('online');
+
+  const mainWrapperRef = useRef<HTMLDivElement>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>('en');
+  const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+
+  const LANGUAGES = [
+    { code: 'en', label: 'English', nativeLabel: 'English' },
+    { code: 'mr', label: 'Marathi', nativeLabel: 'मराठी' },
+    { code: 'hi', label: 'Hindi', nativeLabel: 'हिंदी' },
+  ];
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (mainWrapperRef.current) {
+        setScrolled(mainWrapperRef.current.scrollTop > 8);
+      }
+    };
+    const wrapper = mainWrapperRef.current;
+    if (wrapper) {
+      wrapper.addEventListener('scroll', handleScroll, { passive: true });
+    }
+    return () => {
+      if (wrapper) {
+        wrapper.removeEventListener('scroll', handleScroll);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.lang-selector-wrapper')) {
+        setIsLangDropdownOpen(false);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
+
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -507,8 +548,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       </button>
 
       {/* Main Content Area */}
-      <div className="main-wrapper">
-        <header className="header">
+      <div className="main-wrapper" ref={mainWrapperRef}>
+        <div className="header-outer-wrapper no-print">
+          <header className={`header${scrolled ? ' scrolled' : ''}`}>
           {/* Left: Brand logo & badge */}
           <div className="header-left">
             <button 
@@ -570,6 +612,39 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               {settings.theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
+
+            {/* Language Selector (Farma Style - Non-functional) */}
+            <div className="lang-selector-wrapper">
+              <button
+                type="button"
+                className={`lang-selector-btn${isLangDropdownOpen ? ' active' : ''}`}
+                onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                title="Select Language"
+                style={{ padding: '9px 10px' }}
+              >
+                <Globe size={16} className="lang-selector-globe" style={{ margin: 0 }} />
+              </button>
+              {isLangDropdownOpen && (
+                <div className="lang-dropdown animate-fade-in-scale">
+                  {LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      className={`lang-dropdown-item${lang.code === selectedLanguage ? ' active' : ''}`}
+                      onClick={() => {
+                        setSelectedLanguage(lang.code as 'en' | 'mr' | 'hi');
+                        setIsLangDropdownOpen(false);
+                      }}
+                    >
+                      <span className="lang-indicator-dot" />
+                      <span style={{ fontFamily: lang.code !== 'en' ? "'Noto Sans Devanagari', sans-serif" : 'inherit' }}>
+                        {lang.nativeLabel}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Notifications Bell */}
             <div className="notification-wrapper">
@@ -732,6 +807,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
         </header>
+        </div>
 
         <main className="content-body">{children}</main>
       </div>
