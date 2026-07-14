@@ -148,7 +148,7 @@ export const Sales: React.FC = () => {
   };
 
   const handleDownload = () => {
-    const element = document.querySelector('.print-invoice-layout');
+    const element = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!element) {
       showToast('Could not find layout element.', 'error');
       return;
@@ -161,6 +161,28 @@ export const Sales: React.FC = () => {
         ? `${selectedInvoice.invoiceNumber}.pdf` 
         : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
 
+      // Save original styles
+      const origZoom = element.style.zoom;
+      const origTransform = element.style.transform;
+      const origBorder = element.style.border;
+      const origShadow = element.style.boxShadow;
+      const origRadius = element.style.borderRadius;
+      const origWidth = element.style.width;
+      const origHeight = element.style.height;
+      const origOverflow = element.style.overflow;
+      const origPosition = element.style.position;
+
+      // Apply print styles
+      element.style.setProperty('zoom', '1', 'important');
+      element.style.setProperty('transform', 'none', 'important');
+      element.style.setProperty('border', 'none', 'important');
+      element.style.setProperty('box-shadow', 'none', 'important');
+      element.style.setProperty('border-radius', '0', 'important');
+      element.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+      element.style.setProperty('height', 'auto', 'important');
+      element.style.setProperty('overflow', 'visible', 'important');
+      element.style.setProperty('position', 'relative', 'important');
+
       const opt = {
         margin:       0,
         filename:     fileName,
@@ -169,21 +191,8 @@ export const Sales: React.FC = () => {
           scale: 2, 
           useCORS: true, 
           scrollX: 0, 
-          scrollY: 0,
-          windowWidth: 650,
-          windowHeight: 950,
-          onclone: (_clonedDoc: Document, el: HTMLElement) => {
-            el.style.setProperty('zoom', '1', 'important');
-            el.style.setProperty('transform', 'none', 'important');
-            el.style.setProperty('border', 'none', 'important');
-            el.style.setProperty('box-shadow', 'none', 'important');
-            el.style.setProperty('border-radius', '0', 'important');
-            el.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-            el.style.setProperty('min-height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-            el.style.setProperty('height', 'auto', 'important');
-            el.style.setProperty('overflow', 'visible', 'important');
-            el.style.setProperty('position', 'static', 'important');
-          }
+          scrollY: -window.scrollY,
+          logging: false,
         },
         jsPDF:        { 
           unit: 'mm', 
@@ -193,8 +202,27 @@ export const Sales: React.FC = () => {
       };
       
       html2pdfLib().from(element).set(opt).save().then(() => {
+        // Restore original styles
+        element.style.zoom = origZoom;
+        element.style.transform = origTransform;
+        element.style.border = origBorder;
+        element.style.boxShadow = origShadow;
+        element.style.borderRadius = origRadius;
+        element.style.width = origWidth;
+        element.style.height = origHeight;
+        element.style.overflow = origOverflow;
+        element.style.position = origPosition;
         showToast('PDF downloaded successfully!');
       }).catch((err: any) => {
+        element.style.zoom = origZoom;
+        element.style.transform = origTransform;
+        element.style.border = origBorder;
+        element.style.boxShadow = origShadow;
+        element.style.borderRadius = origRadius;
+        element.style.width = origWidth;
+        element.style.height = origHeight;
+        element.style.overflow = origOverflow;
+        element.style.position = origPosition;
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
       });
@@ -218,6 +246,7 @@ export const Sales: React.FC = () => {
       document.body.appendChild(script);
     }
   };
+
 
   const handleWhatsAppShare = () => {
     const activeDoc = selectedInvoice 
