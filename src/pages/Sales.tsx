@@ -148,31 +148,13 @@ export const Sales: React.FC = () => {
   };
 
   const handleDownload = () => {
-    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
-    if (!originalEl) {
+    const element = document.querySelector('.print-invoice-layout') as HTMLElement;
+    if (!element) {
       showToast('Could not find layout element.', 'error');
       return;
     }
 
     showToast('Compiling high-definition PDF document...', 'info');
-
-    // Create a temporary layout clone positioned at absolute top-left behind the app
-    const tempEl = originalEl.cloneNode(true) as HTMLElement;
-    tempEl.style.setProperty('position', 'absolute', 'important');
-    tempEl.style.setProperty('top', '0', 'important');
-    tempEl.style.setProperty('left', '0', 'important');
-    tempEl.style.setProperty('z-index', '-9999', 'important');
-    tempEl.style.setProperty('zoom', '1', 'important');
-    tempEl.style.setProperty('transform', 'none', 'important');
-    tempEl.style.setProperty('border', 'none', 'important');
-    tempEl.style.setProperty('box-shadow', 'none', 'important');
-    tempEl.style.setProperty('border-radius', '0', 'important');
-    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-    tempEl.style.setProperty('margin', '0', 'important');
-    tempEl.style.setProperty('display', 'block', 'important');
-
-    document.body.appendChild(tempEl);
 
     const generatePDF = (html2pdfLib: any) => {
       const fileName = selectedInvoice 
@@ -189,6 +171,51 @@ export const Sales: React.FC = () => {
           scrollX: 0, 
           scrollY: 0,
           windowWidth: 1024,
+          onclone: (clonedDoc: Document) => {
+            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+            if (clonedEl) {
+              // 1. Recursively hide all siblings of the element and all siblings of its ancestors
+              let current: HTMLElement | null = clonedEl;
+              while (current && current !== clonedDoc.body) {
+                const parentEl: HTMLElement | null = current.parentElement;
+                if (parentEl) {
+                  Array.from(parentEl.children).forEach((sibling) => {
+                    if (sibling !== current) {
+                      (sibling as HTMLElement).style.setProperty('display', 'none', 'important');
+                    }
+                  });
+                }
+                current = parentEl;
+              }
+
+              // 2. Reset container spacing
+              const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+              if (wrapper) {
+                wrapper.style.setProperty('padding', '0', 'important');
+                wrapper.style.setProperty('margin', '0', 'important');
+                wrapper.style.setProperty('display', 'block', 'important');
+              }
+              clonedDoc.body.style.margin = '0';
+              clonedDoc.body.style.padding = '0';
+
+              // 3. Reset scroll positions of all elements in the clone
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach((el) => {
+                el.scrollTop = 0;
+                el.scrollLeft = 0;
+              });
+
+              // 4. Force standard print styling on the cloned invoice
+              clonedEl.style.setProperty('zoom', '1', 'important');
+              clonedEl.style.setProperty('transform', 'none', 'important');
+              clonedEl.style.setProperty('border', 'none', 'important');
+              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+              clonedEl.style.setProperty('border-radius', '0', 'important');
+              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+              clonedEl.style.setProperty('margin', '0', 'important');
+            }
+          }
         },
         jsPDF:        { 
           unit: 'mm', 
@@ -197,17 +224,12 @@ export const Sales: React.FC = () => {
         }
       };
       
-      // Allow browser 50ms to finish painting layout
-      setTimeout(() => {
-        html2pdfLib().from(tempEl).set(opt).save().then(() => {
-          document.body.removeChild(tempEl);
-          showToast('PDF downloaded successfully!');
-        }).catch((err: any) => {
-          document.body.removeChild(tempEl);
-          console.error(err);
-          showToast('Error exporting PDF document.', 'error');
-        });
-      }, 50);
+      html2pdfLib().from(element).set(opt).save().then(() => {
+        showToast('PDF downloaded successfully!');
+      }).catch((err: any) => {
+        console.error(err);
+        showToast('Error exporting PDF document.', 'error');
+      });
     };
 
     const globalWindow = window as any;
@@ -268,31 +290,13 @@ export const Sales: React.FC = () => {
 
     if (!activeDoc) return;
     const customerDetail = customers.find((c) => c.id === activeDoc.customerId);
-    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
-    if (!originalEl) {
+    const element = document.querySelector('.print-invoice-layout') as HTMLElement;
+    if (!element) {
       showToast('Could not find layout element.', 'error');
       return;
     }
 
     showToast('Compiling PDF for sharing...', 'info');
-
-    // Create a temporary layout clone positioned at absolute top-left behind the app
-    const tempEl = originalEl.cloneNode(true) as HTMLElement;
-    tempEl.style.setProperty('position', 'absolute', 'important');
-    tempEl.style.setProperty('top', '0', 'important');
-    tempEl.style.setProperty('left', '0', 'important');
-    tempEl.style.setProperty('z-index', '-9999', 'important');
-    tempEl.style.setProperty('zoom', '1', 'important');
-    tempEl.style.setProperty('transform', 'none', 'important');
-    tempEl.style.setProperty('border', 'none', 'important');
-    tempEl.style.setProperty('box-shadow', 'none', 'important');
-    tempEl.style.setProperty('border-radius', '0', 'important');
-    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-    tempEl.style.setProperty('margin', '0', 'important');
-    tempEl.style.setProperty('display', 'block', 'important');
-
-    document.body.appendChild(tempEl);
 
     const sharePDF = (html2pdfLib: any) => {
       const opt = {
@@ -305,6 +309,51 @@ export const Sales: React.FC = () => {
           scrollX: 0, 
           scrollY: 0,
           windowWidth: 1024,
+          onclone: (clonedDoc: Document) => {
+            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+            if (clonedEl) {
+              // 1. Recursively hide all siblings of the element and all siblings of its ancestors
+              let current: HTMLElement | null = clonedEl;
+              while (current && current !== clonedDoc.body) {
+                const parentEl: HTMLElement | null = current.parentElement;
+                if (parentEl) {
+                  Array.from(parentEl.children).forEach((sibling) => {
+                    if (sibling !== current) {
+                      (sibling as HTMLElement).style.setProperty('display', 'none', 'important');
+                    }
+                  });
+                }
+                current = parentEl;
+              }
+
+              // 2. Reset container spacing
+              const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+              if (wrapper) {
+                wrapper.style.setProperty('padding', '0', 'important');
+                wrapper.style.setProperty('margin', '0', 'important');
+                wrapper.style.setProperty('display', 'block', 'important');
+              }
+              clonedDoc.body.style.margin = '0';
+              clonedDoc.body.style.padding = '0';
+
+              // 3. Reset scroll positions of all elements in the clone
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach((el) => {
+                el.scrollTop = 0;
+                el.scrollLeft = 0;
+              });
+
+              // 4. Force standard print styling on the cloned invoice
+              clonedEl.style.setProperty('zoom', '1', 'important');
+              clonedEl.style.setProperty('transform', 'none', 'important');
+              clonedEl.style.setProperty('border', 'none', 'important');
+              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+              clonedEl.style.setProperty('border-radius', '0', 'important');
+              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+              clonedEl.style.setProperty('margin', '0', 'important');
+            }
+          }
         },
         jsPDF:        { 
           unit: 'mm', 
@@ -313,60 +362,51 @@ export const Sales: React.FC = () => {
         }
       };
       
-      // Allow browser 50ms to finish painting layout
-      setTimeout(() => {
-        html2pdfLib().from(tempEl).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
-          if (tempEl.parentNode) {
-            document.body.removeChild(tempEl);
-          }
-          const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
-          
-          const nav = navigator as any;
-          if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
-            nav.share({
-              files: [pdfFile],
-              title: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} ${activeDoc.number}`,
-              text: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} from ${settings.businessName}`
-            }).then(() => {
-              showToast('Document shared successfully!');
-            }).catch((err: any) => {
-              console.log('Share canceled', err);
-            });
-          } else {
-            const downloadUrl = URL.createObjectURL(pdfBlob);
-            const link = document.createElement('a');
-            link.href = downloadUrl;
-            link.download = `${activeDoc.number}.pdf`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(downloadUrl);
+      html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
+        const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
+        
+        const nav = navigator as any;
+        if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
+          nav.share({
+            files: [pdfFile],
+            title: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} ${activeDoc.number}`,
+            text: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} from ${settings.businessName}`
+          }).then(() => {
+            showToast('Document shared successfully!');
+          }).catch((err: any) => {
+            console.log('Share canceled', err);
+          });
+        } else {
+          const downloadUrl = URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = `${activeDoc.number}.pdf`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(downloadUrl);
 
-            const message = `Hello ${activeDoc.customerName},
+          const message = `Hello ${activeDoc.customerName},
 
 ${activeDoc.msgText}
 
 We have downloaded the PDF document to your device. Please attach it in the chat.`;
 
-            const encoded = encodeURIComponent(message);
-            const phoneNum = customerDetail?.phone ? customerDetail.phone.replace(/[^0-9]/g, '') : '';
-            const targetPhone = phoneNum.length === 10 ? `91${phoneNum}` : phoneNum;
+          const encoded = encodeURIComponent(message);
+          const phoneNum = customerDetail?.phone ? customerDetail.phone.replace(/[^0-9]/g, '') : '';
+          const targetPhone = phoneNum.length === 10 ? `91${phoneNum}` : phoneNum;
+          
+          const url = targetPhone 
+            ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
+            : `https://api.whatsapp.com/send?text=${encoded}`;
             
-            const url = targetPhone 
-              ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
-              : `https://api.whatsapp.com/send?text=${encoded}`;
-              
-            window.open(url, '_blank');
-            showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
-          }
-        }).catch((err: any) => {
-          if (tempEl.parentNode) {
-            document.body.removeChild(tempEl);
-          }
-          console.error(err);
-          showToast('Error generating PDF for WhatsApp sharing.', 'error');
-        });
-      }, 50);
+          window.open(url, '_blank');
+          showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
+        }
+      }).catch((err: any) => {
+        console.error(err);
+        showToast('Error generating PDF for WhatsApp sharing.', 'error');
+      });
     };
 
     const globalWindow = window as any;
