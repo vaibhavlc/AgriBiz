@@ -170,8 +170,8 @@ export const Sales: React.FC = () => {
           useCORS: true, 
           scrollX: 0, 
           scrollY: 0,
-          windowWidth: 1024,
-          windowHeight: 1400,
+          windowWidth: printTemplate === 'A5' ? 559 : 302,
+          windowHeight: printTemplate === 'A5' ? 794 : 1000,
           onclone: (clonedDoc: Document) => {
             const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
             if (clonedEl) {
@@ -275,8 +275,8 @@ export const Sales: React.FC = () => {
           useCORS: true, 
           scrollX: 0, 
           scrollY: 0,
-          windowWidth: 1024,
-          windowHeight: 1400,
+          windowWidth: printTemplate === 'A5' ? 559 : 302,
+          windowHeight: printTemplate === 'A5' ? 794 : 1000,
           onclone: (clonedDoc: Document) => {
             const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
             if (clonedEl) {
