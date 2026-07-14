@@ -156,49 +156,12 @@ export const Sales: React.FC = () => {
       return;
     }
 
-    // 1. Create a full-screen premium overlay to cover the flash
-    const overlay = document.createElement('div');
-    overlay.style.setProperty('position', 'fixed', 'important');
-    overlay.style.setProperty('top', '0', 'important');
-    overlay.style.setProperty('left', '0', 'important');
-    overlay.style.setProperty('width', '100vw', 'important');
-    overlay.style.setProperty('height', '100vh', 'important');
-    overlay.style.setProperty('background-color', '#FCFAF6', 'important');
-    overlay.style.setProperty('z-index', '999999', 'important');
-    overlay.style.setProperty('display', 'flex', 'important');
-    overlay.style.setProperty('flex-direction', 'column', 'important');
-    overlay.style.setProperty('justify-content', 'center', 'important');
-    overlay.style.setProperty('align-items', 'center', 'important');
-    overlay.style.setProperty('font-family', "'Outfit', 'Inter', sans-serif", 'important');
-    overlay.style.setProperty('color', '#2F3E33', 'important');
-    
-    // Add loading spinner CSS and spinner content
-    const styleTag = document.createElement('style');
-    styleTag.innerHTML = `
-      @keyframes pdf-spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .pdf-spinner {
-        border: 4px solid #EAE3D2;
-        border-top: 4px solid #4E6C50;
-        border-radius: 50%;
-        width: 42px;
-        height: 42px;
-        animation: pdf-spin 1s linear infinite;
-      }
-    `;
-    document.head.appendChild(styleTag);
-    overlay.innerHTML = `
-      <div class="pdf-spinner"></div>
-      <p style="margin-top: 18px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px;">Compiling high-definition PDF...</p>
-    `;
-    document.body.appendChild(overlay);
+    showToast('Compiling high-definition PDF document...', 'info');
 
-    // 2. Create the temporary layout clone, positioned at exact (0, 0) relative to viewport but under the overlay
+    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
-    tempEl.style.setProperty('position', 'fixed', 'important');
-    tempEl.style.setProperty('top', '0', 'important');
+    tempEl.style.setProperty('position', 'absolute', 'important');
+    tempEl.style.setProperty('top', '9999px', 'important');
     tempEl.style.setProperty('left', '0', 'important');
     tempEl.style.setProperty('z-index', '999998', 'important');
     tempEl.style.setProperty('zoom', 'normal', 'important');
@@ -335,12 +298,6 @@ export const Sales: React.FC = () => {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
       }
-      if (overlay.parentNode) {
-        document.body.removeChild(overlay);
-      }
-      if (styleTag.parentNode) {
-        document.head.removeChild(styleTag);
-      }
     }
   };
 
@@ -389,49 +346,12 @@ export const Sales: React.FC = () => {
       return;
     }
 
-    // 1. Create a full-screen premium overlay to cover the flash
-    const overlay = document.createElement('div');
-    overlay.style.setProperty('position', 'fixed', 'important');
-    overlay.style.setProperty('top', '0', 'important');
-    overlay.style.setProperty('left', '0', 'important');
-    overlay.style.setProperty('width', '100vw', 'important');
-    overlay.style.setProperty('height', '100vh', 'important');
-    overlay.style.setProperty('background-color', '#FCFAF6', 'important');
-    overlay.style.setProperty('z-index', '999999', 'important');
-    overlay.style.setProperty('display', 'flex', 'important');
-    overlay.style.setProperty('flex-direction', 'column', 'important');
-    overlay.style.setProperty('justify-content', 'center', 'important');
-    overlay.style.setProperty('align-items', 'center', 'important');
-    overlay.style.setProperty('font-family', "'Outfit', 'Inter', sans-serif", 'important');
-    overlay.style.setProperty('color', '#2F3E33', 'important');
-    
-    // Add loading spinner CSS and spinner content
-    const styleTag = document.createElement('style');
-    styleTag.innerHTML = `
-      @keyframes pdf-spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-      }
-      .pdf-spinner {
-        border: 4px solid #EAE3D2;
-        border-top: 4px solid #4E6C50;
-        border-radius: 50%;
-        width: 42px;
-        height: 42px;
-        animation: pdf-spin 1s linear infinite;
-      }
-    `;
-    document.head.appendChild(styleTag);
-    overlay.innerHTML = `
-      <div class="pdf-spinner"></div>
-      <p style="margin-top: 18px; font-weight: 600; font-size: 15px; letter-spacing: 0.3px;">Compiling high-definition PDF...</p>
-    `;
-    document.body.appendChild(overlay);
+    showToast('Compiling PDF for sharing...', 'info');
 
-    // 2. Create the temporary layout clone, positioned at exact (0, 0) relative to viewport but under the overlay
+    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
-    tempEl.style.setProperty('position', 'fixed', 'important');
-    tempEl.style.setProperty('top', '0', 'important');
+    tempEl.style.setProperty('position', 'absolute', 'important');
+    tempEl.style.setProperty('top', '9999px', 'important');
     tempEl.style.setProperty('left', '0', 'important');
     tempEl.style.setProperty('z-index', '999998', 'important');
     tempEl.style.setProperty('zoom', 'normal', 'important');
@@ -600,12 +520,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
-      }
-      if (overlay.parentNode) {
-        document.body.removeChild(overlay);
-      }
-      if (styleTag.parentNode) {
-        document.head.removeChild(styleTag);
       }
     }
   };
