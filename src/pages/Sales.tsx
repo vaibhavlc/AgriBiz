@@ -172,30 +172,17 @@ export const Sales: React.FC = () => {
           scrollY: 0,
           windowWidth: 650,
           windowHeight: 950,
-          onclone: (clonedDoc: Document) => {
-            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
-            if (clonedEl) {
-              clonedEl.style.setProperty('zoom', '1', 'important');
-              clonedEl.style.setProperty('transform', 'none', 'important');
-              clonedEl.style.setProperty('border', 'none', 'important');
-              clonedEl.style.setProperty('box-shadow', 'none', 'important');
-              clonedEl.style.setProperty('border-radius', '0', 'important');
-              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-              clonedEl.style.setProperty('margin', '0', 'important');
-              clonedEl.style.setProperty('position', 'absolute', 'important');
-              clonedEl.style.setProperty('top', '0', 'important');
-              clonedEl.style.setProperty('left', '0', 'important');
-              
-              if (clonedEl.parentNode) {
-                clonedEl.parentNode.removeChild(clonedEl);
-              }
-              clonedDoc.body.innerHTML = '';
-              clonedDoc.body.style.margin = '0';
-              clonedDoc.body.style.padding = '0';
-              clonedDoc.body.style.background = '#FCFAF6';
-              clonedDoc.body.appendChild(clonedEl);
-            }
+          onclone: (_clonedDoc: Document, el: HTMLElement) => {
+            el.style.setProperty('zoom', '1', 'important');
+            el.style.setProperty('transform', 'none', 'important');
+            el.style.setProperty('border', 'none', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+            el.style.setProperty('border-radius', '0', 'important');
+            el.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+            el.style.setProperty('min-height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+            el.style.setProperty('height', 'auto', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+            el.style.setProperty('position', 'static', 'important');
           }
         },
         jsPDF:        { 
@@ -290,30 +277,17 @@ export const Sales: React.FC = () => {
           scrollY: 0,
           windowWidth: 650,
           windowHeight: 950,
-          onclone: (clonedDoc: Document) => {
-            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
-            if (clonedEl) {
-              clonedEl.style.setProperty('zoom', '1', 'important');
-              clonedEl.style.setProperty('transform', 'none', 'important');
-              clonedEl.style.setProperty('border', 'none', 'important');
-              clonedEl.style.setProperty('box-shadow', 'none', 'important');
-              clonedEl.style.setProperty('border-radius', '0', 'important');
-              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-              clonedEl.style.setProperty('margin', '0', 'important');
-              clonedEl.style.setProperty('position', 'absolute', 'important');
-              clonedEl.style.setProperty('top', '0', 'important');
-              clonedEl.style.setProperty('left', '0', 'important');
-              
-              if (clonedEl.parentNode) {
-                clonedEl.parentNode.removeChild(clonedEl);
-              }
-              clonedDoc.body.innerHTML = '';
-              clonedDoc.body.style.margin = '0';
-              clonedDoc.body.style.padding = '0';
-              clonedDoc.body.style.background = '#FCFAF6';
-              clonedDoc.body.appendChild(clonedEl);
-            }
+          onclone: (_clonedDoc: Document, el: HTMLElement) => {
+            el.style.setProperty('zoom', '1', 'important');
+            el.style.setProperty('transform', 'none', 'important');
+            el.style.setProperty('border', 'none', 'important');
+            el.style.setProperty('box-shadow', 'none', 'important');
+            el.style.setProperty('border-radius', '0', 'important');
+            el.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+            el.style.setProperty('min-height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+            el.style.setProperty('height', 'auto', 'important');
+            el.style.setProperty('overflow', 'visible', 'important');
+            el.style.setProperty('position', 'static', 'important');
           }
         },
         jsPDF:        { 
