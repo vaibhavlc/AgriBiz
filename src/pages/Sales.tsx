@@ -173,28 +173,32 @@ export const Sales: React.FC = () => {
           windowWidth: printTemplate === 'A5' ? 559 : 302,
           windowHeight: printTemplate === 'A5' ? 794 : 1000,
           onclone: (clonedDoc: Document) => {
-            // Hide parent/sibling interface elements in the clone
-            const nav = clonedDoc.querySelector('.invoice-detail-nav-panel') as HTMLElement;
-            if (nav) nav.style.display = 'none';
-
-            const header = clonedDoc.querySelector('.header-outer-wrapper') as HTMLElement;
-            if (header) header.style.display = 'none';
-
-            const sidebar = clonedDoc.querySelector('.sidebar') as HTMLElement;
-            if (sidebar) sidebar.style.display = 'none';
-
-            const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
-            if (wrapper) {
-              wrapper.style.setProperty('padding', '0', 'important');
-              wrapper.style.setProperty('margin', '0', 'important');
-              wrapper.style.setProperty('display', 'block', 'important');
-            }
-
-            clonedDoc.body.style.margin = '0';
-            clonedDoc.body.style.padding = '0';
-
             const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
             if (clonedEl) {
+              // Recursively hide all siblings of the element and all siblings of its ancestors
+              let current: HTMLElement | null = clonedEl;
+              while (current && current !== clonedDoc.body) {
+                const parentEl: HTMLElement | null = current.parentElement;
+                if (parentEl) {
+                  Array.from(parentEl.children).forEach((sibling) => {
+                    if (sibling !== current) {
+                      (sibling as HTMLElement).style.setProperty('display', 'none', 'important');
+                    }
+                  });
+                }
+                current = parentEl;
+              }
+
+              // Reset container spacing
+              const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+              if (wrapper) {
+                wrapper.style.setProperty('padding', '0', 'important');
+                wrapper.style.setProperty('margin', '0', 'important');
+                wrapper.style.setProperty('display', 'block', 'important');
+              }
+              clonedDoc.body.style.margin = '0';
+              clonedDoc.body.style.padding = '0';
+
               clonedEl.style.setProperty('zoom', '1', 'important');
               clonedEl.style.setProperty('transform', 'none', 'important');
               clonedEl.style.setProperty('border', 'none', 'important');
@@ -300,28 +304,32 @@ export const Sales: React.FC = () => {
           windowWidth: printTemplate === 'A5' ? 559 : 302,
           windowHeight: printTemplate === 'A5' ? 794 : 1000,
           onclone: (clonedDoc: Document) => {
-            // Hide parent/sibling interface elements in the clone
-            const nav = clonedDoc.querySelector('.invoice-detail-nav-panel') as HTMLElement;
-            if (nav) nav.style.display = 'none';
-
-            const header = clonedDoc.querySelector('.header-outer-wrapper') as HTMLElement;
-            if (header) header.style.display = 'none';
-
-            const sidebar = clonedDoc.querySelector('.sidebar') as HTMLElement;
-            if (sidebar) sidebar.style.display = 'none';
-
-            const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
-            if (wrapper) {
-              wrapper.style.setProperty('padding', '0', 'important');
-              wrapper.style.setProperty('margin', '0', 'important');
-              wrapper.style.setProperty('display', 'block', 'important');
-            }
-
-            clonedDoc.body.style.margin = '0';
-            clonedDoc.body.style.padding = '0';
-
             const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
             if (clonedEl) {
+              // Recursively hide all siblings of the element and all siblings of its ancestors
+              let current: HTMLElement | null = clonedEl;
+              while (current && current !== clonedDoc.body) {
+                const parentEl: HTMLElement | null = current.parentElement;
+                if (parentEl) {
+                  Array.from(parentEl.children).forEach((sibling) => {
+                    if (sibling !== current) {
+                      (sibling as HTMLElement).style.setProperty('display', 'none', 'important');
+                    }
+                  });
+                }
+                current = parentEl;
+              }
+
+              // Reset container spacing
+              const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+              if (wrapper) {
+                wrapper.style.setProperty('padding', '0', 'important');
+                wrapper.style.setProperty('margin', '0', 'important');
+                wrapper.style.setProperty('display', 'block', 'important');
+              }
+              clonedDoc.body.style.margin = '0';
+              clonedDoc.body.style.padding = '0';
+
               clonedEl.style.setProperty('zoom', '1', 'important');
               clonedEl.style.setProperty('transform', 'none', 'important');
               clonedEl.style.setProperty('border', 'none', 'important');
