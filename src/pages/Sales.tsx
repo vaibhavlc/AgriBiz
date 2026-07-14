@@ -161,28 +161,6 @@ export const Sales: React.FC = () => {
         ? `${selectedInvoice.invoiceNumber}.pdf` 
         : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
 
-      // Save original styles
-      const origZoom = element.style.zoom;
-      const origTransform = element.style.transform;
-      const origBorder = element.style.border;
-      const origShadow = element.style.boxShadow;
-      const origRadius = element.style.borderRadius;
-      const origWidth = element.style.width;
-      const origHeight = element.style.height;
-      const origOverflow = element.style.overflow;
-      const origPosition = element.style.position;
-
-      // Apply print styles
-      element.style.setProperty('zoom', '1', 'important');
-      element.style.setProperty('transform', 'none', 'important');
-      element.style.setProperty('border', 'none', 'important');
-      element.style.setProperty('box-shadow', 'none', 'important');
-      element.style.setProperty('border-radius', '0', 'important');
-      element.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-      element.style.setProperty('height', 'auto', 'important');
-      element.style.setProperty('overflow', 'visible', 'important');
-      element.style.setProperty('position', 'relative', 'important');
-
       const opt = {
         margin:       0,
         filename:     fileName,
@@ -191,8 +169,42 @@ export const Sales: React.FC = () => {
           scale: 2, 
           useCORS: true, 
           scrollX: 0, 
-          scrollY: -window.scrollY,
-          logging: false,
+          scrollY: 0,
+          windowWidth: printTemplate === 'A5' ? 559 : 302,
+          windowHeight: printTemplate === 'A5' ? 794 : 1000,
+          onclone: (clonedDoc: Document) => {
+            // Hide parent/sibling interface elements in the clone
+            const nav = clonedDoc.querySelector('.invoice-detail-nav-panel') as HTMLElement;
+            if (nav) nav.style.display = 'none';
+
+            const header = clonedDoc.querySelector('.header-outer-wrapper') as HTMLElement;
+            if (header) header.style.display = 'none';
+
+            const sidebar = clonedDoc.querySelector('.sidebar') as HTMLElement;
+            if (sidebar) sidebar.style.display = 'none';
+
+            const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+            if (wrapper) {
+              wrapper.style.setProperty('padding', '0', 'important');
+              wrapper.style.setProperty('margin', '0', 'important');
+              wrapper.style.setProperty('display', 'block', 'important');
+            }
+
+            clonedDoc.body.style.margin = '0';
+            clonedDoc.body.style.padding = '0';
+
+            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+            if (clonedEl) {
+              clonedEl.style.setProperty('zoom', '1', 'important');
+              clonedEl.style.setProperty('transform', 'none', 'important');
+              clonedEl.style.setProperty('border', 'none', 'important');
+              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+              clonedEl.style.setProperty('border-radius', '0', 'important');
+              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+              clonedEl.style.setProperty('margin', '0', 'important');
+            }
+          }
         },
         jsPDF:        { 
           unit: 'mm', 
@@ -202,27 +214,8 @@ export const Sales: React.FC = () => {
       };
       
       html2pdfLib().from(element).set(opt).save().then(() => {
-        // Restore original styles
-        element.style.zoom = origZoom;
-        element.style.transform = origTransform;
-        element.style.border = origBorder;
-        element.style.boxShadow = origShadow;
-        element.style.borderRadius = origRadius;
-        element.style.width = origWidth;
-        element.style.height = origHeight;
-        element.style.overflow = origOverflow;
-        element.style.position = origPosition;
         showToast('PDF downloaded successfully!');
       }).catch((err: any) => {
-        element.style.zoom = origZoom;
-        element.style.transform = origTransform;
-        element.style.border = origBorder;
-        element.style.boxShadow = origShadow;
-        element.style.borderRadius = origRadius;
-        element.style.width = origWidth;
-        element.style.height = origHeight;
-        element.style.overflow = origOverflow;
-        element.style.position = origPosition;
         console.error(err);
         showToast('Error exporting PDF document.', 'error');
       });
@@ -304,19 +297,40 @@ export const Sales: React.FC = () => {
           useCORS: true, 
           scrollX: 0, 
           scrollY: 0,
-          windowWidth: 650,
-          windowHeight: 950,
-          onclone: (_clonedDoc: Document, el: HTMLElement) => {
-            el.style.setProperty('zoom', '1', 'important');
-            el.style.setProperty('transform', 'none', 'important');
-            el.style.setProperty('border', 'none', 'important');
-            el.style.setProperty('box-shadow', 'none', 'important');
-            el.style.setProperty('border-radius', '0', 'important');
-            el.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-            el.style.setProperty('min-height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
-            el.style.setProperty('height', 'auto', 'important');
-            el.style.setProperty('overflow', 'visible', 'important');
-            el.style.setProperty('position', 'static', 'important');
+          windowWidth: printTemplate === 'A5' ? 559 : 302,
+          windowHeight: printTemplate === 'A5' ? 794 : 1000,
+          onclone: (clonedDoc: Document) => {
+            // Hide parent/sibling interface elements in the clone
+            const nav = clonedDoc.querySelector('.invoice-detail-nav-panel') as HTMLElement;
+            if (nav) nav.style.display = 'none';
+
+            const header = clonedDoc.querySelector('.header-outer-wrapper') as HTMLElement;
+            if (header) header.style.display = 'none';
+
+            const sidebar = clonedDoc.querySelector('.sidebar') as HTMLElement;
+            if (sidebar) sidebar.style.display = 'none';
+
+            const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+            if (wrapper) {
+              wrapper.style.setProperty('padding', '0', 'important');
+              wrapper.style.setProperty('margin', '0', 'important');
+              wrapper.style.setProperty('display', 'block', 'important');
+            }
+
+            clonedDoc.body.style.margin = '0';
+            clonedDoc.body.style.padding = '0';
+
+            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+            if (clonedEl) {
+              clonedEl.style.setProperty('zoom', '1', 'important');
+              clonedEl.style.setProperty('transform', 'none', 'important');
+              clonedEl.style.setProperty('border', 'none', 'important');
+              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+              clonedEl.style.setProperty('border-radius', '0', 'important');
+              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+              clonedEl.style.setProperty('margin', '0', 'important');
+            }
           }
         },
         jsPDF:        { 
