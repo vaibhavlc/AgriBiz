@@ -992,7 +992,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </>
                 )}
               </div>
-              <div style={{ minWidth: "280px" }}>
+              <div style={{ minWidth: "200px" }}>
                 <table className="invoice-summary-table">
                   <tbody>
                     <tr>
@@ -1363,7 +1363,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </>
                   )}
                 </div>
-                <div style={{ minWidth: "280px" }}>
+                <div style={{ minWidth: "200px" }}>
                   <table className="invoice-summary-table">
                     <tbody>
                       <tr>
