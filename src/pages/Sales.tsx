@@ -199,6 +199,13 @@ export const Sales: React.FC = () => {
               clonedDoc.body.style.margin = '0';
               clonedDoc.body.style.padding = '0';
 
+              // Reset scroll positions of all elements in the clone
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach((el) => {
+                el.scrollTop = 0;
+                el.scrollLeft = 0;
+              });
+
               clonedEl.style.setProperty('zoom', '1', 'important');
               clonedEl.style.setProperty('transform', 'none', 'important');
               clonedEl.style.setProperty('border', 'none', 'important');
@@ -329,6 +336,13 @@ export const Sales: React.FC = () => {
               }
               clonedDoc.body.style.margin = '0';
               clonedDoc.body.style.padding = '0';
+
+              // Reset scroll positions of all elements in the clone
+              const allElements = clonedDoc.querySelectorAll('*');
+              allElements.forEach((el) => {
+                el.scrollTop = 0;
+                el.scrollLeft = 0;
+              });
 
               clonedEl.style.setProperty('zoom', '1', 'important');
               clonedEl.style.setProperty('transform', 'none', 'important');
