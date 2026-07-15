@@ -33,6 +33,9 @@ export const Inventory: React.FC = () => {
     invoices,
     purchases,
     showToast,
+    setCurrentTab,
+    setViewInvoice,
+    setViewPurchase,
   } = useApp();
 
   const totalProducts = products.length;
@@ -166,6 +169,16 @@ export const Inventory: React.FC = () => {
       ? ((profitMargin / selectedProduct.sellingPrice) * 100).toFixed(1) 
       : '0.0';
 
+    const handleTransactionClick = (tx: { type: string; id: string }) => {
+      if (tx.type === 'Sales') {
+        setCurrentTab('sales');
+        setViewInvoice(tx.id);
+      } else {
+        setCurrentTab('purchases');
+        setViewPurchase(tx.id);
+      }
+    };
+
     // Stock health percentage for progress bar
     const stockHealthPct = selectedProduct.minStock > 0
       ? Math.min(100, Math.round((selectedProduct.stock / (selectedProduct.minStock * 3)) * 100))
@@ -280,8 +293,13 @@ export const Inventory: React.FC = () => {
             <div style={{ fontSize:'10px', color:'var(--text-muted)', marginTop:'4px' }}>Min threshold: {selectedProduct.minStock}</div>
           </div>
 
-          {/* Cost price */}
-          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+          {/* Cost price - click to go to Purchases */}
+          <div
+            onClick={() => setCurrentTab('purchases')}
+            style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer', transition:'box-shadow 0.2s, transform 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 6px 20px rgba(99,102,241,0.15)'; (e.currentTarget as HTMLDivElement).style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
+          >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
               <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Cost Price</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(99,102,241,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#6366f1' }}>
@@ -292,8 +310,13 @@ export const Inventory: React.FC = () => {
             <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (purchase)</div>
           </div>
 
-          {/* Selling price */}
-          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+          {/* Selling price - click to go to Sales */}
+          <div
+            onClick={() => setCurrentTab('sales')}
+            style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer', transition:'box-shadow 0.2s, transform 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 6px 20px rgba(16,185,129,0.15)'; (e.currentTarget as HTMLDivElement).style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
+          >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
               <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Selling Price</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(16,185,129,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#059669' }}>
@@ -304,8 +327,13 @@ export const Inventory: React.FC = () => {
             <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (retail)</div>
           </div>
 
-          {/* Profit margin */}
-          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+          {/* Profit margin - click to go to Sales */}
+          <div
+            onClick={() => setCurrentTab('sales')}
+            style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer', transition:'box-shadow 0.2s, transform 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 6px 20px rgba(245,158,11,0.15)'; (e.currentTarget as HTMLDivElement).style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
+          >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
               <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Profit Margin</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(245,158,11,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#d97706' }}>
@@ -398,7 +426,12 @@ export const Inventory: React.FC = () => {
                     </thead>
                     <tbody>
                       {transactions.map((tx, idx) => (
-                        <tr key={idx}>
+                        <tr 
+                          key={idx} 
+                          onClick={() => handleTransactionClick(tx)}
+                          style={{ cursor: 'pointer' }}
+                          title="Click to view transaction details"
+                        >
                           <td className="text-nowrap">{new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
                           <td><span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>{tx.type}</span></td>
                           <td style={{ fontWeight:600 }}>{tx.number}</td>
@@ -416,7 +449,14 @@ export const Inventory: React.FC = () => {
               {/* Mobile Cards */}
               <div className="mobile-card-list" style={{ padding:'12px' }}>
                 {transactions.map((tx, idx) => (
-                  <div key={idx} className="mobile-list-card">
+                  <div 
+                    key={idx} 
+                    className="mobile-list-card"
+                    onClick={() => handleTransactionClick(tx)}
+                    style={{ cursor: 'pointer', transition: 'transform 0.15s ease, box-shadow 0.15s ease' }}
+                    onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = '0 4px 12px rgba(0,0,0,0.1)'; }}
+                    onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow = ''; }}
+                  >
                     <div className="mobile-list-card-header">
                       <div>
                         <span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>{tx.type}</span>
