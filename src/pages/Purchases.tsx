@@ -1108,6 +1108,9 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
       balanceDue: selectedPurchase.balanceDue,
     };
 
+    const totalExclCharges = selectedPurchase.subtotal + selectedPurchase.gstTotal;
+    const additionalCharges = selectedPurchase.grandTotal - totalExclCharges;
+
     // Parse structured notes for print formatting
     let supplierInvoiceNo = '';
     let supplierInvoiceDt = '';
@@ -1393,9 +1396,19 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                         <td>{formatINR(totals.sgst)}</td>
                       </tr>
                     )}
+                    <tr style={{ borderTop: '1px dashed var(--border-color)', fontWeight: 600 }}>
+                      <td>Total (Excl. Charges)</td>
+                      <td>{formatINR(totalExclCharges)}</td>
+                    </tr>
+                    {additionalCharges > 0 && (
+                      <tr>
+                        <td>Additional Charges</td>
+                        <td>{formatINR(additionalCharges)}</td>
+                      </tr>
+                    )}
                     <tr className="grand-total-row">
-                      <td>Grand Total</td>
-                      <td>{formatINR(totals.grandTotal)}</td>
+                      <td>Grand Total (Incl. Charges)</td>
+                      <td>{formatINR(selectedPurchase.grandTotal)}</td>
                     </tr>
                     <tr>
                       <td style={{ color: '#10B981' }}>Amount Paid</td>
@@ -1621,8 +1634,18 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     <span>{settings.currencySymbol || "₹"}{totals.sgst.toFixed(2)}</span>
                   </div>
                 )}
+                <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #eee', paddingTop: '3px' }}>
+                  <span>Total (Excl. Charges)</span>
+                  <span>{settings.currencySymbol || "₹"}{totalExclCharges.toFixed(2)}</span>
+                </div>
+                {additionalCharges > 0 && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <span>Additional Charges</span>
+                    <span>{settings.currencySymbol || "₹"}{additionalCharges.toFixed(2)}</span>
+                  </div>
+                )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
-                  <span>GRAND TOTAL</span>
+                  <span>GRAND TOTAL (INCL. CHARGES)</span>
                   <span>{settings.currencySymbol || "₹"}{totals.grandTotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}>

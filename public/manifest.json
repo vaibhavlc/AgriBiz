@@ -1,0 +1,24 @@
+{
+  "name": "Daivyog",
+  "short_name": "Daivyog",
+  "description": "Daivyog Dealer Management System",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a5c2a",
+  "theme_color": "#1a5c2a",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/logo-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ]
+}
