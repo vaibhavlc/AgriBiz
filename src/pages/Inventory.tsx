@@ -53,11 +53,13 @@ export const Inventory: React.FC = () => {
   // Date filters for Product Ledger Activity
   const [ledgerStartDate, setLedgerStartDate] = useState('');
   const [ledgerEndDate, setLedgerEndDate] = useState('');
+  const [ledgerTypeFilter, setLedgerTypeFilter] = useState<'All' | 'Sales' | 'Purchase'>('All');
 
-  // Clear date filters when navigating away or switching items
+  // Clear date & type filters when navigating away or switching items
   React.useEffect(() => {
     setLedgerStartDate('');
     setLedgerEndDate('');
+    setLedgerTypeFilter('All');
   }, [viewProductId]);
 
   // Pagination states
@@ -176,8 +178,18 @@ export const Inventory: React.FC = () => {
     const transactions = allTransactions.filter(tx => {
       if (ledgerStartDate && tx.date < ledgerStartDate) return false;
       if (ledgerEndDate && tx.date > ledgerEndDate) return false;
+      if (ledgerTypeFilter !== 'All') {
+        if (ledgerTypeFilter === 'Sales' && tx.type !== 'Sales') return false;
+        if (ledgerTypeFilter === 'Purchase' && tx.type !== 'Purchase') return false;
+      }
       return true;
     });
+
+    // Compute lifetime statistics
+    const totalSalesValue = productSales.reduce((sum, s) => sum + s.total, 0);
+    const totalSalesQty = productSales.reduce((sum, s) => sum + s.quantity, 0);
+    const totalPurchasesValue = productPurchases.reduce((sum, p) => sum + p.total, 0);
+    const totalPurchasesQty = productPurchases.reduce((sum, p) => sum + p.quantity, 0);
 
     // Calculate margins
     const profitMargin = selectedProduct.sellingPrice - selectedProduct.purchasePrice;
@@ -399,6 +411,23 @@ export const Inventory: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {/* Lifetime statistics card */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Lifetime Activity</h4>
+            {[
+              { label:'Total Quantity Sold', value:`${totalSalesQty} units` },
+              { label:'Total Revenue Generated', value: formatINR(totalSalesValue) },
+              { label:'Total Quantity Purchased', value:`${totalPurchasesQty} units` },
+              { label:'Total Procurement Cost', value: formatINR(totalPurchasesValue) },
+              { label:'Net Ledger Balance', value: formatINR(totalSalesValue - totalPurchasesValue), highlight: true, highlightColor: (totalSalesValue - totalPurchasesValue) >= 0 ? '#16a34a' : '#dc2626' },
+            ].map((row, i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom: i < 4 ? '1px dashed var(--border-color)' : 'none' }}>
+                <span style={{ fontSize:'12px', color:'var(--text-secondary)' }}>{row.label}</span>
+                <span style={{ fontSize:'13px', fontWeight: row.highlight ? 800 : 600, color: row.highlight ? (row.highlightColor || 'var(--primary-dark)') : 'var(--text-primary)' }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── TRANSACTION LEDGER ──────────────────────────────── */}
@@ -465,11 +494,33 @@ export const Inventory: React.FC = () => {
                 }}
               />
             </div>
-            {(ledgerStartDate || ledgerEndDate) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Type:</span>
+              <select
+                value={ledgerTypeFilter}
+                onChange={(e) => setLedgerTypeFilter(e.target.value as 'All' | 'Sales' | 'Purchase')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '13px',
+                  background: 'var(--bg-app)',
+                  color: 'var(--text-primary)',
+                  outline: 'none',
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="All">All Transactions</option>
+                <option value="Sales">Sales Only</option>
+                <option value="Purchase">Purchases Only</option>
+              </select>
+            </div>
+            {(ledgerStartDate || ledgerEndDate || ledgerTypeFilter !== 'All') && (
               <button 
                 onClick={() => {
                   setLedgerStartDate('');
                   setLedgerEndDate('');
+                  setLedgerTypeFilter('All');
                 }}
                 className="btn btn-secondary"
                 style={{
@@ -494,11 +545,12 @@ export const Inventory: React.FC = () => {
             <div style={{ padding:'48px 0', textAlign:'center', color:'var(--text-muted)' }}>
               <FileText size={40} style={{ opacity:0.25, marginBottom:'12px' }} />
               <div style={{ fontSize:'14px', fontWeight:600 }}>No Transactions Match Filters</div>
-              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px', marginBottom:'16px' }}>Adjust your start or end date to view transactions in that period.</div>
+              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px', marginBottom:'16px' }}>Adjust your start date, end date, or transaction type filters.</div>
               <button 
                 onClick={() => {
                   setLedgerStartDate('');
                   setLedgerEndDate('');
+                  setLedgerTypeFilter('All');
                 }}
                 className="btn btn-secondary"
                 style={{ padding: '8px 16px', borderRadius: '10px' }}
