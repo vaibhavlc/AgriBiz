@@ -32,6 +32,7 @@ export const Inventory: React.FC = () => {
     setIsEditingProduct,
     invoices,
     purchases,
+    showToast,
   } = useApp();
 
   const totalProducts = products.length;
@@ -44,6 +45,7 @@ export const Inventory: React.FC = () => {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [viewProductId, setViewProductId] = useState<string | null>(null);
   const [activeMenuProductId, setActiveMenuProductId] = useState<string | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,9 +61,10 @@ export const Inventory: React.FC = () => {
     setIsProductModalOpen(true);
   };
 
-  const handleDeleteProduct = (id: string, name: string) => {
-    if (confirm(`Are you sure you want to delete ${name}? This will remove it from the catalog.`)) {
-      deleteProduct(id);
+  const handleDeleteProduct = (id: string, _name: string) => {
+    const productObj = products.find((p) => p.id === id);
+    if (productObj) {
+      setDeletingProduct(productObj);
     }
   };
 
@@ -167,23 +170,13 @@ export const Inventory: React.FC = () => {
       <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
         {/* Back and Page Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setViewProductId(null)}
-              style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <ArrowLeft size={16} /> Back
-            </button>
-            <div>
-              <h2 style={{ fontSize: '20px', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-primary)' }}>
-                {selectedProduct.name}
-              </h2>
-              <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                SKU: <code style={{ fontFamily: 'monospace', fontWeight: 600 }}>{selectedProduct.sku}</code> | Category: <strong>{selectedProduct.category}</strong>
-              </div>
-            </div>
-          </div>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => setViewProductId(null)}
+            style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <ArrowLeft size={16} /> Back to Catalog
+          </button>
 
           <div style={{ display: 'flex', gap: '12px' }}>
             <button 
@@ -195,14 +188,60 @@ export const Inventory: React.FC = () => {
             </button>
             <button 
               className="btn btn-secondary" 
-              onClick={() => {
-                handleDeleteProduct(selectedProduct.id, selectedProduct.name);
-                setViewProductId(null);
-              }}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-danger)' }}
+              onClick={() => setDeletingProduct(selectedProduct)}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
             >
               <Trash2 size={15} /> Delete Product
             </button>
+          </div>
+        </div>
+
+        {/* Product Profile Hero Banner */}
+        <div className="card" style={{
+          padding: '24px',
+          borderRadius: '16px',
+          border: '1px solid var(--border-color)',
+          background: 'linear-gradient(135deg, var(--card-bg, #ffffff) 0%, var(--bg-app) 100%)',
+          marginBottom: '28px',
+          display: 'flex',
+          gap: '24px',
+          alignItems: 'center',
+          flexWrap: 'wrap'
+        }}>
+          <div style={{
+            width: '68px',
+            height: '68px',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            flexShrink: 0,
+            boxShadow: '0 8px 16px rgba(78,108,80,0.15)'
+          }}>
+            <Package size={32} />
+          </div>
+
+          <div style={{ flex: 1, minWidth: '200px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                {selectedProduct.name}
+              </h2>
+              {getStockStatusBadge(selectedProduct)}
+            </div>
+            
+            <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
+              <span>SKU: <code style={{ fontFamily: 'monospace', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.03)', padding: '2px 6px', borderRadius: '4px' }}>{selectedProduct.sku}</code></span>
+              <span>•</span>
+              <span>Category: <strong style={{ color: 'var(--primary-dark)' }}>{selectedProduct.category}</strong></span>
+              {selectedProduct.hsn && (
+                <>
+                  <span>•</span>
+                  <span>HSN: <strong style={{ color: 'var(--text-primary)' }}>{selectedProduct.hsn}</strong></span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -357,10 +396,48 @@ export const Inventory: React.FC = () => {
           onClose={() => setIsProductModalOpen(false)}
           editProductData={isEditingProduct}
         />
+        {deletingProduct && (
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                  <AlertTriangle size={28} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Product</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Are you sure you want to delete product <strong>{deletingProduct.name}</strong>? This will remove it from the catalog.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingProduct(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    onClick={() => {
+                      const idToDelete = deletingProduct.id;
+                      const nameToDelete = deletingProduct.name;
+                      setDeletingProduct(null);
+                      try {
+                        deleteProduct(idToDelete);
+                        showToast(`Product "${nameToDelete}" deleted successfully.`, 'info');
+                        setViewProductId(null);
+                      } catch (error: any) {
+                        console.error("Delete product error:", error);
+                        showToast(`Failed to delete product: ${error.message || error}`, 'error');
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
-
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Inventory KPI Cards */}
