@@ -375,6 +375,7 @@ export const Inventory: React.FC = () => {
               Unique catalog skus
             </span>
           </div>
+          <div className="kpi-icon-container blue"><Package size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -386,6 +387,7 @@ export const Inventory: React.FC = () => {
               Valued at purchase rate
             </span>
           </div>
+          <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -397,6 +399,7 @@ export const Inventory: React.FC = () => {
               Under minimum limit
             </span>
           </div>
+          <div className="kpi-icon-container amber"><AlertTriangle size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -408,13 +411,14 @@ export const Inventory: React.FC = () => {
               Zero stock quantity
             </span>
           </div>
+          <div className="kpi-icon-container rose"><XCircle size={20} /></div>
         </div>
       </div>
 
       {/* Top Filter Bar */}
       <div className="filters-row-unified">
         <div className="filters-group-one">
-          <div className="search-input-wrapper">
+          <div className="search-input-wrapper sales-search-wrapper">
             <Search size={16} className="search-input-icon" />
             <input
               type="text"
@@ -424,8 +428,8 @@ export const Inventory: React.FC = () => {
             />
           </div>
 
-          {/* Segmented Filter Control */}
-          <div className="segmented-control-inventory" style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 1, minWidth: 0 }}>
+          {/* Desktop Segmented Filter Control */}
+          <div className="desktop-status-filters segmented-control-inventory" style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 1, minWidth: 0 }}>
             {['All', 'In Stock', 'Low Stock', 'Out of Stock'].map((status) => {
               const isActive = stockStatusFilter === status;
               return (
@@ -462,11 +466,29 @@ export const Inventory: React.FC = () => {
               );
             })}
           </div>
+
+          {/* Mobile Status Select Dropdown */}
+          <div className="mobile-status-select-wrapper">
+            <select
+              className="filter-select status-select-field"
+              value={stockStatusFilter}
+              onChange={(e) => {
+                setStockStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              {['All', 'In Stock', 'Low Stock', 'Out of Stock'].map((status) => (
+                <option key={status} value={status}>
+                  {status === 'All' ? 'All Levels' : status}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="filters-group-two">
           {/* Category Filter */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="sales-sort-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
               <Tag size={13} />
             </span>
