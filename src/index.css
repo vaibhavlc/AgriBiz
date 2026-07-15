@@ -5350,6 +5350,12 @@ body.dark-theme .lang-selector-btn:hover {
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
   margin-bottom: 20px;
+  align-items: stretch;
+}
+
+.inv-profile-stat-grid > div {
+  display: flex;
+  flex-direction: column;
 }
 
 .inv-profile-detail-grid {
@@ -5369,6 +5375,15 @@ body.dark-theme .lang-selector-btn:hover {
   .inv-profile-stat-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
+  }
+
+  .inv-profile-stat-grid > div {
+    padding: 14px !important;
+  }
+
+  /* Uniform value font size across all 4 tiles on mobile */
+  .inv-profile-stat-grid .stat-value {
+    font-size: 20px !important;
   }
 
   .inv-profile-detail-grid {

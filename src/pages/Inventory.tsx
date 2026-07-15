@@ -271,7 +271,7 @@ export const Inventory: React.FC = () => {
                 <Package size={14} />
               </div>
             </div>
-            <div style={{ fontSize:'26px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{selectedProduct.stock}</div>
+            <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{selectedProduct.stock}</div>
             <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>units available</div>
             {/* Progress bar */}
             <div style={{ marginTop:'10px', height:'4px', background:'var(--bg-app)', borderRadius:'9999px', overflow:'hidden' }}>
@@ -288,7 +288,7 @@ export const Inventory: React.FC = () => {
                 <Tag size={14} />
               </div>
             </div>
-            <div style={{ fontSize:'22px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{formatINR(selectedProduct.purchasePrice)}</div>
+            <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{formatINR(selectedProduct.purchasePrice)}</div>
             <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (purchase)</div>
           </div>
 
@@ -300,7 +300,7 @@ export const Inventory: React.FC = () => {
                 <TrendingUp size={14} />
               </div>
             </div>
-            <div style={{ fontSize:'22px', fontWeight:800, color:'var(--primary-dark)', lineHeight:1 }}>{formatINR(selectedProduct.sellingPrice)}</div>
+            <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'var(--primary-dark)', lineHeight:1 }}>{formatINR(selectedProduct.sellingPrice)}</div>
             <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (retail)</div>
           </div>
 
@@ -312,7 +312,7 @@ export const Inventory: React.FC = () => {
                 <CheckCircle2 size={14} />
               </div>
             </div>
-            <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
+            <div className="stat-value" style={{ display:'flex', alignItems:'baseline', gap:'6px', flexWrap:'wrap' }}>
               <span style={{ fontSize:'22px', fontWeight:800, color: profitMargin >= 0 ? '#16a34a' : '#dc2626', lineHeight:1 }}>{formatINR(profitMargin)}</span>
               <span style={{ fontSize:'12px', fontWeight:700, color: profitMargin >= 0 ? '#16a34a' : '#dc2626' }}>({marginPercent}%)</span>
             </div>
