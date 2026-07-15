@@ -166,85 +166,92 @@ export const Inventory: React.FC = () => {
       ? ((profitMargin / selectedProduct.sellingPrice) * 100).toFixed(1) 
       : '0.0';
 
+    // Stock health percentage for progress bar
+    const stockHealthPct = selectedProduct.minStock > 0
+      ? Math.min(100, Math.round((selectedProduct.stock / (selectedProduct.minStock * 3)) * 100))
+      : selectedProduct.stock > 0 ? 100 : 0;
+    const stockBarColor = selectedProduct.stock === 0
+      ? '#ef4444'
+      : selectedProduct.stock <= selectedProduct.minStock
+        ? '#f59e0b'
+        : '#22c55e';
+
     return (
       <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
 
-        {/* Premium Product Profile Hero Card */}
-        <div className="card" style={{
+        {/* ── HERO CARD ───────────────────────────────────────── */}
+        <div style={{
           borderRadius: '20px',
-          border: '1px solid var(--border-color)',
           overflow: 'hidden',
-          marginBottom: '24px',
-          boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
+          marginBottom: '20px',
+          border: '1px solid var(--border-color)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
         }}>
-          {/* Gradient Top Banner */}
+          {/* Green gradient banner */}
           <div style={{
-            background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, #6dbf7e 100%)',
-            padding: '20px 24px 48px',
+            background: 'linear-gradient(135deg, #1a5c2a 0%, #2d8a45 50%, #3da85a 100%)',
+            padding: '18px 20px 56px',
             position: 'relative',
             overflow: 'hidden',
           }}>
-            {/* Decorative circles */}
-            <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
-            <div style={{ position: 'absolute', bottom: '-20px', left: '30%', width: '90px', height: '90px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+            {/* BG decorations */}
+            <div style={{ position:'absolute', top:'-40px', right:'-40px', width:'160px', height:'160px', borderRadius:'50%', background:'rgba(255,255,255,0.05)' }} />
+            <div style={{ position:'absolute', bottom:'-30px', left:'20%', width:'100px', height:'100px', borderRadius:'50%', background:'rgba(255,255,255,0.04)' }} />
+            <div style={{ position:'absolute', top:'10px', left:'45%', width:'60px', height:'60px', borderRadius:'50%', background:'rgba(255,255,255,0.03)' }} />
 
-            {/* Top row: Back | Edit + Delete */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: '12px' }}>
+            {/* Action Row — Back left, Edit+Delete right */}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', position:'relative', zIndex:2, flexWrap:'wrap', gap:'10px' }}>
               <button
-                className="btn"
                 onClick={() => setViewProductId(null)}
-                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', padding: '7px 14px', fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(6px)', cursor: 'pointer' }}
+                style={{ display:'flex', alignItems:'center', gap:'6px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', borderRadius:'10px', padding:'7px 14px', fontSize:'13px', fontWeight:600, cursor:'pointer', backdropFilter:'blur(8px)' }}
               >
-                <ArrowLeft size={15} /> Back to Catalog
+                <ArrowLeft size={14} /> Back
               </button>
-
-              <div style={{ display: 'flex', gap: '10px' }}>
+              <div style={{ display:'flex', gap:'8px' }}>
                 <button
                   onClick={() => handleEditClick(selectedProduct)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', padding: '7px 14px', fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(6px)', cursor: 'pointer' }}
+                  style={{ display:'flex', alignItems:'center', gap:'6px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', borderRadius:'10px', padding:'7px 14px', fontSize:'13px', fontWeight:600, cursor:'pointer', backdropFilter:'blur(8px)' }}
                 >
-                  <Edit2 size={14} /> Edit
+                  <Edit2 size={13} /> Edit
                 </button>
                 <button
                   onClick={() => setDeletingProduct(selectedProduct)}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239,68,68,0.25)', color: '#fff', border: '1px solid rgba(239,68,68,0.45)', borderRadius: '10px', padding: '7px 14px', fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(6px)', cursor: 'pointer' }}
+                  style={{ display:'flex', alignItems:'center', gap:'6px', background:'rgba(220,38,38,0.3)', border:'1px solid rgba(220,38,38,0.5)', color:'#fff', borderRadius:'10px', padding:'7px 14px', fontSize:'13px', fontWeight:600, cursor:'pointer', backdropFilter:'blur(8px)' }}
                 >
-                  <Trash2 size={14} /> Delete
+                  <Trash2 size={13} /> Delete
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Product Identity Row (floated up over banner) */}
-          <div style={{ padding: '0 24px 20px', marginTop: '-32px', position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '18px', flexWrap: 'wrap' }}>
-              {/* Icon tile */}
+          {/* Product identity — lifts over the banner */}
+          <div style={{ background:'var(--card-bg, #fff)', padding:'0 20px 20px' }}>
+            <div style={{ display:'flex', alignItems:'flex-start', gap:'16px', marginTop:'-36px', position:'relative', zIndex:2 }}>
+              {/* Avatar */}
               <div style={{
-                width: '64px', height: '64px', borderRadius: '16px',
-                background: 'linear-gradient(135deg, #fff 0%, #f0fdf4 100%)',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                color: 'var(--primary-dark)', flexShrink: 0,
-                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
-                border: '2px solid rgba(255,255,255,0.9)'
+                width:'72px', height:'72px', borderRadius:'18px', flexShrink:0,
+                background:'linear-gradient(135deg, #1a5c2a 0%, #3da85a 100%)',
+                border:'3px solid var(--card-bg, #fff)',
+                boxShadow:'0 4px 20px rgba(0,0,0,0.15)',
+                display:'flex', alignItems:'center', justifyContent:'center', color:'#fff',
               }}>
-                <Package size={28} />
+                <Package size={30} />
               </div>
 
-              {/* Name + meta */}
-              <div style={{ flex: 1, minWidth: '180px', paddingBottom: '4px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+              <div style={{ flex:1, paddingTop:'40px' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:'10px', flexWrap:'wrap' }}>
+                  <h2 style={{ fontSize:'20px', fontWeight:800, color:'var(--text-primary)', margin:0 }}>
                     {selectedProduct.name}
                   </h2>
                   {getStockStatusBadge(selectedProduct)}
                 </div>
-                <div style={{ display: 'flex', gap: '14px', marginTop: '6px', fontSize: '12px', color: 'var(--text-secondary)', flexWrap: 'wrap', alignItems: 'center' }}>
-                  <span>SKU: <code style={{ fontFamily: 'monospace', fontWeight: 700, background: 'var(--bg-app)', padding: '2px 6px', borderRadius: '4px' }}>{selectedProduct.sku}</code></span>
-                  <span style={{ color: 'var(--border-color)' }}>•</span>
-                  <span>Category: <strong style={{ color: 'var(--primary-dark)' }}>{selectedProduct.category}</strong></span>
+                <div style={{ display:'flex', gap:'16px', marginTop:'5px', fontSize:'12px', color:'var(--text-secondary)', flexWrap:'wrap', alignItems:'center' }}>
+                  <span>SKU: <code style={{ fontFamily:'monospace', fontWeight:700, background:'var(--bg-app)', padding:'1px 6px', borderRadius:'4px', fontSize:'11px' }}>{selectedProduct.sku}</code></span>
+                  <span style={{ color:'var(--border-color)' }}>|</span>
+                  <span>Category: <strong style={{ color:'var(--primary-dark)' }}>{selectedProduct.category}</strong></span>
                   {selectedProduct.hsn && (
                     <>
-                      <span style={{ color: 'var(--border-color)' }}>•</span>
+                      <span style={{ color:'var(--border-color)' }}>|</span>
                       <span>HSN: <strong>{selectedProduct.hsn}</strong></span>
                     </>
                   )}
@@ -254,81 +261,127 @@ export const Inventory: React.FC = () => {
           </div>
         </div>
 
-
-        {/* 3 Grid Summary Cards */}
-        <div className="form-grid-3" style={{ marginBottom: '28px' }}>
-          {/* Card 1: Stock Status */}
-          <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border-color)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Stock status</span>
-              {getStockStatusBadge(selectedProduct)}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <strong style={{ fontSize: '28px', color: 'var(--text-primary)', fontWeight: 800 }}>{selectedProduct.stock}</strong>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>units on hand</span>
-            </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-              Low Stock Alert Limit: <strong>{selectedProduct.minStock} units</strong>
-            </div>
-          </div>
-
-          {/* Card 2: Pricing Details */}
-          <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Pricing & Tax</span>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Cost Price</div>
-                <strong style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{formatINR(selectedProduct.purchasePrice)}</strong>
-              </div>
-              <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginBottom: '4px' }}>Retail Rate</div>
-                <strong style={{ fontSize: '18px', color: 'var(--primary-dark)' }}>{formatINR(selectedProduct.sellingPrice)}</strong>
+        {/* ── 4 STAT TILES ────────────────────────────────────── */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'20px' }}>
+          {/* Stock on hand */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Stock On Hand</span>
+              <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(34,197,94,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#16a34a' }}>
+                <Package size={14} />
               </div>
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-              GST Rate Bracket: <strong>{selectedProduct.gstRate}% GST</strong>
+            <div style={{ fontSize:'26px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{selectedProduct.stock}</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>units available</div>
+            {/* Progress bar */}
+            <div style={{ marginTop:'10px', height:'4px', background:'var(--bg-app)', borderRadius:'9999px', overflow:'hidden' }}>
+              <div style={{ height:'100%', width:`${stockHealthPct}%`, background:stockBarColor, borderRadius:'9999px', transition:'width 0.5s ease' }} />
             </div>
+            <div style={{ fontSize:'10px', color:'var(--text-muted)', marginTop:'4px' }}>Min threshold: {selectedProduct.minStock}</div>
           </div>
 
-          {/* Card 3: Margin & Profit */}
-          <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border-color)' }}>
-            <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Profit Margin Estimation</span>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-              <strong style={{ fontSize: '28px', color: 'var(--color-success-dark)', fontWeight: 800 }}>{formatINR(profitMargin)}</strong>
-              <span style={{ fontSize: '14px', color: 'var(--color-success-dark)', fontWeight: 700 }}>({marginPercent}%)</span>
+          {/* Cost price */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Cost Price</span>
+              <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(99,102,241,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#6366f1' }}>
+                <Tag size={14} />
+              </div>
             </div>
-            <div style={{ fontSize: '12px', color: 'var(--text-muted)', borderTop: '1px solid var(--border-color)', paddingTop: '10px', marginTop: '4px' }}>
-              Gross Profit markup per unit sale
+            <div style={{ fontSize:'22px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{formatINR(selectedProduct.purchasePrice)}</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (purchase)</div>
+          </div>
+
+          {/* Selling price */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Selling Price</span>
+              <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(16,185,129,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#059669' }}>
+                <TrendingUp size={14} />
+              </div>
             </div>
+            <div style={{ fontSize:'22px', fontWeight:800, color:'var(--primary-dark)', lineHeight:1 }}>{formatINR(selectedProduct.sellingPrice)}</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (retail)</div>
+          </div>
+
+          {/* Profit margin */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Profit Margin</span>
+              <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(245,158,11,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#d97706' }}>
+                <CheckCircle2 size={14} />
+              </div>
+            </div>
+            <div style={{ display:'flex', alignItems:'baseline', gap:'6px' }}>
+              <span style={{ fontSize:'22px', fontWeight:800, color: profitMargin >= 0 ? '#16a34a' : '#dc2626', lineHeight:1 }}>{formatINR(profitMargin)}</span>
+              <span style={{ fontSize:'12px', fontWeight:700, color: profitMargin >= 0 ? '#16a34a' : '#dc2626' }}>({marginPercent}%)</span>
+            </div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>gross per unit sold</div>
           </div>
         </div>
 
-        {/* Recent Transactions Ledger Card */}
-        <div className="card" style={{ padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-            <div style={{
-              width: '32px', height: '32px', borderRadius: '8px',
-              background: 'linear-gradient(135deg, var(--primary-dark), var(--primary))',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff'
-            }}>
-              <TrendingUp size={16} />
+        {/* ── DETAILS + TAX ROW ───────────────────────────────── */}
+        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
+          {/* Pricing detail breakdown */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Price Breakdown</h4>
+            {[
+              { label:'Purchase Price (excl. GST)', value: formatINR(selectedProduct.purchasePrice) },
+              { label:'Selling Price (excl. GST)', value: formatINR(selectedProduct.sellingPrice) },
+              { label:'GST Rate', value: `${selectedProduct.gstRate}%` },
+              { label:'GST on Selling Price', value: formatINR(selectedProduct.sellingPrice * selectedProduct.gstRate / 100) },
+              { label:'MRP (incl. GST)', value: formatINR(selectedProduct.sellingPrice * (1 + selectedProduct.gstRate / 100)), highlight: true },
+            ].map((row, i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom: i < 4 ? '1px dashed var(--border-color)' : 'none' }}>
+                <span style={{ fontSize:'12px', color:'var(--text-secondary)' }}>{row.label}</span>
+                <span style={{ fontSize:'13px', fontWeight: row.highlight ? 800 : 600, color: row.highlight ? 'var(--primary-dark)' : 'var(--text-primary)' }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Stock info card */}
+          <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Stock Details</h4>
+            {[
+              { label:'Current Stock', value:`${selectedProduct.stock} units` },
+              { label:'Minimum Stock Limit', value:`${selectedProduct.minStock} units` },
+              { label:'Stock Value (at cost)', value: formatINR(selectedProduct.stock * selectedProduct.purchasePrice) },
+              { label:'Stock Value (at MRP)', value: formatINR(selectedProduct.stock * selectedProduct.sellingPrice) },
+              { label:'Potential Profit', value: formatINR(selectedProduct.stock * profitMargin), highlight: true },
+            ].map((row, i) => (
+              <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom: i < 4 ? '1px dashed var(--border-color)' : 'none' }}>
+                <span style={{ fontSize:'12px', color:'var(--text-secondary)' }}>{row.label}</span>
+                <span style={{ fontSize:'13px', fontWeight: row.highlight ? 800 : 600, color: row.highlight ? '#16a34a' : 'var(--text-primary)' }}>{row.value}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── TRANSACTION LEDGER ──────────────────────────────── */}
+        <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', border:'1px solid var(--border-color)', overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
+          {/* Ledger header */}
+          <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border-color)', display:'flex', alignItems:'center', gap:'10px', background:'var(--bg-app)' }}>
+            <div style={{ width:'32px', height:'32px', borderRadius:'8px', background:'linear-gradient(135deg,#1a5c2a,#3da85a)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
+              <TrendingUp size={15} />
             </div>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Product Ledger Activity</h3>
-              <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Historical sales and purchase records for this item</div>
+              <h3 style={{ fontSize:'14px', fontWeight:700, margin:0, color:'var(--text-primary)' }}>Product Ledger Activity</h3>
+              <div style={{ fontSize:'11px', color:'var(--text-muted)' }}>All sales and purchase transactions for this item</div>
+            </div>
+            <div style={{ marginLeft:'auto', background:'var(--card-bg,#fff)', border:'1px solid var(--border-color)', borderRadius:'8px', padding:'4px 10px', fontSize:'12px', fontWeight:700, color:'var(--text-secondary)' }}>
+              {transactions.length} records
             </div>
           </div>
 
           {transactions.length === 0 ? (
-            <div style={{ padding: '40px 0', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <FileText size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
-              <div style={{ fontSize: '14px', fontWeight: 500 }}>No Transaction Records</div>
-              <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px' }}>This item has not been included in any sales invoice or purchase bill yet.</div>
+            <div style={{ padding:'48px 0', textAlign:'center', color:'var(--text-muted)' }}>
+              <FileText size={40} style={{ opacity:0.25, marginBottom:'12px' }} />
+              <div style={{ fontSize:'14px', fontWeight:600 }}>No Transaction Records Yet</div>
+              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px' }}>This item hasn't appeared in any invoice or purchase bill.</div>
             </div>
           ) : (
             <>
-              {/* Desktop View */}
+              {/* Desktop Table */}
               <div className="desktop-only-table">
                 <div className="table-wrapper">
                   <table className="data-table">
@@ -337,26 +390,22 @@ export const Inventory: React.FC = () => {
                         <th>Date</th>
                         <th>Type</th>
                         <th>Ref No.</th>
-                        <th>Party/Contact</th>
-                        <th style={{ textAlign: 'right' }}>Qty</th>
-                        <th style={{ textAlign: 'right' }}>Rate (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Total Value (₹)</th>
+                        <th>Party / Contact</th>
+                        <th style={{ textAlign:'right' }}>Qty</th>
+                        <th style={{ textAlign:'right' }}>Rate (₹)</th>
+                        <th style={{ textAlign:'right' }}>Total (₹)</th>
                       </tr>
                     </thead>
                     <tbody>
                       {transactions.map((tx, idx) => (
                         <tr key={idx}>
-                          <td className="text-nowrap">{new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                          <td>
-                            <span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>
-                              {tx.type}
-                            </span>
-                          </td>
-                          <td style={{ fontWeight: 600 }}>{tx.number}</td>
+                          <td className="text-nowrap">{new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                          <td><span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>{tx.type}</span></td>
+                          <td style={{ fontWeight:600 }}>{tx.number}</td>
                           <td>{tx.contactName}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{tx.quantity}</td>
-                          <td style={{ textAlign: 'right' }}>{formatINR(tx.price).replace('₹', '')}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatINR(tx.total).replace('₹', '')}</td>
+                          <td style={{ textAlign:'right', fontWeight:600 }}>{tx.quantity}</td>
+                          <td style={{ textAlign:'right' }}>{formatINR(tx.price).replace('₹','')}</td>
+                          <td style={{ textAlign:'right', fontWeight:700 }}>{formatINR(tx.total).replace('₹','')}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -364,18 +413,16 @@ export const Inventory: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mobile View */}
-              <div className="mobile-card-list">
+              {/* Mobile Cards */}
+              <div className="mobile-card-list" style={{ padding:'12px' }}>
                 {transactions.map((tx, idx) => (
                   <div key={idx} className="mobile-list-card">
                     <div className="mobile-list-card-header">
                       <div>
-                        <span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>
-                          {tx.type}
-                        </span>
-                        <h4 className="mobile-list-card-title" style={{ marginTop: '4px' }}>{tx.number}</h4>
+                        <span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>{tx.type}</span>
+                        <h4 className="mobile-list-card-title" style={{ marginTop:'4px' }}>{tx.number}</h4>
                       </div>
-                      <span className="mobile-list-card-subtitle">{new Date(tx.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                      <span className="mobile-list-card-subtitle">{new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span>
                     </div>
                     <div className="mobile-list-card-row">
                       <span className="mobile-list-card-label">Party</span>
@@ -391,7 +438,7 @@ export const Inventory: React.FC = () => {
                     </div>
                     <div className="mobile-list-card-row">
                       <span className="mobile-list-card-label">Total Value</span>
-                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(tx.total)}</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight:700 }}>{formatINR(tx.total)}</span>
                     </div>
                   </div>
                 ))}
@@ -400,42 +447,37 @@ export const Inventory: React.FC = () => {
           )}
         </div>
 
-        {/* Reusable Product Modal */}
+        {/* Product Modal */}
         <ProductModal
           isOpen={isProductModalOpen}
           onClose={() => setIsProductModalOpen(false)}
           editProductData={isEditingProduct}
         />
+
+        {/* Delete Confirmation Modal */}
         {deletingProduct && (
-          <div className="modal-overlay" style={{ zIndex: 1000 }}>
-            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+          <div className="modal-overlay" style={{ zIndex:1000 }}>
+            <div className="card modal-content" style={{ maxWidth:'400px', padding:'28px', animation:'scaleUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}>
+              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', textAlign:'center', gap:'16px' }}>
+                <div style={{ padding:'14px', borderRadius:'50%', background:'#fee2e2', color:'#dc2626' }}>
                   <AlertTriangle size={28} />
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Product</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete product <strong>{deletingProduct.name}</strong>? This will remove it from the catalog.
+                <h3 style={{ fontSize:'18px', fontWeight:700, color:'var(--text-primary)', margin:0 }}>Delete Product</h3>
+                <p style={{ fontSize:'14px', color:'var(--text-secondary)', lineHeight:1.6, margin:0 }}>
+                  Are you sure you want to delete <strong>{deletingProduct.name}</strong>? This action cannot be undone and will remove it from the catalog permanently.
                 </p>
-                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingProduct(null)}>
-                    Cancel
-                  </button>
+                <div style={{ display:'flex', gap:'12px', width:'100%' }}>
+                  <button className="btn btn-secondary" style={{ flex:1 }} onClick={() => setDeletingProduct(null)}>Cancel</button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    style={{ flex:1, background:'linear-gradient(135deg,#dc2626,#991b1b)' }}
                     onClick={() => {
-                      const idToDelete = deletingProduct.id;
-                      const nameToDelete = deletingProduct.name;
+                      const id = deletingProduct.id;
+                      const name = deletingProduct.name;
                       setDeletingProduct(null);
-                      try {
-                        deleteProduct(idToDelete);
-                        showToast(`Product "${nameToDelete}" deleted successfully.`, 'info');
-                        setViewProductId(null);
-                      } catch (error: any) {
-                        console.error("Delete product error:", error);
-                        showToast(`Failed to delete product: ${error.message || error}`, 'error');
-                      }
+                      deleteProduct(id);
+                      showToast(`"${name}" deleted from catalog.`, 'info');
+                      setViewProductId(null);
                     }}
                   >
                     Delete
