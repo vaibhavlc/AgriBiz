@@ -939,6 +939,153 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   const selectedInvoice = invoices.find((inv) => inv.id === currentInvoiceId || inv.invoiceNumber === currentInvoiceId);
   const selectedQuotation = quotations.find((q) => q.id === currentQuotationId || q.quotationNumber === currentQuotationId);
 
+  const renderPortalModals = () => {
+    return (
+      <>
+        {/* Delete Invoice modal */}
+        {deletingInvoice && createPortal(
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                  <AlertTriangle size={28} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Invoice</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingInvoice(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    onClick={async () => {
+                      const idToDelete = deletingInvoice.id;
+                      const invoiceNo = deletingInvoice.invoiceNumber;
+                      setDeletingInvoice(null);
+                      try {
+                        deleteInvoice(idToDelete);
+                        showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
+                        setViewInvoice(null);
+                      } catch (error: any) {
+                        console.error("Delete invoice error:", error);
+                        showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {/* Delete Quotation modal */}
+        {deletingQuotation && createPortal(
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                  <AlertTriangle size={28} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Quotation</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingQuotation(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    onClick={() => {
+                      deleteQuotation(deletingQuotation.id);
+                      showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
+                      setDeletingQuotation(null);
+                      setViewQuotation(null);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+
+        {/* Convert Quotation to Invoice Modal */}
+        {isConvertModalOpen && convertQuotationId && createPortal(
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+                Create a sales invoice from this quotation. Please confirm payment collection details.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+                <div className="form-group" style={{ margin: 0 }}>
+                  <label className="form-label">Amount Collected (₹)</label>
+                  <input 
+                    type="number" 
+                    className="form-control" 
+                    value={convertAmountPaid || ''} 
+                    onChange={(e) => setConvertAmountPaid(parseFloat(e.target.value) || 0)} 
+                    placeholder="0.00" 
+                  />
+                </div>
+                {convertAmountPaid > 0 && (
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label">Payment Method</label>
+                    <select 
+                      className="form-control" 
+                      value={convertPaymentMethod} 
+                      onChange={(e) => setConvertPaymentMethod(e.target.value)}
+                    >
+                      <option value="UPI">UPI / GPay / PhonePe</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                      <option value="Cheque">Cheque</option>
+                    </select>
+                  </div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setIsConvertModalOpen(false); setConvertQuotationId(null); }}>
+                  Cancel
+                </button>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ flex: 1 }} 
+                  onClick={() => {
+                    try {
+                      const invoiceId = convertQuotationToInvoice(convertQuotationId, convertAmountPaid, convertPaymentMethod);
+                      showToast("Quotation converted to Invoice successfully!");
+                      setIsConvertModalOpen(false);
+                      setConvertQuotationId(null);
+                      setSalesActiveTab('invoices');
+                      setViewInvoice(invoiceId);
+                      setViewQuotation(null);
+                    } catch (err: any) {
+                      showToast(err.message || "Failed to convert quotation", "error");
+                    }
+                  }}
+                >
+                  Convert
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )}
+      </>
+    );
+  };
+
   // --- RENDERING ---
 
 
@@ -1049,7 +1196,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <h4 className="invoice-detail-header">Billing to:</h4>
                 {customerDetail ? (
                   <>
-                    <h3 className="invoice-customer-name">{customerDetail.name}</h3>
+                    <h3 className="invoice-customer-name">
+                      <button
+                        type="button"
+                        className="table-link-btn customer-link no-print"
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'var(--primary)', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
+                        onClick={() => {
+                          setViewCustomer(customerDetail.id);
+                          setCurrentTab('customers');
+                          setViewInvoice(null);
+                        }}
+                      >
+                        {customerDetail.name}
+                      </button>
+                      <span className="print-only">{customerDetail.name}</span>
+                    </h3>
                     <p className="invoice-customer-sub">{customerDetail.address || "Address: N/A"}</p>
                     <p className="invoice-customer-sub">Phone: {customerDetail.phone}</p>
                     {customerDetail.gstin && (
@@ -1314,7 +1475,27 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Bill No: <strong>{selectedInvoice.invoiceNumber}</strong></span><span>Date: {formatDate(selectedInvoice.date)}</span></div><div>Customer: <strong>{customerDetail?.name || "Walk-in"}</strong></div>{customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}</div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Bill No: <strong>{selectedInvoice.invoiceNumber}</strong></span><span>Date: {formatDate(selectedInvoice.date)}</span></div>                <div>Customer:{' '}
+                  {customerDetail ? (
+                    <>
+                      <button
+                        type="button"
+                        className="table-link-btn customer-link no-print"
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
+                        onClick={() => {
+                          setViewCustomer(customerDetail.id);
+                          setCurrentTab('customers');
+                          setViewInvoice(null);
+                        }}
+                      >
+                        <strong>{customerDetail.name}</strong>
+                      </button>
+                      <strong className="print-only">{customerDetail.name}</strong>
+                    </>
+                  ) : (
+                    <strong>Walk-in</strong>
+                  )}
+                </div>{customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>ITEM</span><span style={{ textAlign: "center" }}>QTY</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
@@ -1329,6 +1510,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <Trash2 size={16} /> Delete & Reset Stock
           </button>
         </div>
+        {renderPortalModals()}
       </div>
     );
   }
@@ -1435,7 +1617,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <h4 className="invoice-detail-header">Estimate for:</h4>
                   {customerDetail ? (
                     <>
-                      <h3 className="invoice-customer-name">{customerDetail.name}</h3>
+                      <h3 className="invoice-customer-name">
+                        <button
+                          type="button"
+                          className="table-link-btn customer-link no-print"
+                          style={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'var(--primary)', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
+                          onClick={() => {
+                            setViewCustomer(customerDetail.id);
+                            setCurrentTab('customers');
+                            setViewQuotation(null);
+                          }}
+                        >
+                          {customerDetail.name}
+                        </button>
+                        <span className="print-only">{customerDetail.name}</span>
+                      </h3>
                       <p className="invoice-customer-sub">{customerDetail.address || "Address: N/A"}</p>
                       <p className="invoice-customer-sub">Phone: {customerDetail.phone}</p>
                       {customerDetail.gstin && (
@@ -1680,7 +1876,27 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <span>Est No: <strong>{selectedQuotation.quotationNumber}</strong></span>
                   <span>Date: {formatDate(selectedQuotation.date)}</span>
                 </div>
-                <div>Customer: <strong>{customerDetail?.name || "Walk-in"}</strong></div>
+                <div>Customer:{' '}
+                  {customerDetail ? (
+                    <>
+                      <button
+                        type="button"
+                        className="table-link-btn customer-link no-print"
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
+                        onClick={() => {
+                          setViewCustomer(customerDetail.id);
+                          setCurrentTab('customers');
+                          setViewQuotation(null);
+                        }}
+                      >
+                        <strong>{customerDetail.name}</strong>
+                      </button>
+                      <strong className="print-only">{customerDetail.name}</strong>
+                    </>
+                  ) : (
+                    <strong>Walk-in</strong>
+                  )}
+                </div>
                 {customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
@@ -1869,6 +2085,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <Trash2 size={16} /> Delete Quotation
           </button>
         </div>
+        {renderPortalModals()}
       </div>
     );
   }
@@ -3262,7 +3479,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             {inv.invoiceNumber}
                           </button>
                         </h4>
-                        <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+                        <button
+                          type="button"
+                          className="table-link-btn customer-link"
+                          style={{ display: 'block', fontSize: '12px', margin: '2px 0 0 0', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: 600, color: 'var(--primary)' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (inv.customerId) {
+                              setViewCustomer(inv.customerId);
+                              setCurrentTab('customers');
+                              setViewInvoice(null);
+                            }
+                          }}
+                        >
+                          {inv.customerName}
+                        </button>
                       </div>
                       <div style={{ position: 'relative' }}>
                         <button
@@ -3308,25 +3539,45 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(inv.date)}</span>
-                      <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>{inv.paymentStatus}</span>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Billing Date</span>
+                      <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Items:</span>
-                      {inv.items && inv.items.length > 0 ? (
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {inv.items[0].productName}
-                          {inv.items.length > 1 ? ` +${inv.items.length - 1}` : ''}
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Status</span>
+                      <span className="mobile-list-card-val">
+                        <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                          {inv.paymentStatus}
                         </span>
-                      ) : (
-                        <span>No items</span>
-                      )}
+                      </span>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '6px', paddingTop: '6px' }}>
-                      <span>Total: {formatINR(inv.grandTotal)}</span>
-                      <span style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
-                        Due: {formatINR(inv.balanceDue)}
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Items</span>
+                      <span className="mobile-list-card-val">
+                        {inv.items && inv.items.length > 0 ? (
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {inv.items[0].productName}
+                            {inv.items.length > 1 ? ` +${inv.items.length - 1}` : ''}
+                          </span>
+                        ) : (
+                          <span>No items</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Grand Total</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
+                        {formatINR(inv.grandTotal)}
+                      </span>
+                    </div>
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Due Amount</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700, color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
+                        {formatINR(inv.balanceDue)}
                       </span>
                     </div>
                   </div>
@@ -3501,7 +3752,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             {q.quotationNumber}
                           </button>
                         </h4>
-                        <span className="mobile-list-card-subtitle">{q.customerName}</span>
+                        <button
+                          type="button"
+                          className="table-link-btn customer-link"
+                          style={{ display: 'block', fontSize: '12px', margin: '2px 0 0 0', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: 600, color: 'var(--primary)' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (q.customerId) {
+                              setViewCustomer(q.customerId);
+                              setCurrentTab('customers');
+                              setViewQuotation(null);
+                            }
+                          }}
+                        >
+                          {q.customerName}
+                        </button>
                       </div>
                       <div style={{ position: 'relative' }}>
                         <button
@@ -3563,31 +3828,47 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         )}
                       </div>
                     </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(q.date)}</span>
-                      <span className={`badge ${
-                        q.status === 'Converted' ? 'badge-success' : 
-                        q.status === 'Approved' ? 'badge-info' : 
-                        q.status === 'Declined' ? 'badge-danger' : 
-                        'badge-secondary'
-                      }`}>{q.status}</span>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Quotation Date</span>
+                      <span className="mobile-list-card-val">{formatDate(q.date)}</span>
                     </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Items:</span>
-                      {q.items && q.items.length > 0 ? (
-                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {q.items[0].productName}
-                          {q.items.length > 1 ? ` +${q.items.length - 1}` : ''}
-                        </span>
-                      ) : (
-                        <span>No items</span>
-                      )}
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '6px', paddingTop: '6px' }}>
-                      <span>Total Value: {formatINR(q.grandTotal)}</span>
-                      <span style={{ color: 'var(--text-muted)' }}>
-                        Valid: {formatDate(q.validUntil)}
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Status</span>
+                      <span className="mobile-list-card-val">
+                        <span className={`badge ${
+                          q.status === 'Converted' ? 'badge-success' : 
+                          q.status === 'Approved' ? 'badge-info' : 
+                          q.status === 'Declined' ? 'badge-danger' : 
+                          'badge-secondary'
+                        }`}>{q.status}</span>
                       </span>
+                    </div>
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Items</span>
+                      <span className="mobile-list-card-val">
+                        {q.items && q.items.length > 0 ? (
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {q.items[0].productName}
+                            {q.items.length > 1 ? ` +${q.items.length - 1}` : ''}
+                          </span>
+                        ) : (
+                          <span>No items</span>
+                        )}
+                      </span>
+                    </div>
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Grand Total</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
+                        {formatINR(q.grandTotal)}
+                      </span>
+                    </div>
+
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Valid Until</span>
+                      <span className="mobile-list-card-val">{formatDate(q.validUntil)}</span>
                     </div>
                   </div>
                 ))}
@@ -3617,147 +3898,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       </div>
 
       {/* PORTAL MODALS */}
-
-      {/* Delete Invoice modal */}
-      {deletingInvoice && createPortal(
-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-              <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
-                <AlertTriangle size={28} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Invoice</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingInvoice(null)}>
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
-                  onClick={async () => {
-                    const idToDelete = deletingInvoice.id;
-                    const invoiceNo = deletingInvoice.invoiceNumber;
-                    setDeletingInvoice(null);
-                    try {
-                      deleteInvoice(idToDelete);
-                      showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
-                      setViewInvoice(null);
-                    } catch (error: any) {
-                      console.error("Delete invoice error:", error);
-                      showToast(`Failed to delete: ${error.message || error}`, 'error');
-                    }
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Delete Quotation modal */}
-      {deletingQuotation && createPortal(
-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-              <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
-                <AlertTriangle size={28} />
-              </div>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Quotation</h3>
-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
-              </p>
-              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingQuotation(null)}>
-                  Cancel
-                </button>
-                <button
-                  className="btn btn-primary"
-                  style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
-                  onClick={() => {
-                    deleteQuotation(deletingQuotation.id);
-                    showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
-                    setDeletingQuotation(null);
-                    setViewQuotation(null);
-                  }}
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
-
-      {/* Convert Quotation to Invoice Modal */}
-      {isConvertModalOpen && convertQuotationId && createPortal(
-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
-          <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-              Create a sales invoice from this quotation. Please confirm payment collection details.
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-              <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Amount Collected (₹)</label>
-                <input 
-                  type="number" 
-                  className="form-control" 
-                  value={convertAmountPaid || ''} 
-                  onChange={(e) => setConvertAmountPaid(parseFloat(e.target.value) || 0)} 
-                  placeholder="0.00" 
-                />
-              </div>
-              {convertAmountPaid > 0 && (
-                <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Payment Method</label>
-                  <select 
-                    className="form-control" 
-                    value={convertPaymentMethod} 
-                    onChange={(e) => setConvertPaymentMethod(e.target.value)}
-                  >
-                    <option value="UPI">UPI / GPay / PhonePe</option>
-                    <option value="Cash">Cash</option>
-                    <option value="Bank Transfer">Bank Transfer</option>
-                    <option value="Cheque">Cheque</option>
-                  </select>
-                </div>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setIsConvertModalOpen(false); setConvertQuotationId(null); }}>
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary" 
-                style={{ flex: 1 }} 
-                onClick={() => {
-                  try {
-                    const invoiceId = convertQuotationToInvoice(convertQuotationId, convertAmountPaid, convertPaymentMethod);
-                    showToast("Quotation converted to Invoice successfully!");
-                    setIsConvertModalOpen(false);
-                    setConvertQuotationId(null);
-                    setSalesActiveTab('invoices');
-                    setViewInvoice(invoiceId);
-                    setViewQuotation(null);
-                  } catch (err: any) {
-                    showToast(err.message || "Failed to convert quotation", "error");
-                  }
-                }}
-              >
-                Convert
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body
-      )}
+      {renderPortalModals()}
     </div>
   );
 };

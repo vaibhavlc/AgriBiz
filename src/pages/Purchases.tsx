@@ -4,6 +4,8 @@ import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import {
   Plus,
   Trash2,
@@ -25,6 +27,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
+  TrendingUp,
+  AlertTriangle,
+  Share2,
 } from 'lucide-react';
 import type { PurchaseItem, Product, Purchase } from '../types';
 
@@ -67,6 +72,8 @@ export const Purchases: React.FC = () => {
   const [activeMenuPurchaseId, setActiveMenuPurchaseId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
   const [activePreviewPurchase, setActivePreviewPurchase] = useState<Purchase | null>(null);
+  const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
+  const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
 
   const [purchaseBillNumber, setPurchaseBillNumber] = useState('');
   const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -119,6 +126,17 @@ export const Purchases: React.FC = () => {
       setAttachedFileUrl(null);
     }
   }, [attachedFile]);
+
+  useEffect(() => {
+    if (currentPurchaseId && printTemplate === 'Thermal') {
+      document.body.classList.add('print-thermal-mode');
+    } else {
+      document.body.classList.remove('print-thermal-mode');
+    }
+    return () => {
+      document.body.classList.remove('print-thermal-mode');
+    };
+  }, [printTemplate, currentPurchaseId]);
 
   useEffect(() => {
     if (purchaseFormPresetSupplierId) {
@@ -365,65 +383,348 @@ export const Purchases: React.FC = () => {
     window.print();
   };
 
-  // Download PDF using html2pdf
-  const handleDownload = (purchaseNo: string) => {
-    const element = document.querySelector('.print-invoice-layout');
-    if (!element) {
-      showToast('Could not find purchase bill layout element.', 'error');
+  // Download PDF using html2canvas and jsPDF
+  const handleDownload = async (purchaseNo: string) => {
+    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
+    if (!originalEl) {
+      showToast('Could not find layout element.', 'error');
       return;
     }
 
-    showToast('Compiling high-definition PDF bill...', 'info');
+    showToast('Compiling high-definition PDF document...', 'info');
 
-    const generatePDF = (html2pdfLib: any) => {
-      // Temporarily clear mobile zoom styling to ensure html2pdf captures native A5 dimensions
-      const htmlElement = element as HTMLElement;
-      const originalZoom = htmlElement.style.zoom;
-      const originalTransform = htmlElement.style.transform;
-      
-      htmlElement.style.setProperty('zoom', '1', 'important');
-      htmlElement.style.setProperty('transform', 'none', 'important');
+    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
+    const tempEl = originalEl.cloneNode(true) as HTMLElement;
+    tempEl.style.setProperty('position', 'absolute', 'important');
+    tempEl.style.setProperty('top', '9999px', 'important');
+    tempEl.style.setProperty('left', '0', 'important');
+    tempEl.style.setProperty('z-index', '999998', 'important');
+    tempEl.style.setProperty('zoom', 'normal', 'important');
+    tempEl.style.setProperty('transform', 'none', 'important');
+    tempEl.style.setProperty('box-shadow', 'none', 'important');
+    tempEl.style.setProperty('border-radius', '0', 'important');
+    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+    tempEl.style.setProperty('margin', '0', 'important');
+    tempEl.style.setProperty('display', 'block', 'important');
 
-      const opt = {
-        margin:       0,
-        filename:     `${purchaseNo || 'purchase_bill'}.pdf`,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { 
-          unit: 'mm', 
-          format: 'a5', 
-          orientation: 'portrait' 
+    document.body.appendChild(tempEl);
+
+    try {
+      // Small timeout for layout calculation
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      // Restructure A5 layout to bypass html2canvas vertical flex rendering bug
+      if (printTemplate === 'A5') {
+        const topKids: HTMLElement[] = [];
+        const bottomKids: HTMLElement[] = [];
+        
+        const kids = Array.from(tempEl.children) as HTMLElement[];
+        kids.forEach((kid) => {
+          const position = kid.style.position || window.getComputedStyle(kid).position;
+          if (position === 'absolute') {
+            return;
+          }
+          
+          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
+          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
+          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
+          
+          if (isSvgIllustration || isSignatureRow || isFooterMessage) {
+            bottomKids.push(kid);
+          } else {
+            topKids.push(kid);
+          }
+        });
+
+        if (topKids.length > 0 && bottomKids.length > 0) {
+          // Read measured gaps from original screen element
+          const headerEl = originalEl.querySelector('.invoice-header-bar') as HTMLElement;
+          const billingEl = originalEl.querySelector('.invoice-billing-details') as HTMLElement;
+          const tableEl = originalEl.querySelector('.invoice-table') as HTMLElement;
+          const summaryEl = originalEl.querySelector('.invoice-table + div, table + div') as HTMLElement;
+
+          let gap1 = 6; // default fallback gaps in px
+          let gap2 = 6;
+          let gap3 = 6;
+
+          if (headerEl && billingEl && tableEl) {
+            const hRect = headerEl.getBoundingClientRect();
+            const bRect = billingEl.getBoundingClientRect();
+            const tRect = tableEl.getBoundingClientRect();
+            
+            const zoom = parseFloat(window.getComputedStyle(originalEl).zoom) || 1;
+            
+            gap1 = Math.max(6, (bRect.top - hRect.bottom) / zoom);
+            gap2 = Math.max(6, (tRect.top - bRect.bottom) / zoom);
+
+            if (summaryEl) {
+              const sRect = summaryEl.getBoundingClientRect();
+              gap3 = Math.max(6, (sRect.top - tRect.bottom) / zoom);
+            }
+          }
+
+          const topWrapper = document.createElement('div');
+          topWrapper.style.setProperty('display', 'flex', 'important');
+          topWrapper.style.setProperty('flex-direction', 'column', 'important');
+          topWrapper.style.setProperty('width', '100%', 'important');
+          
+          const bottomWrapper = document.createElement('div');
+          bottomWrapper.style.setProperty('position', 'absolute', 'important');
+          bottomWrapper.style.setProperty('bottom', '38px', 'important'); // Pinned exactly 38px from bottom of the 210mm card
+          bottomWrapper.style.setProperty('left', '24px', 'important');
+          bottomWrapper.style.setProperty('right', '24px', 'important');
+          bottomWrapper.style.setProperty('display', 'flex', 'important');
+          bottomWrapper.style.setProperty('flex-direction', 'column', 'important');
+          bottomWrapper.style.setProperty('gap', '6px', 'important');
+          bottomWrapper.style.setProperty('width', 'calc(100% - 48px)', 'important');
+          
+          // Move elements
+          topKids.forEach(kid => {
+            if (kid.parentNode) kid.parentNode.removeChild(kid);
+            topWrapper.appendChild(kid);
+          });
+          bottomKids.forEach(kid => {
+            if (kid.parentNode) kid.parentNode.removeChild(kid);
+            bottomWrapper.appendChild(kid);
+          });
+
+          // Apply margins to cloned kids inside topWrapper
+          const clonedHeader = topWrapper.querySelector('.invoice-header-bar') as HTMLElement;
+          const clonedBilling = topWrapper.querySelector('.invoice-billing-details') as HTMLElement;
+          const clonedTable = topWrapper.querySelector('.invoice-table') as HTMLElement;
+
+          if (clonedHeader) clonedHeader.style.setProperty('margin-bottom', `${gap1}px`, 'important');
+          if (clonedBilling) clonedBilling.style.setProperty('margin-bottom', `${gap2}px`, 'important');
+          if (clonedTable) clonedTable.style.setProperty('margin-bottom', `${gap3}px`, 'important');
+          
+          tempEl.appendChild(topWrapper);
+          tempEl.appendChild(bottomWrapper);
         }
-      };
-      
-      html2pdfLib().from(element).set(opt).save().then(() => {
-        showToast('PDF downloaded successfully!');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
-      }).catch((err: any) => {
-        console.error(err);
-        showToast('Error exporting PDF document.', 'error');
-        htmlElement.style.zoom = originalZoom;
-        htmlElement.style.transform = originalTransform;
+      }
+
+      const canvas = await html2canvas(tempEl, {
+        scale: 2.5,
+        useCORS: true,
+        logging: false,
       });
-    };
 
-    const globalWindow = window as any;
-    if (globalWindow.html2pdf) {
-      generatePDF(globalWindow.html2pdf);
-    } else {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
-      script.crossOrigin = 'anonymous';
-      script.onload = () => {
-        if (globalWindow.html2pdf) {
-          generatePDF(globalWindow.html2pdf);
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const fileName = `${purchaseNo || 'purchase_bill'}.pdf`;
+
+      const imgWidth = printTemplate === 'A5' ? 148 : 80;
+      const imgHeight = printTemplate === 'A5' ? 210 : (canvas.height * imgWidth) / canvas.width;
+
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
+      });
+
+      doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      doc.save(fileName);
+      showToast('PDF downloaded successfully!');
+    } catch (err) {
+      console.error(err);
+      showToast('Error exporting PDF document.', 'error');
+    } finally {
+      if (tempEl.parentNode) {
+        document.body.removeChild(tempEl);
+      }
+    }
+  };
+
+  const handleWhatsAppShare = async () => {
+    if (!selectedPurchase) return;
+    const supplierDetail = suppliers.find((s) => s.id === selectedPurchase.supplierId);
+    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
+    if (!originalEl) {
+      showToast('Could not find layout element.', 'error');
+      return;
+    }
+
+    showToast('Compiling PDF for sharing...', 'info');
+
+    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
+    const tempEl = originalEl.cloneNode(true) as HTMLElement;
+    tempEl.style.setProperty('position', 'absolute', 'important');
+    tempEl.style.setProperty('top', '9999px', 'important');
+    tempEl.style.setProperty('left', '0', 'important');
+    tempEl.style.setProperty('z-index', '999998', 'important');
+    tempEl.style.setProperty('zoom', 'normal', 'important');
+    tempEl.style.setProperty('transform', 'none', 'important');
+    tempEl.style.setProperty('box-shadow', 'none', 'important');
+    tempEl.style.setProperty('border-radius', '0', 'important');
+    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+    tempEl.style.setProperty('margin', '0', 'important');
+    tempEl.style.setProperty('display', 'block', 'important');
+
+    document.body.appendChild(tempEl);
+
+    try {
+      // Small timeout for layout calculation
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      // Restructure A5 layout to bypass html2canvas vertical flex rendering bug
+      if (printTemplate === 'A5') {
+        const topKids: HTMLElement[] = [];
+        const bottomKids: HTMLElement[] = [];
+        
+        const kids = Array.from(tempEl.children) as HTMLElement[];
+        kids.forEach((kid) => {
+          const position = kid.style.position || window.getComputedStyle(kid).position;
+          if (position === 'absolute') {
+            return;
+          }
+          
+          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
+          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
+          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
+          
+          if (isSvgIllustration || isSignatureRow || isFooterMessage) {
+            bottomKids.push(kid);
+          } else {
+            topKids.push(kid);
+          }
+        });
+
+        if (topKids.length > 0 && bottomKids.length > 0) {
+          // Read measured gaps from original screen element
+          const headerEl = originalEl.querySelector('.invoice-header-bar') as HTMLElement;
+          const billingEl = originalEl.querySelector('.invoice-billing-details') as HTMLElement;
+          const tableEl = originalEl.querySelector('.invoice-table') as HTMLElement;
+          const summaryEl = originalEl.querySelector('.invoice-table + div, table + div') as HTMLElement;
+
+          let gap1 = 6; // default fallback gaps in px
+          let gap2 = 6;
+          let gap3 = 6;
+
+          if (headerEl && billingEl && tableEl) {
+            const hRect = headerEl.getBoundingClientRect();
+            const bRect = billingEl.getBoundingClientRect();
+            const tRect = tableEl.getBoundingClientRect();
+            
+            const zoom = parseFloat(window.getComputedStyle(originalEl).zoom) || 1;
+            
+            gap1 = Math.max(6, (bRect.top - hRect.bottom) / zoom);
+            gap2 = Math.max(6, (tRect.top - bRect.bottom) / zoom);
+
+            if (summaryEl) {
+              const sRect = summaryEl.getBoundingClientRect();
+              gap3 = Math.max(6, (sRect.top - tRect.bottom) / zoom);
+            }
+          }
+
+          const topWrapper = document.createElement('div');
+          topWrapper.style.setProperty('display', 'flex', 'important');
+          topWrapper.style.setProperty('flex-direction', 'column', 'important');
+          topWrapper.style.setProperty('width', '100%', 'important');
+          
+          const bottomWrapper = document.createElement('div');
+          bottomWrapper.style.setProperty('position', 'absolute', 'important');
+          bottomWrapper.style.setProperty('bottom', '38px', 'important'); // Pinned exactly 38px from bottom of the 210mm card
+          bottomWrapper.style.setProperty('left', '24px', 'important');
+          bottomWrapper.style.setProperty('right', '24px', 'important');
+          bottomWrapper.style.setProperty('display', 'flex', 'important');
+          bottomWrapper.style.setProperty('flex-direction', 'column', 'important');
+          bottomWrapper.style.setProperty('gap', '6px', 'important');
+          bottomWrapper.style.setProperty('width', 'calc(100% - 48px)', 'important');
+          
+          // Move elements
+          topKids.forEach(kid => {
+            if (kid.parentNode) kid.parentNode.removeChild(kid);
+            topWrapper.appendChild(kid);
+          });
+          bottomKids.forEach(kid => {
+            if (kid.parentNode) kid.parentNode.removeChild(kid);
+            bottomWrapper.appendChild(kid);
+          });
+
+          // Apply margins to cloned kids inside topWrapper
+          const clonedHeader = topWrapper.querySelector('.invoice-header-bar') as HTMLElement;
+          const clonedBilling = topWrapper.querySelector('.invoice-billing-details') as HTMLElement;
+          const clonedTable = topWrapper.querySelector('.invoice-table') as HTMLElement;
+
+          if (clonedHeader) clonedHeader.style.setProperty('margin-bottom', `${gap1}px`, 'important');
+          if (clonedBilling) clonedBilling.style.setProperty('margin-bottom', `${gap2}px`, 'important');
+          if (clonedTable) clonedTable.style.setProperty('margin-bottom', `${gap3}px`, 'important');
+          
+          tempEl.appendChild(topWrapper);
+          tempEl.appendChild(bottomWrapper);
         }
-      };
-      script.onerror = () => {
-        showToast('Failed to load PDF engine from CDN.', 'error');
-      };
-      document.body.appendChild(script);
+      }
+
+      const canvas = await html2canvas(tempEl, {
+        scale: 2.5,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      const imgWidth = printTemplate === 'A5' ? 148 : 80;
+      const imgHeight = printTemplate === 'A5' ? 210 : (canvas.height * imgWidth) / canvas.width;
+
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
+      });
+
+      doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+      
+      const pdfBlob = doc.output('blob');
+      const pdfFile = new File([pdfBlob], `${selectedPurchase.purchaseNumber}.pdf`, { type: 'application/pdf' });
+      
+      const nav = navigator as any;
+      if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
+        await nav.share({
+          files: [pdfFile],
+          title: `Purchase Bill ${selectedPurchase.purchaseNumber}`,
+          text: `Purchase Bill from ${settings.businessName}`
+        });
+        showToast('Document shared successfully!');
+      } else {
+        const downloadUrl = URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = `${selectedPurchase.purchaseNumber}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(downloadUrl);
+
+        const message = `Hello ${supplierDetail?.name || 'Supplier'},
+
+Your purchase bill *${selectedPurchase.purchaseNumber}* from *${settings.businessName}* has been generated.
+
+*Summary of Transaction:*
+---------------------------------------
+*Total Amount:* ${formatINR(selectedPurchase.grandTotal)}
+*Amount Paid:* ${formatINR(selectedPurchase.amountPaid)}
+*Balance Due:* ${formatINR(selectedPurchase.balanceDue)}
+---------------------------------------
+
+We have downloaded the PDF document to your device. Please attach it in the chat.`;
+
+        const encoded = encodeURIComponent(message);
+        const phoneNum = supplierDetail?.phone ? supplierDetail.phone.replace(/[^0-9]/g, '') : '';
+        const targetPhone = phoneNum.length === 10 ? `91${phoneNum}` : phoneNum;
+        
+        const url = targetPhone 
+          ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
+          : `https://api.whatsapp.com/send?text=${encoded}`;
+          
+        window.open(url, '_blank');
+        showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error generating PDF for WhatsApp sharing.', 'error');
+    } finally {
+      if (tempEl.parentNode) {
+        document.body.removeChild(tempEl);
+      }
     }
   };
 
@@ -643,6 +944,7 @@ export const Purchases: React.FC = () => {
       setPaymentMethod(pur.paymentMethod as any);
     }
     setIsEnteringPurchase(true);
+    setViewPurchase(null);
   };
 
   const handleSavePurchaseWrapper = (e: React.FormEvent, keepOpen = false) => {
@@ -745,11 +1047,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
     }
   };
 
-  const handleDeletePurchase = (id: string, purchaseNo: string) => {
-    if (confirm(`Are you sure you want to delete purchase voucher ${purchaseNo}? This will deduct the added stock levels and adjust supplier balance.`)) {
-      deletePurchase(id);
-      showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
-      setViewPurchase(null);
+  const handleDeletePurchase = (id: string, _purchaseNo: string) => {
+    const purchaseObj = purchases.find((p) => p.id === id);
+    if (purchaseObj) {
+      setDeletingPurchase(purchaseObj);
     }
   };
 
@@ -859,27 +1160,25 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
     return (
       <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-        <div className="no-print" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px", marginBottom: "24px", backgroundColor: "var(--bg-card)", padding: "16px", borderRadius: "12px", border: "1px solid var(--border-color)" }}>
-          <button className="btn btn-secondary" onClick={() => setViewPurchase(null)}>
-            <ArrowLeft size={16} /> Back to Purchases
-          </button>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-            {getAttachmentName(selectedPurchase.notes) && (
-              <button className="btn btn-secondary" onClick={() => {
-                setActivePreviewPurchase(selectedPurchase);
-                setShowAttachmentPreview(true);
-              }}>
-                <FileText size={16} /> View Invoice File
-              </button>
-            )}
-            <button className="btn btn-secondary" onClick={() => handleStartEditPurchase(selectedPurchase)}>
-              <Edit2 size={16} /> Edit
+        <div className="invoice-detail-nav-panel no-print">
+          <div className="invoice-detail-top-row">
+            <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewPurchase(null)}>
+              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Purchases</span>
             </button>
-            <button className="btn btn-danger" onClick={() => handleDeletePurchase(selectedPurchase.id, selectedPurchase.purchaseNumber)}>
-              <Trash2 size={16} /> Delete
-            </button>
+            <div className="template-selector-group">
+              <span className="template-label">Print Template:</span>
+              <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
+                <option value="A5">Standard A5 Bill Book</option>
+                <option value="Thermal">Thermal 3-Inch roll POS</option>
+              </select>
+            </div>
+          </div>
+          <div className="action-buttons-grid">
             <button className="btn btn-secondary" onClick={() => handleDownload(selectedPurchase.purchaseNumber)} title="Export bill as PDF">
               <Download size={16} /> Save as PDF
+            </button>
+            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share bill details on WhatsApp">
+              <Share2 size={16} /> Share on WhatsApp
             </button>
             <button className="btn btn-primary" onClick={handlePrint} title="Print paper receipt">
               <Printer size={16} /> Print Receipt
@@ -888,24 +1187,24 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         </div>
         {renderAttachmentPreviewModal()}
 
-        {/* Voucher layout */}
-        <div className="invoice-mockup-wrapper">
-          <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
-            {/* Dynamic Logo Watermark in Center */}
-            {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-              <div className="print-watermark-logo">
-                <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+        {printTemplate === "A5" ? (
+          <div className="invoice-mockup-wrapper">
+            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+              {/* Dynamic Logo Watermark in Center */}
+              {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+                <div className="print-watermark-logo">
+                  <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+                </div>
+              )}
+              {/* Elegant leafy branch corner watermark */}
+              <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
+                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M10 90 Q 50 50 90 10" />
+                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#4E6C50" />
+                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#4E6C50" />
+                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#4E6C50" />
+                </svg>
               </div>
-            )}
-            {/* Elegant leafy branch corner watermark */}
-            <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
-              <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#4E6C50" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M10 90 Q 50 50 90 10" />
-                <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#4E6C50" />
-                <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#4E6C50" />
-                <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#4E6C50" />
-              </svg>
-            </div>
 
             {/* Header: Logo, Company Info, Invoice Title */}
             <div className="invoice-header-bar">
@@ -948,7 +1247,27 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <div className="invoice-billing-details">
               <div>
                 <h4 className="invoice-detail-header">Supplier (Seller):</h4>
-                <h3 className="invoice-customer-name">{selectedPurchase.supplierName}</h3>
+                <h3 className="invoice-customer-name">
+                  {selectedPurchase.supplierId ? (
+                    <>
+                      <button
+                        type="button"
+                        className="table-link-btn supplier-link no-print"
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'var(--primary)', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
+                        onClick={() => {
+                          setCurrentTab('suppliers');
+                          setViewSupplier(selectedPurchase.supplierId);
+                          setViewPurchase(null);
+                        }}
+                      >
+                        {selectedPurchase.supplierName}
+                      </button>
+                      <span className="print-only">{selectedPurchase.supplierName}</span>
+                    </>
+                  ) : (
+                    <span>{selectedPurchase.supplierName}</span>
+                  )}
+                </h3>
                 {supplierDetail ? (
                   <>
                     <p className="invoice-customer-sub">{supplierDetail.phone}</p>
@@ -1222,6 +1541,167 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             )}
           </div>
         </div>
+        ) : (
+          <div style={{ display: "flex", justifyContent: "center" }}>
+            <div className="print-invoice-layout thermal">
+              <div style={{ textAlign: "center", marginBottom: "12px" }}>
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
+                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
+                {settings.showContact && (
+                  <p style={{ margin: 0, fontSize: "11px" }}>
+                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
+                  </p>
+                )}
+                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin} (Recipient)</p>}
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Bill No: <strong>{selectedPurchase.purchaseNumber}</strong></span>
+                  <span>Date: {formatDate(selectedPurchase.date)}</span>
+                </div>
+                <div>Supplier:{' '}
+                  {selectedPurchase.supplierId ? (
+                    <>
+                      <button
+                        type="button"
+                        className="table-link-btn supplier-link no-print"
+                        style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
+                        onClick={() => {
+                          setCurrentTab('suppliers');
+                          setViewSupplier(selectedPurchase.supplierId);
+                          setViewPurchase(null);
+                        }}
+                      >
+                        <strong>{supplierDetail?.name || selectedPurchase.supplierName}</strong>
+                      </button>
+                      <strong className="print-only">{supplierDetail?.name || selectedPurchase.supplierName}</strong>
+                    </>
+                  ) : (
+                    <strong>{selectedPurchase.supplierName || "Walk-in Supplier"}</strong>
+                  )}
+                </div>
+                {supplierDetail?.phone && <div>Phone: {supplierDetail.phone}</div>}
+                {supplierInvoiceNo && <div>Supplier Inv: <strong>{supplierInvoiceNo}</strong> ({supplierInvoiceDt})</div>}
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ fontSize: "11px" }}>
+                <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
+                  <span>ITEM</span>
+                  <span style={{ textAlign: "center" }}>QTY</span>
+                  <span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span>
+                </div>
+                <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
+                {selectedPurchase.items.map((item, index) => (
+                  <div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}>
+                    <div>
+                      <span style={{ fontWeight: "bold" }}>{item.productName}</span>
+                      <div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div>
+                    </div>
+                    <span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
+                    <span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span>Total Taxable</span>
+                  <span>{settings.currencySymbol || "₹"}{totals.subtotal.toFixed(2)}</span>
+                </div>
+                {totals.cgst > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Input CGST</span>
+                    <span>{settings.currencySymbol || "₹"}{totals.cgst.toFixed(2)}</span>
+                  </div>
+                )}
+                {totals.sgst > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span>Input SGST</span>
+                    <span>{settings.currencySymbol || "₹"}{totals.sgst.toFixed(2)}</span>
+                  </div>
+                )}
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
+                  <span>GRAND TOTAL</span>
+                  <span>{settings.currencySymbol || "₹"}{totals.grandTotal.toFixed(2)}</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}>
+                  <span>AMOUNT PAID</span>
+                  <span>{settings.currencySymbol || "₹"}{totals.amountPaid.toFixed(2)}</span>
+                </div>
+                {totals.balanceDue > 0 && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}>
+                    <span>BALANCE DUE</span>
+                    <span>{settings.currencySymbol || "₹"}{totals.balanceDue.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
+              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
+                <div>{settings.footerMessage || "THANK YOU! VISIT AGAIN."}</div>
+                {selectedPurchase.notes && <div style={{ fontStyle: "italic" }}>"{remarksVal || selectedPurchase.notes}"</div>}
+                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Bottom secondary action buttons */}
+        <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "24px" }}>
+          {getAttachmentName(selectedPurchase.notes) && (
+            <button className="btn btn-secondary" onClick={() => {
+              setActivePreviewPurchase(selectedPurchase);
+              setShowAttachmentPreview(true);
+            }}>
+              <FileText size={16} /> View Invoice File
+            </button>
+          )}
+          <button className="btn btn-secondary" onClick={() => handleStartEditPurchase(selectedPurchase)}>
+            <Edit2 size={16} /> Edit Purchase
+          </button>
+          <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeletePurchase(selectedPurchase.id, selectedPurchase.purchaseNumber)}>
+            <Trash2 size={16} /> Delete Purchase
+          </button>
+        </div>
+        {deletingPurchase && (
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                  <AlertTriangle size={28} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Purchase Bill</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Are you sure you want to delete purchase bill <strong>{deletingPurchase.purchaseNumber}</strong>? This will deduct the added stock levels and adjust supplier balance.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingPurchase(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    onClick={() => {
+                      const idToDelete = deletingPurchase.id;
+                      const purchaseNo = deletingPurchase.purchaseNumber;
+                      setDeletingPurchase(null);
+                      try {
+                        deletePurchase(idToDelete);
+                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
+                        setViewPurchase(null);
+                      } catch (error: any) {
+                        console.error("Delete purchase error:", error);
+                        showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -1231,33 +1711,80 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
     const totals = getPurchaseTotals();
     const supplierDetail = suppliers.find((s) => s.id === selectedSupplierId);
 
+    const generatedNo = purchaseBillNumber || `PUR-${(purchases.length + 1).toString().padStart(3, '0')}`;
+    
     // Initial prefill for Purchase Bill Number if empty
     if (!purchaseBillNumber) {
-      const generatedNo = `PUR-${(purchases.length + 1).toString().padStart(3, '0')}`;
       setPurchaseBillNumber(generatedNo);
     }
 
     return (
-      <div style={{ animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards', paddingBottom: '40px' }}>
+      <div style={{ animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards', paddingBottom: '40px', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
         
-        {/* TOP BAR ACTION BAR */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <button className="btn btn-secondary btn-sm" type="button" onClick={() => {
+        {/* Designed Banner Header */}
+        <div className="creator-banner-header" style={{
+          background: 'linear-gradient(135deg, #0f172a 0%, var(--primary-dark) 60%, var(--primary) 100%)',
+          boxShadow: '0 8px 32px rgba(15,23,42,0.15)',
+          marginBottom: '24px',
+          position: 'relative',
+          overflow: 'hidden',
+        }}>
+          {/* decorative circles for aesthetic premium feeling */}
+          <div style={{ position: 'absolute', right: -40, top: -40, width: 180, height: 180, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', right: 60, bottom: -60, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.03)', pointerEvents: 'none' }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', zIndex: 1 }}>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => {
                 handleResetForm();
-              }} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <ArrowLeft size={16} /> Exit Editor
-              </button>
-              <h3 style={{ fontSize: '22px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: 0 }}>
-                {editingPurchaseId ? 'Edit Inward Purchase Entry' : 'Log Inward Purchase Entry'}
-              </h3>
+              }}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#fff',
+                borderRadius: '10px',
+                padding: '10px 18px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '13px',
+                fontWeight: 600,
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s',
+                height: '42px',
+              }}
+            >
+              <ArrowLeft size={16} /> Exit Editor
+            </button>
+            <div>
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+                {editingPurchaseId ? 'Edit Entry' : 'New Entry'}
+              </span>
+              <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
+                {editingPurchaseId ? 'Edit Inward Purchase Bill' : 'Log Inward Purchase Entry'}
+              </h1>
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-              Record goods receipt notes, tax divisions, and update inventory ledger.
-            </p>
           </div>
-          
+
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            border: '1px solid rgba(255,255,255,0.18)',
+            borderRadius: '12px',
+            padding: '10px 18px',
+            textAlign: 'right',
+            color: '#fff',
+            zIndex: 1,
+          }}>
+            <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.8)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              Voucher Number
+            </span>
+            <strong style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.5px' }}>
+              {generatedNo}
+            </strong>
+          </div>
         </div>
 
         <form onSubmit={(e) => handleSavePurchaseWrapper(e, false)}>
@@ -2138,6 +2665,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               Total billing outlays
             </span>
           </div>
+          <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2149,6 +2677,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               Cash and bank payouts
             </span>
           </div>
+          <div className="kpi-icon-container emerald"><CheckCircle2 size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2160,6 +2689,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               Accounts payable balance
             </span>
           </div>
+          <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -2171,13 +2701,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               Total purchase transactions
             </span>
           </div>
+          <div className="kpi-icon-container blue"><FileText size={20} /></div>
         </div>
       </div>
 
       {/* Top filter row */}
       <div className="filters-row-unified">
         <div className="filters-group-one">
-          <div className="search-input-wrapper">
+          <div className="search-input-wrapper sales-search-wrapper">
             <Search size={16} className="search-input-icon" />
             <input
               type="text"
@@ -2187,8 +2718,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             />
           </div>
 
-          {/* Segmented Filter Control */}
-          <div style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0 }}>
+          {/* Desktop Segmented Filter Control */}
+          <div className="desktop-status-filters" style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 0 }}>
             {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => {
               const isActive = statusFilter === status;
               return (
@@ -2219,11 +2750,29 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               );
             })}
           </div>
+
+          {/* Mobile Status Select Dropdown */}
+          <div className="mobile-status-select-wrapper">
+            <select
+              className="filter-select status-select-field"
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setCurrentPage(1);
+              }}
+            >
+              {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <div className="filters-group-two">
           {/* Sort Dropdown */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+          <div className="sales-sort-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
             <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
               <ArrowUpDown size={13} />
             </span>
@@ -2239,11 +2788,6 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <option value="amount-asc">Lowest Bill amount</option>
               <option value="number-desc">Bill number desc</option>
             </select>
-            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
           </div>
 
           <button className="btn btn-primary" onClick={() => setIsEnteringPurchase(true)}>
@@ -2503,7 +3047,23 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                           {pur.purchaseNumber}
                         </button>
                       </h4>
-                      <span className="mobile-list-card-subtitle">{pur.supplierName}</span>
+                      {pur.supplierId ? (
+                        <button
+                          type="button"
+                          className="table-link-btn supplier-link"
+                          style={{ display: 'block', fontSize: '12px', margin: '2px 0 0 0', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left', fontWeight: 600, color: 'var(--primary)' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setCurrentTab('suppliers');
+                            setViewSupplier(pur.supplierId);
+                            setViewPurchase(null);
+                          }}
+                        >
+                          {pur.supplierName}
+                        </button>
+                      ) : (
+                        <span className="mobile-list-card-subtitle">{pur.supplierName}</span>
+                      )}
                     </div>
                     <div style={{ position: 'relative' }}>
                       <button
@@ -2608,6 +3168,45 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
           </>
         )}
         {renderAttachmentPreviewModal()}
+        {deletingPurchase && (
+          <div className="modal-overlay" style={{ zIndex: 1000 }}>
+            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+                  <AlertTriangle size={28} />
+                </div>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Purchase Bill</h3>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                  Are you sure you want to delete purchase bill <strong>{deletingPurchase.purchaseNumber}</strong>? This will deduct the added stock levels and adjust supplier balance.
+                </p>
+                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingPurchase(null)}>
+                    Cancel
+                  </button>
+                  <button
+                    className="btn btn-primary"
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    onClick={() => {
+                      const idToDelete = deletingPurchase.id;
+                      const purchaseNo = deletingPurchase.purchaseNumber;
+                      setDeletingPurchase(null);
+                      try {
+                        deletePurchase(idToDelete);
+                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
+                        setViewPurchase(null);
+                      } catch (error: any) {
+                        console.error("Delete purchase error:", error);
+                        showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      }
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
