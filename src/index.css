@@ -5390,3 +5390,152 @@ body.dark-theme .lang-selector-btn:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ── Product Ledger Activity Filter Bar ── */
+.ledger-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--card-bg, #fff);
+  flex-wrap: wrap;
+}
+
+.ledger-filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+}
+
+.ledger-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ledger-input-wrapper svg {
+  position: absolute;
+  left: 10px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.ledger-input-wrapper input[type="date"] {
+  padding: 8px 12px 8px 34px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  width: 100%;
+  outline: none;
+  font-weight: 500;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ledger-input-wrapper input[type="date"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(78, 108, 80, 0.12);
+}
+
+.ledger-select-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.ledger-select-wrapper select {
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  font-size: 13px;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  width: 100%;
+  outline: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ledger-select-wrapper select:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(78, 108, 80, 0.12);
+}
+
+.ledger-clear-btn {
+  padding: 8px 16px;
+  font-size: 12px;
+  height: 36px;
+  border-radius: 10px;
+  white-space: nowrap;
+  align-self: flex-end;
+}
+
+@media (min-width: 769px) {
+  .ledger-dates-row {
+    display: flex;
+    gap: 16px;
+    flex: 2;
+  }
+  .ledger-actions-row {
+    display: flex;
+    gap: 16px;
+    flex: 1.5;
+    align-items: flex-end;
+  }
+  .ledger-filter-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  .ledger-filter-container {
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+    align-items: stretch;
+  }
+
+  /* Date row (Row 1 on mobile) - side-by-side */
+  .ledger-dates-row {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .ledger-dates-row .ledger-filter-group {
+    flex: 1 1 50%;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  /* Type & Clear Row (Row 2 on mobile) */
+  .ledger-actions-row {
+    display: flex;
+    width: 100%;
+    gap: 10px;
+    align-items: flex-end;
+  }
+
+  .ledger-actions-row .ledger-filter-group {
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+
+  .ledger-actions-row .ledger-clear-btn {
+    flex-shrink: 0;
+    width: auto;
+  }
+}

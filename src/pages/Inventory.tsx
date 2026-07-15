@@ -19,6 +19,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Calendar,
 } from 'lucide-react';
 import type { Product } from '../types';
 
@@ -450,89 +451,62 @@ export const Inventory: React.FC = () => {
             </div>
           </div>
 
-          {/* Date Filter Bar */}
-          <div style={{ 
-            padding: '12px 20px', 
-            borderBottom: '1px solid var(--border-color)', 
-            background: 'var(--card-bg, #fff)',
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '16px', 
-            flexWrap: 'wrap'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>From:</span>
-              <input 
-                type="date" 
-                value={ledgerStartDate}
-                onChange={(e) => setLedgerStartDate(e.target.value)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '13px',
-                  background: 'var(--bg-app)',
-                  color: 'var(--text-primary)',
-                  outline: 'none'
-                }}
-              />
+          {/* Date & Type Filter Bar */}
+          <div className="ledger-filter-container">
+            <div className="ledger-dates-row">
+              <div className="ledger-filter-group">
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>From Date</span>
+                <div className="ledger-input-wrapper">
+                  <Calendar size={14} />
+                  <input 
+                    type="date" 
+                    value={ledgerStartDate}
+                    onChange={(e) => setLedgerStartDate(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div className="ledger-filter-group">
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>To Date</span>
+                <div className="ledger-input-wrapper">
+                  <Calendar size={14} />
+                  <input 
+                    type="date" 
+                    value={ledgerEndDate}
+                    onChange={(e) => setLedgerEndDate(e.target.value)}
+                  />
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>To:</span>
-              <input 
-                type="date" 
-                value={ledgerEndDate}
-                onChange={(e) => setLedgerEndDate(e.target.value)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '13px',
-                  background: 'var(--bg-app)',
-                  color: 'var(--text-primary)',
-                  outline: 'none'
-                }}
-              />
+
+            <div className="ledger-actions-row">
+              <div className="ledger-filter-group">
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Transaction Type</span>
+                <div className="ledger-select-wrapper">
+                  <select
+                    value={ledgerTypeFilter}
+                    onChange={(e) => setLedgerTypeFilter(e.target.value as 'All' | 'Sales' | 'Purchase')}
+                  >
+                    <option value="All">All Transactions</option>
+                    <option value="Sales">Sales Only</option>
+                    <option value="Purchase">Purchases Only</option>
+                  </select>
+                </div>
+              </div>
+
+              {(ledgerStartDate || ledgerEndDate || ledgerTypeFilter !== 'All') && (
+                <button 
+                  onClick={() => {
+                    setLedgerStartDate('');
+                    setLedgerEndDate('');
+                    setLedgerTypeFilter('All');
+                  }}
+                  className="btn btn-secondary ledger-clear-btn"
+                >
+                  Clear Filters
+                </button>
+              )}
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>Type:</span>
-              <select
-                value={ledgerTypeFilter}
-                onChange={(e) => setLedgerTypeFilter(e.target.value as 'All' | 'Sales' | 'Purchase')}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid var(--border-color)',
-                  fontSize: '13px',
-                  background: 'var(--bg-app)',
-                  color: 'var(--text-primary)',
-                  outline: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                <option value="All">All Transactions</option>
-                <option value="Sales">Sales Only</option>
-                <option value="Purchase">Purchases Only</option>
-              </select>
-            </div>
-            {(ledgerStartDate || ledgerEndDate || ledgerTypeFilter !== 'All') && (
-              <button 
-                onClick={() => {
-                  setLedgerStartDate('');
-                  setLedgerEndDate('');
-                  setLedgerTypeFilter('All');
-                }}
-                className="btn btn-secondary"
-                style={{
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  height: 'auto',
-                  borderRadius: '8px'
-                }}
-              >
-                Clear Filters
-              </button>
-            )}
           </div>
 
           {allTransactions.length === 0 ? (
