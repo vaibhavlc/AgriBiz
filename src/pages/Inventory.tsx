@@ -50,6 +50,16 @@ export const Inventory: React.FC = () => {
   const [activeMenuProductId, setActiveMenuProductId] = useState<string | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
 
+  // Date filters for Product Ledger Activity
+  const [ledgerStartDate, setLedgerStartDate] = useState('');
+  const [ledgerEndDate, setLedgerEndDate] = useState('');
+
+  // Clear date filters when navigating away or switching items
+  React.useEffect(() => {
+    setLedgerStartDate('');
+    setLedgerEndDate('');
+  }, [viewProductId]);
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -159,9 +169,15 @@ export const Inventory: React.FC = () => {
       };
     });
 
-    const transactions = [...productSales, ...productPurchases].sort(
+    const allTransactions = [...productSales, ...productPurchases].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
+
+    const transactions = allTransactions.filter(tx => {
+      if (ledgerStartDate && tx.date < ledgerStartDate) return false;
+      if (ledgerEndDate && tx.date > ledgerEndDate) return false;
+      return true;
+    });
 
     // Calculate margins
     const profitMargin = selectedProduct.sellingPrice - selectedProduct.purchasePrice;
@@ -388,7 +404,7 @@ export const Inventory: React.FC = () => {
         {/* ── TRANSACTION LEDGER ──────────────────────────────── */}
         <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', border:'1px solid var(--border-color)', overflow:'hidden', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
           {/* Ledger header */}
-          <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border-color)', display:'flex', alignItems:'center', gap:'10px', background:'var(--bg-app)' }}>
+          <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--border-color)', display:'flex', alignItems:'center', gap:'10px', background:'var(--bg-app)', flexWrap:'wrap' }}>
             <div style={{ width:'32px', height:'32px', borderRadius:'8px', background:'linear-gradient(135deg,#1a5c2a,#3da85a)', display:'flex', alignItems:'center', justifyContent:'center', color:'#fff' }}>
               <TrendingUp size={15} />
             </div>
@@ -397,15 +413,98 @@ export const Inventory: React.FC = () => {
               <div style={{ fontSize:'11px', color:'var(--text-muted)' }}>All sales and purchase transactions for this item</div>
             </div>
             <div style={{ marginLeft:'auto', background:'var(--card-bg,#fff)', border:'1px solid var(--border-color)', borderRadius:'8px', padding:'4px 10px', fontSize:'12px', fontWeight:700, color:'var(--text-secondary)' }}>
-              {transactions.length} records
+              {transactions.length === allTransactions.length ? (
+                `${transactions.length} records`
+              ) : (
+                `Showing ${transactions.length} of ${allTransactions.length} records`
+              )}
             </div>
           </div>
 
-          {transactions.length === 0 ? (
+          {/* Date Filter Bar */}
+          <div style={{ 
+            padding: '12px 20px', 
+            borderBottom: '1px solid var(--border-color)', 
+            background: 'var(--card-bg, #fff)',
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '16px', 
+            flexWrap: 'wrap'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>From:</span>
+              <input 
+                type="date" 
+                value={ledgerStartDate}
+                onChange={(e) => setLedgerStartDate(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '13px',
+                  background: 'var(--bg-app)',
+                  color: 'var(--text-primary)',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)' }}>To:</span>
+              <input 
+                type="date" 
+                value={ledgerEndDate}
+                onChange={(e) => setLedgerEndDate(e.target.value)}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-color)',
+                  fontSize: '13px',
+                  background: 'var(--bg-app)',
+                  color: 'var(--text-primary)',
+                  outline: 'none'
+                }}
+              />
+            </div>
+            {(ledgerStartDate || ledgerEndDate) && (
+              <button 
+                onClick={() => {
+                  setLedgerStartDate('');
+                  setLedgerEndDate('');
+                }}
+                className="btn btn-secondary"
+                style={{
+                  padding: '6px 12px',
+                  fontSize: '12px',
+                  height: 'auto',
+                  borderRadius: '8px'
+                }}
+              >
+                Clear Filters
+              </button>
+            )}
+          </div>
+
+          {allTransactions.length === 0 ? (
             <div style={{ padding:'48px 0', textAlign:'center', color:'var(--text-muted)' }}>
               <FileText size={40} style={{ opacity:0.25, marginBottom:'12px' }} />
               <div style={{ fontSize:'14px', fontWeight:600 }}>No Transaction Records Yet</div>
               <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px' }}>This item hasn't appeared in any invoice or purchase bill.</div>
+            </div>
+          ) : transactions.length === 0 ? (
+            <div style={{ padding:'48px 0', textAlign:'center', color:'var(--text-muted)' }}>
+              <FileText size={40} style={{ opacity:0.25, marginBottom:'12px' }} />
+              <div style={{ fontSize:'14px', fontWeight:600 }}>No Transactions Match Filters</div>
+              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px', marginBottom:'16px' }}>Adjust your start or end date to view transactions in that period.</div>
+              <button 
+                onClick={() => {
+                  setLedgerStartDate('');
+                  setLedgerEndDate('');
+                }}
+                className="btn btn-secondary"
+                style={{ padding: '8px 16px', borderRadius: '10px' }}
+              >
+                Reset Date Filters
+              </button>
             </div>
           ) : (
             <>
