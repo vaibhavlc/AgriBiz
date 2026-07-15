@@ -262,7 +262,7 @@ export const Inventory: React.FC = () => {
         </div>
 
         {/* ── 4 STAT TILES ────────────────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:'12px', marginBottom:'20px' }}>
+        <div className="inv-profile-stat-grid">
           {/* Stock on hand */}
           <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
@@ -321,7 +321,7 @@ export const Inventory: React.FC = () => {
         </div>
 
         {/* ── DETAILS + TAX ROW ───────────────────────────────── */}
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:'12px', marginBottom:'20px' }}>
+        <div className="inv-profile-detail-grid">
           {/* Pricing detail breakdown */}
           <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
             <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Price Breakdown</h4>

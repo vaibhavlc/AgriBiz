@@ -5343,3 +5343,35 @@ body.dark-theme .lang-selector-btn:hover {
 }
 
 /* End of stylesheet */
+
+/* ── Inventory Item Profile: Responsive Grids ── */
+.inv-profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.inv-profile-detail-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+@media (max-width: 900px) {
+  .inv-profile-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .inv-profile-stat-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .inv-profile-detail-grid {
+    grid-template-columns: 1fr;
+  }
+}
