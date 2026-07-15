@@ -168,82 +168,92 @@ export const Inventory: React.FC = () => {
 
     return (
       <div style={{ animation: 'fadeIn 0.25s ease-out' }}>
-        {/* Back and Page Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => setViewProductId(null)}
-            style={{ padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
-          >
-            <ArrowLeft size={16} /> Back to Catalog
-          </button>
 
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => handleEditClick(selectedProduct)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <Edit2 size={15} /> Edit Product
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              onClick={() => setDeletingProduct(selectedProduct)}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
-            >
-              <Trash2 size={15} /> Delete Product
-            </button>
-          </div>
-        </div>
-
-        {/* Product Profile Hero Banner */}
+        {/* Premium Product Profile Hero Card */}
         <div className="card" style={{
-          padding: '24px',
-          borderRadius: '16px',
+          borderRadius: '20px',
           border: '1px solid var(--border-color)',
-          background: 'linear-gradient(135deg, var(--card-bg, #ffffff) 0%, var(--bg-app) 100%)',
-          marginBottom: '28px',
-          display: 'flex',
-          gap: '24px',
-          alignItems: 'center',
-          flexWrap: 'wrap'
+          overflow: 'hidden',
+          marginBottom: '24px',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.06)'
         }}>
+          {/* Gradient Top Banner */}
           <div style={{
-            width: '68px',
-            height: '68px',
-            borderRadius: '16px',
-            background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: '#fff',
-            flexShrink: 0,
-            boxShadow: '0 8px 16px rgba(78,108,80,0.15)'
+            background: 'linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 60%, #6dbf7e 100%)',
+            padding: '20px 24px 48px',
+            position: 'relative',
+            overflow: 'hidden',
           }}>
-            <Package size={32} />
+            {/* Decorative circles */}
+            <div style={{ position: 'absolute', top: '-30px', right: '-30px', width: '140px', height: '140px', borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
+            <div style={{ position: 'absolute', bottom: '-20px', left: '30%', width: '90px', height: '90px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)' }} />
+
+            {/* Top row: Back | Edit + Delete */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 1, flexWrap: 'wrap', gap: '12px' }}>
+              <button
+                className="btn"
+                onClick={() => setViewProductId(null)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', padding: '7px 14px', fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(6px)', cursor: 'pointer' }}
+              >
+                <ArrowLeft size={15} /> Back to Catalog
+              </button>
+
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button
+                  onClick={() => handleEditClick(selectedProduct)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.18)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', borderRadius: '10px', padding: '7px 14px', fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(6px)', cursor: 'pointer' }}
+                >
+                  <Edit2 size={14} /> Edit
+                </button>
+                <button
+                  onClick={() => setDeletingProduct(selectedProduct)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(239,68,68,0.25)', color: '#fff', border: '1px solid rgba(239,68,68,0.45)', borderRadius: '10px', padding: '7px 14px', fontSize: '13px', fontWeight: 600, backdropFilter: 'blur(6px)', cursor: 'pointer' }}
+                >
+                  <Trash2 size={14} /> Delete
+                </button>
+              </div>
+            </div>
           </div>
 
-          <div style={{ flex: 1, minWidth: '200px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-              <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                {selectedProduct.name}
-              </h2>
-              {getStockStatusBadge(selectedProduct)}
-            </div>
-            
-            <div style={{ display: 'flex', gap: '16px', marginTop: '8px', fontSize: '13px', color: 'var(--text-secondary)', flexWrap: 'wrap' }}>
-              <span>SKU: <code style={{ fontFamily: 'monospace', fontWeight: 700, backgroundColor: 'rgba(0,0,0,0.03)', padding: '2px 6px', borderRadius: '4px' }}>{selectedProduct.sku}</code></span>
-              <span>•</span>
-              <span>Category: <strong style={{ color: 'var(--primary-dark)' }}>{selectedProduct.category}</strong></span>
-              {selectedProduct.hsn && (
-                <>
-                  <span>•</span>
-                  <span>HSN: <strong style={{ color: 'var(--text-primary)' }}>{selectedProduct.hsn}</strong></span>
-                </>
-              )}
+          {/* Product Identity Row (floated up over banner) */}
+          <div style={{ padding: '0 24px 20px', marginTop: '-32px', position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '18px', flexWrap: 'wrap' }}>
+              {/* Icon tile */}
+              <div style={{
+                width: '64px', height: '64px', borderRadius: '16px',
+                background: 'linear-gradient(135deg, #fff 0%, #f0fdf4 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'var(--primary-dark)', flexShrink: 0,
+                boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+                border: '2px solid rgba(255,255,255,0.9)'
+              }}>
+                <Package size={28} />
+              </div>
+
+              {/* Name + meta */}
+              <div style={{ flex: 1, minWidth: '180px', paddingBottom: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
+                    {selectedProduct.name}
+                  </h2>
+                  {getStockStatusBadge(selectedProduct)}
+                </div>
+                <div style={{ display: 'flex', gap: '14px', marginTop: '6px', fontSize: '12px', color: 'var(--text-secondary)', flexWrap: 'wrap', alignItems: 'center' }}>
+                  <span>SKU: <code style={{ fontFamily: 'monospace', fontWeight: 700, background: 'var(--bg-app)', padding: '2px 6px', borderRadius: '4px' }}>{selectedProduct.sku}</code></span>
+                  <span style={{ color: 'var(--border-color)' }}>•</span>
+                  <span>Category: <strong style={{ color: 'var(--primary-dark)' }}>{selectedProduct.category}</strong></span>
+                  {selectedProduct.hsn && (
+                    <>
+                      <span style={{ color: 'var(--border-color)' }}>•</span>
+                      <span>HSN: <strong>{selectedProduct.hsn}</strong></span>
+                    </>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
+
 
         {/* 3 Grid Summary Cards */}
         <div className="form-grid-3" style={{ marginBottom: '28px' }}>
