@@ -375,6 +375,40 @@ export const Inventory: React.FC = () => {
             </div>
             <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>gross per unit sold</div>
           </div>
+
+          {/* Total Sales Amount - click to go to Sales */}
+          <div
+            onClick={() => setCurrentTab('sales')}
+            style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer', transition:'box-shadow 0.2s, transform 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 6px 20px rgba(16,185,129,0.15)'; (e.currentTarget as HTMLDivElement).style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
+          >
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Total Sales</span>
+              <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(34,197,94,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#16a34a' }}>
+                <TrendingUp size={14} />
+              </div>
+            </div>
+            <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'#16a34a', lineHeight:1 }}>{formatINR(totalSalesValue)}</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{totalSalesQty} units sold</div>
+          </div>
+
+          {/* Total Purchases Amount - click to go to Purchases */}
+          <div
+            onClick={() => setCurrentTab('purchases')}
+            style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)', cursor:'pointer', transition:'box-shadow 0.2s, transform 0.2s' }}
+            onMouseEnter={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 6px 20px rgba(99,102,241,0.15)'; (e.currentTarget as HTMLDivElement).style.transform='translateY(-2px)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
+          >
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Total Purchases</span>
+              <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(99,102,241,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#6366f1' }}>
+                <Tag size={14} />
+              </div>
+            </div>
+            <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'#6366f1', lineHeight:1 }}>{formatINR(totalPurchasesValue)}</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{totalPurchasesQty} units bought</div>
+          </div>
         </div>
 
         {/* ── DETAILS + TAX ROW ───────────────────────────────── */}
