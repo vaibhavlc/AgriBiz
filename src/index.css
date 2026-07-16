@@ -3618,11 +3618,11 @@ body.dark-theme .lang-selector-btn:hover {
 @media (max-width: 576px) {
   .modal-overlay {
     padding: 10px;
-    align-items: flex-start;
+    align-items: center;
     overflow-y: auto;
   }
   .modal-content {
-    margin: 20px auto;
+    margin: 0;
   }
   .modal-header {
     padding: 12px 16px;
