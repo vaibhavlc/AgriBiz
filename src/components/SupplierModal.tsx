@@ -79,7 +79,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
       title={editSupplierData ? 'Edit Supplier Info' : 'Add New Supplier'}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           
           {/* Supplier Name */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
@@ -97,7 +97,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
           </div>
 
           {/* Contact Details Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
               <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone/Contact Number *</label>
               <input

@@ -92,7 +92,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       title={editCustomerData ? 'Edit Customer Info' : 'Add New Customer'}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           
           {/* Full Name */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
@@ -110,7 +110,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           </div>
 
           {/* Contact Row: Phone & Email */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
               <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone Number *</label>
               <input
@@ -137,7 +137,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           </div>
 
           {/* Tax/Location Row: GSTIN & State */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
               <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>GST Number (GSTIN)</label>
               <input
