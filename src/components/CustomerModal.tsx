@@ -91,103 +91,119 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       onClose={onClose}
       title={editCustomerData ? 'Edit Customer Info' : 'Add New Customer'}
     >
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label className="form-label">Customer Full Name *</label>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="e.g. Ramesh Kumar"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoFocus
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Phone Number *</label>
-            <input
-              type="tel"
-              className="form-control"
-              placeholder="e.g. 9876543210"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Email ID</label>
-            <input
-              type="email"
-              className="form-control"
-              placeholder="e.g. ramesh@gmail.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">GST Number (GSTIN)</label>
+      <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+          
+          {/* Full Name */}
+          <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Customer Full Name *</label>
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. 23AABCR1234F1Z5"
-              maxLength={15}
-              value={gstin}
-              onChange={(e) => setGstin(e.target.value)}
-            />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Billing State *</label>
-            <select
-              className="form-control"
-              value={state}
-              onChange={(e) => setState(e.target.value)}
+              placeholder="e.g. Ramesh Kumar"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
-            >
-              <option value="">-- Choose State --</option>
-              {INDIAN_STATES.map((s) => (
-                <option key={s} value={s}>{s}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Village / Billing Address</label>
-          <textarea
-            className="form-control"
-            placeholder="e.g. Ward No. 4, Pipariya Village, MP"
-            rows={3}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-        </div>
-
-        {!editCustomerData && (
-          <div className="form-group">
-            <label className="form-label">Opening Outstanding Balance (₹)</label>
-            <input
-              type="number"
-              className="form-control"
-              placeholder="e.g. 5000 (Use negative for advance credit)"
-              value={outstanding || ''}
-              onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
+              autoFocus
+              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
-        )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary">
-            {editCustomerData ? 'Update Customer' : 'Add Customer'}
-          </button>
+          {/* Contact Row: Phone & Email */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', width: '100%' }}>
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone Number *</label>
+              <input
+                type="tel"
+                className="form-control"
+                placeholder="e.g. 9876543210"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Email ID</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="e.g. ramesh@gmail.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
+
+          {/* Tax/Location Row: GSTIN & State */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', width: '100%' }}>
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>GST Number (GSTIN)</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. 23AABCR1234F1Z5"
+                maxLength={15}
+                value={gstin}
+                onChange={(e) => setGstin(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', textTransform: 'uppercase' }}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Billing State *</label>
+              <select
+                className="form-control"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                required
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              >
+                <option value="">-- Choose State --</option>
+                {INDIAN_STATES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Village / Billing Address</label>
+            <textarea
+              className="form-control"
+              placeholder="e.g. Ward No. 4, Pipariya Village, MP"
+              rows={3}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
+            />
+          </div>
+
+          {/* Opening Outstanding */}
+          {!editCustomerData && (
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Opening Outstanding Balance (₹)</label>
+              <input
+                type="number"
+                className="form-control"
+                placeholder="e.g. 5000 (Use negative for advance credit)"
+                value={outstanding || ''}
+                onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
+          {/* Footer Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ minWidth: '90px' }}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ minWidth: '110px' }}>
+              {editCustomerData ? 'Update Customer' : 'Add Customer'}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

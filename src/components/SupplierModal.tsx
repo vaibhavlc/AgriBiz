@@ -78,87 +78,102 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
       onClose={onClose}
       title={editSupplierData ? 'Edit Supplier Info' : 'Add New Supplier'}
     >
-      <form onSubmit={handleSubmit}>
-        <div className="form-group">
-          <label className="form-label">Supplier Company/Name *</label>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="e.g. Mahindra Agri Implements Ltd"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            required
-            autoFocus
-          />
-        </div>
-
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Phone/Contact Number *</label>
+      <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', width: '100%' }}>
+          
+          {/* Supplier Name */}
+          <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Supplier Company/Name *</label>
             <input
-              type="tel"
+              type="text"
               className="form-control"
-              placeholder="e.g. 0161456789"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              placeholder="e.g. Mahindra Agri Implements Ltd"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               required
+              autoFocus
+              style={{ width: '100%', boxSizing: 'border-box' }}
             />
           </div>
-          <div className="form-group">
-            <label className="form-label">Email ID</label>
+
+          {/* Contact Details Grid */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', width: '100%' }}>
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone/Contact Number *</label>
+              <input
+                type="tel"
+                className="form-control"
+                placeholder="e.g. 0161456789"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                required
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Email ID</label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="e.g. billing@supplier.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          </div>
+
+          {/* GSTIN */}
+          <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>GST Number (GSTIN)</label>
             <input
-              type="email"
+              type="text"
               className="form-control"
-              placeholder="e.g. billing@supplier.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="e.g. 03AAACF4321F1ZX"
+              maxLength={15}
+              value={gstin}
+              onChange={(e) => setGstin(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', textTransform: 'uppercase' }}
             />
           </div>
-        </div>
 
-        <div className="form-group">
-          <label className="form-label">GST Number (GSTIN)</label>
-          <input
-            type="text"
-            className="form-control"
-            placeholder="e.g. 03AAACF4321F1ZX"
-            maxLength={15}
-            value={gstin}
-            onChange={(e) => setGstin(e.target.value)}
-          />
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">Office Address</label>
-          <textarea
-            className="form-control"
-            placeholder="e.g. Phase VII, Focal Point, Ludhiana, Punjab"
-            rows={3}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-          />
-        </div>
-
-        {!editSupplierData && (
-          <div className="form-group">
-            <label className="form-label">Opening Outstanding Balance (₹)</label>
-            <input
-              type="number"
+          {/* Address */}
+          <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Office Address</label>
+            <textarea
               className="form-control"
-              placeholder="e.g. 15000 (Amount we owe this supplier)"
-              value={outstanding || ''}
-              onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
+              placeholder="e.g. Phase VII, Focal Point, Ludhiana, Punjab"
+              rows={3}
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              style={{ width: '100%', boxSizing: 'border-box', resize: 'vertical' }}
             />
           </div>
-        )}
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
-            Cancel
-          </button>
-          <button type="submit" className="btn btn-primary">
-            {editSupplierData ? 'Update Supplier' : 'Add Supplier'}
-          </button>
+          {/* Opening Outstanding */}
+          {!editSupplierData && (
+            <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Opening Outstanding Balance (₹)</label>
+              <input
+                type="number"
+                className="form-control"
+                placeholder="e.g. 15000 (Amount we owe this supplier)"
+                value={outstanding || ''}
+                onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
+                style={{ width: '100%', boxSizing: 'border-box' }}
+              />
+            </div>
+          )}
+
+          {/* Footer Buttons */}
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ minWidth: '90px' }}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" style={{ minWidth: '110px' }}>
+              {editSupplierData ? 'Update Supplier' : 'Add Supplier'}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>
