@@ -60,13 +60,18 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
-    video.muted = true;
+    video.muted = false; // Play with sound as requested
     video.playsInline = true;
     const playPromise = video.play();
     if (playPromise !== undefined) {
-      playPromise.catch(() => {
-        // Autoplay blocked — treat as ended
-        setVideoEnded(true);
+      playPromise.catch((err) => {
+        console.warn("Autoplay with sound was blocked by browser. Attempting muted autoplay...", err);
+        // Fallback to muted playback so animation still runs
+        video.muted = true;
+        video.play().catch(() => {
+          // If both fail, trigger video end so the app initializes
+          setVideoEnded(true);
+        });
       });
     }
   }, []);
@@ -83,7 +88,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#ffffff',
+        backgroundColor: '#000000', // Black background to match the video background
         opacity: fading ? 0 : 1,
         transition: fading ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         userSelect: 'none',
@@ -93,12 +98,25 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
       }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Dark theme support */}
+      {/* Sizing adjustments for larger desktop screens */}
       <style>{`
-        @media (prefers-color-scheme: dark) {
-          .splash-root { background-color: #0f1a12 !important; }
+        .splash-root {
+          background-color: #000000 !important;
         }
-        body.dark-theme .splash-root { background-color: #0f1a12 !important; }
+        .splash-video {
+          max-width: 280px;
+          max-height: 280px;
+          width: 65vw;
+          height: 65vw;
+        }
+        @media (min-width: 768px) {
+          .splash-video {
+            max-width: 580px !important;
+            max-height: 580px !important;
+            width: 45vw !important;
+            height: 45vw !important;
+          }
+        }
       `}</style>
 
       <div
@@ -109,7 +127,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#000000', // Black background
         }}
       >
         {!videoError ? (
@@ -117,21 +135,16 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
           <video
             ref={videoRef}
             src={WEBM_SRC}
-            muted
             playsInline
             autoPlay
             disablePictureInPicture
             onEnded={handleVideoEnd}
             onError={handleVideoError}
+            className="splash-video"
             style={{
-              maxWidth: '280px',
-              maxHeight: '280px',
-              width: '60vw',
-              height: '60vw',
               objectFit: 'contain',
               pointerEvents: 'none',
               display: 'block',
-              // Hide all native video controls
               outline: 'none',
               border: 'none',
               background: 'transparent',
