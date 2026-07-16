@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
@@ -12,9 +12,20 @@ import { Expenses } from './pages/Expenses';
 import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { RecycleBin } from './pages/RecycleBin';
+import SplashScreen from './components/SplashScreen';
 
 const AppContent: React.FC = () => {
   const { currentTab } = useApp();
+  const [appReady, setAppReady] = useState(false);
+  const [splashComplete, setSplashComplete] = useState(false);
+
+  useEffect(() => {
+    // Simulate application initialization (fetching settings, loading database keys, loading CSS)
+    const initTimer = setTimeout(() => {
+      setAppReady(true);
+    }, 800); // 800ms minimum initialization time
+    return () => clearTimeout(initTimer);
+  }, []);
 
   const renderActivePage = () => {
     switch (currentTab) {
@@ -45,7 +56,27 @@ const AppContent: React.FC = () => {
     }
   };
 
-  return <Layout>{renderActivePage()}</Layout>;
+  return (
+    <>
+      {!splashComplete && (
+        <SplashScreen
+          appReady={appReady}
+          onComplete={() => setSplashComplete(true)}
+        />
+      )}
+      <div
+        style={{
+          opacity: splashComplete ? 1 : 0,
+          visibility: splashComplete ? 'visible' : 'hidden',
+          transition: 'opacity 400ms cubic-bezier(0.4, 0, 0.2, 1)',
+          height: '100%',
+          width: '100%',
+        }}
+      >
+        <Layout>{renderActivePage()}</Layout>
+      </div>
+    </>
+  );
 };
 
 const App: React.FC = () => {
@@ -57,3 +88,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
