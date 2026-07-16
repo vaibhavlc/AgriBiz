@@ -48,11 +48,11 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
     setTimeout(() => setVideoEnded(true), 1800);
   }, []);
 
-  // Safety: if WebM never loads within 4s, move on
+  // Safety: if WebM never loads within 15s, move on to app
   useEffect(() => {
     const timer = setTimeout(() => {
       setVideoEnded(true);
-    }, 4000);
+    }, 15000);
     return () => clearTimeout(timer);
   }, []);
 
