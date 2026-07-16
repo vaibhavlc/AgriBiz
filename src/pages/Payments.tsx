@@ -178,6 +178,62 @@ export const Payments: React.FC = () => {
 
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+      {/* Segmented Tab Control matching Sales/Purchases tab header design */}
+      <div className="no-print sales-segmented-tabs" style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        borderBottom: '1px solid var(--border-color)', 
+        marginBottom: '24px',
+        paddingBottom: '2px'
+      }}>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('CustomerReceipt');
+            setCurrentPage(1);
+          }}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: 700,
+            border: 'none',
+            background: 'none',
+            color: activeTab === 'CustomerReceipt' ? 'var(--primary)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'CustomerReceipt' ? '3px solid var(--primary)' : '3px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <TrendingUp size={16} /> Customer Receipts
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setActiveTab('SupplierPayment');
+            setCurrentPage(1);
+          }}
+          style={{
+            padding: '10px 20px',
+            fontSize: '14px',
+            fontWeight: 700,
+            border: 'none',
+            background: 'none',
+            color: activeTab === 'SupplierPayment' ? 'var(--primary)' : 'var(--text-secondary)',
+            borderBottom: activeTab === 'SupplierPayment' ? '3px solid var(--primary)' : '3px solid transparent',
+            cursor: 'pointer',
+            transition: 'all 0.2s',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <TrendingDown size={16} /> Supplier Payments
+        </button>
+      </div>
+
       {/* Quick stats for payments overview */}
       <div className="grid-cols-2" style={{ marginBottom: '24px' }}>
         <div
@@ -332,18 +388,6 @@ export const Payments: React.FC = () => {
             width: 100%;
             flex: none;
           }
-          .payments-filter-inputs .segmented-control-payments-tabs {
-            grid-column: span 2;
-            width: 100% !important;
-            height: 44px;
-            display: flex;
-            align-items: center;
-          }
-          .payments-filter-inputs .segmented-control-payments-tabs button {
-            flex: 1 !important;
-            height: 36px !important;
-            font-size: 12px !important;
-          }
           .payments-filter-inputs .search-input-wrapper {
             grid-column: span 1;
             width: 100% !important;
@@ -377,42 +421,6 @@ export const Payments: React.FC = () => {
       <div className="card payments-filter-card">
         <div className="payments-filter-row">
           <div className="payments-filter-inputs">
-            {/* Tab switches */}
-            <div
-              className="segmented-control-payments-tabs"
-              style={{
-                display: 'flex',
-                backgroundColor: 'var(--bg-app)',
-                padding: '4px',
-                borderRadius: '8px',
-                border: '1px solid var(--border-color)',
-                flexShrink: 0,
-              }}
-            >
-              <button
-                type="button"
-                className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'CustomerReceipt' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
-                onClick={() => {
-                  setActiveTab('CustomerReceipt');
-                  setCurrentPage(1);
-                }}
-              >
-                Customer Receipts
-              </button>
-              <button
-                type="button"
-                className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'SupplierPayment' ? 'btn-primary' : 'btn-secondary'}`}
-                style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
-                onClick={() => {
-                  setActiveTab('SupplierPayment');
-                  setCurrentPage(1);
-                }}
-              >
-                Supplier Payments
-              </button>
-            </div>
-
             {/* Search */}
             <div className="search-input-wrapper">
               <Search size={16} className="search-input-icon" />
@@ -451,6 +459,15 @@ export const Payments: React.FC = () => {
           <div className="payments-filter-actions">
             <button
               className="btn btn-primary"
+              style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}
               onClick={() => {
                 setPaymentType(activeTab);
                 setContactId('');
