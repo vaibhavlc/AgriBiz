@@ -16,6 +16,8 @@ import {
   ChevronRight,
   TrendingDown,
   FileText,
+  MoreVertical,
+  CheckCircle2,
 } from 'lucide-react';
 import type { Expense } from '../types';
 
@@ -40,6 +42,7 @@ export const Expenses: React.FC = () => {
   const [endDate, setEndDate] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const [activeMenuExpId, setActiveMenuExpId] = useState<string | null>(null);
 
   // Form states
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -508,12 +511,17 @@ export const Expenses: React.FC = () => {
             width: 100% !important;
             margin: 0 !important;
             justify-content: center;
-            height: 38px;
+            height: 40px;
             font-size: 13px;
+            font-weight: 600;
           }
           .expense-filter-actions .btn-log-expense {
             grid-column: span 2;
             order: -1;
+            height: 44px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 10px;
           }
           .expense-filter-actions .btn-export {
             grid-column: span 1;
@@ -823,49 +831,80 @@ export const Expenses: React.FC = () => {
               {paginatedExpenses.map((exp) => (
                 <div key={exp.id} className="mobile-list-card" style={{ borderLeft: exp.status === 'Due' ? '4px solid #D97706' : '4px solid var(--color-danger)' }}>
                   <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">{exp.category}</h4>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h4 className="mobile-list-card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: exp.status === 'Due' ? '#D97706' : 'var(--color-danger)', flexShrink: 0, display: 'inline-block' }}></span>
+                        {exp.category}
+                      </h4>
                       <span className="mobile-list-card-subtitle">
-                        {formatDate(exp.date)}
-                        {exp.payee && ` • ${exp.payee}`}
+                        {formatDate(exp.date)}{exp.payee && ` • ${exp.payee}`}
                       </span>
                     </div>
-                    <div style={{ display: 'flex', gap: '6px' }}>
+                    {/* ⋮ Dropdown Menu */}
+                    <div style={{ position: 'relative', flexShrink: 0 }}>
                       <button
                         type="button"
                         className="btn btn-secondary btn-sm"
-                        style={{ padding: '6px', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={() => handleEditClick(exp)}
+                        style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        onClick={(e) => { e.stopPropagation(); setActiveMenuExpId(activeMenuExpId === exp.id ? null : exp.id); }}
                       >
-                        <Edit2 size={12} />
+                        <MoreVertical size={16} />
                       </button>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm danger"
-                        style={{ padding: '6px', borderRadius: '50%', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={() => handleDeleteExpense(exp.id, exp.category, exp.amount)}
-                      >
-                        <Trash size={12} />
-                      </button>
+                      {activeMenuExpId === exp.id && (
+                        <>
+                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuExpId(null)} />
+                          <div className="card" style={{
+                            position: 'absolute', right: '0', top: '100%', marginTop: '4px', zIndex: 999,
+                            minWidth: '150px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
+                            backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.08)'
+                          }}>
+                            <button
+                              className="dropdown-item"
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                              onClick={() => { handleEditClick(exp); setActiveMenuExpId(null); }}
+                            >
+                              <Edit2 size={14} /> Edit
+                            </button>
+                            {exp.status === 'Due' && (
+                              <button
+                                className="dropdown-item"
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-success-dark)' }}
+                                onClick={() => { handleMarkAsPaid(exp); setActiveMenuExpId(null); }}
+                              >
+                                <CheckCircle2 size={14} /> Mark Paid
+                              </button>
+                            )}
+                            <button
+                              className="dropdown-item danger"
+                              style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
+                              onClick={() => { handleDeleteExpense(exp.id, exp.category, exp.amount); setActiveMenuExpId(null); }}
+                            >
+                              <Trash size={14} /> Delete
+                            </button>
+                          </div>
+                        </>
+                      )}
                     </div>
+                  </div>
+
+                  {/* Amount prominently shown */}
+                  <div style={{ margin: '10px 0 8px 0', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
+                    <span style={{ fontSize: '22px', fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>
+                      {formatINR(exp.amount)}
+                    </span>
+                    {exp.status === 'Due' ? (
+                      <span className="badge" style={{ padding: '2px 8px', fontSize: '11px', borderRadius: '20px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.12)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.25)' }}>
+                        DUE {exp.dueDate ? `by ${formatDate(exp.dueDate)}` : ''}
+                      </span>
+                    ) : (
+                      <span className="badge" style={{ padding: '2px 8px', fontSize: '11px', borderRadius: '20px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>PAID</span>
+                    )}
                   </div>
 
                   <div className="mobile-list-card-row">
                     <span className="mobile-list-card-label">Voucher ID</span>
-                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{exp.id}</span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Status</span>
-                    <span className="mobile-list-card-val">
-                      {exp.status === 'Due' ? (
-                        <span className="badge" style={{ padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.1)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.2)' }}>
-                          Due {exp.dueDate ? `by ${formatDate(exp.dueDate)}` : ''}
-                        </span>
-                      ) : (
-                        <span className="badge" style={{ padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>Paid</span>
-                      )}
-                    </span>
+                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{exp.id}</span>
                   </div>
 
                   {exp.status !== 'Due' && (
@@ -877,32 +916,27 @@ export const Expenses: React.FC = () => {
 
                   {exp.status !== 'Due' && exp.referenceNumber && (
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Ref Number</span>
-                      <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{exp.referenceNumber}</span>
+                      <span className="mobile-list-card-label">Ref No.</span>
+                      <span className="mobile-list-card-val" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{exp.referenceNumber}</span>
                     </div>
                   )}
 
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Amount</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>
-                      {formatINR(exp.amount)}
-                    </span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Remarks</span>
-                    <span className="mobile-list-card-val" style={{ fontStyle: 'italic', fontSize: '12px' }}>{exp.notes || '—'}</span>
-                  </div>
+                  {exp.notes && (
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Remarks</span>
+                      <span className="mobile-list-card-val" style={{ fontStyle: 'italic', fontSize: '12px', color: 'var(--text-secondary)' }}>{exp.notes}</span>
+                    </div>
+                  )}
 
                   {exp.status === 'Due' && (
-                    <div style={{ marginTop: '12px', paddingTop: '10px', borderTop: '1px dashed var(--border-color)' }}>
+                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border-color)' }}>
                       <button
                         type="button"
-                        className="btn btn-primary btn-sm"
-                        style={{ width: '100%', height: '34px', justifyContent: 'center', backgroundColor: 'var(--primary)', border: 'none', fontWeight: 700 }}
+                        className="btn btn-primary"
+                        style={{ width: '100%', height: '38px', justifyContent: 'center', fontWeight: 700, borderRadius: '8px', gap: '6px' }}
                         onClick={() => handleMarkAsPaid(exp)}
                       >
-                        Mark as Paid
+                        <CheckCircle2 size={15} /> Mark as Paid
                       </button>
                     </div>
                   )}
