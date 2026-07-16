@@ -861,11 +861,9 @@ export const Expenses: React.FC = () => {
                   boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
                 }}>
 
-                  {/* Card Header — gradient strip */}
+                  {/* Card Header — neutral with colored border */}
                   <div style={{
-                    background: exp.status === 'Due'
-                      ? 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
-                      : 'linear-gradient(135deg, #FFF5F5 0%, #FFE4E4 100%)',
+                    background: 'var(--card-bg, #ffffff)',
                     borderBottom: `2px solid ${exp.status === 'Due' ? '#F59E0B' : 'var(--color-danger)'}`,
                     padding: '12px 14px',
                     display: 'flex',
