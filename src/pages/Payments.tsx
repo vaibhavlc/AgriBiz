@@ -16,6 +16,9 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
+  Smartphone,
+  Wallet,
+  AlertCircle,
 } from 'lucide-react';
 import type { Payment } from '../types';
 
@@ -230,6 +233,9 @@ export const Payments: React.FC = () => {
               In: {formatINR(upiIn)} | Out: {formatINR(upiOut)}
             </span>
           </div>
+          <div className="kpi-icon-container blue" style={{ background: 'rgba(59,130,246,0.12)', color: 'var(--color-info)' }}>
+            <Smartphone size={20} />
+          </div>
         </div>
 
         {/* Cash Ledger */}
@@ -242,6 +248,9 @@ export const Payments: React.FC = () => {
             <span className="kpi-subtext" style={{ fontSize: '10px' }}>
               In: {formatINR(cashIn)} | Out: {formatINR(cashOut)}
             </span>
+          </div>
+          <div className="kpi-icon-container green" style={{ background: 'rgba(16,185,129,0.12)', color: 'var(--primary-dark)' }}>
+            <Wallet size={20} />
           </div>
         </div>
 
@@ -256,6 +265,9 @@ export const Payments: React.FC = () => {
               Total outstanding balance
             </span>
           </div>
+          <div className="kpi-icon-container amber" style={{ background: 'rgba(245,158,11,0.12)', color: 'var(--color-warning-dark)' }}>
+            <AlertCircle size={20} />
+          </div>
         </div>
 
         {/* Total Supplier Owed */}
@@ -269,103 +281,189 @@ export const Payments: React.FC = () => {
               Total accounts payable balance
             </span>
           </div>
+          <div className="kpi-icon-container rose" style={{ background: 'rgba(239,68,68,0.12)', color: 'var(--color-danger-dark)' }}>
+            <TrendingDown size={20} />
+          </div>
         </div>
       </div>
 
-      {/* Navigation and filters */}
-      <div className="filters-row-unified">
-        <div className="filters-group-one">
-          {/* Tab switches */}
-          <div
-            className="segmented-control-payments-tabs"
-            style={{
-              display: 'flex',
-              backgroundColor: 'var(--bg-app)',
-              padding: '4px',
-              borderRadius: '8px',
-              border: '1px solid var(--border-color)',
-              flexShrink: 1,
-              minWidth: 0,
-            }}
-          >
+      {/* Style tweaks to support Sales-like responsive layout */}
+      <style>{`
+        .payments-filter-card {
+          padding: 16px 20px;
+          margin-bottom: 20px;
+        }
+        .payments-filter-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .payments-filter-inputs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          flex: 1 1 500px;
+          min-width: 0;
+        }
+        .payments-filter-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          flex: 0 1 auto;
+        }
+        @media (max-width: 768px) {
+          .payments-filter-card {
+            padding: 12px 14px;
+          }
+          .payments-filter-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .payments-filter-inputs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            flex: none;
+          }
+          .payments-filter-inputs .segmented-control-payments-tabs {
+            grid-column: span 2;
+            width: 100% !important;
+            height: 44px;
+            display: flex;
+            align-items: center;
+          }
+          .payments-filter-inputs .segmented-control-payments-tabs button {
+            flex: 1 !important;
+            height: 36px !important;
+            font-size: 12px !important;
+          }
+          .payments-filter-inputs .search-input-wrapper {
+            grid-column: span 1;
+            width: 100% !important;
+          }
+          .payments-filter-inputs .method-select-wrapper {
+            grid-column: span 1;
+            width: 100% !important;
+          }
+          .payments-filter-inputs select {
+            width: 100% !important;
+            height: 38px;
+          }
+          .payments-filter-actions {
+            width: 100%;
+            flex: none;
+          }
+          .payments-filter-actions button,
+          .payments-filter-actions .btn {
+            width: 100% !important;
+            margin: 0 !important;
+            justify-content: center;
+            height: 44px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 10px;
+          }
+        }
+      `}</style>
+
+      {/* Navigation and filters wrapped inside a Card */}
+      <div className="card payments-filter-card">
+        <div className="payments-filter-row">
+          <div className="payments-filter-inputs">
+            {/* Tab switches */}
+            <div
+              className="segmented-control-payments-tabs"
+              style={{
+                display: 'flex',
+                backgroundColor: 'var(--bg-app)',
+                padding: '4px',
+                borderRadius: '8px',
+                border: '1px solid var(--border-color)',
+                flexShrink: 0,
+              }}
+            >
+              <button
+                type="button"
+                className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'CustomerReceipt' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
+                onClick={() => {
+                  setActiveTab('CustomerReceipt');
+                  setCurrentPage(1);
+                }}
+              >
+                Customer Receipts
+              </button>
+              <button
+                type="button"
+                className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'SupplierPayment' ? 'btn-primary' : 'btn-secondary'}`}
+                style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
+                onClick={() => {
+                  setActiveTab('SupplierPayment');
+                  setCurrentPage(1);
+                }}
+              >
+                Supplier Payments
+              </button>
+            </div>
+
+            {/* Search */}
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-input-icon" />
+              <input
+                type="text"
+                placeholder="Search contact or reference..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+
+            {/* Payment Method Dropdown Filter */}
+            <div className="method-select-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                <Tag size={13} />
+              </span>
+              <select
+                className="filter-select"
+                style={{ paddingLeft: '36px', width: '100%' }}
+                value={methodFilter}
+                onChange={(e) => {
+                  setMethodFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="All">All Methods</option>
+                <option value="UPI">UPI</option>
+                <option value="Cash">Cash</option>
+                <option value="Bank Transfer">Bank Transfer</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="payments-filter-actions">
             <button
-              type="button"
-              className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'CustomerReceipt' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
+              className="btn btn-primary"
               onClick={() => {
-                setActiveTab('CustomerReceipt');
-                setCurrentPage(1);
+                setPaymentType(activeTab);
+                setContactId('');
+                setAmount(0);
+                setReferenceNumber('');
+                setNotes('');
+                setEditingPaymentId(null);
+                setIsFormOpen(true);
               }}
             >
-              Customer Receipts
-            </button>
-            <button
-              type="button"
-              className={`btn btn-sm segmented-btn-payments-tabs ${activeTab === 'SupplierPayment' ? 'btn-primary' : 'btn-secondary'}`}
-              style={{ border: 'none', borderRadius: '6px', whiteSpace: 'normal', textAlign: 'center', lineHeight: '1.1' }}
-              onClick={() => {
-                setActiveTab('SupplierPayment');
-                setCurrentPage(1);
-              }}
-            >
-              Supplier Payments
+              <Plus size={16} /> Record Payment
             </button>
           </div>
-
-          {/* Search */}
-          <div className="search-input-wrapper">
-            <Search size={16} className="search-input-icon" />
-            <input
-              type="text"
-              placeholder="Search contact or reference..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-        </div>
-
-        <div className="filters-group-two">
-          {/* Payment Method Dropdown Filter */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <Tag size={13} />
-            </span>
-            <select
-              className="filter-select"
-              style={{ paddingLeft: '36px' }}
-              value={methodFilter}
-              onChange={(e) => {
-                setMethodFilter(e.target.value);
-                setCurrentPage(1);
-              }}
-            >
-              <option value="All">All Methods</option>
-              <option value="UPI">UPI</option>
-              <option value="Cash">Cash</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Cheque">Cheque</option>
-            </select>
-            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
-          </div>
-
-          <button
-            className="btn btn-primary"
-            onClick={() => {
-              setPaymentType(activeTab);
-              setContactId('');
-              setAmount(0);
-              setReferenceNumber('');
-              setNotes('');
-              setEditingPaymentId(null);
-              setIsFormOpen(true);
-            }}
-          >
-            <Plus size={16} /> Record Payment
-          </button>
         </div>
       </div>
 
