@@ -19,6 +19,10 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
+  Scale,
+  Activity,
+  AlertTriangle,
 } from 'lucide-react';
 import type { Customer } from '../types';
 
@@ -136,7 +140,7 @@ export const Customers: React.FC = () => {
     });
 
     const outstandingColor = selectedCustomer.outstanding > 0
-      ? 'var(--color-danger)'
+      ? 'var(--text-primary)'
       : selectedCustomer.outstanding < 0
         ? 'var(--color-success-dark)'
         : 'var(--text-primary)';
@@ -201,8 +205,10 @@ export const Customers: React.FC = () => {
           <div
             className="cust-outstanding-banner"
             style={{
-              borderColor: selectedCustomer.outstanding > 0 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)',
-              backgroundColor: selectedCustomer.outstanding > 0 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)',
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--bg-app, #f9fafb)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
             }}
           >
             <div>
@@ -211,7 +217,7 @@ export const Customers: React.FC = () => {
                 {selectedCustomer.outstanding > 0 ? 'Amount customer owes you' : selectedCustomer.outstanding < 0 ? 'Advance credit balance' : 'Account fully settled'}
               </div>
             </div>
-            <div className="cust-outstanding-amount" style={{ color: outstandingColor }}>
+            <div className="cust-outstanding-amount" style={{ color: selectedCustomer.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>
               {formatINR(selectedCustomer.outstanding)}
             </div>
           </div>
@@ -233,26 +239,41 @@ export const Customers: React.FC = () => {
         </div>
 
         {/* Stats Row */}
-        <div className="cust-stats-row">
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Total Invoiced</div>
-            <div className="cust-stat-value" style={{ color: 'var(--color-danger-dark)' }}>{formatINR(totalInvoiced)}</div>
-            <div className="cust-stat-sub">{totalInvoiceCount} invoice{totalInvoiceCount !== 1 ? 's' : ''}</div>
+        <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Invoiced</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{formatINR(totalInvoiced)}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{totalInvoiceCount} invoice{totalInvoiceCount !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="kpi-icon-container blue"><FileText size={20} /></div>
           </div>
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Total Received</div>
-            <div className="cust-stat-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalReceived)}</div>
-            <div className="cust-stat-sub">{totalPaymentCount} payment{totalPaymentCount !== 1 ? 's' : ''}</div>
+          
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Received</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>{formatINR(totalReceived)}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{totalPaymentCount} payment{totalPaymentCount !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="kpi-icon-container emerald"><CreditCard size={20} /></div>
           </div>
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Balance Due</div>
-            <div className="cust-stat-value" style={{ color: outstandingColor }}>{formatINR(selectedCustomer.outstanding)}</div>
-            <div className="cust-stat-sub">{selectedCustomer.outstanding > 0 ? 'Pending' : selectedCustomer.outstanding < 0 ? 'Advance' : 'Settled'}</div>
+
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Balance Due</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: selectedCustomer.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>{formatINR(selectedCustomer.outstanding)}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{selectedCustomer.outstanding > 0 ? 'Pending' : selectedCustomer.outstanding < 0 ? 'Advance' : 'Settled'}</span>
+            </div>
+            <div className="kpi-icon-container blue"><Scale size={20} /></div>
           </div>
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Last Transaction</div>
-            <div className="cust-stat-value cust-stat-value--sm">{lastTxDate ? formatDate(lastTxDate) : '—'}</div>
-            <div className="cust-stat-sub">{ledgerEntries.length} entries total</div>
+
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Last Transaction</span>
+              <span className="kpi-value" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{lastTxDate ? formatDate(lastTxDate) : '—'}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{ledgerEntries.length} entries total</span>
+            </div>
+            <div className="kpi-icon-container blue"><Activity size={20} /></div>
           </div>
         </div>
 
@@ -318,52 +339,78 @@ export const Customers: React.FC = () => {
 
               {/* Mobile / Tablet Cards */}
               <div className="cust-ledger-mobile">
-                {ledgerWithBalance.map((entry, idx) => (
-                  <div key={idx} className="cust-ledger-card">
-                    <div className="cust-ledger-card-top">
-                      <div>
-                        <span className={`badge ${entry.type === 'Invoice' ? 'badge-danger' : 'badge-success'}`}>
+                {ledgerWithBalance.map((entry, idx) => {
+                  const isInvoice = entry.type === 'Invoice';
+                  
+                  return (
+                    <div key={idx} className="mobile-list-card" style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '12px', backgroundColor: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'var(--shadow-sm)' }}>
+                      {/* Header row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{
+                            width: '32px', height: '32px', borderRadius: '50%',
+                            backgroundColor: isInvoice ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                            color: isInvoice ? 'var(--color-info)' : 'var(--color-success-dark)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                          }}>
+                            {isInvoice ? <FileText size={16} /> : <CreditCard size={16} />}
+                          </div>
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                              {entry.docNo}
+                            </h4>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{formatDate(entry.date)}</span>
+                          </div>
+                        </div>
+                        <span className={`badge ${isInvoice ? 'badge-info' : 'badge-success'}`}>
                           {entry.type}
                         </span>
-                        <div className="cust-ledger-card-doc">{entry.docNo}</div>
                       </div>
-                      <div className="cust-ledger-card-date">{formatDate(entry.date)}</div>
+
+                      {/* Description */}
+                      <div style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '6px 0', borderBottom: '1px dashed var(--border-color)' }}>
+                        {entry.desc}
+                      </div>
+
+                      {/* Debit and Credit in one row */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Debit:</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'var(--text-secondary)' }}>
+                            {entry.debit > 0 ? formatINR(entry.debit) : '—'}
+                          </span>
+                        </div>
+                        <div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Credit:</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: entry.credit > 0 ? 'var(--color-success-dark)' : 'var(--text-secondary)' }}>
+                            {entry.credit > 0 ? formatINR(entry.credit) : '—'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Balance and Action button in one row */}
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
+                        <div>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Balance:</span>
+                          <span style={{ fontSize: '13px', fontWeight: 800, color: entry.balance > 0 ? 'var(--color-warning-dark, #b45309)' : entry.balance < 0 ? 'var(--color-success-dark)' : 'var(--text-primary)' }}>
+                            {formatINR(entry.balance)}
+                          </span>
+                        </div>
+                        <div>
+                          {isInvoice ? (
+                            <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }}>
+                              <Eye size={12} /> View Invoice
+                            </button>
+                          ) : (
+                            <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => setCurrentTab('payments')}>
+                              <ArrowDownLeft size={12} /> View Receipt
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                    <div className="cust-ledger-card-desc">{entry.desc}</div>
-                    <div className="cust-ledger-card-amounts">
-                      <div className="cust-ledger-amount-block">
-                        <span className="cust-ledger-amount-label">Debit</span>
-                        <span className="cust-ledger-amount-val" style={{ color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'var(--text-muted)' }}>
-                          {entry.debit > 0 ? formatINR(entry.debit) : '—'}
-                        </span>
-                      </div>
-                      <div className="cust-ledger-amount-block">
-                        <span className="cust-ledger-amount-label">Credit</span>
-                        <span className="cust-ledger-amount-val" style={{ color: entry.credit > 0 ? 'var(--color-success-dark)' : 'var(--text-muted)' }}>
-                          {entry.credit > 0 ? formatINR(entry.credit) : '—'}
-                        </span>
-                      </div>
-                      <div className="cust-ledger-amount-block">
-                        <span className="cust-ledger-amount-label">Balance</span>
-                        <span className="cust-ledger-amount-val" style={{ fontWeight: 700, color: entry.balance > 0 ? 'var(--color-danger)' : entry.balance < 0 ? 'var(--color-success-dark)' : 'var(--text-primary)' }}>
-                          {formatINR(entry.balance)}
-                        </span>
-                      </div>
-                      <div className="cust-ledger-amount-block no-print">
-                        <span className="cust-ledger-amount-label">Link</span>
-                        {entry.type === 'Invoice' ? (
-                          <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }}>
-                            <Eye size={12} /> View
-                          </button>
-                        ) : (
-                          <button className="btn btn-secondary" style={{ padding: '4px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }} onClick={() => setCurrentTab('payments')}>
-                            <ArrowDownLeft size={12} /> View
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
@@ -489,6 +536,7 @@ export const Customers: React.FC = () => {
             <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>{totalCustomers}</span>
             <span className="kpi-subtext" style={{ fontSize: '10px' }}>Registered accounts</span>
           </div>
+          <div className="kpi-icon-container blue"><Users size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -496,6 +544,7 @@ export const Customers: React.FC = () => {
             <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>{formatINR(pendingReceivables)}</span>
             <span className="kpi-subtext" style={{ fontSize: '10px' }}>Total outstanding balance</span>
           </div>
+          <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -503,6 +552,7 @@ export const Customers: React.FC = () => {
             <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>{activeBilling} accounts</span>
             <span className="kpi-subtext" style={{ fontSize: '10px' }}>Invoice transaction activity</span>
           </div>
+          <div className="kpi-icon-container emerald"><Activity size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
@@ -510,53 +560,138 @@ export const Customers: React.FC = () => {
             <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>{formatINR(averageReceivable)}</span>
             <span className="kpi-subtext" style={{ fontSize: '10px' }}>Per account outstanding</span>
           </div>
+          <div className="kpi-icon-container blue"><Scale size={20} /></div>
         </div>
       </div>
 
-      {/* Directory filters */}
-      <div className="filters-row-unified">
-        <div className="filters-group-one">
-          <div className="search-input-wrapper">
-            <Search size={16} className="search-input-icon" />
-            <input
-              type="text"
-              placeholder="Search customer name, phone, or GSTIN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      {/* Style tweaks to support Sales-like responsive layout */}
+      <style>{`
+        .customers-filter-card {
+          padding: 16px 20px;
+          margin-bottom: 20px;
+        }
+        .customers-filter-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .customers-filter-inputs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          flex: 1 1 500px;
+          min-width: 0;
+        }
+        .customers-filter-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          flex: 0 1 auto;
+        }
+        @media (max-width: 768px) {
+          .customers-filter-card {
+            padding: 12px 14px;
+          }
+          .customers-filter-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .customers-filter-inputs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            flex: none;
+          }
+          .customers-filter-inputs .search-input-wrapper {
+            grid-column: span 1;
+            width: 100% !important;
+          }
+          .customers-filter-inputs .outstanding-select-wrapper {
+            grid-column: span 1;
+            width: 100% !important;
+          }
+          .customers-filter-inputs select {
+            width: 100% !important;
+            height: 38px;
+          }
+          .customers-filter-actions {
+            width: 100%;
+            flex: none;
+          }
+          .customers-filter-actions button,
+          .customers-filter-actions .btn {
+            width: 100% !important;
+            margin: 0 !important;
+            justify-content: center;
+            height: 44px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 10px;
+          }
+        }
+      `}</style>
+
+      {/* Directory filters wrapped inside a Card */}
+      <div className="card customers-filter-card">
+        <div className="customers-filter-row">
+          <div className="customers-filter-inputs">
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-input-icon" />
+              <input
+                type="text"
+                placeholder="Search customer name, phone, or GSTIN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+
+            {/* Outstanding Balance Dropdown Filter */}
+            <div className="outstanding-select-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                <Tag size={13} />
+              </span>
+              <select
+                className="filter-select"
+                style={{ paddingLeft: '36px', width: '100%' }}
+                value={outstandingFilter}
+                onChange={(e) => {
+                  setOutstandingFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="All">All Dues</option>
+                <option value="Owed">Pending Dues</option>
+                <option value="Credit">Advance Paid</option>
+                <option value="Zero">Fully Settled</option>
+              </select>
+            </div>
           </div>
 
-          {/* Outstanding Balance Dropdown Filter */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <Tag size={13} />
-            </span>
-            <select
-              className="filter-select"
-              style={{ paddingLeft: '36px' }}
-              value={outstandingFilter}
-              onChange={(e) => {
-                setOutstandingFilter(e.target.value);
-                setCurrentPage(1);
+          <div className="customers-filter-actions">
+            <button
+              className="btn btn-primary"
+              style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
+              onClick={handleAddNewClick}
             >
-              <option value="All">All Dues</option>
-              <option value="Owed">Pending Dues</option>
-              <option value="Credit">Advance Paid</option>
-              <option value="Zero">Fully Settled</option>
-            </select>
-            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
+              <Plus size={16} /> Add Customer
+            </button>
           </div>
-        </div>
-
-        <div className="filters-group-two">
-          <button className="btn btn-primary" onClick={handleAddNewClick}>
-            <Plus size={16} /> Add Customer
-          </button>
         </div>
       </div>
 
@@ -703,14 +838,16 @@ export const Customers: React.FC = () => {
                     <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</span>
                   </div>
 
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Address</span>
-                    <span className="mobile-list-card-val" style={{ fontSize: '12px' }}>{c.address ? `${c.address} (${c.state || 'Madhya Pradesh'})` : '—'}</span>
+                  <div className="mobile-list-card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                    <span className="mobile-list-card-label" style={{ flexShrink: 0 }}>Address</span>
+                    <span className="mobile-list-card-val" style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%', textAlign: 'right' }} title={c.address ? `${c.address} (${c.state || 'Madhya Pradesh'})` : '—'}>
+                      {c.address ? `${c.address} (${c.state || 'Madhya Pradesh'})` : '—'}
+                    </span>
                   </div>
 
                   <div className="mobile-list-card-row">
                     <span className="mobile-list-card-label">Outstanding Balance</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700, color: c.outstanding > 0 ? 'var(--color-danger)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit' }}>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700, color: c.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit' }}>
                       {formatINR(c.outstanding)}
                     </span>
                   </div>

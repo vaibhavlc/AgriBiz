@@ -19,6 +19,10 @@ import {
   Tag,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
+  Scale,
+  Activity,
+  AlertTriangle,
 } from 'lucide-react';
 import type { Supplier } from '../types';
 
@@ -136,7 +140,7 @@ export const Suppliers: React.FC = () => {
     });
 
     const outstandingColor = selectedSupplier.outstanding > 0
-      ? 'var(--color-danger)'
+      ? 'var(--text-primary)'
       : selectedSupplier.outstanding < 0
         ? 'var(--color-success-dark)'
         : 'var(--text-primary)';
@@ -204,8 +208,10 @@ export const Suppliers: React.FC = () => {
           <div
             className="cust-outstanding-banner"
             style={{
-              borderColor: selectedSupplier.outstanding > 0 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)',
-              backgroundColor: selectedSupplier.outstanding > 0 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)',
+              borderColor: 'var(--border-color)',
+              backgroundColor: 'var(--bg-app, #f9fafb)',
+              borderWidth: '1px',
+              borderStyle: 'solid',
             }}
           >
             <div>
@@ -218,7 +224,7 @@ export const Suppliers: React.FC = () => {
                     : 'All bills fully settled'}
               </div>
             </div>
-            <div className="cust-outstanding-amount" style={{ color: outstandingColor }}>
+            <div className="cust-outstanding-amount" style={{ color: selectedSupplier.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>
               {formatINR(selectedSupplier.outstanding)}
             </div>
           </div>
@@ -247,36 +253,41 @@ export const Suppliers: React.FC = () => {
         </div>
 
         {/* ── Stats Row ── */}
-        <div className="cust-stats-row">
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Total Purchased</div>
-            <div className="cust-stat-value" style={{ color: 'var(--color-danger-dark)' }}>
-              {formatINR(totalPurchased)}
+        <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Purchased</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{formatINR(totalPurchased)}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{totalBillCount} bill{totalBillCount !== 1 ? 's' : ''}</span>
             </div>
-            <div className="cust-stat-sub">{totalBillCount} bill{totalBillCount !== 1 ? 's' : ''}</div>
+            <div className="kpi-icon-container blue"><FileText size={20} /></div>
           </div>
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Total Paid</div>
-            <div className="cust-stat-value" style={{ color: 'var(--color-success-dark)' }}>
-              {formatINR(totalPaid)}
+
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Paid</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>{formatINR(totalPaid)}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{totalPaymentCount} payment{totalPaymentCount !== 1 ? 's' : ''}</span>
             </div>
-            <div className="cust-stat-sub">{totalPaymentCount} payment{totalPaymentCount !== 1 ? 's' : ''}</div>
+            <div className="kpi-icon-container emerald"><CreditCard size={20} /></div>
           </div>
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Balance Owed</div>
-            <div className="cust-stat-value" style={{ color: outstandingColor }}>
-              {formatINR(selectedSupplier.outstanding)}
+
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Balance Owed</span>
+              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: selectedSupplier.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>{formatINR(selectedSupplier.outstanding)}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{selectedSupplier.outstanding > 0 ? 'Pending' : selectedSupplier.outstanding < 0 ? 'Overpaid' : 'Settled'}</span>
             </div>
-            <div className="cust-stat-sub">
-              {selectedSupplier.outstanding > 0 ? 'Pending' : selectedSupplier.outstanding < 0 ? 'Overpaid' : 'Settled'}
-            </div>
+            <div className="kpi-icon-container blue"><Scale size={20} /></div>
           </div>
-          <div className="cust-stat-card">
-            <div className="cust-stat-label">Last Transaction</div>
-            <div className="cust-stat-value cust-stat-value--sm">
-              {lastTxDate ? formatDate(lastTxDate) : '—'}
+
+          <div className="kpi-card" style={{ cursor: 'default' }}>
+            <div className="kpi-info" style={{ gap: '2px' }}>
+              <span className="kpi-label" style={{ fontSize: '11px' }}>Last Transaction</span>
+              <span className="kpi-value" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{lastTxDate ? formatDate(lastTxDate) : '—'}</span>
+              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{ledgerEntries.length} entries total</span>
             </div>
-            <div className="cust-stat-sub">{ledgerEntries.length} entries total</div>
+            <div className="kpi-icon-container blue"><Activity size={20} /></div>
           </div>
         </div>
 
@@ -340,55 +351,81 @@ export const Suppliers: React.FC = () => {
                 </div>
               </div>
 
-              {/* Mobile / Tablet Cards */}
-              <div className="cust-ledger-mobile">
-                {ledgerWithBalance.map((entry, idx) => (
-                  <div key={idx} className="cust-ledger-card">
-                    <div className="cust-ledger-card-top">
-                      <div>
-                        <span className={`badge ${entry.type === 'Purchase' ? 'badge-danger' : 'badge-success'}`}>
-                          {entry.type}
-                        </span>
-                        <div className="cust-ledger-card-doc">{entry.docNo}</div>
-                      </div>
-                      <div className="cust-ledger-card-date">{formatDate(entry.date)}</div>
-                    </div>
-                    <div className="cust-ledger-card-desc">{entry.desc}</div>
-                    <div className="cust-ledger-card-amounts">
-                      <div className="cust-ledger-amount-block">
-                        <span className="cust-ledger-amount-label">Debit</span>
-                        <span className="cust-ledger-amount-val" style={{ color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'var(--text-muted)' }}>
-                          {entry.debit > 0 ? formatINR(entry.debit) : '—'}
-                        </span>
-                      </div>
-                      <div className="cust-ledger-amount-block">
-                        <span className="cust-ledger-amount-label">Credit</span>
-                        <span className="cust-ledger-amount-val" style={{ color: entry.credit > 0 ? 'var(--color-success-dark)' : 'var(--text-muted)' }}>
-                          {entry.credit > 0 ? formatINR(entry.credit) : '—'}
-                        </span>
-                      </div>
-                      <div className="cust-ledger-amount-block">
-                        <span className="cust-ledger-amount-label">Balance</span>
-                        <span className="cust-ledger-amount-val" style={{ fontWeight: 700, color: entry.balance > 0 ? 'var(--color-danger)' : entry.balance < 0 ? 'var(--color-success-dark)' : 'var(--text-primary)' }}>
-                          {formatINR(entry.balance)}
-                        </span>
-                      </div>
-                      <div className="cust-ledger-amount-block no-print">
-                        <span className="cust-ledger-amount-label">Link</span>
-                        {entry.type === 'Purchase' ? (
-                          <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '12px' }} onClick={() => { setViewPurchase(entry.refId); setCurrentTab('purchases'); }}>
-                            <Eye size={12} /> View
-                          </button>
-                        ) : (
-                          <button className="btn btn-secondary btn-sm" style={{ padding: '4px 10px', fontSize: '12px' }} onClick={() => setCurrentTab('payments')}>
-                            <ArrowUpRight size={12} /> View
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+               {/* Mobile / Tablet Cards */}
+               <div className="cust-ledger-mobile">
+                 {ledgerWithBalance.map((entry, idx) => {
+                   const isPurchase = entry.type === 'Purchase';
+                   
+                   return (
+                     <div key={idx} className="mobile-list-card" style={{ padding: '16px', border: '1px solid var(--border-color)', borderRadius: '12px', backgroundColor: 'var(--bg-card)', display: 'flex', flexDirection: 'column', gap: '10px', boxShadow: 'var(--shadow-sm)' }}>
+                       {/* Header row */}
+                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                           <div style={{
+                             width: '32px', height: '32px', borderRadius: '50%',
+                             backgroundColor: isPurchase ? 'rgba(59, 130, 246, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                             color: isPurchase ? 'var(--color-info)' : 'var(--color-success-dark)',
+                             display: 'flex', alignItems: 'center', justifyContent: 'center'
+                           }}>
+                             {isPurchase ? <FileText size={16} /> : <CreditCard size={16} />}
+                           </div>
+                           <div>
+                             <h4 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                               {entry.docNo}
+                             </h4>
+                             <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{formatDate(entry.date)}</span>
+                           </div>
+                         </div>
+                         <span className={`badge ${isPurchase ? 'badge-info' : 'badge-success'}`}>
+                           {entry.type}
+                         </span>
+                       </div>
+ 
+                       {/* Description */}
+                       <div style={{ fontSize: '12px', color: 'var(--text-secondary)', padding: '6px 0', borderBottom: '1px dashed var(--border-color)' }}>
+                         {entry.desc}
+                       </div>
+
+                       {/* Debit and Credit in one row */}
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
+                         <div>
+                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Debit:</span>
+                           <span style={{ fontSize: '12px', fontWeight: 700, color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'var(--text-secondary)' }}>
+                             {entry.debit > 0 ? formatINR(entry.debit) : '—'}
+                           </span>
+                         </div>
+                         <div>
+                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Credit:</span>
+                           <span style={{ fontSize: '12px', fontWeight: 700, color: entry.credit > 0 ? 'var(--color-success-dark)' : 'var(--text-secondary)' }}>
+                             {entry.credit > 0 ? formatINR(entry.credit) : '—'}
+                           </span>
+                         </div>
+                       </div>
+
+                       {/* Balance and Action button in one row */}
+                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
+                         <div>
+                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Balance:</span>
+                           <span style={{ fontSize: '13px', fontWeight: 800, color: entry.balance > 0 ? 'var(--color-warning-dark, #b45309)' : entry.balance < 0 ? 'var(--color-success-dark)' : 'var(--text-primary)' }}>
+                             {formatINR(entry.balance)}
+                           </span>
+                         </div>
+                         <div>
+                           {isPurchase ? (
+                             <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => { setViewPurchase(entry.refId); setCurrentTab('purchases'); }}>
+                               <Eye size={12} /> View Bill
+                             </button>
+                           ) : (
+                             <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => setCurrentTab('payments')}>
+                               <ArrowUpRight size={12} /> View Payout
+                             </button>
+                           )}
+                         </div>
+                       </div>
+                     </div>
+                   );
+                 })}
+               </div>
             </>
           )}
         </div>
@@ -510,92 +547,164 @@ export const Suppliers: React.FC = () => {
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
             <span className="kpi-label" style={{ fontSize: '11px' }}>Total Suppliers</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-              {totalSuppliers}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Registered directory entries
-            </span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>{totalSuppliers}</span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Registered directory entries</span>
           </div>
+          <div className="kpi-icon-container blue"><Truck size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
             <span className="kpi-label" style={{ fontSize: '11px' }}>Pending Payables</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
-              {formatINR(pendingPayables)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Total outstanding balance we owe
-            </span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>{formatINR(pendingPayables)}</span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Total outstanding balance we owe</span>
           </div>
+          <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
             <span className="kpi-label" style={{ fontSize: '11px' }}>Active Accounts</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
-              {activeAccounts} accounts
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Supplier voucher activity
-            </span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>{activeAccounts} accounts</span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Supplier voucher activity</span>
           </div>
+          <div className="kpi-icon-container emerald"><Activity size={20} /></div>
         </div>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info" style={{ gap: '2px' }}>
             <span className="kpi-label" style={{ fontSize: '11px' }}>Average Payable</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
-              {formatINR(averagePayable)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Per supplier outstanding
-            </span>
+            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>{formatINR(averagePayable)}</span>
+            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Per supplier outstanding</span>
           </div>
+          <div className="kpi-icon-container blue"><Scale size={20} /></div>
         </div>
       </div>
 
-      {/* Search and filters */}
-      <div className="filters-row-unified">
-        <div className="filters-group-one">
-          <div className="search-input-wrapper">
-            <Search size={16} className="search-input-icon" />
-            <input
-              type="text"
-              placeholder="Search supplier name, phone, or GSTIN..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
+      {/* Style tweaks to support Sales-like responsive layout */}
+      <style>{`
+        .suppliers-filter-card {
+          padding: 16px 20px;
+          margin-bottom: 20px;
+        }
+        .suppliers-filter-row {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          justify-content: space-between;
+        }
+        .suppliers-filter-inputs {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 12px;
+          align-items: center;
+          flex: 1 1 500px;
+          min-width: 0;
+        }
+        .suppliers-filter-actions {
+          display: flex;
+          gap: 8px;
+          align-items: center;
+          flex-wrap: wrap;
+          justify-content: flex-end;
+          flex: 0 1 auto;
+        }
+        @media (max-width: 768px) {
+          .suppliers-filter-card {
+            padding: 12px 14px;
+          }
+          .suppliers-filter-row {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 12px;
+          }
+          .suppliers-filter-inputs {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            width: 100%;
+            flex: none;
+          }
+          .suppliers-filter-inputs .search-input-wrapper {
+            grid-column: span 1;
+            width: 100% !important;
+          }
+          .suppliers-filter-inputs .outstanding-select-wrapper {
+            grid-column: span 1;
+            width: 100% !important;
+          }
+          .suppliers-filter-inputs select {
+            width: 100% !important;
+            height: 38px;
+          }
+          .suppliers-filter-actions {
+            width: 100%;
+            flex: none;
+          }
+          .suppliers-filter-actions button,
+          .suppliers-filter-actions .btn {
+            width: 100% !important;
+            margin: 0 !important;
+            justify-content: center;
+            height: 44px;
+            font-size: 14px;
+            font-weight: 700;
+            border-radius: 10px;
+          }
+        }
+      `}</style>
+
+      {/* Directory filters wrapped inside a Card */}
+      <div className="card suppliers-filter-card">
+        <div className="suppliers-filter-row">
+          <div className="suppliers-filter-inputs">
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-input-icon" />
+              <input
+                type="text"
+                placeholder="Search supplier name, phone, or GSTIN..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: '100%' }}
+              />
+            </div>
+
+            {/* Outstanding Balance Dropdown Filter */}
+            <div className="outstanding-select-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+                <Tag size={13} />
+              </span>
+              <select
+                className="filter-select"
+                style={{ paddingLeft: '36px', width: '100%' }}
+                value={outstandingFilter}
+                onChange={(e) => {
+                  setOutstandingFilter(e.target.value);
+                  setCurrentPage(1);
+                }}
+              >
+                <option value="All">All Suppliers</option>
+                <option value="Owed">Outstanding</option>
+                <option value="Zero">Fully Paid</option>
+              </select>
+            </div>
           </div>
 
-          {/* Outstanding Balance Dropdown Filter */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <Tag size={13} />
-            </span>
-            <select
-              className="filter-select"
-              style={{ paddingLeft: '36px' }}
-              value={outstandingFilter}
-              onChange={(e) => {
-                setOutstandingFilter(e.target.value);
-                setCurrentPage(1);
+          <div className="suppliers-filter-actions">
+            <button
+              className="btn btn-primary"
+              style={{
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                border: 'none',
+                boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)',
+                fontWeight: 700,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px'
               }}
+              onClick={handleAddNewClick}
             >
-              <option value="All">All Suppliers</option>
-              <option value="Owed">Outstanding</option>
-              <option value="Zero">Fully Paid</option>
-            </select>
-            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </span>
+              <Plus size={16} /> Add Supplier
+            </button>
           </div>
-        </div>
-
-        <div className="filters-group-two">
-          <button className="btn btn-primary" onClick={handleAddNewClick}>
-            <Plus size={16} /> Add Supplier
-          </button>
         </div>
       </div>
 
@@ -715,7 +824,7 @@ export const Suppliers: React.FC = () => {
                                 >
                                   <Eye size={14} /> View Profile
                                 </button>
-
+ 
                                 <button 
                                   className="dropdown-item" 
                                   style={{
@@ -771,76 +880,78 @@ export const Suppliers: React.FC = () => {
                 </table>
               </div>
             </div>
-
+ 
             {/* Mobile View */}
-            <div className="mobile-card-list">
-              {paginatedSuppliers.map((s) => (
-                <div key={s.id} className="mobile-list-card">
-                  <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">
-                        <button type="button" className="table-link-btn supplier-link" onClick={() => setViewSupplier(s.id)}>
-                          {s.name}
-                        </button>
-                      </h4>
-                      <span className="mobile-list-card-subtitle">{s.phone}</span>
-                    </div>
-                    <div style={{ position: 'relative' }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={(e) => { e.stopPropagation(); setActiveMenuSupplierId(activeMenuSupplierId === s.id ? null : s.id); }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {activeMenuSupplierId === s.id && (
-                        <>
-                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuSupplierId(null)} />
-                          <div className="card" style={{
-                            position: 'absolute', right: '0', top: '100%', marginTop: '4px',
-                            zIndex: 999, minWidth: '150px', padding: '6px 0',
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
-                            display: 'flex', flexDirection: 'column', gap: '2px',
-                            backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
-                          }}>
-                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
-                              onClick={() => { setActiveMenuSupplierId(null); setViewSupplier(s.id); }}>
-                              <Eye size={14} /> View Profile
-                            </button>
-                            <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
-                              onClick={() => { setActiveMenuSupplierId(null); handleEditClick(s); }}>
-                              <Edit2 size={14} /> Edit Details
-                            </button>
-                            <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
-                              onClick={() => { setActiveMenuSupplierId(null); handleDeleteSupplier(s.id, s.name); }}>
-                              <Trash2 size={14} /> Delete Profile
-                            </button>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">GSTIN</span>
-                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Address</span>
-                    <span className="mobile-list-card-val" style={{ fontSize: '12px' }}>{s.address || '—'}</span>
-                  </div>
-
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">We Owe Dues</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700, color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit' }}>
-                      {formatINR(s.outstanding)}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
+             <div className="mobile-card-list">
+               {paginatedSuppliers.map((s) => (
+                 <div key={s.id} className="mobile-list-card">
+                   <div className="mobile-list-card-header">
+                     <div>
+                       <h4 className="mobile-list-card-title">
+                         <button type="button" className="table-link-btn supplier-link" onClick={() => setViewSupplier(s.id)}>
+                           {s.name}
+                         </button>
+                       </h4>
+                       <span className="mobile-list-card-subtitle">{s.phone}</span>
+                     </div>
+                     <div style={{ position: 'relative' }}>
+                       <button
+                         type="button"
+                         className="btn btn-secondary btn-sm"
+                         style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                         onClick={(e) => { e.stopPropagation(); setActiveMenuSupplierId(activeMenuSupplierId === s.id ? null : s.id); }}
+                       >
+                         <MoreVertical size={16} />
+                       </button>
+                       {activeMenuSupplierId === s.id && (
+                         <>
+                           <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuSupplierId(null)} />
+                           <div className="card" style={{
+                             position: 'absolute', right: '0', top: '100%', marginTop: '4px',
+                             zIndex: 999, minWidth: '150px', padding: '6px 0',
+                             boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                             display: 'flex', flexDirection: 'column', gap: '2px',
+                             backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
+                           }}>
+                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
+                               onClick={() => { setActiveMenuSupplierId(null); setViewSupplier(s.id); }}>
+                               <Eye size={14} /> View Profile
+                             </button>
+                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
+                               onClick={() => { setActiveMenuSupplierId(null); handleEditClick(s); }}>
+                               <Edit2 size={14} /> Edit Details
+                             </button>
+                             <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
+                               onClick={() => { setActiveMenuSupplierId(null); handleDeleteSupplier(s.id, s.name); }}>
+                               <Trash2 size={14} /> Delete Profile
+                             </button>
+                           </div>
+                         </>
+                       )}
+                     </div>
+                   </div>
+ 
+                   <div className="mobile-list-card-row">
+                     <span className="mobile-list-card-label">GSTIN</span>
+                     <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</span>
+                   </div>
+ 
+                   <div className="mobile-list-card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
+                     <span className="mobile-list-card-label" style={{ flexShrink: 0 }}>Address</span>
+                     <span className="mobile-list-card-val" style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%', textAlign: 'right' }} title={s.address || '—'}>
+                       {s.address || '—'}
+                     </span>
+                   </div>
+ 
+                   <div className="mobile-list-card-row">
+                     <span className="mobile-list-card-label">We Owe Dues</span>
+                     <span className="mobile-list-card-val" style={{ fontWeight: 700, color: s.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : 'inherit' }}>
+                       {formatINR(s.outstanding)}
+                     </span>
+                   </div>
+                 </div>
+               ))}
+             </div>
 
             {/* Pagination */}
             {totalPages > 1 && (
