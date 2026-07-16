@@ -18,6 +18,8 @@ import {
   FileText,
   MoreVertical,
   CheckCircle2,
+  AlertCircle,
+  Receipt,
 } from 'lucide-react';
 import type { Expense } from '../types';
 
@@ -103,6 +105,14 @@ export const Expenses: React.FC = () => {
       }
     });
     return { name: topCatName, amount: maxVal };
+  }, [expenses]);
+
+  const totalDueAmt = useMemo(() => {
+    return expenses.filter((e) => e.status === 'Due').reduce((sum, e) => sum + e.amount, 0);
+  }, [expenses]);
+
+  const totalDueCount = useMemo(() => {
+    return expenses.filter((e) => e.status === 'Due').length;
   }, [expenses]);
 
 
@@ -344,7 +354,7 @@ export const Expenses: React.FC = () => {
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* KPI Stats Widgets Row */}
-      <div className="grid-cols-3" style={{ marginBottom: '24px' }}>
+      <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info">
             <span className="kpi-label">Total Historical Expenses</span>
@@ -374,13 +384,26 @@ export const Expenses: React.FC = () => {
         <div className="kpi-card" style={{ cursor: 'default' }}>
           <div className="kpi-info">
             <span className="kpi-label">Top Expense Category</span>
-            <span className="kpi-value" style={{ color: 'var(--text-primary)', fontSize: '22px' }}>
+            <span className="kpi-value" style={{ color: 'var(--text-primary)', fontSize: '20px' }}>
               {topCategory.name}
             </span>
             <span className="kpi-subtext">Total: {formatINR(topCategory.amount)}</span>
           </div>
           <div className="kpi-icon-container amber">
             <Tag size={22} />
+          </div>
+        </div>
+
+        <div className="kpi-card" style={{ cursor: 'default' }}>
+          <div className="kpi-info">
+            <span className="kpi-label">Pending / Due Amount</span>
+            <span className="kpi-value" style={{ color: '#D97706' }}>
+              {formatINR(totalDueAmt)}
+            </span>
+            <span className="kpi-subtext">{totalDueCount} due {totalDueCount === 1 ? 'entry' : 'entries'} pending</span>
+          </div>
+          <div className="kpi-icon-container" style={{ background: 'rgba(217,119,6,0.12)', color: '#D97706' }}>
+            <AlertCircle size={22} />
           </div>
         </div>
       </div>
@@ -829,117 +852,164 @@ export const Expenses: React.FC = () => {
             {/* Mobile Cards List View */}
             <div className="mobile-card-list">
               {paginatedExpenses.map((exp) => (
-                <div key={exp.id} className="mobile-list-card" style={{ borderLeft: exp.status === 'Due' ? '4px solid #D97706' : '4px solid var(--color-danger)' }}>
-                  <div className="mobile-list-card-header">
+                <div key={exp.id} className="mobile-list-card" style={{
+                  borderLeft: 'none',
+                  padding: 0,
+                  overflow: 'hidden',
+                  borderRadius: '14px',
+                  border: '1px solid var(--border-color)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+                }}>
+
+                  {/* Card Header — gradient strip */}
+                  <div style={{
+                    background: exp.status === 'Due'
+                      ? 'linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)'
+                      : 'linear-gradient(135deg, #FFF5F5 0%, #FFE4E4 100%)',
+                    borderBottom: `2px solid ${exp.status === 'Due' ? '#F59E0B' : 'var(--color-danger)'}`,
+                    padding: '12px 14px',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: '10px'
+                  }}>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <h4 className="mobile-list-card-title" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: exp.status === 'Due' ? '#D97706' : 'var(--color-danger)', flexShrink: 0, display: 'inline-block' }}></span>
-                        {exp.category}
-                      </h4>
-                      <span className="mobile-list-card-subtitle">
-                        {formatDate(exp.date)}{exp.payee && ` • ${exp.payee}`}
+                      {/* Category chip */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                        <div style={{
+                          width: '28px', height: '28px', borderRadius: '8px',
+                          background: exp.status === 'Due' ? 'rgba(217,119,6,0.15)' : 'rgba(239,68,68,0.12)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                        }}>
+                          <Receipt size={14} style={{ color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger)' }} />
+                        </div>
+                        <span style={{
+                          fontSize: '15px', fontWeight: 700,
+                          color: 'var(--text-primary)',
+                          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+                        }}>{exp.category}</span>
+                      </div>
+                      {/* Payee + date subtitle */}
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block' }}>
+                        {exp.payee && <strong style={{ color: 'var(--text-secondary)', fontWeight: 600 }}>{exp.payee}</strong>}
+                        {exp.payee && ' · '}{formatDate(exp.date)}
                       </span>
                     </div>
-                    {/* ⋮ Dropdown Menu */}
-                    <div style={{ position: 'relative', flexShrink: 0 }}>
-                      <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                        onClick={(e) => { e.stopPropagation(); setActiveMenuExpId(activeMenuExpId === exp.id ? null : exp.id); }}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
-                      {activeMenuExpId === exp.id && (
-                        <>
-                          <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuExpId(null)} />
-                          <div className="card" style={{
-                            position: 'absolute', right: '0', top: '100%', marginTop: '4px', zIndex: 999,
-                            minWidth: '150px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
-                            backgroundColor: 'var(--card-bg, #ffffff)', border: '1px solid var(--border-color)',
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12), 0 8px 10px -6px rgba(0,0,0,0.08)'
-                          }}>
-                            <button
-                              className="dropdown-item"
-                              style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
-                              onClick={() => { handleEditClick(exp); setActiveMenuExpId(null); }}
-                            >
-                              <Edit2 size={14} /> Edit
-                            </button>
-                            {exp.status === 'Due' && (
-                              <button
-                                className="dropdown-item"
-                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-success-dark)' }}
-                                onClick={() => { handleMarkAsPaid(exp); setActiveMenuExpId(null); }}
-                              >
-                                <CheckCircle2 size={14} /> Mark Paid
+
+                    {/* Right: amount + ⋮ menu */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', flexShrink: 0 }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{
+                          fontSize: '20px', fontWeight: 800, lineHeight: 1.1,
+                          color: exp.status === 'Due' ? '#B45309' : 'var(--color-danger-dark)'
+                        }}>{formatINR(exp.amount)}</div>
+                        {exp.status === 'Due' ? (
+                          <span style={{
+                            display: 'inline-block', marginTop: '3px',
+                            fontSize: '10px', fontWeight: 700, padding: '2px 7px',
+                            borderRadius: '20px', letterSpacing: '0.04em',
+                            background: 'rgba(217,119,6,0.15)', color: '#B45309',
+                            border: '1px solid rgba(217,119,6,0.3)'
+                          }}>DUE</span>
+                        ) : (
+                          <span style={{
+                            display: 'inline-block', marginTop: '3px',
+                            fontSize: '10px', fontWeight: 700, padding: '2px 7px',
+                            borderRadius: '20px', letterSpacing: '0.04em',
+                            background: 'rgba(16,185,129,0.12)', color: 'var(--primary)',
+                            border: '1px solid rgba(16,185,129,0.25)'
+                          }}>PAID</span>
+                        )}
+                      </div>
+                      {/* ⋮ Dropdown */}
+                      <div style={{ position: 'relative' }}>
+                        <button
+                          type="button"
+                          className="btn btn-secondary btn-sm"
+                          style={{ padding: '5px', borderRadius: '8px', width: '30px', height: '30px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                          onClick={(e) => { e.stopPropagation(); setActiveMenuExpId(activeMenuExpId === exp.id ? null : exp.id); }}
+                        >
+                          <MoreVertical size={15} />
+                        </button>
+                        {activeMenuExpId === exp.id && (
+                          <>
+                            <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} onClick={() => setActiveMenuExpId(null)} />
+                            <div className="card" style={{
+                              position: 'absolute', right: 0, top: '100%', marginTop: '4px', zIndex: 999,
+                              minWidth: '150px', padding: '6px 0', display: 'flex', flexDirection: 'column', gap: '2px',
+                              backgroundColor: 'var(--card-bg, #fff)', border: '1px solid var(--border-color)',
+                              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.12)'
+                            }}>
+                              <button className="dropdown-item"
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
+                                onClick={() => { handleEditClick(exp); setActiveMenuExpId(null); }}>
+                                <Edit2 size={14} /> Edit
                               </button>
-                            )}
-                            <button
-                              className="dropdown-item danger"
-                              style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
-                              onClick={() => { handleDeleteExpense(exp.id, exp.category, exp.amount); setActiveMenuExpId(null); }}
-                            >
-                              <Trash size={14} /> Delete
-                            </button>
-                          </div>
-                        </>
-                      )}
+                              {exp.status === 'Due' && (
+                                <button className="dropdown-item"
+                                  style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-success-dark)' }}
+                                  onClick={() => { handleMarkAsPaid(exp); setActiveMenuExpId(null); }}>
+                                  <CheckCircle2 size={14} /> Mark Paid
+                                </button>
+                              )}
+                              <button className="dropdown-item danger"
+                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
+                                onClick={() => { handleDeleteExpense(exp.id, exp.category, exp.amount); setActiveMenuExpId(null); }}>
+                                <Trash size={14} /> Delete
+                              </button>
+                            </div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Amount prominently shown */}
-                  <div style={{ margin: '10px 0 8px 0', display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                    <span style={{ fontSize: '22px', fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>
-                      {formatINR(exp.amount)}
-                    </span>
-                    {exp.status === 'Due' ? (
-                      <span className="badge" style={{ padding: '2px 8px', fontSize: '11px', borderRadius: '20px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.12)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.25)' }}>
-                        DUE {exp.dueDate ? `by ${formatDate(exp.dueDate)}` : ''}
-                      </span>
-                    ) : (
-                      <span className="badge" style={{ padding: '2px 8px', fontSize: '11px', borderRadius: '20px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>PAID</span>
+                  {/* Card Body — detail rows */}
+                  <div style={{ padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+
+                    {/* 2-column detail grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Voucher ID</div>
+                        <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>{exp.id}</div>
+                      </div>
+                      <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Payment</div>
+                        <div style={{ fontSize: '12px', fontWeight: 700, color: exp.status === 'Due' ? '#D97706' : 'var(--text-primary)' }}>
+                          {exp.status === 'Due' ? `Due ${exp.dueDate ? formatDate(exp.dueDate) : ''}` : exp.paymentMethod}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Reference number if exists */}
+                    {exp.status !== 'Due' && exp.referenceNumber && (
+                      <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Ref Number</div>
+                        <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>{exp.referenceNumber}</div>
+                      </div>
                     )}
-                  </div>
 
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Voucher ID</span>
-                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{exp.id}</span>
-                  </div>
+                    {/* Notes if exists */}
+                    {exp.notes && (
+                      <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Remarks</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{exp.notes}</div>
+                      </div>
+                    )}
 
-                  {exp.status !== 'Due' && (
-                    <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Method</span>
-                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{exp.paymentMethod}</span>
-                    </div>
-                  )}
-
-                  {exp.status !== 'Due' && exp.referenceNumber && (
-                    <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Ref No.</span>
-                      <span className="mobile-list-card-val" style={{ fontFamily: 'monospace', fontSize: '12px' }}>{exp.referenceNumber}</span>
-                    </div>
-                  )}
-
-                  {exp.notes && (
-                    <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Remarks</span>
-                      <span className="mobile-list-card-val" style={{ fontStyle: 'italic', fontSize: '12px', color: 'var(--text-secondary)' }}>{exp.notes}</span>
-                    </div>
-                  )}
-
-                  {exp.status === 'Due' && (
-                    <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed var(--border-color)' }}>
+                    {/* Mark as paid CTA */}
+                    {exp.status === 'Due' && (
                       <button
                         type="button"
                         className="btn btn-primary"
-                        style={{ width: '100%', height: '38px', justifyContent: 'center', fontWeight: 700, borderRadius: '8px', gap: '6px' }}
+                        style={{ width: '100%', height: '40px', justifyContent: 'center', fontWeight: 700, borderRadius: '10px', gap: '6px', marginTop: '2px',
+                          background: 'linear-gradient(135deg, #10B981, #059669)', border: 'none', fontSize: '13px' }}
                         onClick={() => handleMarkAsPaid(exp)}
                       >
                         <CheckCircle2 size={15} /> Mark as Paid
                       </button>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
