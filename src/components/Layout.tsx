@@ -26,7 +26,6 @@ import {
   ChevronRight,
   User,
   LogOut,
-  MoreHorizontal,
   TrendingDown,
   Trash2,
   Globe,
@@ -80,6 +79,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>('online');
 
   const mainWrapperRef = useRef<HTMLDivElement>(null);
+  const bottomNavRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>('en');
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
@@ -211,6 +211,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [currentTab]);
 
+  // Center the active mobile bottom nav tab item when currentTab changes
+  useEffect(() => {
+    if (bottomNavRef.current) {
+      const activeBtn = bottomNavRef.current.querySelector('[data-active="true"]');
+      if (activeBtn) {
+        activeBtn.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+  }, [currentTab]);
+
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -337,20 +351,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const bottomNavItems = [
-    { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={20} /> },
-    { id: 'sales', label: 'Sales', icon: <FileSpreadsheet size={20} /> },
-    { id: 'purchases', label: 'Purchases', icon: <ShoppingBag size={20} /> },
-    { id: 'inventory', label: 'Inventory', icon: <Package size={20} /> },
-    { id: 'more', label: 'More', icon: <MoreHorizontal size={20} /> },
+    { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={18} /> },
+    { id: 'sales', label: 'Sales', icon: <FileSpreadsheet size={18} /> },
+    { id: 'purchases', label: 'Purchases', icon: <ShoppingBag size={18} /> },
+    { id: 'inventory', label: 'Inventory', icon: <Package size={18} /> },
+    { id: 'payments', label: 'Payments', icon: <IndianRupee size={18} /> },
+    { id: 'expenses', label: 'Expenses', icon: <TrendingDown size={18} /> },
+    { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
+    { id: 'suppliers', label: 'Suppliers', icon: <Truck size={18} /> },
+    { id: 'reports', label: 'Reports', icon: <TrendingUp size={18} /> },
+    { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
   ];
 
   const handleBottomNavClick = (tabId: string) => {
-    if (tabId === 'more') {
-      setIsMobileMoreOpen(true);
-    } else {
-      handleTabChange(tabId);
-      setIsMobileMoreOpen(false);
-    }
+    handleTabChange(tabId);
   };
 
   const renderNavGroup = (title: string, items: typeof operationsItems) => (
@@ -490,18 +504,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const renderMobileBottomNav = () => {
     return (
-      <div className="mobile-bottom-nav no-print">
+      <div className="mobile-bottom-nav no-print" ref={bottomNavRef}>
         {bottomNavItems.map((item) => {
-          const isSelected = item.id === 'more' ? isMobileMoreOpen : currentTab === item.id && !isMobileMoreOpen;
+          const isSelected = currentTab === item.id;
           return (
             <button
               key={item.id}
               type="button"
               onClick={() => handleBottomNavClick(item.id)}
+              data-active={isSelected ? "true" : "false"}
               style={{
-                background: 'none', border: 'none', padding: '6px',
+                background: 'none', border: 'none', padding: '6px 0',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: '4px', flex: 1, cursor: 'pointer',
+                gap: '4px', flex: '0 0 20%', width: '20%', cursor: 'pointer',
                 color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
                 transition: 'all 0.2s ease', position: 'relative'
               }}
@@ -525,8 +540,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 )}
               </div>
               <span style={{
-                fontSize: '10px', fontWeight: isSelected ? 700 : 500,
-                color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)'
+                fontSize: '9.5px', fontWeight: isSelected ? 700 : 500,
+                color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)',
+                whiteSpace: 'nowrap'
               }}>
                 {item.label}
               </span>
