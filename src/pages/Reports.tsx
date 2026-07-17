@@ -1035,6 +1035,12 @@ export const Reports: React.FC = () => {
       return;
     }
 
+    if (activeReport === 'gstr3b') {
+      showToast('Opening print dialog. Please select "Save as PDF" to download a searchable, selectable text-based PDF.', 'info');
+      window.print();
+      return;
+    }
+
     showToast('Generating PDF, please wait...', 'info');
 
     // Temporarily make element visible for html2canvas to capture
@@ -1042,7 +1048,7 @@ export const Reports: React.FC = () => {
     wrapper.style.zIndex = '9999';
 
     try {
-      const isGstr = activeReport.startsWith('gstr') && activeReport !== 'gstr3b';
+      const isGstr = activeReport.startsWith('gstr');
       const orientation = isGstr ? 'landscape' : 'portrait';
       const pageW = isGstr ? 297 : 210;
       const pageH = isGstr ? 210 : 297;
@@ -1572,14 +1578,23 @@ export const Reports: React.FC = () => {
         {/* PAGE HEADER */}
         <div className="gstr3b-header-container">
           <div className="gstr3b-header-left">
-            {settings.showLogo && settings.logo && (
-              <img src={settings.logo} alt="Company Logo" style={{ maxHeight: '60px', objectFit: 'contain', width: 'auto', alignSelf: 'flex-start', marginBottom: '8px' }} />
-            )}
-            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2f3e33' }}>{settings.businessName || 'AgriBiz Store'}</h1>
-            {settings.showAddress && <div style={{ fontSize: '11px', color: '#5d6b5e' }}>{getFullAddress(settings)}</div>}
-            {settings.showGstin && settings.gstin && <div style={{ fontSize: '11px', color: '#2f3e33', fontWeight: 700 }}>GSTIN: {settings.gstin}</div>}
-            {settings.phone && <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Phone: {settings.phone}</div>}
-            {settings.email && <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Email: {settings.email}</div>}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+              {settings.showLogo && settings.logo && (
+                <div style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                  <img src={settings.logo} alt="Company Logo" style={{ maxWidth: '120px', maxHeight: '60px', objectFit: 'contain', borderRadius: '6px', margin: 0, padding: 0 }} />
+                </div>
+              )}
+              <div>
+                <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2f3e33' }}>{settings.businessName || 'AgriBiz Store'}</h1>
+                {settings.showAddress && <div style={{ fontSize: '11px', color: '#5d6b5e', marginTop: '2px' }}>{getFullAddress(settings)}</div>}
+                {settings.showGstin && settings.gstin && <div style={{ fontSize: '11px', color: '#2f3e33', fontWeight: 700, marginTop: '2px' }}>GSTIN: {settings.gstin}</div>}
+                <div style={{ fontSize: '11px', color: '#5d6b5e', display: 'flex', flexWrap: 'wrap', gap: '4px 8px', marginTop: '2px' }}>
+                  {settings.phone && <span>Phone: {settings.phone}</span>}
+                  {settings.phone && settings.email && <span style={{ opacity: 0.5 }}>|</span>}
+                  {settings.email && <span>Email: {settings.email}</span>}
+                </div>
+              </div>
+            </div>
           </div>
           <div className="gstr3b-header-right">
             <div style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', letterSpacing: '1px', textTransform: 'uppercase' }}>FINANCIAL GST REPORT</div>

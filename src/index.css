@@ -6135,16 +6135,22 @@ body.dark-theme .lang-selector-btn:hover {
     break-inside: avoid !important;
   }
   .gstr3b-print-section {
+    display: block !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
     margin-bottom: 24px !important;
   }
   .gstr3b-table-scroll-wrapper {
+    display: block !important;
     overflow: visible !important;
     width: 100% !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
     margin-bottom: 24px !important;
   }
   .gstr3b-ca-table {
+    display: table !important;
+    width: 100% !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
