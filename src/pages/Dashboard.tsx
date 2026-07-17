@@ -196,6 +196,7 @@ export const Dashboard: React.FC = () => {
     showToast,
     settings,
     updateSettings,
+    openNewPaymentForm,
   } = useApp();
 
   // Filters State
@@ -1214,7 +1215,7 @@ export const Dashboard: React.FC = () => {
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
-            onClick={() => setCurrentTab('payments')}
+            onClick={() => openNewPaymentForm()}
           >
             <ArrowRightLeft size={15} /> Record Payment
           </button>

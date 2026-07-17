@@ -27,8 +27,6 @@ export const Payments: React.FC = () => {
     payments,
     customers,
     suppliers,
-    addPayment,
-    editPayment,
     deletePayment,
     searchQuery,
     setSearchQuery,
@@ -39,6 +37,8 @@ export const Payments: React.FC = () => {
     paymentFormPreset,
     setPaymentFormPreset,
     settings,
+    openNewPaymentForm,
+    openEditPaymentForm,
   } = useApp();
 
   const upiIn = payments.filter((p) => p.type === 'CustomerReceipt' && p.paymentMethod === 'UPI').reduce((s, p) => s + p.amount, 0);
@@ -50,33 +50,16 @@ export const Payments: React.FC = () => {
   const totalSupplierOwed = suppliers.reduce((s, supp) => s + supp.outstanding, 0);
 
   const [activeTab, setActiveTab] = useState<'CustomerReceipt' | 'SupplierPayment'>('CustomerReceipt');
-  const [isFormOpen, setIsFormOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [selectedReceipt, setSelectedReceipt] = useState<Payment | null>(null);
   const [activeMenuPaymentId, setActiveMenuPaymentId] = useState<string | null>(null);
-  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
-
-  // New payment form states
-  const [paymentType, setPaymentType] = useState<'CustomerReceipt' | 'SupplierPayment'>('CustomerReceipt');
-  const [contactId, setContactId] = useState('');
-  const [paymentDate, setPaymentDate] = useState('2026-07-01');
-  const [amount, setAmount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque'>('UPI');
-  const [referenceNumber, setReferenceNumber] = useState('');
-  const [notes, setNotes] = useState('');
 
   useEffect(() => {
     if (paymentFormPreset) {
-      setPaymentType(paymentFormPreset.type);
-      setContactId(paymentFormPreset.contactId);
-      setAmount(0);
-      setReferenceNumber('');
-      setNotes('');
-      setEditingPaymentId(null);
-      setIsFormOpen(true);
+      openNewPaymentForm(paymentFormPreset);
       setPaymentFormPreset(null);
     }
-  }, [paymentFormPreset, setPaymentFormPreset]);
+  }, [paymentFormPreset, setPaymentFormPreset, openNewPaymentForm]);
 
   // Filtering states
   const [methodFilter, setMethodFilter] = useState('All');
@@ -92,57 +75,7 @@ export const Payments: React.FC = () => {
     window.print();
   };
 
-  const handleSavePayment = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!contactId) {
-      showToast('Please select a contact to log payment.', 'error');
-      return;
-    }
-    if (amount <= 0) {
-      showToast('Please enter a valid amount greater than zero.', 'error');
-      return;
-    }
 
-    const contactName =
-      paymentType === 'CustomerReceipt'
-        ? customers.find((c) => c.id === contactId)?.name || 'Unknown Customer'
-        : suppliers.find((s) => s.id === contactId)?.name || 'Unknown Supplier';
-
-    if (editingPaymentId) {
-      editPayment({
-        id: editingPaymentId,
-        date: paymentDate,
-        type: paymentType,
-        contactId,
-        contactName,
-        amount,
-        paymentMethod,
-        referenceNumber: referenceNumber.trim() || undefined,
-        notes: notes.trim() || undefined,
-      });
-      showToast(`Payment of ${formatINR(amount)} updated successfully!`);
-      setEditingPaymentId(null);
-    } else {
-      addPayment({
-        date: paymentDate,
-        type: paymentType,
-        contactId,
-        contactName,
-        amount,
-        paymentMethod,
-        referenceNumber: referenceNumber.trim() || undefined,
-        notes: notes.trim() || undefined,
-      });
-      showToast(`Payment of ${formatINR(amount)} logged successfully!`);
-    }
-
-    // Reset states
-    setContactId('');
-    setAmount(0);
-    setReferenceNumber('');
-    setNotes('');
-    setIsFormOpen(false);
-  };
 
   const handleDeletePayment = (id: string, name: string, type: string) => {
     const confirmationMsg =
@@ -469,13 +402,7 @@ export const Payments: React.FC = () => {
                 gap: '8px'
               }}
               onClick={() => {
-                setPaymentType(activeTab);
-                setContactId('');
-                setAmount(0);
-                setReferenceNumber('');
-                setNotes('');
-                setEditingPaymentId(null);
-                setIsFormOpen(true);
+                openNewPaymentForm({ contactId: '', type: activeTab });
               }}
             >
               <Plus size={16} /> Record Payment
@@ -493,7 +420,7 @@ export const Payments: React.FC = () => {
             <p className="empty-state-desc">
               There are no transactions matching your search query or selected method filters.
             </p>
-            <button className="btn btn-primary" onClick={() => setIsFormOpen(true)}>
+            <button className="btn btn-primary" onClick={() => openNewPaymentForm({ contactId: '', type: activeTab })}>
               Record First Payment
             </button>
           </div>
@@ -634,15 +561,7 @@ export const Payments: React.FC = () => {
                                   }}
                                   onClick={() => {
                                     setActiveMenuPaymentId(null);
-                                    setPaymentType(pay.type);
-                                    setContactId(pay.contactId);
-                                    setPaymentDate(pay.date);
-                                    setAmount(pay.amount);
-                                    setPaymentMethod(pay.paymentMethod);
-                                    setReferenceNumber(pay.referenceNumber || '');
-                                    setNotes(pay.notes || '');
-                                    setEditingPaymentId(pay.id);
-                                    setIsFormOpen(true);
+                                    openEditPaymentForm(pay);
                                   }}
                                 >
                                   <Edit2 size={14} /> Edit Record
@@ -732,15 +651,7 @@ export const Payments: React.FC = () => {
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => {
                                 setActiveMenuPaymentId(null);
-                                setPaymentType(pay.type);
-                                setContactId(pay.contactId);
-                                setPaymentDate(pay.date);
-                                setAmount(pay.amount);
-                                setPaymentMethod(pay.paymentMethod);
-                                setReferenceNumber(pay.referenceNumber || '');
-                                setNotes(pay.notes || '');
-                                setEditingPaymentId(pay.id);
-                                setIsFormOpen(true);
+                                openEditPaymentForm(pay);
                               }}>
                               <Edit2 size={14} /> Edit Record
                             </button>
@@ -809,197 +720,7 @@ export const Payments: React.FC = () => {
         )}
       </div>
 
-      <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}>
-        <form onSubmit={handleSavePayment}>
-          <div className="form-group">
-            <label className="form-label">Transaction Type *</label>
-            <div className="payment-type-toggle">
-              <button
-                type="button"
-                className="payment-type-btn"
-                style={{
-                  backgroundColor: paymentType === 'CustomerReceipt' ? 'rgba(16,185,129,0.15)' : 'transparent',
-                  color: paymentType === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--text-secondary)',
-                  border: paymentType === 'CustomerReceipt' ? '1px solid var(--color-success-dark)' : '1px solid transparent',
-                }}
-                onClick={() => {
-                  setPaymentType('CustomerReceipt');
-                  setContactId('');
-                }}
-              >
-                Inward Receipt (Customer)
-              </button>
-              <button
-                type="button"
-                className="payment-type-btn"
-                style={{
-                  backgroundColor: paymentType === 'SupplierPayment' ? 'rgba(239,68,68,0.12)' : 'transparent',
-                  color: paymentType === 'SupplierPayment' ? 'var(--color-danger-dark)' : 'var(--text-secondary)',
-                  border: paymentType === 'SupplierPayment' ? '1px solid var(--color-danger-dark)' : '1px solid transparent',
-                }}
-                onClick={() => {
-                  setPaymentType('SupplierPayment');
-                  setContactId('');
-                }}
-              >
-                Outward Payout (Supplier)
-              </button>
-            </div>
-          </div>
 
-          <div className="form-group">
-            <label className="form-label">
-              Select {paymentType === 'CustomerReceipt' ? 'Customer' : 'Supplier'} *
-            </label>
-            <select
-              className="form-control"
-              value={contactId}
-              onChange={(e) => setContactId(e.target.value)}
-              required
-              style={{ paddingRight: '36px' }}
-            >
-              <option value="">-- Choose Contact --</option>
-              {paymentType === 'CustomerReceipt'
-                ? customers.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} — Dues: {formatINR(c.outstanding)}
-                    </option>
-                  ))
-                : suppliers.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} — Owed: {formatINR(s.outstanding)}
-                    </option>
-                  ))}
-            </select>
-
-            {contactId && (() => {
-              const selectedContact = paymentType === 'CustomerReceipt'
-                ? customers.find(c => c.id === contactId)
-                : suppliers.find(s => s.id === contactId);
-
-              if (!selectedContact) return null;
-
-              const isOwed = selectedContact.outstanding > 0;
-              const cardColor = paymentType === 'CustomerReceipt' 
-                ? (isOwed ? 'rgba(245,158,11,0.06)' : 'rgba(16,185,129,0.06)')
-                : (isOwed ? 'rgba(239,68,68,0.05)' : 'rgba(16,185,129,0.06)');
-              const borderColor = paymentType === 'CustomerReceipt'
-                ? (isOwed ? 'var(--color-warning)' : 'var(--color-success)')
-                : (isOwed ? 'var(--color-danger)' : 'var(--color-success)');
-              const textColor = paymentType === 'CustomerReceipt'
-                ? (isOwed ? 'var(--color-warning-dark)' : 'var(--color-success-dark)')
-                : (isOwed ? 'var(--color-danger-dark)' : 'var(--color-success-dark)');
-              const labelText = paymentType === 'CustomerReceipt' ? 'Customer Dues' : 'Balance We Owe';
-
-              return (
-                <div className="selected-contact-card" style={{ background: cardColor, borderColor: borderColor } as React.CSSProperties}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div className="selected-contact-avatar" style={{ background: borderColor }}>
-                      {selectedContact.name.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="selected-contact-name">{selectedContact.name}</div>
-                      <div className="selected-contact-phone">{selectedContact.phone}</div>
-                    </div>
-                  </div>
-                  <div className="selected-contact-balance-block">
-                    <div className="selected-contact-balance-label">{labelText}</div>
-                    <div className="selected-contact-balance-val" style={{ color: textColor }}>{formatINR(selectedContact.outstanding)}</div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-
-          <div className="form-row">
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Payment Date *</label>
-              <input
-                type="date"
-                className="form-control"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Amount Transferred *</label>
-              <div style={{ position: 'relative' }}>
-                <span style={{
-                  position: 'absolute',
-                  left: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  fontWeight: 700,
-                  color: 'var(--text-muted)',
-                  fontSize: '13px',
-                  pointerEvents: 'none',
-                }}>₹</span>
-                <input
-                  type="number"
-                  className="form-control"
-                  placeholder="0.00"
-                  value={amount || ''}
-                  onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))}
-                  required
-                  style={{ paddingLeft: '26px' }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-row">
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Payment Method *</label>
-              <select
-                className="form-control"
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-              >
-                <option value="UPI">UPI / GPay / PhonePe</option>
-                <option value="Cash">Cash Ledger</option>
-                <option value="Bank Transfer">Bank Transfer (IMPS/RTGS)</option>
-                <option value="Cheque">Cheque</option>
-              </select>
-            </div>
-            <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Reference Number (Txn/Cheque ID)</label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. UPI82012019"
-                value={referenceNumber}
-                onChange={(e) => setReferenceNumber(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Remarks / Description</label>
-            <textarea
-              className="form-control"
-              placeholder="e.g. Settle outstanding bill payment"
-              rows={2}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              style={{ resize: 'vertical' }}
-            />
-          </div>
-
-          <div className="modal-form-actions no-print">
-            <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)} style={{ borderRadius: '8px' }}>
-              Cancel
-            </button>
-            <button type="submit" className="btn btn-primary" style={{
-              borderRadius: '8px',
-              boxShadow: '0 4px 14px rgba(16,185,129,0.2)',
-              fontWeight: 700,
-            }}>
-              {editingPaymentId ? '✓ Save Changes' : '✓ Log Transaction'}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       {/* Printable Receipt Modal */}
       <Modal isOpen={isReceiptOpen} onClose={() => setIsReceiptOpen(false)} title="Payment Voucher Slip">

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
+import { Modal } from './Modal';
+import { formatINR } from '../utils/dummyData';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -51,6 +53,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setIsEnteringPurchase,
     toast,
     showToast,
+    isPaymentFormOpen,
+    setIsPaymentFormOpen,
+    paymentType,
+    setPaymentType,
+    contactId,
+    setContactId,
+    paymentDate,
+    setPaymentDate,
+    amount,
+    setAmount,
+    paymentMethod,
+    setPaymentMethod,
+    referenceNumber,
+    setReferenceNumber,
+    notes,
+    setNotes,
+    editingPaymentId,
+    handleSavePayment,
+    customers,
+    suppliers,
   } = useApp();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -934,6 +956,203 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </div>
       )}
+
+      {/* Global Record/Edit Payment Modal */}
+      <Modal 
+        isOpen={isPaymentFormOpen} 
+        onClose={() => setIsPaymentFormOpen(false)} 
+        title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}
+      >
+        <form onSubmit={handleSavePayment}>
+          <div className="form-group">
+            <label className="form-label">Transaction Type *</label>
+            <div className="payment-type-toggle">
+              <button
+                type="button"
+                className="payment-type-btn"
+                style={{
+                  backgroundColor: paymentType === 'CustomerReceipt' ? 'rgba(16,185,129,0.15)' : 'transparent',
+                  color: paymentType === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--text-secondary)',
+                  border: paymentType === 'CustomerReceipt' ? '1px solid var(--color-success-dark)' : '1px solid transparent',
+                }}
+                onClick={() => {
+                  setPaymentType('CustomerReceipt');
+                  setContactId('');
+                }}
+              >
+                Inward Receipt (Customer)
+              </button>
+              <button
+                type="button"
+                className="payment-type-btn"
+                style={{
+                  backgroundColor: paymentType === 'SupplierPayment' ? 'rgba(239,68,68,0.12)' : 'transparent',
+                  color: paymentType === 'SupplierPayment' ? 'var(--color-danger-dark)' : 'var(--text-secondary)',
+                  border: paymentType === 'SupplierPayment' ? '1px solid var(--color-danger-dark)' : '1px solid transparent',
+                }}
+                onClick={() => {
+                  setPaymentType('SupplierPayment');
+                  setContactId('');
+                }}
+              >
+                Outward Payout (Supplier)
+              </button>
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">
+              Select {paymentType === 'CustomerReceipt' ? 'Customer' : 'Supplier'} *
+            </label>
+            <select
+              className="form-control"
+              value={contactId}
+              onChange={(e) => setContactId(e.target.value)}
+              required
+              style={{ paddingRight: '36px' }}
+            >
+              <option value="">-- Choose Contact --</option>
+              {paymentType === 'CustomerReceipt'
+                ? customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} — Dues: {formatINR(c.outstanding)}
+                    </option>
+                  ))
+                : suppliers.map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} — Owed: {formatINR(s.outstanding)}
+                    </option>
+                  ))}
+            </select>
+
+            {contactId && (() => {
+              const selectedContact = paymentType === 'CustomerReceipt'
+                ? customers.find(c => c.id === contactId)
+                : suppliers.find(s => s.id === contactId);
+
+              if (!selectedContact) return null;
+
+              const isOwed = selectedContact.outstanding > 0;
+              const cardColor = paymentType === 'CustomerReceipt' 
+                ? (isOwed ? 'rgba(245,158,11,0.06)' : 'rgba(16,185,129,0.06)')
+                : (isOwed ? 'rgba(239,68,68,0.05)' : 'rgba(16,185,129,0.06)');
+              const borderColor = paymentType === 'CustomerReceipt'
+                ? (isOwed ? 'var(--color-warning)' : 'var(--color-success)')
+                : (isOwed ? 'var(--color-danger)' : 'var(--color-success)');
+              const textColor = paymentType === 'CustomerReceipt'
+                ? (isOwed ? 'var(--color-warning-dark)' : 'var(--color-success-dark)')
+                : (isOwed ? 'var(--color-danger-dark)' : 'var(--color-success-dark)');
+              const labelText = paymentType === 'CustomerReceipt' ? 'Customer Dues' : 'Balance We Owe';
+
+              return (
+                <div className="selected-contact-card" style={{ background: cardColor, borderColor: borderColor } as React.CSSProperties}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div className="selected-contact-avatar" style={{ background: borderColor }}>
+                      {selectedContact.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="selected-contact-name">{selectedContact.name}</div>
+                      <div className="selected-contact-phone">{selectedContact.phone}</div>
+                    </div>
+                  </div>
+                  <div className="selected-contact-balance-block">
+                    <div className="selected-contact-balance-label">{labelText}</div>
+                    <div className="selected-contact-balance-val" style={{ color: textColor }}>{formatINR(selectedContact.outstanding)}</div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+
+          <div className="form-row">
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Payment Date *</label>
+              <input
+                type="date"
+                className="form-control"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
+                required
+              />
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Amount Transferred *</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{
+                  position: 'absolute',
+                  left: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  fontWeight: 700,
+                  color: 'var(--text-muted)',
+                  fontSize: '13px',
+                  pointerEvents: 'none',
+                }}>₹</span>
+                <input
+                  type="number"
+                  className="form-control"
+                  placeholder="0.00"
+                  value={amount || ''}
+                  onChange={(e) => setAmount(Math.max(0, parseFloat(e.target.value) || 0))}
+                  required
+                  style={{ paddingLeft: '26px' }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Payment Method *</label>
+              <select
+                className="form-control"
+                value={paymentMethod}
+                onChange={(e) => setPaymentMethod(e.target.value as any)}
+              >
+                <option value="UPI">UPI / GPay / PhonePe</option>
+                <option value="Cash">Cash Ledger</option>
+                <option value="Bank Transfer">Bank Transfer (IMPS/RTGS)</option>
+                <option value="Cheque">Cheque</option>
+              </select>
+            </div>
+            <div className="form-group" style={{ margin: 0 }}>
+              <label className="form-label">Reference Number (Txn/Cheque ID)</label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. UPI82012019"
+                value={referenceNumber}
+                onChange={(e) => setReferenceNumber(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Remarks / Description</label>
+            <textarea
+              className="form-control"
+              placeholder="e.g. Settle outstanding bill payment"
+              rows={2}
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              style={{ resize: 'vertical' }}
+            />
+          </div>
+
+          <div className="modal-form-actions no-print">
+            <button type="button" className="btn btn-secondary" onClick={() => setIsPaymentFormOpen(false)} style={{ borderRadius: '8px' }}>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" style={{
+              borderRadius: '8px',
+              boxShadow: '0 4px 14px rgba(16,185,129,0.2)',
+              fontWeight: 700,
+            }}>
+              {editingPaymentId ? '✓ Save Changes' : '✓ Log Transaction'}
+            </button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

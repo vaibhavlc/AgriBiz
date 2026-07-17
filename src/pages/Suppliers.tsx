@@ -41,8 +41,8 @@ export const Suppliers: React.FC = () => {
     isEditingSupplier,
     setIsEditingSupplier,
     setPurchaseFormPresetSupplierId,
-    setPaymentFormPreset,
     settings,
+    openNewPaymentForm,
   } = useApp();
 
   const totalSuppliers = suppliers.length;
@@ -242,10 +242,7 @@ export const Suppliers: React.FC = () => {
             </button>
             <button
               className="btn btn-secondary cust-action-btn"
-              onClick={() => {
-                setPaymentFormPreset({ contactId: selectedSupplier.id, type: 'SupplierPayment' });
-                setCurrentTab('payments');
-              }}
+              onClick={() => openNewPaymentForm({ contactId: selectedSupplier.id, type: 'SupplierPayment' })}
             >
               <ArrowUpRight size={15} /> Record Payout
             </button>

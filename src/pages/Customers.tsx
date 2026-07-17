@@ -41,8 +41,8 @@ export const Customers: React.FC = () => {
     isEditingCustomer,
     setIsEditingCustomer,
     setSalesFormPresetCustomerId,
-    setPaymentFormPreset,
     settings,
+    openNewPaymentForm,
   } = useApp();
 
   const totalCustomers = customers.length;
@@ -231,7 +231,7 @@ export const Customers: React.FC = () => {
             </button>
             <button
               className="btn btn-secondary cust-action-btn"
-              onClick={() => { setPaymentFormPreset({ contactId: selectedCustomer.id, type: 'CustomerReceipt' }); setCurrentTab('payments'); }}
+              onClick={() => openNewPaymentForm({ contactId: selectedCustomer.id, type: 'CustomerReceipt' })}
             >
               <ArrowDownLeft size={15} /> Record Receipt
             </button>

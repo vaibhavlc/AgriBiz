@@ -102,6 +102,28 @@ interface AppContextType {
   setSalesFormPresetCustomerId: (id: string | null) => void;
   purchaseFormPresetSupplierId: string | null;
   setPurchaseFormPresetSupplierId: (id: string | null) => void;
+
+  isPaymentFormOpen: boolean;
+  setIsPaymentFormOpen: (val: boolean) => void;
+  paymentType: 'CustomerReceipt' | 'SupplierPayment';
+  setPaymentType: (type: 'CustomerReceipt' | 'SupplierPayment') => void;
+  contactId: string;
+  setContactId: (id: string) => void;
+  paymentDate: string;
+  setPaymentDate: (date: string) => void;
+  amount: number;
+  setAmount: (amount: number) => void;
+  paymentMethod: 'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque';
+  setPaymentMethod: (method: 'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque') => void;
+  referenceNumber: string;
+  setReferenceNumber: (ref: string) => void;
+  notes: string;
+  setNotes: (notes: string) => void;
+  editingPaymentId: string | null;
+  setEditingPaymentId: (id: string | null) => void;
+  openNewPaymentForm: (preset?: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' }) => void;
+  openEditPaymentForm: (payment: Payment) => void;
+  handleSavePayment: (e: React.FormEvent) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -180,12 +202,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [salesFormPresetCustomerId, setSalesFormPresetCustomerId] = useState<string | null>(null);
   const [purchaseFormPresetSupplierId, setPurchaseFormPresetSupplierId] = useState<string | null>(null);
 
+  const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
+  const [paymentType, setPaymentType] = useState<'CustomerReceipt' | 'SupplierPayment'>('CustomerReceipt');
+  const [contactId, setContactId] = useState('');
+  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [amount, setAmount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque'>('UPI');
+  const [referenceNumber, setReferenceNumber] = useState('');
+  const [notes, setNotes] = useState('');
+  const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
     // Auto-clear toast after 3 seconds
     setTimeout(() => {
       setToast((curr) => curr && curr.message === message ? null : curr);
     }, 3000);
+  };
+
+  const openNewPaymentForm = (preset?: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' }) => {
+    setEditingPaymentId(null);
+    if (preset) {
+      setPaymentType(preset.type);
+      setContactId(preset.contactId);
+    } else {
+      setPaymentType('CustomerReceipt');
+      setContactId('');
+    }
+    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setAmount(0);
+    setPaymentMethod('UPI');
+    setReferenceNumber('');
+    setNotes('');
+    setIsPaymentFormOpen(true);
+  };
+
+  const openEditPaymentForm = (pay: Payment) => {
+    setEditingPaymentId(pay.id);
+    setPaymentType(pay.type);
+    setContactId(pay.contactId);
+    setPaymentDate(pay.date);
+    setAmount(pay.amount);
+    setPaymentMethod(pay.paymentMethod as any);
+    setReferenceNumber(pay.referenceNumber || '');
+    setNotes(pay.notes || '');
+    setIsPaymentFormOpen(true);
+  };
+
+  const handleSavePayment = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!contactId) {
+      showToast('Please select a contact to log payment.', 'error');
+      return;
+    }
+    if (amount <= 0) {
+      showToast('Please enter a valid amount greater than zero.', 'error');
+      return;
+    }
+
+    const contactName =
+      paymentType === 'CustomerReceipt'
+        ? customers.find((c) => c.id === contactId)?.name || 'Unknown Customer'
+        : suppliers.find((s) => s.id === contactId)?.name || 'Unknown Supplier';
+
+    if (editingPaymentId) {
+      editPayment({
+        id: editingPaymentId,
+        date: paymentDate,
+        type: paymentType,
+        contactId,
+        contactName,
+        amount,
+        paymentMethod,
+        referenceNumber: referenceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      showToast(`Payment of ₹${amount.toLocaleString('en-IN')} updated successfully!`);
+      setEditingPaymentId(null);
+    } else {
+      addPayment({
+        date: paymentDate,
+        type: paymentType,
+        contactId,
+        contactName,
+        amount,
+        paymentMethod,
+        referenceNumber: referenceNumber.trim() || undefined,
+        notes: notes.trim() || undefined,
+      });
+      showToast(`Payment of ₹${amount.toLocaleString('en-IN')} logged successfully!`);
+    }
+
+    // Reset states
+    setContactId('');
+    setAmount(0);
+    setReferenceNumber('');
+    setNotes('');
+    setIsPaymentFormOpen(false);
   };
 
   // Sync to localStorage
@@ -1195,6 +1308,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSalesFormPresetCustomerId,
         purchaseFormPresetSupplierId,
         setPurchaseFormPresetSupplierId,
+
+        isPaymentFormOpen,
+        setIsPaymentFormOpen,
+        paymentType,
+        setPaymentType,
+        contactId,
+        setContactId,
+        paymentDate,
+        setPaymentDate,
+        amount,
+        setAmount,
+        paymentMethod,
+        setPaymentMethod,
+        referenceNumber,
+        setReferenceNumber,
+        notes,
+        setNotes,
+        editingPaymentId,
+        setEditingPaymentId,
+        openNewPaymentForm,
+        openEditPaymentForm,
+        handleSavePayment,
       }}
     >
       {children}
