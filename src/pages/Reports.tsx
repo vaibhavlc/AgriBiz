@@ -4400,39 +4400,79 @@ export const Reports: React.FC = () => {
           fontFamily: 'var(--font-sans)',
           color: '#000000',
           padding: '15mm',
-          boxSizing: 'border-box'
+          boxSizing: 'border-box',
+          position: 'relative'
         }}>
+          {/* Watermark Logo (Black and White) for GSTR-3B */}
+          {activeReport === 'gstr3b' && settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+            <div className="print-watermark-logo">
+              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" style={{ filter: 'grayscale(100%) contrast(120%)' }} />
+            </div>
+          )}
+
           {/* Header Block (Unified Invoice PDF Header style) */}
-          <div className="invoice-header-bar">
-            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-              {settings.showLogo && settings.logo && (
-                <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
-                  <img 
-                    src={settings.logo} 
-                    alt="Business Logo" 
-                    style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
-                  />
+          <div className="invoice-header-bar" style={{ position: 'relative', zIndex: 1 }}>
+            {activeReport === 'gstr3b' ? (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", height: "65px" }}>
+                  {settings.showLogo && settings.logo && (
+                    <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                      <img 
+                        src={settings.logo} 
+                        alt="Business Logo" 
+                        style={{ height: "65px", width: "auto", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                      />
+                    </div>
+                  )}
+                  <div style={{ display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                    <h2 className="invoice-company-name" style={{ margin: 0, lineHeight: 1.2 }}>{settings.businessName || 'AgriBiz Seeds'}</h2>
+                    {settings.showAddress && (
+                      <p className="invoice-company-sub" style={{ margin: "2px 0 0 0", lineHeight: 1.2 }}>{getFullAddress(settings)}</p>
+                    )}
+                    {settings.showContact && (
+                      <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap', lineHeight: 1.2 }}>
+                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                        {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
+                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-              <div>
-                <h2 className="invoice-company-name">{settings.businessName || 'AgriBiz Store'}</h2>
-                {settings.showAddress && (
-                  <p className="invoice-company-sub">{getFullAddress(settings)}</p>
-                )}
-                {settings.showContact && (
-                  <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
-                    {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
-                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
-                    {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
-                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
-                  </p>
-                )}
                 {settings.showGstin && settings.gstin && (
-                  <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                  <p className="invoice-company-gst" style={{ margin: "6px 0 0 0" }}>GSTIN: {settings.gstin}</p>
                 )}
               </div>
-            </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+                {settings.showLogo && settings.logo && (
+                  <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                    <img 
+                      src={settings.logo} 
+                      alt="Business Logo" 
+                      style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                    />
+                  </div>
+                )}
+                <div>
+                  <h2 className="invoice-company-name">{settings.businessName || 'AgriBiz Store'}</h2>
+                  {settings.showAddress && (
+                    <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                  )}
+                  {settings.showContact && (
+                    <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
+                      {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                      {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
+                      {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                      {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
+                      {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                    </p>
+                  )}
+                  {settings.showGstin && settings.gstin && (
+                    <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                  )}
+                </div>
+              </div>
+            )}
             <div style={{ textAlign: "right" }}>
               {activeReport === 'gstr3b' ? (
                 <>
