@@ -6054,6 +6054,20 @@ body.dark-theme .lang-selector-btn:hover {
   margin-top: 30px;
 }
 
+.gstr3b-table-scroll-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 24px;
+}
+.gstr3b-table-scroll-wrapper::-webkit-scrollbar {
+  height: 6px;
+}
+.gstr3b-table-scroll-wrapper::-webkit-scrollbar-thumb {
+  background-color: #c8d3c5;
+  border-radius: 3px;
+}
+
 @media (max-width: 991px) {
   .gstr3b-summary-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -6061,12 +6075,25 @@ body.dark-theme .lang-selector-btn:hover {
 }
 
 @media (max-width: 576px) {
+  .gstr3b-working-report-wrapper {
+    padding: 16px !important;
+  }
   .gstr3b-header-container {
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
+  }
+  .gstr3b-header-left h1 {
+    font-size: 16px !important;
   }
   .gstr3b-header-right {
     text-align: left;
+  }
+  .gstr3b-header-right h2 {
+    font-size: 14px !important;
+  }
+  .gstr3b-section-title {
+    font-size: 11px !important;
+    margin: 16px 0 8px 0 !important;
   }
   .gstr3b-summary-grid {
     grid-template-columns: 1fr;
@@ -6087,6 +6114,8 @@ body.dark-theme .lang-selector-btn:hover {
   .gstr3b-summary-grid {
     grid-template-columns: repeat(4, 1fr) !important;
     gap: 8px !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   .gstr3b-ca-table th {
     background-color: #f2f5f2 !important;
@@ -6102,5 +6131,28 @@ body.dark-theme .lang-selector-btn:hover {
     background-color: #fcfdfc !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .gstr3b-print-section {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    margin-bottom: 24px !important;
+  }
+  .gstr3b-table-scroll-wrapper {
+    overflow: visible !important;
+    width: 100% !important;
+    margin-bottom: 24px !important;
+  }
+  .gstr3b-ca-table {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .gstr3b-ca-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  thead {
+    display: table-header-group !important;
   }
 }
