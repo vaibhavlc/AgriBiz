@@ -38,6 +38,25 @@ export const Reports: React.FC = () => {
   const [startDate, setStartDate] = useState('2026-06-01');
   const [endDate, setEndDate] = useState('2026-07-01');
 
+  const returnPeriod = () => {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+    if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+      return start.toLocaleDateString('en-US', options);
+    }
+    return `${start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+  };
+
+  const generatedOn = new Date().toLocaleDateString('en-IN', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true
+  });
+
   // Toast status alert
   const [toast, setToast] = useState<{ message: string; type: 'info' | 'success' | 'error' } | null>(null);
   
@@ -1501,7 +1520,7 @@ export const Reports: React.FC = () => {
     );
   };
 
-  const renderGstr3bReport = (isPrintMode: boolean) => {
+  const renderGstr3bReport = () => {
     const businessStateCode = settings.gstin ? settings.gstin.substring(0, 2) : '23';
 
 
@@ -1515,24 +1534,7 @@ export const Reports: React.FC = () => {
 
     const hasInterstateSupplies = interstateUnregisteredTaxable > 0;
 
-    const returnPeriod = () => {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
-      if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
-        return start.toLocaleDateString('en-US', options);
-      }
-      return `${start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
-    };
 
-    const generatedOn = new Date().toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true
-    });
 
     const outwardTaxTotal = gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst;
     const itcTotal = gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst;
@@ -1565,47 +1567,7 @@ export const Reports: React.FC = () => {
     const totalRemainingCredit = igstRemainingCredit + cgstRemainingCredit + sgstRemainingCredit;
 
     return (
-      <div className="gstr3b-working-report-wrapper">
-        {/* DOWNLOAD / CSV TRIGGER */}
-        {!isPrintMode && (
-          <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '20px' }}>
-            <button className="btn btn-secondary btn-sm" onClick={handleExportGstr3B}>
-              <Percent size={14} style={{ marginRight: '6px' }} /> Download GSTR-3B CSV
-            </button>
-          </div>
-        )}
-
-        {/* PAGE HEADER */}
-        <div className="gstr3b-header-container">
-          <div className="gstr3b-header-left">
-            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-              {settings.showLogo && settings.logo && (
-                <div style={{ flexShrink: 0, margin: 0, padding: 0 }}>
-                  <img src={settings.logo} alt="Company Logo" style={{ maxWidth: '120px', maxHeight: '60px', objectFit: 'contain', borderRadius: '6px', margin: 0, padding: 0 }} />
-                </div>
-              )}
-              <div>
-                <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2f3e33' }}>{settings.businessName || 'AgriBiz Store'}</h1>
-                {settings.showAddress && <div style={{ fontSize: '11px', color: '#5d6b5e', marginTop: '2px' }}>{getFullAddress(settings)}</div>}
-                {settings.showGstin && settings.gstin && <div style={{ fontSize: '11px', color: '#2f3e33', fontWeight: 700, marginTop: '2px' }}>GSTIN: {settings.gstin}</div>}
-                <div style={{ fontSize: '11px', color: '#5d6b5e', display: 'flex', flexWrap: 'wrap', gap: '4px 8px', marginTop: '2px' }}>
-                  {settings.phone && <span>Phone: {settings.phone}</span>}
-                  {settings.phone && settings.email && <span style={{ opacity: 0.5 }}>|</span>}
-                  {settings.email && <span>Email: {settings.email}</span>}
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="gstr3b-header-right">
-            <div style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', letterSpacing: '1px', textTransform: 'uppercase' }}>FINANCIAL GST REPORT</div>
-            <h2 style={{ margin: '4px 0 12px 0', fontSize: '16px', fontWeight: 900, color: '#2f3e33', textTransform: 'uppercase', lineHeight: 1.2 }}>GSTR-3B WORKING REPORT</h2>
-            <div style={{ fontSize: '11px', color: '#1a2e1d' }}><strong>Return Period:</strong> {returnPeriod()}</div>
-            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>From Date:</strong> {formatDate(startDate)}</div>
-            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>To Date:</strong> {formatDate(endDate)}</div>
-            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>Generated On:</strong> {generatedOn}</div>
-            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>Generated By:</strong> {settings.ownerName || 'Kunal Chaudhari'}</div>
-          </div>
-        </div>
+      <div className="gstr3b-working-report-wrapper" style={{ padding: 0, border: 'none', boxShadow: 'none' }}>
 
         {/* SUMMARY SECTION */}
         <div className="gstr3b-summary-grid">
@@ -1980,30 +1942,7 @@ export const Reports: React.FC = () => {
           </div>
         </div>
 
-        {/* REPORT FOOTER */}
-        <div className="gstr3b-print-section">
-          <div className="gstr3b-footer-container">
-            <div className="gstr3b-signature-box">
-              <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Prepared By:</div>
-              <div className="gstr3b-signature-line"></div>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#1a2e1d', marginTop: '6px' }}>Accountant / CA Staff</div>
-            </div>
-            <div className="gstr3b-signature-box">
-              <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Verified By:</div>
-              <div className="gstr3b-signature-line"></div>
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#1a2e1d', marginTop: '6px' }}>Chartered Accountant</div>
-            </div>
-            <div className="gstr3b-signature-box">
-              <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Authorized Signatory:</div>
-              {settings.signature ? (
-                <img src={settings.signature} alt="E-Signature" style={{ maxHeight: '40px', objectFit: 'contain', margin: '6px 0', mixBlendMode: 'multiply' }} />
-              ) : (
-                <div className="gstr3b-signature-line"></div>
-              )}
-              <div style={{ fontSize: '11px', fontWeight: 600, color: '#1a2e1d', marginTop: '6px' }}>Owner Signature</div>
-            </div>
-          </div>
-        </div>
+
 
         <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '9px', color: '#5d6b5e', borderTop: '1px dashed #e2e9e0', paddingTop: '16px' }}>
           <div>System Generated Report • AgriBiz Financial Modules</div>
@@ -4362,7 +4301,7 @@ export const Reports: React.FC = () => {
         );
 
       case 'gstr3b':
-        return renderGstr3bReport(true);
+        return renderGstr3bReport();
 
       default:
         return null;
@@ -4463,32 +4402,58 @@ export const Reports: React.FC = () => {
           padding: '15mm',
           boxSizing: 'border-box'
         }}>
-          {/* Header Block */}
-          {activeReport !== 'gstr3b' && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #2F3E33', paddingBottom: '12px', marginBottom: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                {settings.showLogo && settings.logo && (
-                  <img src={settings.logo} alt="Logo" style={{ maxHeight: '90px', objectFit: 'contain', borderRadius: '4px', margin: 0, padding: 0 }} />
-                )}
-                <div>
-                  <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
-                  {settings.showAddress && <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>{getFullAddress(settings)}</p>}
-                  {settings.showGstin && settings.gstin && <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>}
+          {/* Header Block (Unified Invoice PDF Header style) */}
+          <div className="invoice-header-bar">
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+              {settings.showLogo && settings.logo && (
+                <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                  <img 
+                    src={settings.logo} 
+                    alt="Business Logo" 
+                    style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                  />
                 </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <h2 style={{ margin: 0, fontSize: '13px', fontWeight: 700, color: '#555555', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  Financial Audit Report
-                </h2>
-                <p style={{ margin: '4px 0 0 0', fontSize: '10px', color: '#555555' }}>
-                  Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
-                </p>
-                <p style={{ margin: '2px 0 0 0', fontSize: '10px', color: '#555555' }}>
-                  Date Generated: {formatDate(new Date().toISOString())}
-                </p>
+              )}
+              <div>
+                <h2 className="invoice-company-name">{settings.businessName || 'AgriBiz Store'}</h2>
+                {settings.showAddress && (
+                  <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                )}
+                {settings.showContact && (
+                  <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
+                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                    {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
+                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                    {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
+                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                  </p>
+                )}
+                {settings.showGstin && settings.gstin && (
+                  <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                )}
               </div>
             </div>
-          )}
+            <div style={{ textAlign: "right" }}>
+              {activeReport === 'gstr3b' ? (
+                <>
+                  <h1 className="invoice-main-title">GSTR-3B WORKING REPORT</h1>
+                  <p className="invoice-company-sub" style={{ margin: '3px 0 0 0', fontWeight: 600 }}>Return Period: {returnPeriod()}</p>
+                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated On: {generatedOn}</p>
+                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated By: {settings.ownerName || 'Kunal Chaudhari'}</p>
+                </>
+              ) : (
+                <>
+                  <h1 className="invoice-main-title">{activeReport.toUpperCase()} REPORT</h1>
+                  <p className="invoice-company-sub" style={{ margin: '3px 0 0 0' }}>
+                    Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
+                  </p>
+                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>
+                    Date Generated: {formatDate(new Date().toISOString())}
+                  </p>
+                </>
+              )}
+            </div>
+          </div>
 
           {/* Dynamic content */}
           {renderPrintReportContent()}
