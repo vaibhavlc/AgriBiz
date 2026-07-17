@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import {
   Store,
@@ -23,6 +23,22 @@ export const Settings: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  const settingsTabsRef = useRef<HTMLDivElement>(null);
+
+  // Center active settings tab item when activeTab changes
+  useEffect(() => {
+    if (settingsTabsRef.current) {
+      const activeTabElement = settingsTabsRef.current.querySelector('[data-active="true"]');
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+  }, [activeTab]);
 
   // Business Information
   const [businessName, setBusinessName] = useState(settings.businessName || '');
@@ -356,54 +372,44 @@ export const Settings: React.FC = () => {
   return (
     <div style={{ animation: 'fadeIn 0.2s ease-out' }} className="no-print">
       {/* Modern Inner Navigation Tabs */}
-      <div 
-        style={{ 
-          display: 'flex', 
-          gap: '8px', 
-          marginBottom: '24px', 
-          borderBottom: '1px solid var(--border-color)', 
-          paddingBottom: '8px',
-          overflowX: 'auto',
-          whiteSpace: 'nowrap'
-        }}
-      >
+      <div className="settings-tabs-horizontal" ref={settingsTabsRef}>
         <button
           type="button"
           onClick={() => setActiveTab('profile')}
-          className={`btn btn-sm ${activeTab === 'profile' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ border: activeTab === 'profile' ? 'none' : '1px solid var(--border-color)' }}
+          className={`settings-tab-pill ${activeTab === 'profile' ? 'active' : ''}`}
+          data-active={activeTab === 'profile'}
         >
           <Store size={15} /> Business Profile
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('banking')}
-          className={`btn btn-sm ${activeTab === 'banking' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ border: activeTab === 'banking' ? 'none' : '1px solid var(--border-color)' }}
+          className={`settings-tab-pill ${activeTab === 'banking' ? 'active' : ''}`}
+          data-active={activeTab === 'banking'}
         >
           <CreditCard size={15} /> Bank Details
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('branding')}
-          className={`btn btn-sm ${activeTab === 'branding' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ border: activeTab === 'branding' ? 'none' : '1px solid var(--border-color)' }}
+          className={`settings-tab-pill ${activeTab === 'branding' ? 'active' : ''}`}
+          data-active={activeTab === 'branding'}
         >
           <ImageIcon size={15} /> Logos & Signature
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('prefixes')}
-          className={`btn btn-sm ${activeTab === 'prefixes' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ border: activeTab === 'prefixes' ? 'none' : '1px solid var(--border-color)' }}
+          className={`settings-tab-pill ${activeTab === 'prefixes' ? 'active' : ''}`}
+          data-active={activeTab === 'prefixes'}
         >
           <FileText size={15} /> Vouchers & Terms
         </button>
         <button
           type="button"
           onClick={() => setActiveTab('system')}
-          className={`btn btn-sm ${activeTab === 'system' ? 'btn-primary' : 'btn-secondary'}`}
-          style={{ border: activeTab === 'system' ? 'none' : '1px solid var(--border-color)' }}
+          className={`settings-tab-pill ${activeTab === 'system' ? 'active' : ''}`}
+          data-active={activeTab === 'system'}
         >
           <Sliders size={15} /> Print & System
         </button>
@@ -417,9 +423,14 @@ export const Settings: React.FC = () => {
             <>
               {/* Business Info */}
               <div className="card">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <Briefcase size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Business Information</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Briefcase size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Information</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage firm names, PAN/GST registration, and contacts</p>
+                  </div>
                 </div>
 
                 <div className="form-grid-2" style={{ marginTop: '16px' }}>
@@ -528,9 +539,14 @@ export const Settings: React.FC = () => {
 
               {/* Business Address */}
               <div className="card">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <MapPin size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Business Address</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <MapPin size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Address</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Set physical store billing addresses</p>
+                  </div>
                 </div>
 
                 <div className="form-group" style={{ marginTop: '16px' }}>
@@ -616,9 +632,14 @@ export const Settings: React.FC = () => {
           {/* TAB 2: Bank Details */}
           {activeTab === 'banking' && (
             <div className="card animate-fade-in">
-              <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                <CreditCard size={20} style={{ color: 'var(--primary)' }} />
-                <span>Banking & Settlement Details</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <CreditCard size={18} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Banking & Settlement Details</h3>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage bank account and UPI settlement options</p>
+                </div>
               </div>
 
               <div className="form-grid-2" style={{ marginTop: '16px' }}>
@@ -691,9 +712,14 @@ export const Settings: React.FC = () => {
             <>
               {/* Company Logo Card */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <ImageIcon size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Company Logo Branding</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ImageIcon size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Company Logo Branding</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure invoice logo brandings</p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', marginTop: '20px' }}>
@@ -730,9 +756,14 @@ export const Settings: React.FC = () => {
 
               {/* Watermark Logo Branding Card */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <ImageIcon size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Dedicated Bill Watermark Logo</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ImageIcon size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Dedicated Bill Watermark Logo</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure transparent bill background watermarks</p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', marginTop: '20px' }}>
@@ -769,9 +800,14 @@ export const Settings: React.FC = () => {
 
               {/* E-Signature Drawing Card */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <FileText size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Authorized Signatory E-Signature</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Authorized Signatory E-Signature</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Draw or manage electronic signature for invoices</p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
@@ -822,9 +858,14 @@ export const Settings: React.FC = () => {
             <>
               {/* Accounting & Invoice Configurations */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <FileText size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Voucher & Document Prefixes</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Voucher & Document Prefixes</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure voucher prefix naming conventions</p>
+                  </div>
                 </div>
 
                 <div className="form-grid-3" style={{ marginTop: '16px' }}>
@@ -889,9 +930,14 @@ export const Settings: React.FC = () => {
 
               {/* Bill-Type Specific Terms & Conditions */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <FileText size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Terms & Conditions (per Bill Type)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Terms & Conditions (per Bill Type)</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Customize default terms for invoices, quotations, and bills</p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
@@ -944,9 +990,14 @@ export const Settings: React.FC = () => {
             <>
               {/* Color Palette (Theme Selection) */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <Sun size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Color Palette Selection</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sun size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Color Palette Selection</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Choose your color palette mode preference</p>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
                   <button
@@ -972,9 +1023,14 @@ export const Settings: React.FC = () => {
 
               {/* Print Preferences */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <Eye size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Print preferences (Invoice & Slip Templates)</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Eye size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Print preferences</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Customize visibility elements on printed A5 invoices</p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
@@ -1030,9 +1086,14 @@ export const Settings: React.FC = () => {
 
               {/* Warning & Alert Preferences */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <Eye size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Dashboard Alert Settings</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Eye size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Dashboard Alert Settings</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Toggle low stock and safety limit warnings</p>
+                  </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '20px' }}>
@@ -1066,9 +1127,14 @@ export const Settings: React.FC = () => {
 
               {/* Formatting & System Defaults */}
               <div className="card animate-fade-in">
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
-                  <Sliders size={20} style={{ color: 'var(--primary)' }} />
-                  <span>Format Preferences</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Sliders size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Format Preferences</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure system date and local currency formats</p>
+                  </div>
                 </div>
 
                 <div className="form-grid-2" style={{ marginTop: '16px' }}>
@@ -1105,9 +1171,14 @@ export const Settings: React.FC = () => {
 
               {/* Database Maintenance */}
               <div className="card animate-fade-in" style={{ borderColor: 'rgba(239, 68, 68, 0.2)' }}>
-                <div className="card-title" style={{ gap: '8px', justifyContent: 'flex-start', borderBottom: '1px solid rgba(239, 68, 68, 0.2)', paddingBottom: '12px' }}>
-                  <RefreshCw size={20} style={{ color: 'var(--color-danger)' }} />
-                  <span style={{ color: 'var(--color-danger)', fontWeight: 700 }}>Database Maintenance</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid rgba(239, 68, 68, 0.2)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: 'var(--color-danger)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <RefreshCw size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-danger)', margin: 0 }}>Database Maintenance</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Perform database reset and factory default operations</p>
+                  </div>
                 </div>
                 <div style={{ marginTop: '16px' }}>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
@@ -1128,18 +1199,7 @@ export const Settings: React.FC = () => {
           )}
 
           {/* Persistent Action Footer with Inline Success Banner */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '16px',
-            marginTop: '24px',
-            padding: '16px 24px',
-            backgroundColor: 'var(--bg-card)',
-            borderRadius: '12px',
-            border: '1px solid var(--border-color)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
-          }}>
+          <div className="settings-footer-unified">
             <div style={{ flex: 1 }}>
               {savedSuccess && (
                 <div style={{
@@ -1153,7 +1213,9 @@ export const Settings: React.FC = () => {
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: 600,
-                  animation: 'fadeIn 0.2s ease-out'
+                  animation: 'fadeIn 0.2s ease-out',
+                  width: '100%',
+                  justifyContent: 'center'
                 }}>
                   <CheckCircle2 size={16} style={{ color: '#10b981' }} />
                   <span>Preferences saved successfully!</span>
