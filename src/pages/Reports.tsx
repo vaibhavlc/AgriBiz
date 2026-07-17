@@ -729,6 +729,11 @@ export const Reports: React.FC = () => {
   const totalSGSTPaid = totalPurchasesTax / 2;
   const netGSTDue = totalSalesTax - totalPurchasesTax;
 
+  // Additional counts for dues ledgers and ITC
+  const customersWithDues = customers.filter(c => c.outstanding > 0).length;
+  const suppliersWithDues = suppliers.filter(s => s.outstanding > 0).length;
+  const totalGstr2ITC = gstr2B2BList.reduce((acc, x) => acc + x.cgst + x.sgst + x.igst, 0);
+
   // 6. Customer Ledger Report
   const totalCustomers = customers.length;
   const pendingReceivables = customers.reduce((sum, c) => sum + (c.outstanding > 0 ? c.outstanding : 0), 0);
@@ -1687,6 +1692,14 @@ export const Reports: React.FC = () => {
                 </div>
                 <div className="kpi-icon-container blue"><TrendingUp size={20} /></div>
               </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Potential Markup Margin</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalRetailVal - totalAssetVal)}</span>
+                  <span className="kpi-subtext">Valued at sales markup profit</span>
+                </div>
+                <div className="kpi-icon-container emerald"><Briefcase size={20} /></div>
+              </div>
             </div>
 
             {/* Desktop View */}
@@ -1789,6 +1802,14 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             {/* GST Summary metrics */}
             <div style={kpiGridStyle}>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Gross Taxable Turnover</span>
+                  <span className="kpi-value">{formatINR(totalSalesBase)}</span>
+                  <span className="kpi-subtext">Excluding tax value</span>
+                </div>
+                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
+              </div>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
                   <span className="kpi-label">Output GST (Collected)</span>
@@ -1963,6 +1984,14 @@ export const Reports: React.FC = () => {
               </div>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
+                  <span className="kpi-label">Accounts with Dues</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{customersWithDues} accounts</span>
+                  <span className="kpi-subtext">Customers owing payments</span>
+                </div>
+                <div className="kpi-icon-container amber"><Users size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
                   <span className="kpi-label">Total Outstanding Dues</span>
                   <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(pendingReceivables)}</span>
                   <span className="kpi-subtext">Collectable assets</span>
@@ -2078,6 +2107,14 @@ export const Reports: React.FC = () => {
                   <span className="kpi-subtext">Active accounts</span>
                 </div>
                 <div className="kpi-icon-container blue"><Truck size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Accounts with Balance</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{suppliersWithDues} accounts</span>
+                  <span className="kpi-subtext">Suppliers we owe money</span>
+                </div>
+                <div className="kpi-icon-container amber"><Truck size={20} /></div>
               </div>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
@@ -2478,6 +2515,14 @@ export const Reports: React.FC = () => {
               </div>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
+                  <span className="kpi-label">Eligible Input Tax Credit</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalGstr2ITC)}</span>
+                  <span className="kpi-subtext">Claimable CGST+SGST+IGST</span>
+                </div>
+                <div className="kpi-icon-container blue"><Percent size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
                   <span className="kpi-label">Documents Received</span>
                   <span className="kpi-value">{gstr2DocsSummary.total} Invoices</span>
                   <span className="kpi-subtext">Range: {gstr2DocsSummary.from} - {gstr2DocsSummary.to}</span>
@@ -2695,6 +2740,16 @@ export const Reports: React.FC = () => {
                   <span className="kpi-subtext">Tax Offset Applied</span>
                 </div>
                 <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
+                  <span className="kpi-label">Carry Forward Tax Credit</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>
+                    {formatINR(Math.max(0, (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst) - (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)))}
+                  </span>
+                  <span className="kpi-subtext">Excess ITC for next period</span>
+                </div>
+                <div className="kpi-icon-container emerald"><Percent size={20} /></div>
               </div>
             </div>
 
@@ -3092,10 +3147,11 @@ export const Reports: React.FC = () => {
               Stock Inventory Asset Valuation
             </h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
               <div><strong>Total Items:</strong> {totalStockQty} units</div>
               <div><strong>Asset Value (Cost):</strong> {formatINR(totalAssetVal)}</div>
               <div><strong>Retail Value (Potential):</strong> {formatINR(totalRetailVal)}</div>
+              <div><strong>Potential Margin:</strong> {formatINR(totalRetailVal - totalAssetVal)}</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
@@ -3148,7 +3204,8 @@ export const Reports: React.FC = () => {
               GST Tax Ledger Summary
             </h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+              <div><strong>Taxable Turnover:</strong> {formatINR(totalSalesBase)}</div>
               <div><strong>Output GST Collected:</strong> {formatINR(totalSalesTax)}</div>
               <div><strong>Input GST ITC Paid:</strong> {formatINR(totalPurchasesTax)}</div>
               <div><strong>Net GST Payable:</strong> {formatINR(netGSTDue)}</div>
@@ -3202,8 +3259,9 @@ export const Reports: React.FC = () => {
               Customer Outstanding Balances Statement
             </h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
               <div><strong>Registered Customers:</strong> {totalCustomers} accounts</div>
+              <div><strong>Accounts with Dues:</strong> {customersWithDues} accounts</div>
               <div><strong>Accumulated Dues:</strong> {formatINR(pendingReceivables)}</div>
               <div><strong>Average Dues:</strong> {formatINR(averageReceivable)}</div>
             </div>
@@ -3247,8 +3305,9 @@ export const Reports: React.FC = () => {
               Supplier Account Payables Statement
             </h2>
             
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
               <div><strong>Registered Suppliers:</strong> {totalSuppliers} accounts</div>
+              <div><strong>Accounts Owed:</strong> {suppliersWithDues} accounts</div>
               <div><strong>Accumulated Owed:</strong> {formatINR(pendingPayables)}</div>
               <div><strong>Average Payables:</strong> {formatINR(averagePayable)}</div>
             </div>
@@ -3462,9 +3521,10 @@ export const Reports: React.FC = () => {
             </h2>
 
             {/* Overall summary block */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
               <div><strong>B2B Purchases:</strong> {gstr2B2BList.length} Rows</div>
               <div><strong>HSN Categories:</strong> {gstr2HSNList.length} Codes</div>
+              <div><strong>Eligible ITC:</strong> {formatINR(totalGstr2ITC)}</div>
               <div><strong>Docs Received:</strong> {gstr2DocsSummary.total} Bills</div>
             </div>
 
@@ -3595,10 +3655,11 @@ export const Reports: React.FC = () => {
             </h2>
 
             {/* Overall summary block */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
               <div><strong>Outward Tax Liability:</strong> {formatINR(gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)}</div>
-              <div><strong>Eligible Input Tax Credit (ITC):</strong> {formatINR(gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)}</div>
+              <div><strong>Eligible ITC:</strong> {formatINR(gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)}</div>
               <div><strong>Net Cash Payable:</strong> {formatINR(Math.max(0, (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst) - (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)))}</div>
+              <div><strong>Carry Forward Credit:</strong> {formatINR(Math.max(0, (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst) - (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)))}</div>
             </div>
 
             {/* Table 3.1 */}
