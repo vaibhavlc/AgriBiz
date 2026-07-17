@@ -3724,13 +3724,13 @@ export const Reports: React.FC = () => {
         </div>
 
         <div className="filters-group-two" style={{ flexWrap: 'wrap', gap: '8px' }}>
-          <button className="btn btn-secondary" onClick={handleExport}>
+          <button className="btn btn-secondary reports-export-btn" onClick={handleExport}>
             <Download size={16} /> Export CSV
           </button>
-          <button className="btn btn-secondary" onClick={handleDownloadPDF}>
+          <button className="btn btn-secondary reports-save-btn" onClick={handleDownloadPDF}>
             <FileText size={16} /> Save PDF
           </button>
-          <button className="btn btn-primary" onClick={handlePrint}>
+          <button className="btn btn-primary reports-print-btn" onClick={handlePrint}>
             <Printer size={16} /> Print Report
           </button>
         </div>
