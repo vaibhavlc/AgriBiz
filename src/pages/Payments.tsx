@@ -811,7 +811,7 @@ export const Payments: React.FC = () => {
 
       <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}>
         <form onSubmit={handleSavePayment}>
-          <div className="form-group" style={{ marginBottom: '20px' }}>
+          <div className="form-group" style={{ marginBottom: '12px' }}>
             <label className="form-label">Transaction Type *</label>
             <div style={{
               display: 'flex',
@@ -867,7 +867,7 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '20px' }}>
+          <div className="form-group" style={{ marginBottom: '12px' }}>
             <label className="form-label">
               Select {paymentType === 'CustomerReceipt' ? 'Customer' : 'Supplier'} *
             </label>
@@ -952,7 +952,7 @@ export const Payments: React.FC = () => {
             })()}
           </div>
 
-          <div className="form-row" style={{ marginBottom: '16px' }}>
+          <div className="form-row" style={{ marginBottom: '12px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Payment Date *</label>
               <input
@@ -989,7 +989,7 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-row" style={{ marginBottom: '16px' }}>
+          <div className="form-row" style={{ marginBottom: '12px' }}>
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Payment Method *</label>
               <select
@@ -1015,7 +1015,7 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '24px' }}>
+          <div className="form-group" style={{ marginBottom: '16px' }}>
             <label className="form-label">Remarks / Description</label>
             <textarea
               className="form-control"
@@ -1027,7 +1027,7 @@ export const Payments: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }} className="no-print">
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }} className="no-print">
             <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)} style={{ borderRadius: '8px' }}>
               Cancel
             </button>

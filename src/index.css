@@ -3639,7 +3639,8 @@ body.dark-theme .lang-selector-btn:hover {
   }
   .modal-body {
     padding: 16px 18px;
-    max-height: none;
+    max-height: 70vh;
+    overflow-y: auto;
   }
   .modal-footer {
     padding: 12px 18px;
