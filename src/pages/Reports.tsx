@@ -16,6 +16,8 @@ import {
   Users,
   Truck,
   BookOpen,
+  AlertTriangle,
+  CheckCircle2,
 } from 'lucide-react';
 
 export const Reports: React.FC = () => {
@@ -1096,6 +1098,488 @@ export const Reports: React.FC = () => {
     gap: '16px',
     marginBottom: '24px'
   };
+
+  const renderGstr3bReport = (isPrintMode: boolean) => {
+    const businessStateCode = settings.gstin ? settings.gstin.substring(0, 2) : '23';
+
+    const interstateUnregisteredTaxable = gstr1B2CSList
+      .filter(item => !item.pos.startsWith(businessStateCode))
+      .reduce((acc, item) => acc + item.taxable, 0);
+
+    const interstateUnregisteredIGST = gstr1B2CSList
+      .filter(item => !item.pos.startsWith(businessStateCode))
+      .reduce((acc, item) => acc + item.igst, 0);
+
+    const hasInterstateSupplies = interstateUnregisteredTaxable > 0;
+
+    const returnPeriod = () => {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const options: Intl.DateTimeFormatOptions = { month: 'long', year: 'numeric' };
+      if (start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear()) {
+        return start.toLocaleDateString('en-US', options);
+      }
+      return `${start.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}`;
+    };
+
+    const generatedOn = new Date().toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+
+    const outwardTaxTotal = gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst;
+    const itcTotal = gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst;
+    const netGstPayable = Math.max(0, outwardTaxTotal - itcTotal);
+    const remainingItc = Math.max(0, itcTotal - outwardTaxTotal);
+
+    // Difference between Sales Ledger GST and Outward Tax
+    const gstDiff = Math.abs(totalSalesTax - outwardTaxTotal);
+    const isMismatch = gstDiff > 0.05; // allow minimal rounding discrepancy
+
+    // Payment utilization values
+    const igstLiability = gstr3BData.outward.igst;
+    const igstItcUtilized = Math.min(igstLiability, gstr3BData.itc.igst);
+    const igstCashPaid = Math.max(0, igstLiability - igstItcUtilized);
+    const igstRemainingCredit = Math.max(0, gstr3BData.itc.igst - igstLiability);
+
+    const cgstLiability = gstr3BData.outward.cgst;
+    const cgstItcUtilized = Math.min(cgstLiability, gstr3BData.itc.cgst);
+    const cgstCashPaid = Math.max(0, cgstLiability - cgstItcUtilized);
+    const cgstRemainingCredit = Math.max(0, gstr3BData.itc.cgst - cgstLiability);
+
+    const sgstLiability = gstr3BData.outward.sgst;
+    const sgstItcUtilized = Math.min(sgstLiability, gstr3BData.itc.sgst);
+    const sgstCashPaid = Math.max(0, sgstLiability - sgstItcUtilized);
+    const sgstRemainingCredit = Math.max(0, gstr3BData.itc.sgst - sgstLiability);
+
+    const totalLiability = igstLiability + cgstLiability + sgstLiability;
+    const totalItcUtilized = igstItcUtilized + cgstItcUtilized + sgstItcUtilized;
+    const totalCashPaid = igstCashPaid + cgstCashPaid + sgstCashPaid;
+    const totalRemainingCredit = igstRemainingCredit + cgstRemainingCredit + sgstRemainingCredit;
+
+    return (
+      <div className="gstr3b-working-report-wrapper">
+        {/* DOWNLOAD / CSV TRIGGER */}
+        {!isPrintMode && (
+          <div className="no-print" style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginBottom: '20px' }}>
+            <button className="btn btn-secondary btn-sm" onClick={handleExportGstr3B}>
+              <Percent size={14} style={{ marginRight: '6px' }} /> Download GSTR-3B CSV
+            </button>
+          </div>
+        )}
+
+        {/* PAGE HEADER */}
+        <div className="gstr3b-header-container">
+          <div className="gstr3b-header-left">
+            {settings.showLogo && settings.logo && (
+              <img src={settings.logo} alt="Company Logo" style={{ maxHeight: '60px', objectFit: 'contain', width: 'auto', alignSelf: 'flex-start', marginBottom: '8px' }} />
+            )}
+            <h1 style={{ margin: 0, fontSize: '18px', fontWeight: 800, color: '#2f3e33' }}>{settings.businessName || 'AgriBiz Store'}</h1>
+            {settings.showAddress && <div style={{ fontSize: '11px', color: '#5d6b5e' }}>{getFullAddress(settings)}</div>}
+            {settings.showGstin && settings.gstin && <div style={{ fontSize: '11px', color: '#2f3e33', fontWeight: 700 }}>GSTIN: {settings.gstin}</div>}
+            {settings.phone && <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Phone: {settings.phone}</div>}
+            {settings.email && <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Email: {settings.email}</div>}
+          </div>
+          <div className="gstr3b-header-right">
+            <div style={{ fontSize: '10px', fontWeight: 700, color: '#10b981', letterSpacing: '1px', textTransform: 'uppercase' }}>FINANCIAL GST REPORT</div>
+            <h2 style={{ margin: '4px 0 12px 0', fontSize: '16px', fontWeight: 900, color: '#2f3e33', textTransform: 'uppercase', lineHeight: 1.2 }}>GSTR-3B WORKING REPORT</h2>
+            <div style={{ fontSize: '11px', color: '#1a2e1d' }}><strong>Return Period:</strong> {returnPeriod()}</div>
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>From Date:</strong> {formatDate(startDate)}</div>
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>To Date:</strong> {formatDate(endDate)}</div>
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>Generated On:</strong> {generatedOn}</div>
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}><strong>Generated By:</strong> {settings.ownerName || 'Kunal Chaudhari'}</div>
+          </div>
+        </div>
+
+        {/* SUMMARY SECTION */}
+        <div className="gstr3b-summary-grid">
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Total Taxable Sales</div>
+            <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.outward.taxable)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Total GST Liability</div>
+            <div className="gstr3b-summary-card-value" style={{ color: '#be3144' }}>{formatINR(outwardTaxTotal)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Eligible ITC</div>
+            <div className="gstr3b-summary-card-value" style={{ color: '#10b981' }}>{formatINR(itcTotal)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Net GST Payable</div>
+            <div className="gstr3b-summary-card-value" style={{ color: netGstPayable > 0 ? '#be3144' : '#1a2e1d' }}>{formatINR(netGstPayable)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Remaining ITC</div>
+            <div className="gstr3b-summary-card-value" style={{ color: '#10b981' }}>{formatINR(remainingItc)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Total Purchase Value</div>
+            <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.itc.taxable)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Total Sales Value</div>
+            <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.outward.taxable + outwardTaxTotal)}</div>
+          </div>
+          <div className="gstr3b-summary-card">
+            <div className="gstr3b-summary-card-label">Total GST Collected</div>
+            <div className="gstr3b-summary-card-value">{formatINR(totalSalesTax)}</div>
+          </div>
+        </div>
+
+        {/* TABLE 3.1 */}
+        <div className="gstr3b-section-title">Table 3.1: Details of Outward Supplies and Inward Supplies Liable to Reverse Charge</div>
+        <table className="gstr3b-ca-table">
+          <thead>
+            <tr>
+              <th style={{ width: '40%' }}>Nature of Supplies</th>
+              <th style={{ textAlign: 'right' }}>Taxable Value (₹)</th>
+              <th style={{ textAlign: 'right' }}>Integrated Tax (₹)</th>
+              <th style={{ textAlign: 'right' }}>Central Tax (₹)</th>
+              <th style={{ textAlign: 'right' }}>State/UT Tax (₹)</th>
+              <th style={{ textAlign: 'right' }}>Cess (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.taxable).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.igst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.cgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.sgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td>(b) Outward taxable supplies (Zero Rated)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td>(c) Other Outward Supplies (Nil Rated / Exempted)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td>(d) Inward Supplies liable to Reverse Charge</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td>(e) Non GST Outward Supplies</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr className="total-row">
+              <td>Grand Total (Table 3.1)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.taxable).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.igst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.cgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.sgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* TABLE 3.2 */}
+        <div className="gstr3b-section-title">Table 3.2: Details of Inter-State Supplies Made To (Unregistered/Composition/UIN)</div>
+        <table className="gstr3b-ca-table">
+          <thead>
+            <tr>
+              <th style={{ width: '50%' }}>Place of Supply (Recipient State Type)</th>
+              <th style={{ textAlign: 'right' }}>Total Taxable Value (₹)</th>
+              <th style={{ textAlign: 'right' }}>Integrated Tax (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {hasInterstateSupplies ? (
+              <>
+                <tr>
+                  <td>Supplies made to Unregistered Persons</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredTaxable).replace('₹', '')}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredIGST).replace('₹', '')}</td>
+                </tr>
+                <tr>
+                  <td>Supplies made to Composition Taxable Persons</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td>Supplies made to UIN Holders</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                </tr>
+                <tr className="total-row">
+                  <td>Total Interstate Supplies (Table 3.2)</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredTaxable).replace('₹', '')}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredIGST).replace('₹', '')}</td>
+                </tr>
+              </>
+            ) : (
+              <tr>
+                <td colSpan={3} style={{ textAlign: 'center', color: '#5d6b5e', padding: '12px', fontStyle: 'italic' }}>
+                  No Interstate Supplies
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+
+        {/* TABLE 4 */}
+        <div className="gstr3b-section-title">Table 4: Eligible Input Tax Credit (ITC) Details</div>
+        <table className="gstr3b-ca-table">
+          <thead>
+            <tr>
+              <th style={{ width: '40%' }}>Details of Input Tax Credit (ITC)</th>
+              <th style={{ textAlign: 'right' }}>Integrated Tax (₹)</th>
+              <th style={{ textAlign: 'right' }}>Central Tax (₹)</th>
+              <th style={{ textAlign: 'right' }}>State/UT Tax (₹)</th>
+              <th style={{ textAlign: 'right' }}>Cess (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style={{ backgroundColor: '#fafbfa', fontWeight: 'bold' }}>
+              <td colSpan={5} style={{ textTransform: 'uppercase', fontSize: '9px', color: '#2f3e33' }}>(A) ITC Available (whether in full or part)</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px' }}>1. Import of goods</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px' }}>2. Import of services</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px' }}>3. Inward supplies liable to reverse charge (other than 1 & 2 above)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px' }}>4. Inward supplies from ISD</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px', fontWeight: 600 }}>5. All other ITC (Registered purchases)</td>
+              <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr style={{ backgroundColor: '#fafbfa', fontWeight: 'bold' }}>
+              <td colSpan={5} style={{ textTransform: 'uppercase', fontSize: '9px', color: '#2f3e33' }}>(B) ITC Reversed</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px' }}>1. As per rules 42 & 43 of CGST Rules</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td style={{ paddingLeft: '16px' }}>2. Others</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr className="total-row">
+              <td>(C) Net ITC Available (A - B)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* TABLE 5 */}
+        <div className="gstr3b-section-title">Table 5: Values of Exempt, Nil Rated and Non GST Inward Supplies</div>
+        <table className="gstr3b-ca-table">
+          <thead>
+            <tr>
+              <th style={{ width: '50%' }}>Nature of Inward Supplies</th>
+              <th style={{ textAlign: 'right' }}>Inter-State Supplies (₹)</th>
+              <th style={{ textAlign: 'right' }}>Intra-State Supplies (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>From a supplier under composition scheme, Exempt and Nil rated inward supplies</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr>
+              <td>Non GST inward supplies</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* TAX PAYMENT SUMMARY */}
+        <div className="gstr3b-section-title">Tax Payment and Settlement Ledger</div>
+        <table className="gstr3b-ca-table">
+          <thead>
+            <tr>
+              <th>Tax Component</th>
+              <th style={{ textAlign: 'right' }}>Tax Liability (₹)</th>
+              <th style={{ textAlign: 'right' }}>ITC Utilized (₹)</th>
+              <th style={{ textAlign: 'right' }}>Paid in Cash (₹)</th>
+              <th style={{ textAlign: 'right' }}>Balance Credit (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Integrated Tax (IGST)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(igstLiability).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(igstItcUtilized).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: igstCashPaid > 0 ? '#be3144' : 'inherit' }}>{formatINR(igstCashPaid).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(igstRemainingCredit).replace('₹', '')}</td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Central Tax (CGST)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(cgstLiability).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(cgstItcUtilized).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: cgstCashPaid > 0 ? '#be3144' : 'inherit' }}>{formatINR(cgstCashPaid).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(cgstRemainingCredit).replace('₹', '')}</td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>State/UT Tax (SGST)</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(sgstLiability).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(sgstItcUtilized).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: sgstCashPaid > 0 ? '#be3144' : 'inherit' }}>{formatINR(sgstCashPaid).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(sgstRemainingCredit).replace('₹', '')}</td>
+            </tr>
+            <tr>
+              <td style={{ fontWeight: 600 }}>Cess</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+            </tr>
+            <tr className="total-row">
+              <td>Total Settlement Summary</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalLiability).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalItcUtilized).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalCashPaid).replace('₹', '')}</td>
+              <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalRemainingCredit).replace('₹', '')}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        {/* GST RECONCILIATION SUMMARY */}
+        <div className="gstr3b-section-title">GST Reconciliation Audit Summary</div>
+        <div className="gstr3b-reconciliation-container">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', fontSize: '12px' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e9e0' }}>
+                <span>Total Book Sales Value:</span>
+                <strong style={{ fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.taxable)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e9e0' }}>
+                <span>Total Book Purchase Value:</span>
+                <strong style={{ fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.taxable)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e9e0' }}>
+                <span>Output GST Liability (GSTR-3B):</span>
+                <strong style={{ fontFamily: 'monospace', color: '#be3144' }}>{formatINR(outwardTaxTotal)}</strong>
+              </div>
+            </div>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e9e0' }}>
+                <span>Input GST Credit (ITC Available):</span>
+                <strong style={{ fontFamily: 'monospace', color: '#10b981' }}>{formatINR(itcTotal)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e9e0' }}>
+                <span>Net GST Cash Liability:</span>
+                <strong style={{ fontFamily: 'monospace' }}>{formatINR(netGstPayable)}</strong>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 0', borderBottom: '1px solid #e2e9e0' }}>
+                <span>Carry Forward Tax Credit:</span>
+                <strong style={{ fontFamily: 'monospace', color: '#10b981' }}>{formatINR(remainingItc)}</strong>
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px', borderRadius: '6px', backgroundColor: isMismatch ? '#fffbeb' : '#f0fdf4', border: isMismatch ? '1px solid #fde68a' : '1px solid #bbf7d0' }}>
+            {isMismatch ? (
+              <>
+                <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
+                <span style={{ fontSize: '11px', color: '#b45309', fontWeight: 600 }}>
+                  WARNING: A discrepancy of {formatINR(gstDiff)} detected between sales invoice register ({formatINR(totalSalesTax)}) and outward tax supplies ({formatINR(outwardTaxTotal)}). Please verify tax configurations.
+                </span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
+                <span style={{ fontSize: '11px', color: '#15803d', fontWeight: 600 }}>
+                  Ledger Reconciled Perfectly: Outward tax matches Sales Invoice Register perfectly. No discrepancy found.
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* REPORT FOOTER */}
+        <div className="gstr3b-footer-container">
+          <div className="gstr3b-signature-box">
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Prepared By:</div>
+            <div className="gstr3b-signature-line"></div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: '#1a2e1d', marginTop: '6px' }}>Accountant / CA Staff</div>
+          </div>
+          <div className="gstr3b-signature-box">
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Verified By:</div>
+            <div className="gstr3b-signature-line"></div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: '#1a2e1d', marginTop: '6px' }}>Chartered Accountant</div>
+          </div>
+          <div className="gstr3b-signature-box">
+            <div style={{ fontSize: '11px', color: '#5d6b5e' }}>Authorized Signatory:</div>
+            {settings.signature ? (
+              <img src={settings.signature} alt="E-Signature" style={{ maxHeight: '40px', objectFit: 'contain', margin: '6px 0', mixBlendMode: 'multiply' }} />
+            ) : (
+              <div className="gstr3b-signature-line"></div>
+            )}
+            <div style={{ fontSize: '11px', fontWeight: 600, color: '#1a2e1d', marginTop: '6px' }}>Owner Signature</div>
+          </div>
+        </div>
+
+        <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '9px', color: '#5d6b5e', borderTop: '1px dashed #e2e9e0', paddingTop: '16px' }}>
+          <div>System Generated Report • AgriBiz Financial Modules</div>
+          <div style={{ marginTop: '4px', fontStyle: 'italic', maxWidth: '600px', margin: '4px auto 0 auto' }}>
+            Disclaimer: This report is generated from accounting entries and is intended for GST reconciliation and Chartered Accountant working purposes. It is not a substitute for the official GSTR-3B return filed on the GST Portal.
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+
 
   const renderReportContent = () => {
     switch (activeReport) {
@@ -2711,213 +3195,7 @@ export const Reports: React.FC = () => {
         );
 
       case 'gstr3b':
-        return (
-          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
-            {/* GSTR-3B Header Dashboard Cards */}
-            <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Outward Tax Liability</span>
-                  <span className="kpi-value">{formatINR(gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)}</span>
-                  <span className="kpi-subtext">Taxable Outward: {formatINR(gstr3BData.outward.taxable)}</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingUp size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Eligible Input Tax Credit (ITC)</span>
-                  <span className="kpi-value">{formatINR(gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)}</span>
-                  <span className="kpi-subtext">Taxable Inward: {formatINR(gstr3BData.itc.taxable)}</span>
-                </div>
-                <div className="kpi-icon-container emerald"><TrendingDown size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Net GST Cash Liability</span>
-                  <span className="kpi-value">
-                    {formatINR(Math.max(0, (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst) - (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)))}
-                  </span>
-                  <span className="kpi-subtext">Tax Offset Applied</span>
-                </div>
-                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Carry Forward Tax Credit</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>
-                    {formatINR(Math.max(0, (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst) - (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)))}
-                  </span>
-                  <span className="kpi-subtext">Excess ITC for next period</span>
-                </div>
-                <div className="kpi-icon-container emerald"><Percent size={20} /></div>
-              </div>
-            </div>
-
-            {/* GSTR-3B Main Section Panels */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-              {/* Table 3.1 */}
-              <div className="card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Table 3.1: Details of Outward Supplies and Inward Supplies Liable to Reverse Charge
-                    </h3>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Consolidated summary of sales and reverse charge liabilities for self-declaration.
-                    </p>
-                  </div>
-                  <button className="btn btn-secondary btn-sm" onClick={handleExportGstr3B}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download GSTR-3B CSV
-                  </button>
-                </div>
-
-                <div className="table-wrapper">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Nature of Supplies</th>
-                        <th className="align-right">Total Taxable Value (₹)</th>
-                        <th className="align-right">Integrated Tax (₹)</th>
-                        <th className="align-right">Central Tax (₹)</th>
-                        <th className="align-right">State/UT Tax (₹)</th>
-                        <th className="align-right">Cess (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
-                        <td className="align-right" style={{ fontWeight: 600 }}>{formatINR(gstr3BData.outward.taxable).replace('₹', '')}</td>
-                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(gstr3BData.outward.igst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(gstr3BData.outward.cgst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>{formatINR(gstr3BData.outward.sgst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ color: 'var(--text-secondary)' }}>0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>(b) Outward taxable supplies (zero rated)</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>(c) Other outward supplies (Nil rated, exempted)</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>(d) Inward supplies (liable to reverse charge)</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ fontWeight: 600 }}>(e) Non-GST outward supplies</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Table 4 */}
-              <div className="card" style={{ padding: '20px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      Table 4: Eligible Input Tax Credit (ITC)
-                    </h3>
-                    <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Consolidated summary of input credits available to offset your tax liability.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="table-wrapper">
-                  <table className="data-table">
-                    <thead>
-                      <tr>
-                        <th>Details of Input Tax Credit</th>
-                        <th className="align-right">Integrated Tax (₹)</th>
-                        <th className="align-right">Central Tax (₹)</th>
-                        <th className="align-right">State/UT Tax (₹)</th>
-                        <th className="align-right">Cess (₹)</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      <tr style={{ backgroundColor: 'var(--bg-app)', fontWeight: 700 }}>
-                        <td colSpan={5} style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>(A) ITC Available (whether in full or part)</td>
-                      </tr>
-                      <tr>
-                        <td style={{ paddingLeft: '20px' }}>1. Import of goods</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ paddingLeft: '20px' }}>2. Import of services</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ paddingLeft: '20px' }}>3. Inward supplies liable to reverse charge</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr>
-                        <td style={{ paddingLeft: '20px' }}>4. Inward supplies from ISD</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr style={{ fontWeight: 600 }}>
-                        <td style={{ paddingLeft: '20px' }}>5. All other ITC (Registered purchases)</td>
-                        <td className="align-right" style={{ color: 'var(--text-primary)' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ color: 'var(--text-primary)' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ color: 'var(--text-primary)' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'var(--bg-app)', fontWeight: 700 }}>
-                        <td colSpan={5} style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-secondary)' }}>(B) ITC Reversed</td>
-                      </tr>
-                      <tr>
-                        <td style={{ paddingLeft: '20px' }}>1. As per rules 42 & 43 of CGST Rules</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                      <tr style={{ backgroundColor: 'var(--bg-app)', fontWeight: 700 }}>
-                        <td style={{ fontWeight: 700 }}>(C) Net ITC Available (A - B)</td>
-                        <td className="align-right" style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
-                        <td className="align-right" style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
-                        <td className="align-right">0.00</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-            </div>
-          </div>
-        );
+        return renderGstr3bReport(false);
 
       default:
         return null;
@@ -3648,122 +3926,7 @@ export const Reports: React.FC = () => {
         );
 
       case 'gstr3b':
-        return (
-          <div>
-            <h2 style={{ textAlign: 'center', fontSize: '14px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33', borderBottom: '1px solid #E2E9E0', paddingBottom: '6px' }}>
-              GSTR-3B Self-Declaration Consolidated Return (CA-Ready)
-            </h2>
-
-            {/* Overall summary block */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
-              <div><strong>Outward Tax Liability:</strong> {formatINR(gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)}</div>
-              <div><strong>Eligible ITC:</strong> {formatINR(gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)}</div>
-              <div><strong>Net Cash Payable:</strong> {formatINR(Math.max(0, (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst) - (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst)))}</div>
-              <div><strong>Carry Forward Credit:</strong> {formatINR(Math.max(0, (gstr3BData.itc.cgst + gstr3BData.itc.sgst + gstr3BData.itc.igst) - (gstr3BData.outward.cgst + gstr3BData.outward.sgst + gstr3BData.outward.igst)))}</div>
-            </div>
-
-            {/* Table 3.1 */}
-            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              Table 3.1: Outward Supplies & Reverse Charge Liability
-            </h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Nature of Supplies</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Total Taxable Value (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Cess (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.outward.taxable.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{gstr3BData.outward.igst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{gstr3BData.outward.cgst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{gstr3BData.outward.sgst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(b) Outward taxable supplies (zero rated)</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(c) Other outward supplies (Nil rated, exempted)</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(d) Inward supplies (liable to reverse charge)</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0' }}>(e) Non-GST outward supplies</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-              </tbody>
-            </table>
-
-            {/* Table 4 */}
-            <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              Table 4: Eligible Input Tax Credit (ITC)
-            </h3>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Details of ITC</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Integrated Tax (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Central Tax (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>State/UT Tax (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Cess (₹)</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ backgroundColor: '#F9FAF9', fontWeight: 'bold' }}>
-                  <td colSpan={5} style={{ padding: '4px 6px', border: '1px solid #C8D3C5' }}>(A) ITC Available</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '4px 6px', paddingLeft: '15px', border: '1px solid #E2E9E0' }}>1. Import of goods</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '4px 6px', paddingLeft: '15px', border: '1px solid #E2E9E0' }}>5. All other ITC (Registered purchases)</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.igst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.cgst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.sgst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'right' }}>0.00</td>
-                </tr>
-                <tr style={{ backgroundColor: '#F9FAF9', fontWeight: 'bold' }}>
-                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5' }}>(C) Net ITC Available (A - B)</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.igst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.cgst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right', fontWeight: 'bold' }}>{gstr3BData.itc.sgst.toFixed(2)}</td>
-                  <td style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>0.00</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        );
+        return renderGstr3bReport(true);
 
       default:
         return null;

@@ -5905,3 +5905,202 @@ body.dark-theme .lang-selector-btn:hover {
     width: 100% !important;
   }
 }
+
+/* CA-Style GSTR-3B Working Report CSS styling */
+.gstr3b-working-report-wrapper {
+  background-color: #ffffff;
+  color: #1a2e1d;
+  font-family: 'Inter', -apple-system, sans-serif;
+  padding: 30px;
+  border-radius: 12px;
+  border: 1px solid #e2e9e0;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.015);
+}
+
+.gstr3b-header-container {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 2px solid #2f3e33;
+  padding-bottom: 20px;
+  margin-bottom: 24px;
+  gap: 20px;
+}
+
+.gstr3b-header-left {
+  flex: 1.5;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gstr3b-header-right {
+  flex: 1;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.gstr3b-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.gstr3b-summary-card {
+  background-color: #f7f9f6;
+  border: 1px solid #c8d3c5;
+  border-radius: 6px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 76px;
+}
+
+.gstr3b-summary-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: #5d6b5e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+}
+
+.gstr3b-summary-card-value {
+  font-size: 15px;
+  font-weight: 800;
+  color: #1a2e1d;
+  font-family: 'monospace';
+  margin-top: 4px;
+}
+
+.gstr3b-ca-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+  font-size: 11px;
+}
+
+.gstr3b-ca-table th {
+  background-color: #f2f5f2;
+  color: #2f3e33;
+  font-weight: 700;
+  border: 1px solid #c8d3c5;
+  padding: 6px 8px;
+  text-align: left;
+  text-transform: uppercase;
+  font-size: 10px;
+}
+
+.gstr3b-ca-table td {
+  border: 1px solid #e2e9e0;
+  padding: 6px 8px;
+  color: #1a2e1d;
+}
+
+.gstr3b-ca-table tr.total-row {
+  background-color: #f7f9f6;
+  font-weight: 700;
+}
+
+.gstr3b-ca-table tr.total-row td {
+  border-top: 1.5px solid #2f3e33;
+  border-bottom: 1.5px solid #2f3e33;
+}
+
+.gstr3b-section-title {
+  font-size: 12px;
+  font-weight: 800;
+  color: #2f3e33;
+  text-transform: uppercase;
+  border-left: 3px solid #10b981;
+  padding-left: 8px;
+  margin: 20px 0 10px 0;
+  letter-spacing: 0.5px;
+}
+
+.gstr3b-reconciliation-container {
+  background-color: #fcfdfc;
+  border: 1px dashed #c8d3c5;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 24px;
+}
+
+.gstr3b-footer-container {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 36px;
+  border-top: 1px solid #e2e9e0;
+  padding-top: 24px;
+  gap: 20px;
+}
+
+.gstr3b-signature-box {
+  flex: 1;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.gstr3b-signature-line {
+  width: 120px;
+  height: 1px;
+  background-color: #c8d3c5;
+  margin-top: 30px;
+}
+
+@media (max-width: 991px) {
+  .gstr3b-summary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 576px) {
+  .gstr3b-header-container {
+    flex-direction: column;
+    gap: 16px;
+  }
+  .gstr3b-header-right {
+    text-align: left;
+  }
+  .gstr3b-summary-grid {
+    grid-template-columns: 1fr;
+  }
+  .gstr3b-footer-container {
+    flex-direction: column;
+    gap: 24px;
+  }
+}
+
+/* Print Specific Rules for GSTR-3B CA-Report */
+@media print {
+  .gstr3b-working-report-wrapper {
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+  .gstr3b-summary-grid {
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 8px !important;
+  }
+  .gstr3b-ca-table th {
+    background-color: #f2f5f2 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .gstr3b-ca-table tr.total-row {
+    background-color: #f7f9f6 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .gstr3b-reconciliation-container {
+    background-color: #fcfdfc !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
