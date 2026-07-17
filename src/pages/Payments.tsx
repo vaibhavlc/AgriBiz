@@ -811,27 +811,13 @@ export const Payments: React.FC = () => {
 
       <Modal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}>
         <form onSubmit={handleSavePayment}>
-          <div className="form-group" style={{ marginBottom: '12px' }}>
+          <div className="form-group">
             <label className="form-label">Transaction Type *</label>
-            <div style={{
-              display: 'flex',
-              backgroundColor: 'var(--bg-app)',
-              padding: '4px',
-              borderRadius: '10px',
-              border: '1.5px solid var(--border-color)',
-              gap: '4px',
-              width: '100%',
-            }}>
+            <div className="payment-type-toggle">
               <button
                 type="button"
+                className="payment-type-btn"
                 style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   backgroundColor: paymentType === 'CustomerReceipt' ? 'rgba(16,185,129,0.15)' : 'transparent',
                   color: paymentType === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--text-secondary)',
                   border: paymentType === 'CustomerReceipt' ? '1px solid var(--color-success-dark)' : '1px solid transparent',
@@ -845,14 +831,8 @@ export const Payments: React.FC = () => {
               </button>
               <button
                 type="button"
+                className="payment-type-btn"
                 style={{
-                  flex: 1,
-                  padding: '10px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                   backgroundColor: paymentType === 'SupplierPayment' ? 'rgba(239,68,68,0.12)' : 'transparent',
                   color: paymentType === 'SupplierPayment' ? 'var(--color-danger-dark)' : 'var(--text-secondary)',
                   border: paymentType === 'SupplierPayment' ? '1px solid var(--color-danger-dark)' : '1px solid transparent',
@@ -867,7 +847,7 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '12px' }}>
+          <div className="form-group">
             <label className="form-label">
               Select {paymentType === 'CustomerReceipt' ? 'Customer' : 'Supplier'} *
             </label>
@@ -912,47 +892,26 @@ export const Payments: React.FC = () => {
               const labelText = paymentType === 'CustomerReceipt' ? 'Customer Dues' : 'Balance We Owe';
 
               return (
-                <div style={{
-                  marginTop: '12px',
-                  padding: '12px 18px',
-                  borderRadius: '12px',
-                  background: cardColor,
-                  border: `1px solid ${borderColor}`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  animation: 'fadeIn 0.2s ease-out',
-                }}>
+                <div className="selected-contact-card" style={{ background: cardColor, borderColor: borderColor } as React.CSSProperties}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '36px',
-                      height: '36px',
-                      borderRadius: '50%',
-                      background: borderColor,
-                      color: '#fff',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontWeight: 800,
-                      fontSize: '14px',
-                    }}>
+                    <div className="selected-contact-avatar" style={{ background: borderColor }}>
                       {selectedContact.name.charAt(0).toUpperCase()}
                     </div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{selectedContact.name}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{selectedContact.phone}</div>
+                      <div className="selected-contact-name">{selectedContact.name}</div>
+                      <div className="selected-contact-phone">{selectedContact.phone}</div>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{labelText}</div>
-                    <div style={{ fontSize: '15px', fontWeight: 800, color: textColor }}>{formatINR(selectedContact.outstanding)}</div>
+                  <div className="selected-contact-balance-block">
+                    <div className="selected-contact-balance-label">{labelText}</div>
+                    <div className="selected-contact-balance-val" style={{ color: textColor }}>{formatINR(selectedContact.outstanding)}</div>
                   </div>
                 </div>
               );
             })()}
           </div>
 
-          <div className="form-row" style={{ marginBottom: '12px' }}>
+          <div className="form-row">
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Payment Date *</label>
               <input
@@ -989,7 +948,7 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-row" style={{ marginBottom: '12px' }}>
+          <div className="form-row">
             <div className="form-group" style={{ margin: 0 }}>
               <label className="form-label">Payment Method *</label>
               <select
@@ -1015,7 +974,7 @@ export const Payments: React.FC = () => {
             </div>
           </div>
 
-          <div className="form-group" style={{ marginBottom: '16px' }}>
+          <div className="form-group">
             <label className="form-label">Remarks / Description</label>
             <textarea
               className="form-control"
@@ -1027,13 +986,12 @@ export const Payments: React.FC = () => {
             />
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }} className="no-print">
+          <div className="modal-form-actions no-print">
             <button type="button" className="btn btn-secondary" onClick={() => setIsFormOpen(false)} style={{ borderRadius: '8px' }}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" style={{
               borderRadius: '8px',
-              padding: '10px 20px',
               boxShadow: '0 4px 14px rgba(16,185,129,0.2)',
               fontWeight: 700,
             }}>

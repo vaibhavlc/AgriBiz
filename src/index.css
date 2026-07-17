@@ -5587,3 +5587,165 @@ body.dark-theme .lang-selector-btn:hover {
     width: auto;
   }
 }
+
+/* ── Compact Modal Forms & Elements ── */
+.payment-type-toggle {
+  display: flex;
+  background-color: var(--bg-app);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1.5px solid var(--border-color);
+  gap: 4px;
+  width: 100%;
+}
+
+.payment-type-btn {
+  flex: 1;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.selected-contact-card {
+  margin-top: 12px;
+  padding: 12px 18px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.selected-contact-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.selected-contact-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.selected-contact-phone {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.selected-contact-balance-block {
+  text-align: right;
+}
+
+.selected-contact-balance-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.selected-contact-balance-val {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.modal-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.modal-form-actions .btn {
+  padding: 10px 20px;
+}
+
+@media (max-width: 576px) {
+  /* Make modal bodies more compact */
+  .modal-body {
+    padding: 12px 14px !important;
+  }
+  
+  /* Reduce modal form spacings */
+  .modal-body .form-control {
+    padding: 8px 10px !important;
+    font-size: 12.5px !important;
+  }
+  
+  .modal-body .form-label {
+    font-size: 11.5px !important;
+    margin-bottom: 3px !important;
+  }
+  
+  .modal-body .form-group {
+    margin-bottom: 8px !important;
+  }
+  
+  .modal-body .form-row {
+    gap: 8px !important;
+  }
+  
+  /* Type Toggle compact */
+  .payment-type-toggle {
+    padding: 2px !important;
+    border-radius: 8px !important;
+  }
+  
+  .payment-type-btn {
+    padding: 6px !important;
+    font-size: 11.5px !important;
+    border-radius: 6px !important;
+  }
+  
+  /* Selected Contact Card compact */
+  .selected-contact-card {
+    margin-top: 8px !important;
+    padding: 8px 12px !important;
+    border-radius: 8px !important;
+  }
+  
+  .selected-contact-avatar {
+    display: none !important;
+  }
+  
+  .selected-contact-name {
+    font-size: 12.5px !important;
+  }
+  
+  .selected-contact-phone {
+    font-size: 10px !important;
+  }
+  
+  .selected-contact-balance-label {
+    font-size: 9px !important;
+  }
+  
+  .selected-contact-balance-val {
+    font-size: 13.5px !important;
+  }
+  
+  /* Modal Action buttons compact */
+  .modal-form-actions {
+    margin-top: 12px !important;
+    gap: 8px !important;
+  }
+  
+  .modal-form-actions button,
+  .modal-form-actions .btn {
+    padding: 8px 16px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+    height: auto !important;
+    width: auto !important;
+  }
+}
