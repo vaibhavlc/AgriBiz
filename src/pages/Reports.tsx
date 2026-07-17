@@ -3695,13 +3695,15 @@ export const Reports: React.FC = () => {
       <div className="filters-row-unified no-print">
         <div className="filters-group-one" style={{ flexWrap: 'wrap', gap: '8px' }}>
           {/* Preset Ranges */}
-          <select className="filter-select" style={{ minWidth: '160px' }} value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-            <option value="All">All Historical Records</option>
-            <option value="Custom">Custom Date Range</option>
-          </select>
+          <div className="reports-preset-select-wrapper" style={{ minWidth: '160px' }}>
+            <select className="filter-select" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
+              <option value="All">All Historical Records</option>
+              <option value="Custom">Custom Date Range</option>
+            </select>
+          </div>
 
           {dateRange === 'Custom' && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', flex: '1 1 auto', minWidth: '240px' }}>
+            <div className="reports-custom-date-wrapper" style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'nowrap', flex: '1 1 auto', minWidth: '240px' }}>
               <input
                 type="date"
                 className="filter-select"

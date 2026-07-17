@@ -5749,3 +5749,65 @@ body.dark-theme .lang-selector-btn:hover {
     width: auto !important;
   }
 }
+
+/* Reports preset select and date wrapper styling */
+.reports-preset-select-wrapper {
+  display: block;
+  position: relative;
+}
+.reports-preset-select-wrapper select {
+  width: 100%;
+}
+.reports-custom-date-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+@media (max-width: 640px) {
+  .reports-preset-select-wrapper {
+    width: 100% !important;
+    height: 40px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative !important;
+  }
+
+  .reports-preset-select-wrapper select {
+    width: 100% !important;
+    height: 40px !important;
+    line-height: 40px !important;
+    box-sizing: border-box !important;
+    padding: 0 28px 0 12px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .reports-custom-date-wrapper {
+    grid-column: span 2 !important;
+    width: 100% !important;
+    display: flex !important;
+    gap: 8px !important;
+    align-items: center !important;
+  }
+
+  .reports-custom-date-wrapper input {
+    height: 40px !important;
+    line-height: 40px !important;
+    box-sizing: border-box !important;
+    padding: 0 12px !important;
+    font-size: 12px !important;
+    border-radius: 10px !important;
+    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    width: 100% !important;
+  }
+}
