@@ -4414,13 +4414,13 @@ export const Reports: React.FC = () => {
           <div className="invoice-header-bar" style={{ position: 'relative', zIndex: 1 }}>
             {activeReport === 'gstr3b' ? (
               <div style={{ display: "flex", flexDirection: "column" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", height: "65px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", height: "90px" }}>
                   {settings.showLogo && settings.logo && (
                     <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
                       <img 
                         src={settings.logo} 
                         alt="Business Logo" 
-                        style={{ height: "65px", width: "auto", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                        style={{ height: "90px", width: "auto", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
                       />
                     </div>
                   )}
