@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
@@ -48,6 +48,22 @@ export const Reports: React.FC = () => {
     }
     setTimeout(() => setToast(null), 3500);
   };
+
+  const reportTabsRef = useRef<HTMLDivElement>(null);
+
+  // Center active report tab item when activeReport changes
+  useEffect(() => {
+    if (reportTabsRef.current) {
+      const activeTabElement = reportTabsRef.current.querySelector('[data-active="true"]');
+      if (activeTabElement) {
+        activeTabElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'center'
+        });
+      }
+    }
+  }, [activeReport]);
   const filterByDate = (dateStr: string) => {
     if (dateRange === 'All') return true;
     const date = new Date(dateStr).getTime();
@@ -3748,11 +3764,12 @@ export const Reports: React.FC = () => {
       {/* Interactive dashboard area (hidden during print) */}
       <div className="no-print">
         {/* Horizontal Tabs selector */}
-        <div className="report-tabs-horizontal">
+        <div className="report-tabs-horizontal" ref={reportTabsRef}>
           {reportTabs.map((tab) => (
             <div
               key={tab.id}
               className={`report-tab-pill ${activeReport === tab.id ? 'active' : ''}`}
+              data-active={activeReport === tab.id}
               onClick={() => setActiveReport(tab.id as any)}
             >
               {tab.icon}
