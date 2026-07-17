@@ -1100,6 +1100,14 @@ export const Reports: React.FC = () => {
               </div>
               <div className="kpi-card" style={{ cursor: 'default' }}>
                 <div className="kpi-info">
+                  <span className="kpi-label">Total GST Collected</span>
+                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{formatINR(totalSalesTax)}</span>
+                  <span className="kpi-subtext">GST tax liability</span>
+                </div>
+                <div className="kpi-icon-container emerald"><Percent size={20} /></div>
+              </div>
+              <div className="kpi-card" style={{ cursor: 'default' }}>
+                <div className="kpi-info">
                   <span className="kpi-label">Total Invoice Value</span>
                   <span className="kpi-value" style={{ color: 'var(--primary-dark)' }}>{formatINR(totalSalesVal)}</span>
                   <span className="kpi-subtext">Inclusive of GST</span>
@@ -2848,9 +2856,10 @@ export const Reports: React.FC = () => {
             </h2>
             
             {/* Summary metrics block */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
               <div><strong>Invoices count:</strong> {filteredInvoices.length} bills</div>
               <div><strong>Taxable Amount:</strong> {formatINR(totalSalesBase)}</div>
+              <div><strong>GST Tax Collected:</strong> {formatINR(totalSalesTax)}</div>
               <div><strong>Total Sales (Inc. GST):</strong> {formatINR(totalSalesVal)}</div>
             </div>
 
