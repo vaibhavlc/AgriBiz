@@ -1054,12 +1054,6 @@ export const Reports: React.FC = () => {
       return;
     }
 
-    if (activeReport === 'gstr3b') {
-      showToast('Opening print dialog. Please select "Save as PDF" to download a searchable, selectable text-based PDF.', 'info');
-      window.print();
-      return;
-    }
-
     showToast('Generating PDF, please wait...', 'info');
 
     // Temporarily make element visible for html2canvas to capture
@@ -1067,7 +1061,7 @@ export const Reports: React.FC = () => {
     wrapper.style.zIndex = '9999';
 
     try {
-      const isGstr = activeReport.startsWith('gstr');
+      const isGstr = activeReport.startsWith('gstr') && activeReport !== 'gstr3b';
       const orientation = isGstr ? 'landscape' : 'portrait';
       const pageW = isGstr ? 297 : 210;
       const pageH = isGstr ? 210 : 297;
