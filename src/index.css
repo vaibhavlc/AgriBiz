@@ -1481,6 +1481,10 @@ body.dark-theme .prem-live-dot {
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
   cursor: pointer;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .kpi-card:hover {
@@ -1493,6 +1497,10 @@ body.dark-theme .prem-live-dot {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
+  flex: 1;
+  width: 100%;
+  overflow: hidden;
 }
 
 .kpi-label {
@@ -2733,12 +2741,19 @@ body.dark-theme .lang-selector-btn:hover {
   .kpi-card {
     padding: 12px 14px !important;
     min-height: 90px;
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   .kpi-value {
-    font-size: 17px !important;
+    font-size: clamp(9px, 3.2vw, 15px) !important;
     letter-spacing: -0.2px !important;
     margin-top: 2px;
+    word-break: break-all !important;
+    overflow-wrap: anywhere !important;
+    white-space: normal !important;
   }
 
   .kpi-label {
@@ -6071,6 +6086,17 @@ body.dark-theme .lang-selector-btn:hover {
 @media (max-width: 991px) {
   .gstr3b-summary-grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .gstr3b-summary-card {
+    min-width: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .gstr3b-summary-card-value {
+    font-size: clamp(9px, 3.2vw, 14px) !important;
+    word-break: break-all !important;
+    white-space: normal !important;
   }
 }
 
