@@ -47,7 +47,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
   "Kerala": ["Alappuzha", "Ernakulam", "Idukki", "Kannur", "Kasaragod", "Kollam", "Kottayam", "Kozhikode", "Malappuram", "Waynad", "Palakkad", "Pathanamthitta", "Thiruvananthapuram", "Thrissur"],
   "Ladakh": ["Kargil", "Leh"],
   "Lakshadweep": ["Lakshadweep"],
-  "Madhya Pradesh": ["Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior", "Harda", "Hoshangabad", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandla", "Mandsaur", "Morena", "Narsinghpur", "Neemuch", "Niwari", "Panna", "Raisen", "Rajgarh", "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri", "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"],
+  "Madhya Pradesh": ["Agar Malwa", "Alirajpur", "Anuppur", "Ashoknagar", "Balaghat", "Barwani", "Betul", "Bhind", "Bhopal", "Burhanpur", "Chhatarpur", "Chhindwara", "Damoh", "Datia", "Dewas", "Dhar", "Dindori", "Guna", "Gwalior", "Harda", "Hoshangabad", "Hoshangabad (Narmadapuram)", "Narmadapuram", "Indore", "Jabalpur", "Jhabua", "Katni", "Khandwa", "Khargone", "Mandla", "Mandsaur", "Morena", "Narsinghpur", "Neemuch", "Niwari", "Panna", "Raisen", "Rajgarh", "Ratlam", "Rewa", "Sagar", "Satna", "Sehore", "Seoni", "Shahdol", "Shajapur", "Sheopur", "Shivpuri", "Sidhi", "Singrauli", "Tikamgarh", "Ujjain", "Umaria", "Vidisha"],
   "Maharashtra": ["Ahmednagar", "Akola", "Amravati", "Aurangabad", "Beed", "Bhandara", "Buldhana", "Chandrapur", "Dhule", "Gadchiroli", "Gondia", "Hingoli", "Jalgaon", "Jalna", "Kolhapur", "Latur", "Mumbai City", "Mumbai Suburban", "Nagpur", "Nanded", "Nandurbar", "Nashik", "Osmanabad", "Palghar", "Parbhani", "Pune", "Raigad", "Ratnagiri", "Sangli", "Satara", "Sindhudurg", "Solapur", "Thane", "Wardha", "Washim", "Yavatmal"],
   "Manipur": ["Bishnupur", "Chandel", "Churachandpur", "Imphal East", "Imphal West", "Jiribam", "Kakching", "Kamjong", "Kangpokpi", "Noney", "Pherzawl", "Senapati", "Tamenglong", "Tengnoupal", "Thoubal", "Ukhrul"],
   "Meghalaya": ["East Garo Hills", "East Jaintia Hills", "East Khasi Hills", "North Garo Hills", "Ri Bhoi", "South Garo Hills", "South West Garo Hills", "South West Khasi Hills", "West Garo Hills", "West Jaintia Hills", "West Khasi Hills"],
@@ -69,6 +69,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 const DISTRICT_TALUKAS: Record<string, string[]> = {
   "Hoshangabad": ["Pipariya", "Itarsi", "Sohagpur", "Babai", "Seoni Malwa", "Hoshangabad"],
   "Narmadapuram": ["Pipariya", "Itarsi", "Sohagpur", "Babai", "Seoni Malwa", "Hoshangabad"],
+  "Hoshangabad (Narmadapuram)": ["Pipariya", "Itarsi", "Sohagpur", "Babai", "Seoni Malwa", "Hoshangabad"],
   "Bhopal": ["Huzur", "Berasia"],
   "Indore": ["Indore", "Mhow", "Depalpur", "Sanwer"],
   "Jabalpur": ["Jabalpur", "Patan", "Sihora", "Kundam"],
@@ -760,69 +761,40 @@ export const Settings: React.FC = () => {
                   />
                 </div>
 
-                <div className="form-grid-3">
+                <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Village / City *</label>
+                    <label className="form-label">State *</label>
                     <select
                       className="form-control"
-                      value={selectedCity}
-                      onChange={(e) => handleCityChange(e.target.value)}
+                      value={selectedState}
+                      onChange={(e) => handleStateChange(e.target.value)}
                       required
                     >
-                      <option value="">Select Village/City</option>
-                      {getCityOptions(taluka).map((c) => (
-                        <option key={c} value={c}>
-                          {c}
+                      <option value="">Select State</option>
+                      {INDIAN_STATES.map((st) => (
+                        <option key={st} value={st}>
+                          {st}
                         </option>
                       ))}
                       <option value="custom">-- Enter Manually --</option>
                     </select>
-                    {selectedCity === 'custom' && (
+                    {selectedState === 'custom' && (
                       <input
                         type="text"
-                        placeholder="Enter City Name"
+                        placeholder="Enter State Name"
                         className="form-control"
                         style={{ marginTop: '8px' }}
-                        value={customCity}
+                        value={customState}
                         onChange={(e) => {
                           const v = e.target.value;
-                          setCustomCity(v);
-                          setCity(v);
+                          setCustomState(v);
+                          setState(v);
                         }}
                         required
                       />
                     )}
                   </div>
-                  <div className="form-group">
-                    <label className="form-label">Taluka</label>
-                    <select
-                      className="form-control"
-                      value={selectedTaluka}
-                      onChange={(e) => handleTalukaChange(e.target.value)}
-                    >
-                      <option value="">Select Taluka</option>
-                      {getTalukaOptions(district).map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                      <option value="custom">-- Enter Manually --</option>
-                    </select>
-                    {selectedTaluka === 'custom' && (
-                      <input
-                        type="text"
-                        placeholder="Enter Taluka Name"
-                        className="form-control"
-                        style={{ marginTop: '8px' }}
-                        value={customTaluka}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setCustomTaluka(v);
-                          setTaluka(v);
-                        }}
-                      />
-                    )}
-                  </div>
+
                   <div className="form-group">
                     <label className="form-label">District *</label>
                     <select
@@ -857,39 +829,71 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="form-grid-2">
+                <div className="form-grid-3">
                   <div className="form-group">
-                    <label className="form-label">State *</label>
+                    <label className="form-label">Taluka (Tehsil)</label>
                     <select
                       className="form-control"
-                      value={selectedState}
-                      onChange={(e) => handleStateChange(e.target.value)}
-                      required
+                      value={selectedTaluka}
+                      onChange={(e) => handleTalukaChange(e.target.value)}
                     >
-                      <option value="">Select State</option>
-                      {INDIAN_STATES.map((st) => (
-                        <option key={st} value={st}>
-                          {st}
+                      <option value="">Select Taluka</option>
+                      {getTalukaOptions(district).map((t) => (
+                        <option key={t} value={t}>
+                          {t}
                         </option>
                       ))}
                       <option value="custom">-- Enter Manually --</option>
                     </select>
-                    {selectedState === 'custom' && (
+                    {selectedTaluka === 'custom' && (
                       <input
                         type="text"
-                        placeholder="Enter State Name"
+                        placeholder="Enter Taluka Name"
                         className="form-control"
                         style={{ marginTop: '8px' }}
-                        value={customState}
+                        value={customTaluka}
                         onChange={(e) => {
                           const v = e.target.value;
-                          setCustomState(v);
-                          setState(v);
+                          setCustomTaluka(v);
+                          setTaluka(v);
+                        }}
+                      />
+                    )}
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Village / City *</label>
+                    <select
+                      className="form-control"
+                      value={selectedCity}
+                      onChange={(e) => handleCityChange(e.target.value)}
+                      required
+                    >
+                      <option value="">Select Village/City</option>
+                      {getCityOptions(taluka).map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))}
+                      <option value="custom">-- Enter Manually --</option>
+                    </select>
+                    {selectedCity === 'custom' && (
+                      <input
+                        type="text"
+                        placeholder="Enter City Name"
+                        className="form-control"
+                        style={{ marginTop: '8px' }}
+                        value={customCity}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          setCustomCity(v);
+                          setCity(v);
                         }}
                         required
                       />
                     )}
                   </div>
+
                   <div className="form-group">
                     <label className="form-label">Pincode *</label>
                     <input
