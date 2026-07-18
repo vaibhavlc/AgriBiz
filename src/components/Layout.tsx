@@ -147,6 +147,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (window.innerWidth > 1024) return;
+      if (currentTab === 'reports') return;
 
       const target = e.target as HTMLElement;
       // Do not trigger swipe inside scrollable horizontal tables, modals, selectors, or input controls
@@ -169,6 +170,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (window.innerWidth > 1024) return;
+      if (currentTab === 'reports') return;
       if (touchStartX === 0 || touchStartY === 0) return;
 
       const touchEndX = e.changedTouches[0].clientX;

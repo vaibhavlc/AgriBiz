@@ -85,6 +85,95 @@ export const Reports: React.FC = () => {
       }
     }
   }, [activeReport]);
+
+  // Touch swipe gesture navigation to switch reports on mobile
+  useEffect(() => {
+    let touchStartX = 0;
+    let touchStartY = 0;
+
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.innerWidth > 1024) return;
+      const target = e.target as HTMLElement;
+
+      // Ignore swipes on tables, horizontal containers, modals, buttons, input controls
+      if (
+        target.closest('.table-wrapper') ||
+        target.closest('.gstr3b-table-scroll-wrapper') ||
+        target.closest('.report-tabs-horizontal') ||
+        target.closest('.modal') ||
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('select') ||
+        target.closest('button') ||
+        target.closest('a')
+      ) {
+        return;
+      }
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (window.innerWidth > 1024) return;
+      if (touchStartX === 0 || touchStartY === 0) return;
+
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+
+      const diffX = touchStartX - touchEndX;
+      const diffY = touchStartY - touchEndY;
+
+      // Reset
+      touchStartX = 0;
+      touchStartY = 0;
+
+      // Horizontal swipe larger than Y diff and above threshold (75px)
+      if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 75) {
+        const orderedReports = [
+          'sales',
+          'purchase',
+          'expense',
+          'profit',
+          'stock',
+          'gst',
+          'custLedger',
+          'suppLedger',
+          'gstr1',
+          'gstr2',
+          'gstr3b'
+        ];
+        const currentIndex = orderedReports.indexOf(activeReport);
+        if (currentIndex === -1) return;
+
+        if (diffX > 0) {
+          // Swiped Left -> Next Report
+          const nextIndex = currentIndex + 1;
+          if (nextIndex < orderedReports.length) {
+            setActiveReport(orderedReports[nextIndex] as any);
+          } else {
+            setActiveReport(orderedReports[0] as any); // Wrap around to first
+          }
+        } else {
+          // Swiped Right -> Previous Report
+          const prevIndex = currentIndex - 1;
+          if (prevIndex >= 0) {
+            setActiveReport(orderedReports[prevIndex] as any);
+          } else {
+            setActiveReport(orderedReports[orderedReports.length - 1] as any); // Wrap around to last
+          }
+        }
+      }
+    };
+
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+    document.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      document.removeEventListener('touchstart', handleTouchStart);
+      document.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [activeReport]);
+
   const filterByDate = (dateStr: string) => {
     if (dateRange === 'All') return true;
     const date = new Date(dateStr).getTime();
