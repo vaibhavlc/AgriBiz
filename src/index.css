@@ -6169,4 +6169,55 @@ body.dark-theme .lang-selector-btn:hover {
     z-index: -10 !important;
     opacity: 0.08 !important;
   }
+  .gstr3b-pdf-page {
+    page-break-after: always !important;
+    break-after: page !important;
+    margin-bottom: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 15mm !important;
+    width: 100% !important;
+    height: 100% !important;
+  }
+}
+
+/* GSTR-3B PDF A4 Page Simulator */
+.gstr3b-pdf-page {
+  position: relative;
+  width: 794px;
+  height: 1123px;
+  padding: 15mm;
+  box-sizing: border-box;
+  background-color: #ffffff;
+  page-break-after: always;
+  break-after: page;
+  overflow: hidden;
+}
+
+.gstr3b-pdf-page:not(:last-child) {
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+  border: 1px solid #e2e9e0;
+}
+
+.gstr3b-pdf-page .print-watermark-logo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.08;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 440px;
+  height: 440px;
+}
+
+.gstr3b-pdf-page .print-watermark-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  filter: grayscale(100%) contrast(120%);
 }

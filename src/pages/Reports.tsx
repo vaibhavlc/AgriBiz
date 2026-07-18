@@ -1068,36 +1068,61 @@ export const Reports: React.FC = () => {
 
       await new Promise(r => setTimeout(r, 80)); // allow render flush
 
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: '#ffffff',
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-      });
+      const pdfPages = element.querySelectorAll('.gstr3b-pdf-page');
+      const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
+
+      if (pdfPages.length > 0) {
+        // Multi-page sequential capture mode (for GSTR-3B A4 Simulator pages)
+        for (let i = 0; i < pdfPages.length; i++) {
+          const pageEl = pdfPages[i] as HTMLElement;
+          const canvas = await html2canvas(pageEl, {
+            scale: 2,
+            useCORS: true,
+            logging: false,
+            backgroundColor: '#ffffff',
+            windowWidth: pageEl.scrollWidth,
+            windowHeight: pageEl.scrollHeight,
+          });
+
+          const imgData = canvas.toDataURL('image/jpeg', 0.97);
+
+          if (i > 0) {
+            pdf.addPage();
+          }
+          pdf.addImage(imgData, 'JPEG', 0, 0, pageW, pageH);
+        }
+      } else {
+        // Single screenshot slicing mode (default fallback for other reports)
+        const canvas = await html2canvas(element, {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          backgroundColor: '#ffffff',
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight,
+        });
+
+        const imgData = canvas.toDataURL('image/jpeg', 0.97);
+
+        const imgW = pageW;
+        const imgH = (canvas.height * imgW) / canvas.width;
+        let heightLeft = imgH;
+        let posY = 0;
+
+        pdf.addImage(imgData, 'JPEG', 0, posY, imgW, imgH);
+        heightLeft -= pageH;
+
+        while (heightLeft > 0) {
+          posY -= pageH;
+          pdf.addPage();
+          pdf.addImage(imgData, 'JPEG', 0, posY, imgW, imgH);
+          heightLeft -= pageH;
+        }
+      }
 
       // Hide again immediately
       wrapper.style.visibility = 'hidden';
       wrapper.style.zIndex = '-1';
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.97);
-      const pdf = new jsPDF({ orientation, unit: 'mm', format: 'a4' });
-
-      const imgW = pageW;
-      const imgH = (canvas.height * imgW) / canvas.width;
-      let heightLeft = imgH;
-      let posY = 0;
-
-      pdf.addImage(imgData, 'JPEG', 0, posY, imgW, imgH);
-      heightLeft -= pageH;
-
-      while (heightLeft > 0) {
-        posY -= pageH;
-        pdf.addPage();
-        pdf.addImage(imgData, 'JPEG', 0, posY, imgW, imgH);
-        heightLeft -= pageH;
-      }
 
       const filename = `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(filename);
@@ -1562,9 +1587,56 @@ export const Reports: React.FC = () => {
 
     return (
       <div className="gstr3b-working-report-wrapper" style={{ padding: 0, border: 'none', boxShadow: 'none' }}>
+        {/* PAGE 1 */}
+        <div className="gstr3b-pdf-page">
+          {/* Watermark Logo */}
+          {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+            <div className="print-watermark-logo">
+              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+            </div>
+          )}
 
-        {/* SUMMARY SECTION */}
-        <div className="gstr3b-summary-grid">
+          {/* Unified Invoice style header inside Page 1 */}
+          <div className="invoice-header-bar" style={{ marginBottom: '24px' }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
+              {settings.showLogo && settings.logo && (
+                <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
+                  <img 
+                    src={settings.logo} 
+                    alt="Business Logo" 
+                    style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
+                  />
+                </div>
+              )}
+              <div>
+                <h2 className="invoice-company-name">{settings.businessName || 'AgriBiz Store'}</h2>
+                {settings.showAddress && (
+                  <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                )}
+                {settings.showContact && (
+                  <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
+                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                    {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
+                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                    {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
+                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                  </p>
+                )}
+                {settings.showGstin && settings.gstin && (
+                  <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                )}
+              </div>
+            </div>
+            <div style={{ textAlign: "right" }}>
+              <h1 className="invoice-main-title">GSTR-3B WORKING REPORT</h1>
+              <p className="invoice-company-sub" style={{ margin: '3px 0 0 0', fontWeight: 600 }}>Return Period: {returnPeriod()}</p>
+              <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated On: {generatedOn}</p>
+              <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated By: {settings.ownerName || 'Kunal Chaudhari'}</p>
+            </div>
+          </div>
+
+          {/* SUMMARY SECTION */}
+          <div className="gstr3b-summary-grid">
           <div className="gstr3b-summary-card">
             <div className="gstr3b-summary-card-label">Total Taxable Sales</div>
             <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.outward.taxable)}</div>
@@ -1715,9 +1787,19 @@ export const Reports: React.FC = () => {
             </table>
           </div>
         </div>
+        </div> {/* Close Page 1 */}
 
-        {/* TABLE 4 */}
-        <div className="gstr3b-print-section">
+        {/* PAGE 2 */}
+        <div className="gstr3b-pdf-page">
+          {/* Watermark Logo */}
+          {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+            <div className="print-watermark-logo">
+              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+            </div>
+          )}
+
+          {/* TABLE 4 */}
+          <div className="gstr3b-print-section">
           <div className="gstr3b-section-title">Table 4: Eligible Input Tax Credit (ITC) Details</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
@@ -1825,9 +1907,19 @@ export const Reports: React.FC = () => {
             </table>
           </div>
         </div>
+        </div> {/* Close Page 2 */}
 
-        {/* TAX PAYMENT SUMMARY */}
-        <div className="gstr3b-print-section">
+        {/* PAGE 3 */}
+        <div className="gstr3b-pdf-page">
+          {/* Watermark Logo */}
+          {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+            <div className="print-watermark-logo">
+              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+            </div>
+          )}
+
+          {/* TAX PAYMENT SUMMARY */}
+          <div className="gstr3b-print-section">
           <div className="gstr3b-section-title">Tax Payment and Settlement Ledger</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
@@ -1944,6 +2036,7 @@ export const Reports: React.FC = () => {
             Disclaimer: This report is generated from accounting entries and is intended for GST reconciliation and Chartered Accountant working purposes. It is not a substitute for the official GSTR-3B return filed on the GST Portal.
           </div>
         </div>
+        </div> {/* Close Page 3 */}
       </div>
     );
   };
@@ -4393,16 +4486,10 @@ export const Reports: React.FC = () => {
           backgroundColor: '#ffffff',
           fontFamily: 'var(--font-sans)',
           color: '#000000',
-          padding: '15mm',
+          padding: activeReport === 'gstr3b' ? '0' : '15mm',
           boxSizing: 'border-box',
           position: 'relative'
         }}>
-          {/* Watermark Logo (Black and White) for GSTR-3B */}
-          {activeReport === 'gstr3b' && settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-            <div className="print-watermark-logo">
-              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" style={{ filter: 'grayscale(100%) contrast(120%)' }} />
-            </div>
-          )}
 
           {/* Header Block (Unified Invoice PDF Header style) */}
           <div className="invoice-header-bar" style={{ position: 'relative', zIndex: 1 }}>
