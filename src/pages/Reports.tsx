@@ -1907,19 +1907,9 @@ export const Reports: React.FC = () => {
             </table>
           </div>
         </div>
-        </div> {/* Close Page 2 */}
 
-        {/* PAGE 3 */}
-        <div className="gstr3b-pdf-page">
-          {/* Watermark Logo */}
-          {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-            <div className="print-watermark-logo">
-              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
-            </div>
-          )}
-
-          {/* TAX PAYMENT SUMMARY */}
-          <div className="gstr3b-print-section">
+        {/* TAX PAYMENT SUMMARY */}
+        <div className="gstr3b-print-section">
           <div className="gstr3b-section-title">Tax Payment and Settlement Ledger</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
@@ -1972,9 +1962,19 @@ export const Reports: React.FC = () => {
             </table>
           </div>
         </div>
+        </div> {/* Close Page 2 */}
 
-        {/* GST RECONCILIATION SUMMARY */}
-        <div className="gstr3b-print-section">
+        {/* PAGE 3 */}
+        <div className="gstr3b-pdf-page">
+          {/* Watermark Logo */}
+          {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
+            <div className="print-watermark-logo">
+              <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
+            </div>
+          )}
+
+          {/* GST RECONCILIATION SUMMARY */}
+          <div className="gstr3b-print-section">
           <div className="gstr3b-section-title">GST Reconciliation Audit Summary</div>
           <div className="gstr3b-reconciliation-container">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', fontSize: '12px' }}>
