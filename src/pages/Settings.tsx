@@ -66,23 +66,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
   "West Bengal": ["Alipurduar", "Bankura", "Birbhum", "Cooch Behar", "Dakshin Dinajpur", "Darjeeling", "Hooghly", "Howrah", "Jalpaiguri", "Jhargram", "Kalimpong", "Kolkata", "Malda", "Murshidabad", "Nadia", "North 24 Parganas", "Paschim Bardhaman", "Paschim Medinipur", "Purba Bardhaman", "Purba Medinipur", "Purulia", "South 24 Parganas", "Uttar Dinajpur"]
 };
 
-const DISTRICT_TALUKAS: Record<string, string[]> = {
-  "Hoshangabad": ["Pipariya", "Itarsi", "Sohagpur", "Babai", "Seoni Malwa", "Hoshangabad"],
-  "Narmadapuram": ["Pipariya", "Itarsi", "Sohagpur", "Babai", "Seoni Malwa", "Hoshangabad"],
-  "Hoshangabad (Narmadapuram)": ["Pipariya", "Itarsi", "Sohagpur", "Babai", "Seoni Malwa", "Hoshangabad"],
-  "Bhopal": ["Huzur", "Berasia"],
-  "Indore": ["Indore", "Mhow", "Depalpur", "Sanwer"],
-  "Jabalpur": ["Jabalpur", "Patan", "Sihora", "Kundam"],
-  "Pune": ["Pune City", "Haveli", "Khed", "Baramati", "Shirur", "Maval", "Indapur"],
-  "Nagpur": ["Nagpur Urban", "Nagpur Rural", "Saoner", "Katol", "Kamptee", "Ramtek"]
-};
 
-const TALUKA_CITIES: Record<string, string[]> = {
-  "Pipariya": ["Pipariya", "Shobhapur", "Pachmarhi", "Singanpur", "Khaparkheda", "Rampur"],
-  "Hoshangabad": ["Hoshangabad", "Narmadapuram", "Babai", "Sohagpur"],
-  "Itarsi": ["Itarsi", "Borkhedi"],
-  "Huzur": ["Bhopal", "Kolar", "Bairagarh"]
-};
 
 export const Settings: React.FC = () => {
   const { settings, updateSettings, resetToDefault, showToast } = useApp();
@@ -147,32 +131,6 @@ export const Settings: React.FC = () => {
     return opts.includes(settings.district || '') ? '' : (settings.district || '');
   });
 
-  const getTalukaOptions = (dist: string) => {
-    return DISTRICT_TALUKAS[dist] || [];
-  };
-
-  const [selectedTaluka, setSelectedTaluka] = useState(() => {
-    const opts = getTalukaOptions(settings.district || '');
-    return opts.includes(settings.taluka || '') ? (settings.taluka || '') : (settings.taluka ? 'custom' : '');
-  });
-  const [customTaluka, setCustomTaluka] = useState(() => {
-    const opts = getTalukaOptions(settings.district || '');
-    return opts.includes(settings.taluka || '') ? '' : (settings.taluka || '');
-  });
-
-  const getCityOptions = (tal: string) => {
-    return TALUKA_CITIES[tal] || [];
-  };
-
-  const [selectedCity, setSelectedCity] = useState(() => {
-    const opts = getCityOptions(settings.taluka || '');
-    return opts.includes(settings.city || '') ? (settings.city || '') : (settings.city ? 'custom' : '');
-  });
-  const [customCity, setCustomCity] = useState(() => {
-    const opts = getCityOptions(settings.taluka || '');
-    return opts.includes(settings.city || '') ? '' : (settings.city || '');
-  });
-
   const handleStateChange = (newVal: string) => {
     setSelectedState(newVal);
     if (newVal && newVal !== 'custom') {
@@ -183,18 +141,10 @@ export const Settings: React.FC = () => {
       setCustomState('');
     }
     
-    // Reset child states
+    // Reset district states
     setSelectedDistrict('');
     setCustomDistrict('');
     setDistrict('');
-    
-    setSelectedTaluka('');
-    setCustomTaluka('');
-    setTaluka('');
-    
-    setSelectedCity('');
-    setCustomCity('');
-    setCity('');
   };
 
   const handleDistrictChange = (newVal: string) => {
@@ -205,40 +155,6 @@ export const Settings: React.FC = () => {
     } else {
       setDistrict('');
       setCustomDistrict('');
-    }
-    
-    setSelectedTaluka('');
-    setCustomTaluka('');
-    setTaluka('');
-    
-    setSelectedCity('');
-    setCustomCity('');
-    setCity('');
-  };
-
-  const handleTalukaChange = (newVal: string) => {
-    setSelectedTaluka(newVal);
-    if (newVal && newVal !== 'custom') {
-      setTaluka(newVal);
-      setCustomTaluka('');
-    } else {
-      setTaluka('');
-      setCustomTaluka('');
-    }
-    
-    setSelectedCity('');
-    setCustomCity('');
-    setCity('');
-  };
-
-  const handleCityChange = (newVal: string) => {
-    setSelectedCity(newVal);
-    if (newVal && newVal !== 'custom') {
-      setCity(newVal);
-      setCustomCity('');
-    } else {
-      setCity('');
-      setCustomCity('');
     }
   };
 
@@ -832,66 +748,25 @@ export const Settings: React.FC = () => {
                 <div className="form-grid-3">
                   <div className="form-group">
                     <label className="form-label">Taluka (Tehsil)</label>
-                    <select
+                    <input
+                      type="text"
                       className="form-control"
-                      value={selectedTaluka}
-                      onChange={(e) => handleTalukaChange(e.target.value)}
-                    >
-                      <option value="">Select Taluka</option>
-                      {getTalukaOptions(district).map((t) => (
-                        <option key={t} value={t}>
-                          {t}
-                        </option>
-                      ))}
-                      <option value="custom">-- Enter Manually --</option>
-                    </select>
-                    {selectedTaluka === 'custom' && (
-                      <input
-                        type="text"
-                        placeholder="Enter Taluka Name"
-                        className="form-control"
-                        style={{ marginTop: '8px' }}
-                        value={customTaluka}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setCustomTaluka(v);
-                          setTaluka(v);
-                        }}
-                      />
-                    )}
+                      value={taluka}
+                      placeholder="e.g. Pipariya"
+                      onChange={(e) => setTaluka(e.target.value)}
+                    />
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Village / City *</label>
-                    <select
+                    <input
+                      type="text"
                       className="form-control"
-                      value={selectedCity}
-                      onChange={(e) => handleCityChange(e.target.value)}
+                      value={city}
+                      placeholder="e.g. Pipariya"
+                      onChange={(e) => setCity(e.target.value)}
                       required
-                    >
-                      <option value="">Select Village/City</option>
-                      {getCityOptions(taluka).map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
-                      <option value="custom">-- Enter Manually --</option>
-                    </select>
-                    {selectedCity === 'custom' && (
-                      <input
-                        type="text"
-                        placeholder="Enter City Name"
-                        className="form-control"
-                        style={{ marginTop: '8px' }}
-                        value={customCity}
-                        onChange={(e) => {
-                          const v = e.target.value;
-                          setCustomCity(v);
-                          setCity(v);
-                        }}
-                        required
-                      />
-                    )}
+                    />
                   </div>
 
                   <div className="form-group">
