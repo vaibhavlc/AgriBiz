@@ -2748,20 +2748,24 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   .kpi-value {
-    font-size: 21px !important;
+    font-size: 23px !important;
     letter-spacing: -0.2px !important;
     margin-top: 2px;
-    word-break: break-all !important;
-    overflow-wrap: anywhere !important;
-    white-space: normal !important;
+    word-break: normal !important;
+    overflow-wrap: normal !important;
+    white-space: nowrap !important;
+  }
+
+  .kpi-value .kpi-val-short {
+    font-size: 23px !important;
   }
 
   .kpi-value .kpi-val-medium {
-    font-size: 15px !important;
+    font-size: 18px !important;
   }
 
   .kpi-value .kpi-val-long {
-    font-size: 11px !important;
+    font-size: 14px !important;
   }
 
   .kpi-label {
