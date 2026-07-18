@@ -29,6 +29,16 @@ export const formatINR = (amount: number): string => {
   return formatCurrency(amount);
 };
 
+// Helper to convert a string to Title Case
+export const toTitleCase = (str: string | undefined | null): string => {
+  if (!str) return '';
+  return str
+    .trim()
+    .split(/\s+/)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+};
+
 // Helper to format dates consistently based on settings
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '';

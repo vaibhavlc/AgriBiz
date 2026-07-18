@@ -9,6 +9,7 @@ import {
   initialPayments,
   initialSettings,
   initialExpenses,
+  toTitleCase,
 } from '../utils/dummyData';
 
 interface AppContextType {
@@ -132,47 +133,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Load initial data from localStorage if exists, otherwise use initial mock data
   const [products, setProducts] = useState<Product[]>(() => {
     const local = localStorage.getItem('agribiz_products');
-    return local ? JSON.parse(local) : initialProducts;
+    const raw = local ? JSON.parse(local) : initialProducts;
+    return raw.map((p: any) => ({
+      ...p,
+      name: toTitleCase(p.name),
+      category: toTitleCase(p.category),
+    }));
   });
 
   const [customers, setCustomers] = useState<Customer[]>(() => {
     const local = localStorage.getItem('agribiz_customers');
-    return local ? JSON.parse(local) : initialCustomers;
+    const raw = local ? JSON.parse(local) : initialCustomers;
+    return raw.map((c: any) => ({
+      ...c,
+      name: toTitleCase(c.name),
+    }));
   });
 
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
     const local = localStorage.getItem('agribiz_suppliers');
-    return local ? JSON.parse(local) : initialSuppliers;
+    const raw = local ? JSON.parse(local) : initialSuppliers;
+    return raw.map((s: any) => ({
+      ...s,
+      name: toTitleCase(s.name),
+    }));
   });
 
   const [invoices, setInvoices] = useState<Invoice[]>(() => {
     const local = localStorage.getItem('agribiz_invoices');
-    return local ? JSON.parse(local) : initialInvoices;
+    const raw = local ? JSON.parse(local) : initialInvoices;
+    return raw.map((inv: any) => ({
+      ...inv,
+      customerName: toTitleCase(inv.customerName),
+      items: (inv.items || []).map((item: any) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
+    }));
   });
 
   const [quotations, setQuotations] = useState<Quotation[]>(() => {
     const local = localStorage.getItem('agribiz_quotations');
-    return local ? JSON.parse(local) : [];
+    const raw = local ? JSON.parse(local) : [];
+    return raw.map((q: any) => ({
+      ...q,
+      customerName: toTitleCase(q.customerName),
+      items: (q.items || []).map((item: any) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
+    }));
   });
 
   const [purchases, setPurchases] = useState<Purchase[]>(() => {
     const local = localStorage.getItem('agribiz_purchases');
-    return local ? JSON.parse(local) : initialPurchases;
+    const raw = local ? JSON.parse(local) : initialPurchases;
+    return raw.map((pur: any) => ({
+      ...pur,
+      supplierName: toTitleCase(pur.supplierName),
+      items: (pur.items || []).map((item: any) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
+    }));
   });
 
   const [payments, setPayments] = useState<Payment[]>(() => {
     const local = localStorage.getItem('agribiz_payments');
-    return local ? JSON.parse(local) : initialPayments;
+    const raw = local ? JSON.parse(local) : initialPayments;
+    return raw.map((pay: any) => ({
+      ...pay,
+      contactName: toTitleCase(pay.contactName),
+    }));
   });
 
   const [settings, setSettings] = useState<BusinessSettings>(() => {
     const local = localStorage.getItem('agribiz_settings');
-    return local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
+    const raw = local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
+    return {
+      ...raw,
+      businessName: toTitleCase(raw.businessName),
+      ownerName: toTitleCase(raw.ownerName),
+    };
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
     const local = localStorage.getItem('agribiz_expenses');
-    return local ? JSON.parse(local) : initialExpenses;
+    const raw = local ? JSON.parse(local) : initialExpenses;
+    return raw.map((exp: any) => ({
+      ...exp,
+      payee: toTitleCase(exp.payee),
+      category: toTitleCase(exp.category),
+    }));
   });
 
   const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>(() => {
@@ -350,6 +402,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addProduct = (p: Omit<Product, 'id'>) => {
     const newProduct: Product = {
       ...p,
+      name: toTitleCase(p.name),
+      category: toTitleCase(p.category),
       id: `P-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
     setProducts((prev) => [...prev, newProduct]);
@@ -357,7 +411,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const editProduct = (p: Product) => {
-    setProducts((prev) => prev.map((item) => (item.id === p.id ? p : item)));
+    const formatted: Product = {
+      ...p,
+      name: toTitleCase(p.name),
+      category: toTitleCase(p.category),
+    };
+    setProducts((prev) => prev.map((item) => (item.id === p.id ? formatted : item)));
   };
 
   const deleteProduct = (id: string) => {
@@ -380,6 +439,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addCustomer = (c: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => {
     const newCustomer: Customer = {
       ...c,
+      name: toTitleCase(c.name),
       id: `C-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       outstanding: c.outstanding || 0,
     };
@@ -388,7 +448,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const editCustomer = (c: Customer) => {
-    setCustomers((prev) => prev.map((item) => (item.id === c.id ? c : item)));
+    const formatted: Customer = {
+      ...c,
+      name: toTitleCase(c.name),
+    };
+    setCustomers((prev) => prev.map((item) => (item.id === c.id ? formatted : item)));
   };
 
   const deleteCustomer = (id: string) => {
@@ -411,6 +475,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addSupplier = (s: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => {
     const newSupplier: Supplier = {
       ...s,
+      name: toTitleCase(s.name),
       id: `S-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       outstanding: s.outstanding || 0,
     };
@@ -419,7 +484,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const editSupplier = (s: Supplier) => {
-    setSuppliers((prev) => prev.map((item) => (item.id === s.id ? s : item)));
+    const formatted: Supplier = {
+      ...s,
+      name: toTitleCase(s.name),
+    };
+    setSuppliers((prev) => prev.map((item) => (item.id === s.id ? formatted : item)));
   };
 
   const deleteSupplier = (id: string) => {
@@ -448,6 +517,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newInvoice: Invoice = {
       ...inv,
+      customerName: toTitleCase(inv.customerName),
+      items: (inv.items || []).map((item) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
       id,
       invoiceNumber,
     };
@@ -647,11 +721,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error("Error applying new customer balance on edit:", err);
     }
 
+    const formattedInvoice: Invoice = {
+      ...updatedInvoice,
+      customerName: toTitleCase(updatedInvoice.customerName),
+      items: (updatedInvoice.items || []).map((item) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
+    };
+
     // 5. Update state atomically
     setProducts(finalProducts);
     setCustomers(finalCustomers);
     setInvoices((prev) =>
-      prev.map((inv) => (inv.id === oldInvoice.id || inv.invoiceNumber === oldInvoice.invoiceNumber ? updatedInvoice : inv))
+      prev.map((inv) => (inv.id === oldInvoice.id || inv.invoiceNumber === oldInvoice.invoiceNumber ? formattedInvoice : inv))
     );
   };
 
@@ -664,6 +747,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newQuotation: Quotation = {
       ...q,
+      customerName: toTitleCase(q.customerName),
+      items: (q.items || []).map((item) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
       id,
       quotationNumber,
     };
@@ -673,7 +761,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const editQuotation = (q: Quotation) => {
-    setQuotations((prev) => prev.map((item) => (item.id === q.id ? q : item)));
+    const formatted: Quotation = {
+      ...q,
+      customerName: toTitleCase(q.customerName),
+      items: (q.items || []).map((item) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
+    };
+    setQuotations((prev) => prev.map((item) => (item.id === q.id ? formatted : item)));
   };
 
   const deleteQuotation = (id: string) => {
@@ -749,6 +845,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const newPurchase: Purchase = {
       ...pur,
+      supplierName: toTitleCase(pur.supplierName),
+      items: (pur.items || []).map((item) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
       id,
       purchaseNumber,
     };
@@ -928,11 +1029,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error("Error applying supplier balance on purchase edit:", err);
     }
 
+    const formattedPurchase: Purchase = {
+      ...updatedPurchase,
+      supplierName: toTitleCase(updatedPurchase.supplierName),
+      items: (updatedPurchase.items || []).map((item) => ({
+        ...item,
+        productName: toTitleCase(item.productName),
+      })),
+    };
+
     // 5. Update state atomically
     setProducts(finalProducts);
     setSuppliers(finalSuppliers);
     setPurchases((prev) =>
-      prev.map((pur) => (pur.id === oldPurchase.id || pur.purchaseNumber === oldPurchase.purchaseNumber ? updatedPurchase : pur))
+      prev.map((pur) => (pur.id === oldPurchase.id || pur.purchaseNumber === oldPurchase.purchaseNumber ? formattedPurchase : pur))
     );
   };
 
@@ -940,6 +1050,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addPayment = (pay: Omit<Payment, 'id'>) => {
     const newPayment: Payment = {
       ...pay,
+      contactName: toTitleCase(pay.contactName),
       id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
 
@@ -1026,10 +1137,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
+    const formattedPayment: Payment = {
+      ...updatedPayment,
+      contactName: toTitleCase(updatedPayment.contactName),
+    };
+
     setCustomers(revertedCustomers);
     setSuppliers(revertedSuppliers);
     setPayments((prev) =>
-      prev.map((p) => (p.id === updatedPayment.id ? updatedPayment : p))
+      prev.map((p) => (p.id === updatedPayment.id ? formattedPayment : p))
     );
   };
 
@@ -1079,12 +1195,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateSettings = (s: BusinessSettings) => {
-    setSettings(s);
+    const formatted: BusinessSettings = {
+      ...s,
+      businessName: toTitleCase(s.businessName),
+      ownerName: toTitleCase(s.ownerName),
+    };
+    setSettings(formatted);
   };
 
   const addExpense = (exp: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
       ...exp,
+      payee: toTitleCase(exp.payee),
+      category: toTitleCase(exp.category),
       id: `EXP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
     };
     setExpenses((prev) => [newExpense, ...prev]);
@@ -1092,7 +1215,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const editExpense = (exp: Expense) => {
-    setExpenses((prev) => prev.map((item) => (item.id === exp.id ? exp : item)));
+    const formatted: Expense = {
+      ...exp,
+      payee: toTitleCase(exp.payee),
+      category: toTitleCase(exp.category),
+    };
+    setExpenses((prev) => prev.map((item) => (item.id === exp.id ? formatted : item)));
   };
 
   const deleteExpense = (id: string) => {
