@@ -19,7 +19,7 @@ import {
 import { getFullAddress, initialSettings } from '../utils/dummyData';
 
 export const Settings: React.FC = () => {
-  const { settings, updateSettings, resetToDefault } = useApp();
+  const { settings, updateSettings, resetToDefault, showToast } = useApp();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -164,6 +164,9 @@ export const Settings: React.FC = () => {
     });
 
     setSavedSuccess(true);
+    if (showToast) {
+      showToast('Preferences saved successfully!');
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => setSavedSuccess(false), 3000);
   };
@@ -344,6 +347,9 @@ export const Settings: React.FC = () => {
       ...settings,
       signature: base64Data
     });
+    if (showToast) {
+      showToast('Signature saved successfully!');
+    }
   };
 
   const handleRemoveSignature = () => {
@@ -352,6 +358,9 @@ export const Settings: React.FC = () => {
       ...settings,
       signature: undefined
     });
+    if (showToast) {
+      showToast('Signature removed successfully!');
+    }
   };
 
   const handleReset = () => {
