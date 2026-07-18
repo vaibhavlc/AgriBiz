@@ -147,9 +147,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const handleTouchStart = (e: TouchEvent) => {
       if (window.innerWidth > 1024) return;
-      if (currentTab === 'reports') return;
 
       const target = e.target as HTMLElement;
+      // If we are on reports tab, only allow layout page swiping if target is NOT inside report body/tabs
+      if (currentTab === 'reports') {
+        if (target.closest('.report-content-container') || target.closest('.report-tabs-horizontal')) {
+          return;
+        }
+      }
+
       // Do not trigger swipe inside scrollable horizontal tables, modals, selectors, or input controls
       if (
         target.closest('.table-wrapper') ||
@@ -170,7 +176,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     const handleTouchEnd = (e: TouchEvent) => {
       if (window.innerWidth > 1024) return;
-      if (currentTab === 'reports') return;
       if (touchStartX === 0 || touchStartY === 0) return;
 
       const touchEndX = e.changedTouches[0].clientX;

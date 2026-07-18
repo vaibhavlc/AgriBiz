@@ -95,11 +95,15 @@ export const Reports: React.FC = () => {
       if (window.innerWidth > 1024) return;
       const target = e.target as HTMLElement;
 
-      // Ignore swipes on tables, horizontal containers, modals, buttons, input controls
+      // Only allow report tab swiping if gesture started inside the report content container
+      if (!target.closest('.report-content-container')) {
+        return;
+      }
+
+      // Ignore swipes on tables, horizontal scrollable containers, modals, buttons, input controls
       if (
         target.closest('.table-wrapper') ||
         target.closest('.gstr3b-table-scroll-wrapper') ||
-        target.closest('.report-tabs-horizontal') ||
         target.closest('.modal') ||
         target.closest('input') ||
         target.closest('textarea') ||
@@ -4563,7 +4567,7 @@ export const Reports: React.FC = () => {
         </div>
 
         {/* Main Content Area (Full screen width!) */}
-        <div className="card" style={{ border: 'none', boxShadow: 'none', padding: 0 }}>
+        <div className="card report-content-container" style={{ border: 'none', boxShadow: 'none', padding: 0 }}>
           {renderReportContent()}
         </div>
       </div>
