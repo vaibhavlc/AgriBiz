@@ -379,8 +379,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'sales', label: 'Sales', icon: <FileSpreadsheet size={18} /> },
     { id: 'purchases', label: 'Purchases', icon: <ShoppingBag size={18} /> },
     { id: 'inventory', label: 'Inventory', icon: <Package size={18} /> },
-    { id: 'payments', label: 'Payments', icon: <IndianRupee size={18} /> },
     { id: 'expenses', label: 'Expenses', icon: <TrendingDown size={18} /> },
+    { id: 'payments', label: 'Payments', icon: <IndianRupee size={18} /> },
     { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
     { id: 'suppliers', label: 'Suppliers', icon: <Truck size={18} /> },
     { id: 'reports', label: 'Reports', icon: <TrendingUp size={18} /> },
@@ -429,8 +429,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (!isMobileMoreOpen) return null;
 
     const moreItems = [
-      { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={20} />, desc: 'Ledger & Cashbook', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
       { id: 'expenses', label: 'Expenses Book', icon: <TrendingDown size={20} />, desc: 'Store operational costs', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+      { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={20} />, desc: 'Ledger & Cashbook', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
       { id: 'customers', label: 'Customers', icon: <Users size={20} />, desc: 'Client Directory', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
       { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} />, desc: 'Vendor Contacts', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
       { id: 'reports', label: 'Tax & Reports', icon: <TrendingUp size={20} />, desc: 'GSTR & P&L Analytics', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
