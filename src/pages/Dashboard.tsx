@@ -29,13 +29,23 @@ interface AnimatedCounterProps {
 }
 
 const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ value, isCurrency = false, isPercent = false }) => {
+  let displayValue = '';
   if (isPercent) {
-    return <>{value.toFixed(1)}%</>;
+    displayValue = `${value.toFixed(1)}%`;
+  } else if (isCurrency) {
+    displayValue = formatINR(value);
+  } else {
+    displayValue = value.toLocaleString();
   }
-  if (isCurrency) {
-    return <>{formatINR(value)}</>;
+
+  let lengthClass = 'kpi-val-short';
+  if (displayValue.length > 11) {
+    lengthClass = 'kpi-val-long';
+  } else if (displayValue.length > 7) {
+    lengthClass = 'kpi-val-medium';
   }
-  return <>{value.toLocaleString()}</>;
+
+  return <span className={lengthClass}>{displayValue}</span>;
 };
 
 // Custom CSS Grid Bar Chart Component

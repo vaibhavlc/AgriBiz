@@ -2748,12 +2748,20 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   .kpi-value {
-    font-size: clamp(9px, 3.2vw, 15px) !important;
+    font-size: 21px !important;
     letter-spacing: -0.2px !important;
     margin-top: 2px;
     word-break: break-all !important;
     overflow-wrap: anywhere !important;
     white-space: normal !important;
+  }
+
+  .kpi-value .kpi-val-medium {
+    font-size: 15px !important;
+  }
+
+  .kpi-value .kpi-val-long {
+    font-size: 11px !important;
   }
 
   .kpi-label {
