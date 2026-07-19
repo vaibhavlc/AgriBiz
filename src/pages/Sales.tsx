@@ -5,6 +5,7 @@ import { jsPDF } from 'jspdf';
 import { useApp } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
 import {
   Plus,
@@ -3137,105 +3138,65 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       {/* KPI Cards section */}
       {salesActiveTab === 'invoices' ? (
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Sales</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-                {formatINR(totalSales)}
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Total billing revenue
-              </span>
-            </div>
-            <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Collected</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
-                {formatINR(totalCollected)}
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Cash and digital collection
-              </span>
-            </div>
-            <div className="kpi-icon-container emerald"><Plus size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Outstanding Dues</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
-                {formatINR(totalOutstanding)}
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Accounts receivable dues
-              </span>
-            </div>
-            <div className="kpi-icon-container amber"><AlertTriangle size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Voucher Count</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
-                {invoiceCount} invoices
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Total sales transactions
-              </span>
-            </div>
-            <div className="kpi-icon-container blue"><FileText size={20} /></div>
-          </div>
+          <KpiCard
+            label="Total Sales"
+            value={formatINR(totalSales)}
+            subtext="Total billing revenue"
+            icon={<TrendingUp size={20} />}
+            variant="success"
+          />
+          <KpiCard
+            label="Total Collected"
+            value={formatINR(totalCollected)}
+            subtext="Cash and digital collection"
+            icon={<Plus size={20} />}
+            variant="success"
+          />
+          <KpiCard
+            label="Outstanding Dues"
+            value={formatINR(totalOutstanding)}
+            subtext="Accounts receivable dues"
+            icon={<AlertTriangle size={20} />}
+            variant="danger"
+          />
+          <KpiCard
+            label="Voucher Count"
+            value={`${invoiceCount} invoices`}
+            subtext="Total sales transactions"
+            icon={<FileText size={20} />}
+            variant="info"
+          />
         </div>
       ) : (
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Estimates</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-                {formatINR(totalQuoted)}
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Active quoted value
-              </span>
-            </div>
-            <div className="kpi-icon-container blue"><FileText size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Approved Value</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
-                {formatINR(approvedQuoted)}
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Estimates won or converted
-              </span>
-            </div>
-            <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Open Quotations</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-warning-dark, #b45309)' }}>
-                {openQuotedCount} drafts
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Drafts and sent estimates
-              </span>
-            </div>
-            <div className="kpi-icon-container amber"><Calendar size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Estimate Count</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
-                {totalQuotedCount} estimates
-              </span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-                Total quotations logged
-              </span>
-            </div>
-            <div className="kpi-icon-container blue"><FileText size={20} /></div>
-          </div>
+          <KpiCard
+            label="Total Estimates"
+            value={formatINR(totalQuoted)}
+            subtext="Active quoted value"
+            icon={<FileText size={20} />}
+            variant="info"
+          />
+          <KpiCard
+            label="Approved Value"
+            value={formatINR(approvedQuoted)}
+            subtext="Estimates won or converted"
+            icon={<TrendingUp size={20} />}
+            variant="success"
+          />
+          <KpiCard
+            label="Open Quotations"
+            value={`${openQuotedCount} drafts`}
+            subtext="Drafts and sent estimates"
+            icon={<Calendar size={20} />}
+            variant="warning"
+          />
+          <KpiCard
+            label="Estimate Count"
+            value={`${totalQuotedCount} estimates`}
+            subtext="Total quotations logged"
+            icon={<TrendingUp size={20} />}
+            variant="info"
+          />
         </div>
       )}
 

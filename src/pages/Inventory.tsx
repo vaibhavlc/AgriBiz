@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR } from '../utils/dummyData';
 import { ProductModal } from '../components/ProductModal';
+import { KpiCard } from '../components/KpiCard';
 import {
   Plus,
   Search,
@@ -693,54 +694,34 @@ export const Inventory: React.FC = () => {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Inventory KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Products</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-              {totalProducts} Items
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Unique catalog skus
-            </span>
-          </div>
-          <div className="kpi-icon-container blue"><Package size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Stock Valuation</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-              {formatINR(totalStockValue)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Valued at purchase rate
-            </span>
-          </div>
-          <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Low Stock Alert</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-warning-dark)' }}>
-              {lowStockAlerts} items
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Under minimum limit
-            </span>
-          </div>
-          <div className="kpi-icon-container amber"><AlertTriangle size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Out of Stock</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
-              {outOfStockCount} items
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Zero stock quantity
-            </span>
-          </div>
-          <div className="kpi-icon-container rose"><XCircle size={20} /></div>
-        </div>
+        <KpiCard
+          label="Total Products"
+          value={`${totalProducts} Items`}
+          subtext="Unique catalog skus"
+          icon={<Package size={20} />}
+          variant="info"
+        />
+        <KpiCard
+          label="Stock Valuation"
+          value={formatINR(totalStockValue)}
+          subtext="Valued at purchase rate"
+          icon={<TrendingUp size={20} />}
+          variant="success"
+        />
+        <KpiCard
+          label="Low Stock Alert"
+          value={`${lowStockAlerts} items`}
+          subtext="Under minimum limit"
+          icon={<AlertTriangle size={20} />}
+          variant="warning"
+        />
+        <KpiCard
+          label="Out of Stock"
+          value={`${outOfStockCount} items`}
+          subtext="Zero stock quantity"
+          icon={<XCircle size={20} />}
+          variant="danger"
+        />
       </div>
 
       {/* Top Filter Bar */}

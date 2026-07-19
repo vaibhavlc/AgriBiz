@@ -3,6 +3,7 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { KpiCard } from '../components/KpiCard';
 import {
   TrendingUp,
   TrendingDown,
@@ -1277,38 +1278,34 @@ export const Reports: React.FC = () => {
 
         {/* KPI Cards */}
         <div style={kpiGridStyle}>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info">
-              <span className="kpi-label">Total Taxable Sales</span>
-              <span className="kpi-value">{formatINR(gstr3BData.outward.taxable)}</span>
-              <span className="kpi-subtext">Outward taxable supplies</span>
-            </div>
-            <div className="kpi-icon-container emerald"><FileText size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info">
-              <span className="kpi-label">Total GST Liability</span>
-              <span className="kpi-value" style={{ color: 'var(--color-danger-dark)' }}>{formatINR(outwardTaxTotal)}</span>
-              <span className="kpi-subtext">CGST + SGST + IGST</span>
-            </div>
-            <div className="kpi-icon-container rose"><Percent size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info">
-              <span className="kpi-label">Eligible ITC</span>
-              <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(itcTotal)}</span>
-              <span className="kpi-subtext">Input Tax Credit available</span>
-            </div>
-            <div className="kpi-icon-container blue"><TrendingDown size={20} /></div>
-          </div>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info">
-              <span className="kpi-label">Net GST Payable</span>
-              <span className="kpi-value" style={{ color: netGstPayable > 0 ? 'var(--color-danger-dark)' : 'var(--color-success-dark)' }}>{formatINR(netGstPayable)}</span>
-              <span className="kpi-subtext">{remainingItc > 0 ? `₹${remainingItc.toFixed(0)} carry forward` : 'Cash payment due'}</span>
-            </div>
-            <div className="kpi-icon-container amber"><Briefcase size={20} /></div>
-          </div>
+          <KpiCard
+            label="Total Taxable Sales"
+            value={formatINR(gstr3BData.outward.taxable)}
+            subtext="Outward taxable supplies"
+            icon={<FileText size={20} />}
+            variant="success"
+          />
+          <KpiCard
+            label="Total GST Liability"
+            value={formatINR(outwardTaxTotal)}
+            subtext="CGST + SGST + IGST"
+            icon={<Percent size={20} />}
+            variant="danger"
+          />
+          <KpiCard
+            label="Eligible ITC"
+            value={formatINR(itcTotal)}
+            subtext="Input Tax Credit available"
+            icon={<TrendingDown size={20} />}
+            variant="info"
+          />
+          <KpiCard
+            label="Net GST Payable"
+            value={formatINR(netGstPayable)}
+            subtext={remainingItc > 0 ? `₹${remainingItc.toFixed(0)} carry forward` : 'Cash payment due'}
+            icon={<Briefcase size={20} />}
+            variant={netGstPayable > 0 ? "danger" : "success"}
+          />
         </div>
 
         {/* Reconciliation Status Banner */}
@@ -2142,38 +2139,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Sales Invoices Count</span>
-                  <span className="kpi-value">{filteredInvoices.length}</span>
-                  <span className="kpi-subtext">Tax bills generated</span>
-                </div>
-                <div className="kpi-icon-container emerald"><BookOpen size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Taxable Sales</span>
-                  <span className="kpi-value">{formatINR(totalSalesBase)}</span>
-                  <span className="kpi-subtext">Excludes GST tax</span>
-                </div>
-                <div className="kpi-icon-container emerald"><DollarSign size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total GST Collected</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{formatINR(totalSalesTax)}</span>
-                  <span className="kpi-subtext">GST tax liability</span>
-                </div>
-                <div className="kpi-icon-container emerald"><Percent size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Invoice Value</span>
-                  <span className="kpi-value" style={{ color: 'var(--primary-dark)' }}>{formatINR(totalSalesVal)}</span>
-                  <span className="kpi-subtext">Inclusive of GST</span>
-                </div>
-                <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-              </div>
+              <KpiCard
+                label="Sales Invoices Count"
+                value={filteredInvoices.length}
+                subtext="Tax bills generated"
+                icon={<BookOpen size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Total Taxable Sales"
+                value={formatINR(totalSalesBase)}
+                subtext="Excludes GST tax"
+                icon={<DollarSign size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Total GST Collected"
+                value={formatINR(totalSalesTax)}
+                subtext="GST tax liability"
+                icon={<Percent size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Total Invoice Value"
+                value={formatINR(totalSalesVal)}
+                subtext="Inclusive of GST"
+                icon={<TrendingUp size={20} />}
+                variant="success"
+              />
             </div>
 
             {/* Desktop View */}
@@ -2274,38 +2267,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Bills logged</span>
-                  <span className="kpi-value">{filteredPurchases.length}</span>
-                  <span className="kpi-subtext">Supplier inward vouchers</span>
-                </div>
-                <div className="kpi-icon-container blue"><BookOpen size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Base Purchases</span>
-                  <span className="kpi-value">{formatINR(totalPurchasesBase)}</span>
-                  <span className="kpi-subtext">Taxable raw cost</span>
-                </div>
-                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total GST Paid</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{formatINR(totalPurchasesTax)}</span>
-                  <span className="kpi-subtext">Input tax credit</span>
-                </div>
-                <div className="kpi-icon-container blue"><Percent size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Outward Cost</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-danger-dark)' }}>{formatINR(totalPurchasesVal)}</span>
-                  <span className="kpi-subtext">Inclusive of GST</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
-              </div>
+              <KpiCard
+                label="Bills logged"
+                value={filteredPurchases.length}
+                subtext="Supplier inward vouchers"
+                icon={<BookOpen size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Total Base Purchases"
+                value={formatINR(totalPurchasesBase)}
+                subtext="Taxable raw cost"
+                icon={<DollarSign size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Total GST Paid"
+                value={formatINR(totalPurchasesTax)}
+                subtext="Input tax credit"
+                icon={<Percent size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Total Outward Cost"
+                value={formatINR(totalPurchasesVal)}
+                subtext="Inclusive of GST"
+                icon={<TrendingDown size={20} />}
+                variant="danger"
+              />
             </div>
 
             {/* Desktop View */}
@@ -2406,38 +2395,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Expenses Spends</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(totalExpenses)}</span>
-                  <span className="kpi-subtext">Cumulative operational spends</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Settled / Paid Expenses</span>
-                  <span className="kpi-value" style={{ color: 'var(--primary)' }}>{formatINR(totalPaidExpensesVal)}</span>
-                  <span className="kpi-subtext">Fully paid invoices</span>
-                </div>
-                <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Outstanding / Due Dues</span>
-                  <span className="kpi-value" style={{ color: '#D97706' }}>{formatINR(totalDueExpensesVal)}</span>
-                  <span className="kpi-subtext">Unsettled accounts due</span>
-                </div>
-                <div className="kpi-icon-container amber"><DollarSign size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Top Category</span>
-                  <span className="kpi-value" style={{ fontSize: '18px', color: 'var(--text-primary)' }}>{topExpenseCategory.name}</span>
-                  <span className="kpi-subtext">Total: {formatINR(topExpenseCategory.amount)}</span>
-                </div>
-                <div className="kpi-icon-container blue"><Layers size={20} /></div>
-              </div>
+              <KpiCard
+                label="Total Expenses Spends"
+                value={formatINR(totalExpenses)}
+                subtext="Cumulative operational spends"
+                icon={<TrendingDown size={20} />}
+                variant="danger"
+              />
+              <KpiCard
+                label="Settled / Paid Expenses"
+                value={formatINR(totalPaidExpensesVal)}
+                subtext="Fully paid invoices"
+                icon={<TrendingUp size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Outstanding / Due Dues"
+                value={formatINR(totalDueExpensesVal)}
+                subtext="Unsettled accounts due"
+                icon={<DollarSign size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Top Category"
+                value={topExpenseCategory.name}
+                subtext={`Total: ${formatINR(topExpenseCategory.amount)}`}
+                icon={<Layers size={20} />}
+                variant="info"
+              />
             </div>
 
             <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
@@ -2554,38 +2539,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Sales Revenue (Taxable)</span>
-                  <span className="kpi-value">{formatINR(totalSalesBase)}</span>
-                  <span className="kpi-subtext">Goods value dispatched</span>
-                </div>
-                <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Cost of Goods Sold (COGS)</span>
-                  <span className="kpi-value">{formatINR(coGS)}</span>
-                  <span className="kpi-subtext">Original inventory purchase cost</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Operational Expenses</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(totalExpenses)}</span>
-                  <span className="kpi-subtext">Rent, utility bills, salary, etc.</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Net Profit (Loss)</span>
-                  <span className="kpi-value" style={{ color: netProfit >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)' }}>{formatINR(netProfit)}</span>
-                  <span className="kpi-subtext">Margin percentage: {profitMarginPercent.toFixed(1)}%</span>
-                </div>
-                <div className="kpi-icon-container emerald"><Percent size={20} /></div>
-              </div>
+              <KpiCard
+                label="Sales Revenue (Taxable)"
+                value={formatINR(totalSalesBase)}
+                subtext="Goods value dispatched"
+                icon={<TrendingUp size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Cost of Goods Sold (COGS)"
+                value={formatINR(coGS)}
+                subtext="Original inventory purchase cost"
+                icon={<TrendingDown size={20} />}
+                variant="danger"
+              />
+              <KpiCard
+                label="Operational Expenses"
+                value={formatINR(totalExpenses)}
+                subtext="Rent, utility bills, salary, etc."
+                icon={<TrendingDown size={20} />}
+                variant="danger"
+              />
+              <KpiCard
+                label="Net Profit (Loss)"
+                value={formatINR(netProfit)}
+                subtext={`Margin percentage: ${profitMarginPercent.toFixed(1)}%`}
+                icon={<Percent size={20} />}
+                variant={netProfit >= 0 ? "success" : "danger"}
+              />
             </div>
 
             <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
@@ -2707,38 +2688,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Stock Quantity</span>
-                  <span className="kpi-value">{totalStockQty} items</span>
-                  <span className="kpi-subtext">Available in warehouse</span>
-                </div>
-                <div className="kpi-icon-container blue"><Layers size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Stock Valuation (Asset Cost)</span>
-                  <span className="kpi-value" style={{ color: 'var(--primary-dark)' }}>{formatINR(totalAssetVal)}</span>
-                  <span className="kpi-subtext">Valued at base purchase price</span>
-                </div>
-                <div className="kpi-icon-container emerald"><DollarSign size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Potential Value (Retail)</span>
-                  <span className="kpi-value">{formatINR(totalRetailVal)}</span>
-                  <span className="kpi-subtext">Valued at sales retail price</span>
-                </div>
-                <div className="kpi-icon-container blue"><TrendingUp size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Potential Markup Margin</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalRetailVal - totalAssetVal)}</span>
-                  <span className="kpi-subtext">Valued at sales markup profit</span>
-                </div>
-                <div className="kpi-icon-container emerald"><Briefcase size={20} /></div>
-              </div>
+              <KpiCard
+                label="Total Stock Quantity"
+                value={`${totalStockQty} items`}
+                subtext="Available in warehouse"
+                icon={<Layers size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Stock Valuation (Asset Cost)"
+                value={formatINR(totalAssetVal)}
+                subtext="Valued at base purchase price"
+                icon={<DollarSign size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Potential Value (Retail)"
+                value={formatINR(totalRetailVal)}
+                subtext="Valued at sales retail price"
+                icon={<TrendingUp size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Potential Markup Margin"
+                value={formatINR(totalRetailVal - totalAssetVal)}
+                subtext="Valued at sales markup profit"
+                icon={<Briefcase size={20} />}
+                variant="success"
+              />
             </div>
 
             {/* Desktop View */}
@@ -2841,40 +2818,34 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             {/* GST Summary metrics */}
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Gross Taxable Turnover</span>
-                  <span className="kpi-value">{formatINR(totalSalesBase)}</span>
-                  <span className="kpi-subtext">Excluding tax value</span>
-                </div>
-                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Output GST (Collected)</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalSalesTax)}</span>
-                  <span className="kpi-subtext">CGST: {formatINR(totalCGSTCollected)} | SGST: {formatINR(totalSGSTCollected)}</span>
-                </div>
-                <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Input GST (ITC Paid)</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-info-dark)' }}>{formatINR(totalPurchasesTax)}</span>
-                  <span className="kpi-subtext">CGST: {formatINR(totalCGSTPaid)} | SGST: {formatINR(totalSGSTPaid)}</span>
-                </div>
-                <div className="kpi-icon-container blue"><TrendingDown size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Net GST Liability</span>
-                  <span className="kpi-value" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
-                    {formatINR(netGSTDue)}
-                  </span>
-                  <span className="kpi-subtext">{netGSTDue >= 0 ? 'Cash Payable to Govt' : 'Carry Forward Credit'}</span>
-                </div>
-                <div className="kpi-icon-container rose"><Percent size={20} /></div>
-              </div>
+              <KpiCard
+                label="Gross Taxable Turnover"
+                value={formatINR(totalSalesBase)}
+                subtext="Excluding tax value"
+                icon={<DollarSign size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Output GST (Collected)"
+                value={formatINR(totalSalesTax)}
+                subtext={`CGST: ${formatINR(totalCGSTCollected)} | SGST: ${formatINR(totalSGSTCollected)}`}
+                icon={<TrendingUp size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Input GST (ITC Paid)"
+                value={formatINR(totalPurchasesTax)}
+                subtext={`CGST: ${formatINR(totalCGSTPaid)} | SGST: ${formatINR(totalSGSTPaid)}`}
+                icon={<TrendingDown size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Net GST Liability"
+                value={formatINR(netGSTDue)}
+                subtext={netGSTDue >= 0 ? 'Cash Payable to Govt' : 'Carry Forward Credit'}
+                icon={<Percent size={20} />}
+                variant={netGSTDue >= 0 ? "danger" : "success"}
+              />
             </div>
 
             {/* GST summary log */}
@@ -3013,38 +2984,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Registered Customers</span>
-                  <span className="kpi-value">{totalCustomers}</span>
-                  <span className="kpi-subtext">Active accounts</span>
-                </div>
-                <div className="kpi-icon-container blue"><Users size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Accounts with Dues</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{customersWithDues} accounts</span>
-                  <span className="kpi-subtext">Customers owing payments</span>
-                </div>
-                <div className="kpi-icon-container amber"><Users size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Outstanding Dues</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(pendingReceivables)}</span>
-                  <span className="kpi-subtext">Collectable assets</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingUp size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Average Outstanding</span>
-                  <span className="kpi-value">{formatINR(averageReceivable)}</span>
-                  <span className="kpi-subtext">Per active customer account</span>
-                </div>
-                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
-              </div>
+              <KpiCard
+                label="Registered Customers"
+                value={totalCustomers}
+                subtext="Active accounts"
+                icon={<Users size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Accounts with Dues"
+                value={`${customersWithDues} accounts`}
+                subtext="Customers owing payments"
+                icon={<Users size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Total Outstanding Dues"
+                value={formatINR(pendingReceivables)}
+                subtext="Collectable assets"
+                icon={<TrendingUp size={20} />}
+                variant="danger"
+              />
+              <KpiCard
+                label="Average Outstanding"
+                value={formatINR(averageReceivable)}
+                subtext="Per active customer account"
+                icon={<DollarSign size={20} />}
+                variant="info"
+              />
             </div>
 
             {/* Desktop View */}
@@ -3139,38 +3106,34 @@ export const Reports: React.FC = () => {
         return (
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Registered Suppliers</span>
-                  <span className="kpi-value">{totalSuppliers}</span>
-                  <span className="kpi-subtext">Active accounts</span>
-                </div>
-                <div className="kpi-icon-container blue"><Truck size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Accounts with Balance</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}>{suppliersWithDues} accounts</span>
-                  <span className="kpi-subtext">Suppliers we owe money</span>
-                </div>
-                <div className="kpi-icon-container amber"><Truck size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Total Balance Owed</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>{formatINR(pendingPayables)}</span>
-                  <span className="kpi-subtext">Accounts payable cost</span>
-                </div>
-                <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Average Payable</span>
-                  <span className="kpi-value">{formatINR(averagePayable)}</span>
-                  <span className="kpi-subtext">Per active supplier account</span>
-                </div>
-                <div className="kpi-icon-container blue"><DollarSign size={20} /></div>
-              </div>
+              <KpiCard
+                label="Registered Suppliers"
+                value={totalSuppliers}
+                subtext="Active accounts"
+                icon={<Truck size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Accounts with Balance"
+                value={`${suppliersWithDues} accounts`}
+                subtext="Suppliers we owe money"
+                icon={<Truck size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Total Balance Owed"
+                value={formatINR(pendingPayables)}
+                subtext="Accounts payable cost"
+                icon={<TrendingDown size={20} />}
+                variant="danger"
+              />
+              <KpiCard
+                label="Average Payable"
+                value={formatINR(averagePayable)}
+                subtext="Per active supplier account"
+                icon={<DollarSign size={20} />}
+                variant="info"
+              />
             </div>
 
             {/* Desktop View */}
@@ -3266,38 +3229,34 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             {/* GSTR-1 Header Dashboard Cards */}
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">B2B Invoices (Registered)</span>
-                  <span className="kpi-value">{gstr1B2BList.length} Rows</span>
-                  <span className="kpi-subtext">Taxable: {formatINR(gstr1B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}</span>
-                </div>
-                <div className="kpi-icon-container emerald"><BookOpen size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">B2CS (Unregistered OE)</span>
-                  <span className="kpi-value">{gstr1B2CSList.length} Groups</span>
-                  <span className="kpi-subtext">Taxable: {formatINR(gstr1B2CSList.reduce((acc, x) => acc + x.taxable, 0))}</span>
-                </div>
-                <div className="kpi-icon-container blue"><Users size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">HSN Summary (Table 12)</span>
-                  <span className="kpi-value">{gstr1HSNList.length} Categories</span>
-                  <span className="kpi-subtext">Taxable: {formatINR(gstr1HSNList.reduce((acc, x) => acc + x.taxable, 0))}</span>
-                </div>
-                <div className="kpi-icon-container amber"><Layers size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Documents Issued (Table 13)</span>
-                  <span className="kpi-value">{gstr1DocsSummary.total} Invoices</span>
-                  <span className="kpi-subtext">Range: {gstr1DocsSummary.from} - {gstr1DocsSummary.to}</span>
-                </div>
-                <div className="kpi-icon-container rose"><FileText size={20} /></div>
-              </div>
+              <KpiCard
+                label="B2B Invoices (Registered)"
+                value={`${gstr1B2BList.length} Rows`}
+                subtext={`Taxable: ${formatINR(gstr1B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}`}
+                icon={<BookOpen size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="B2CS (Unregistered OE)"
+                value={`${gstr1B2CSList.length} Groups`}
+                subtext={`Taxable: ${formatINR(gstr1B2CSList.reduce((acc, x) => acc + x.taxable, 0))}`}
+                icon={<Users size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="HSN Summary (Table 12)"
+                value={`${gstr1HSNList.length} Categories`}
+                subtext={`Taxable: ${formatINR(gstr1HSNList.reduce((acc, x) => acc + x.taxable, 0))}`}
+                icon={<Layers size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Documents Issued (Table 13)"
+                value={`${gstr1DocsSummary.total} Invoices`}
+                subtext={`Range: ${gstr1DocsSummary.from} - ${gstr1DocsSummary.to}`}
+                icon={<FileText size={20} />}
+                variant="danger"
+              />
             </div>
 
             {/* GSTR-1 Main Section Panels */}
@@ -3536,38 +3495,34 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             {/* GSTR-2 Header Dashboard Cards */}
             <div style={kpiGridStyle}>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">B2B Purchases (Registered)</span>
-                  <span className="kpi-value">{gstr2B2BList.length} Rows</span>
-                  <span className="kpi-subtext">Taxable: {formatINR(gstr2B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}</span>
-                </div>
-                <div className="kpi-icon-container emerald"><Briefcase size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">HSN Inward Summary (Table 13)</span>
-                  <span className="kpi-value">{gstr2HSNList.length} Categories</span>
-                  <span className="kpi-subtext">Taxable: {formatINR(gstr2HSNList.reduce((acc, x) => acc + x.taxable, 0))}</span>
-                </div>
-                <div className="kpi-icon-container amber"><Layers size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Eligible Input Tax Credit</span>
-                  <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}>{formatINR(totalGstr2ITC)}</span>
-                  <span className="kpi-subtext">Claimable CGST+SGST+IGST</span>
-                </div>
-                <div className="kpi-icon-container blue"><Percent size={20} /></div>
-              </div>
-              <div className="kpi-card" style={{ cursor: 'default' }}>
-                <div className="kpi-info">
-                  <span className="kpi-label">Documents Received</span>
-                  <span className="kpi-value">{gstr2DocsSummary.total} Invoices</span>
-                  <span className="kpi-subtext">Range: {gstr2DocsSummary.from} - {gstr2DocsSummary.to}</span>
-                </div>
-                <div className="kpi-icon-container rose"><FileText size={20} /></div>
-              </div>
+              <KpiCard
+                label="B2B Purchases (Registered)"
+                value={`${gstr2B2BList.length} Rows`}
+                subtext={`Taxable: ${formatINR(gstr2B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}`}
+                icon={<Briefcase size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="HSN Inward Summary (Table 13)"
+                value={`${gstr2HSNList.length} Categories`}
+                subtext={`Taxable: ${formatINR(gstr2HSNList.reduce((acc, x) => acc + x.taxable, 0))}`}
+                icon={<Layers size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Eligible Input Tax Credit"
+                value={formatINR(totalGstr2ITC)}
+                subtext="Claimable CGST+SGST+IGST"
+                icon={<Percent size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Documents Received"
+                value={`${gstr2DocsSummary.total} Invoices`}
+                subtext={`Range: ${gstr2DocsSummary.from} - ${gstr2DocsSummary.to}`}
+                icon={<FileText size={20} />}
+                variant="danger"
+              />
             </div>
 
             {/* GSTR-2 Main Section Panels */}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
+import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
 import {
   Plus,
@@ -251,41 +252,34 @@ export const Suppliers: React.FC = () => {
 
         {/* ── Stats Row ── */}
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Purchased</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)' }}>{formatINR(totalPurchased)}</span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{totalBillCount} bill{totalBillCount !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="kpi-icon-container blue"><FileText size={20} /></div>
-          </div>
-
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Total Paid</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>{formatINR(totalPaid)}</span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{totalPaymentCount} payment{totalPaymentCount !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="kpi-icon-container emerald"><CreditCard size={20} /></div>
-          </div>
-
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Balance Owed</span>
-              <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: selectedSupplier.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>{formatINR(selectedSupplier.outstanding)}</span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{selectedSupplier.outstanding > 0 ? 'Pending' : selectedSupplier.outstanding < 0 ? 'Overpaid' : 'Settled'}</span>
-            </div>
-            <div className="kpi-icon-container blue"><Scale size={20} /></div>
-          </div>
-
-          <div className="kpi-card" style={{ cursor: 'default' }}>
-            <div className="kpi-info" style={{ gap: '2px' }}>
-              <span className="kpi-label" style={{ fontSize: '11px' }}>Last Transaction</span>
-              <span className="kpi-value" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)' }}>{lastTxDate ? formatDate(lastTxDate) : '—'}</span>
-              <span className="kpi-subtext" style={{ fontSize: '10px' }}>{ledgerEntries.length} entries total</span>
-            </div>
-            <div className="kpi-icon-container blue"><Activity size={20} /></div>
-          </div>
+          <KpiCard
+            label="Total Purchased"
+            value={formatINR(totalPurchased)}
+            subtext={`${totalBillCount} bill${totalBillCount !== 1 ? 's' : ''}`}
+            icon={<FileText size={20} />}
+            variant="info"
+          />
+          <KpiCard
+            label="Total Paid"
+            value={formatINR(totalPaid)}
+            subtext={`${totalPaymentCount} payment${totalPaymentCount !== 1 ? 's' : ''}`}
+            icon={<CreditCard size={20} />}
+            variant="success"
+          />
+          <KpiCard
+            label="Balance Owed"
+            value={formatINR(selectedSupplier.outstanding)}
+            subtext={selectedSupplier.outstanding > 0 ? 'Pending' : selectedSupplier.outstanding < 0 ? 'Overpaid' : 'Settled'}
+            icon={<Scale size={20} />}
+            variant={selectedSupplier.outstanding > 0 ? "danger" : "success"}
+          />
+          <KpiCard
+            label="Last Transaction"
+            value={lastTxDate ? formatDate(lastTxDate) : '—'}
+            subtext={`${ledgerEntries.length} entries total`}
+            icon={<Activity size={20} />}
+            variant="info"
+          />
         </div>
 
         {/* ── Ledger Table (Desktop) / Cards (Mobile) ── */}
@@ -541,38 +535,34 @@ export const Suppliers: React.FC = () => {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Suppliers KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Suppliers</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>{totalSuppliers}</span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Registered directory entries</span>
-          </div>
-          <div className="kpi-icon-container blue"><Truck size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Pending Payables</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>{formatINR(pendingPayables)}</span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Total outstanding balance we owe</span>
-          </div>
-          <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Active Accounts</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>{activeAccounts} accounts</span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Supplier voucher activity</span>
-          </div>
-          <div className="kpi-icon-container emerald"><Activity size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Average Payable</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>{formatINR(averagePayable)}</span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>Per supplier outstanding</span>
-          </div>
-          <div className="kpi-icon-container blue"><Scale size={20} /></div>
-        </div>
+        <KpiCard
+          label="Total Suppliers"
+          value={totalSuppliers}
+          subtext="Registered directory entries"
+          icon={<Truck size={20} />}
+          variant="info"
+        />
+        <KpiCard
+          label="Pending Payables"
+          value={formatINR(pendingPayables)}
+          subtext="Total outstanding balance we owe"
+          icon={<AlertTriangle size={20} />}
+          variant="danger"
+        />
+        <KpiCard
+          label="Active Accounts"
+          value={`${activeAccounts} accounts`}
+          subtext="Supplier voucher activity"
+          icon={<Activity size={20} />}
+          variant="success"
+        />
+        <KpiCard
+          label="Average Payable"
+          value={formatINR(averagePayable)}
+          subtext="Per supplier outstanding"
+          icon={<Scale size={20} />}
+          variant="info"
+        />
       </div>
 
       {/* Style tweaks to support Sales-like responsive layout */}

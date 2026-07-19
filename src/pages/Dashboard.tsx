@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
+import { KpiCard } from '../components/KpiCard';
 import {
   TrendingUp,
   TrendingDown,
@@ -885,292 +886,254 @@ export const Dashboard: React.FC = () => {
         {/* Tab 1: Financial Health */}
         {activeKpiTab === 'financial' && (
           <div className="grid-cols-4 tab-content-enter">
-            <div 
-              className={`kpi-card${shouldBlink(['sales', 'sale', 'billing', 'turnover']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total Sales Billing"
+              value={<AnimatedCounter value={stats.totalSales} isCurrency />}
+              subtext="Sales inclusive of GST"
+              icon={<TrendingUp size={20} />}
+              variant="success"
               onClick={() => setCurrentTab('sales')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total Sales Billing</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.totalSales} isCurrency /></span>
-                <span className="kpi-subtext">Sales inclusive of GST</span>
-              </div>
-              <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-            </div>
+              className={shouldBlink(['sales', 'sale', 'billing', 'turnover']) ? 'search-blink-highlight' : ''}
+            />
             
-            <div 
-              className={`kpi-card${shouldBlink(['sales', 'sale', 'revenue', 'taxable']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Taxable Sales Revenue"
+              value={<AnimatedCounter value={stats.totalSalesBase} isCurrency />}
+              subtext="Excluding collected GST"
+              icon={<TrendingUp size={20} />}
+              variant="success"
               onClick={() => setCurrentTab('sales')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Taxable Sales Revenue</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.totalSalesBase} isCurrency /></span>
-                <span className="kpi-subtext">Excluding collected GST</span>
-              </div>
-              <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-            </div>
+              className={shouldBlink(['sales', 'sale', 'revenue', 'taxable']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['purchases', 'purchase', 'buying', 'procurement']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total Purchases Billing"
+              value={<AnimatedCounter value={stats.totalPurchases} isCurrency />}
+              subtext="Cumulative stock acquisitions"
+              icon={<TrendingDown size={20} />}
+              variant="warning"
               onClick={() => setCurrentTab('purchases')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total Purchases Billing</span>
-                <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}><AnimatedCounter value={stats.totalPurchases} isCurrency /></span>
-                <span className="kpi-subtext">Cumulative stock acquisitions</span>
-              </div>
-              <div className="kpi-icon-container amber"><TrendingDown size={20} /></div>
-            </div>
+              className={shouldBlink(['purchases', 'purchase', 'buying', 'procurement']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['expenses', 'expense', 'spend', 'cost']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total Expenses Spends"
+              value={<AnimatedCounter value={stats.totalExpenses} isCurrency />}
+              subtext="Operational overhead costs"
+              icon={<TrendingDown size={20} />}
+              variant="danger"
               onClick={() => setCurrentTab('expenses')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total Expenses Spends</span>
-                <span className="kpi-value" style={{ color: 'var(--color-danger)' }}><AnimatedCounter value={stats.totalExpenses} isCurrency /></span>
-                <span className="kpi-subtext">Operational overhead costs</span>
-              </div>
-              <div className="kpi-icon-container rose"><TrendingDown size={20} /></div>
-            </div>
+              className={shouldBlink(['expenses', 'expense', 'spend', 'cost']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div className={`kpi-card${shouldBlink(['profit', 'gross', 'margin']) ? ' search-blink-highlight' : ''}`}>
-              <div className="kpi-info">
-                <span className="kpi-label">Gross Sales Profit</span>
-                <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.grossProfit} isCurrency /></span>
-                <span className="kpi-subtext">Sales subtotal minus COGS</span>
-              </div>
-              <div className="kpi-icon-container emerald"><DollarSign size={20} /></div>
-            </div>
+            <KpiCard
+              label="Gross Sales Profit"
+              value={<AnimatedCounter value={stats.grossProfit} isCurrency />}
+              subtext="Sales subtotal minus COGS"
+              icon={<DollarSign size={20} />}
+              variant="success"
+              className={shouldBlink(['profit', 'gross', 'margin']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div className={`kpi-card${shouldBlink(['profit', 'net', 'earnings', 'income']) ? ' search-blink-highlight' : ''}`}>
-              <div className="kpi-info">
-                <span className="kpi-label">Net Operating Profit</span>
-                <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.netProfit} isCurrency /></span>
-                <span className="kpi-subtext">Gross profit minus expenses</span>
-              </div>
-              <div className="kpi-icon-container emerald"><DollarSign size={20} /></div>
-            </div>
+            <KpiCard
+              label="Net Operating Profit"
+              value={<AnimatedCounter value={stats.netProfit} isCurrency />}
+              subtext="Gross profit minus expenses"
+              icon={<DollarSign size={20} />}
+              variant="success"
+              className={shouldBlink(['profit', 'net', 'earnings', 'income']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div className={`kpi-card${shouldBlink(['profit', 'margin', 'gross']) ? ' search-blink-highlight' : ''}`}>
-              <div className="kpi-info">
-                <span className="kpi-label">Gross Profit Margin</span>
-                <span className="kpi-value" style={{ color: 'var(--color-info)' }}><AnimatedCounter value={stats.grossProfitMargin} isPercent /></span>
-                <span className="kpi-subtext">Efficiency percentage return</span>
-              </div>
-              <div className="kpi-icon-container blue"><Percent size={20} /></div>
-            </div>
+            <KpiCard
+              label="Gross Profit Margin"
+              value={<AnimatedCounter value={stats.grossProfitMargin} isPercent />}
+              subtext="Efficiency percentage return"
+              icon={<Percent size={20} />}
+              variant="info"
+              className={shouldBlink(['profit', 'margin', 'gross']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div className={`kpi-card${shouldBlink(['cogs', 'cost', 'stock cost']) ? ' search-blink-highlight' : ''}`}>
-              <div className="kpi-info">
-                <span className="kpi-label">COGS (Stock Cost)</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.cogs} isCurrency /></span>
-                <span className="kpi-subtext">Cost price of items sold</span>
-              </div>
-              <div className="kpi-icon-container rose"><Package size={20} /></div>
-            </div>
+            <KpiCard
+              label="COGS (Stock Cost)"
+              value={<AnimatedCounter value={stats.cogs} isCurrency />}
+              subtext="Cost price of items sold"
+              icon={<Package size={20} />}
+              variant="danger"
+              className={shouldBlink(['cogs', 'cost', 'stock cost']) ? 'search-blink-highlight' : ''}
+            />
           </div>
         )}
 
         {/* Tab 2: Collections & Outstanding */}
         {activeKpiTab === 'payments' && (
           <div className="grid-cols-4 tab-content-enter">
-            <div 
-              className={`kpi-card${shouldBlink(['collected', 'collection', 'receipt', 'payment']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total Amount Collected"
+              value={<AnimatedCounter value={stats.collectedAmount} isCurrency />}
+              subtext="Total receipts collected"
+              icon={<ArrowDownLeft size={20} />}
+              variant="success"
               onClick={() => setCurrentTab('payments')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total Amount Collected</span>
-                <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.collectedAmount} isCurrency /></span>
-                <span className="kpi-subtext">Total receipts collected</span>
-              </div>
-              <div className="kpi-icon-container emerald"><ArrowDownLeft size={20} /></div>
-            </div>
+              className={shouldBlink(['collected', 'collection', 'receipt', 'payment']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['receivables', 'receivable', 'due', 'outstanding', 'customer']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Outstanding Receivables"
+              value={<AnimatedCounter value={stats.receivables} isCurrency />}
+              subtext="Dues left on invoices"
+              icon={<Users size={20} />}
+              variant="danger"
               onClick={() => setCurrentTab('sales')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Outstanding Receivables</span>
-                <span className="kpi-value" style={{ color: 'var(--color-danger)' }}><AnimatedCounter value={stats.receivables} isCurrency /></span>
-                <span className="kpi-subtext">Dues left on invoices</span>
-              </div>
-              <div className="kpi-icon-container rose"><Users size={20} /></div>
-            </div>
+              className={shouldBlink(['receivables', 'receivable', 'due', 'outstanding', 'customer']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['payables', 'payable', 'due', 'outstanding', 'supplier']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Outstanding Payables"
+              value={<AnimatedCounter value={stats.payables} isCurrency />}
+              subtext="Dues owed to manufacturers"
+              icon={<Truck size={20} />}
+              variant="danger"
               onClick={() => setCurrentTab('suppliers')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Outstanding Payables</span>
-                <span className="kpi-value" style={{ color: 'var(--color-danger)' }}><AnimatedCounter value={stats.payables} isCurrency /></span>
-                <span className="kpi-subtext">Dues owed to manufacturers</span>
-              </div>
-              <div className="kpi-icon-container rose"><Truck size={20} /></div>
-            </div>
+              className={shouldBlink(['payables', 'payable', 'due', 'outstanding', 'supplier']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['pending', 'uncollected', 'collection']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Pending Billing Collection"
+              value={<AnimatedCounter value={stats.pendingCollection} isCurrency />}
+              subtext="Amount yet to collect"
+              icon={<Clock size={20} />}
+              variant="warning"
               onClick={() => setCurrentTab('sales')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Pending Billing Collection</span>
-                <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}><AnimatedCounter value={stats.pendingCollection} isCurrency /></span>
-                <span className="kpi-subtext">Amount yet to collect</span>
-              </div>
-              <div className="kpi-icon-container amber"><Clock size={20} /></div>
-            </div>
+              className={shouldBlink(['pending', 'uncollected', 'collection']) ? 'search-blink-highlight' : ''}
+            />
           </div>
         )}
 
         {/* Tab 3: GST Ledger */}
         {activeKpiTab === 'gst' && (
           <div className="grid-cols-4 tab-content-enter">
-            <div 
-              className={`kpi-card${shouldBlink(['gst', 'tax', 'collected', 'cgst', 'sgst']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total GST Collected"
+              value={<AnimatedCounter value={stats.gstCollected} isCurrency />}
+              subtext="Output tax collected"
+              icon={<TrendingUp size={20} />}
+              variant="success"
               onClick={() => setCurrentTab('reports')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total GST Collected</span>
-                <span className="kpi-value" style={{ color: 'var(--color-success-dark)' }}><AnimatedCounter value={stats.gstCollected} isCurrency /></span>
-                <span className="kpi-subtext">Output tax collected</span>
-              </div>
-              <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-            </div>
+              className={shouldBlink(['gst', 'tax', 'collected', 'cgst', 'sgst']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['gst', 'tax', 'paid', 'cgst', 'sgst']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total GST Paid"
+              value={<AnimatedCounter value={stats.gstPaid} isCurrency />}
+              subtext="Input tax credit paid"
+              icon={<TrendingDown size={20} />}
+              variant="warning"
               onClick={() => setCurrentTab('reports')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total GST Paid</span>
-                <span className="kpi-value" style={{ color: 'var(--color-warning-dark)' }}><AnimatedCounter value={stats.gstPaid} isCurrency /></span>
-                <span className="kpi-subtext">Input tax credit paid</span>
-              </div>
-              <div className="kpi-icon-container amber"><TrendingDown size={20} /></div>
-            </div>
+              className={shouldBlink(['gst', 'tax', 'paid', 'cgst', 'sgst']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['gst', 'tax', 'liability', 'cgst', 'sgst']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total GST Liability"
+              value={<AnimatedCounter value={stats.gstLiability} isCurrency />}
+              subtext="Output minus Input tax"
+              icon={<FileText size={20} />}
+              variant={stats.gstLiability > 0 ? "danger" : "info"}
               onClick={() => setCurrentTab('reports')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total GST Liability</span>
-                <span className="kpi-value" style={{ color: stats.gstLiability > 0 ? 'var(--color-danger)' : 'inherit' }}><AnimatedCounter value={stats.gstLiability} isCurrency /></span>
-                <span className="kpi-subtext">Output minus Input tax</span>
-              </div>
-              <div className="kpi-icon-container blue"><FileText size={20} /></div>
-            </div>
+              className={shouldBlink(['gst', 'tax', 'liability', 'cgst', 'sgst']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['gst', 'tax', 'cgst', 'sgst', 'share']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="CGST / SGST Share"
+              value={<AnimatedCounter value={stats.gstCollected / 2} isCurrency />}
+              subtext="50% equal split values"
+              icon={<Percent size={20} />}
+              variant="info"
               onClick={() => setCurrentTab('reports')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">CGST / SGST Share</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.gstCollected / 2} isCurrency /></span>
-                <span className="kpi-subtext">50% equal split values</span>
-              </div>
-              <div className="kpi-icon-container blue"><Percent size={20} /></div>
-            </div>
+              className={shouldBlink(['gst', 'tax', 'cgst', 'sgst', 'share']) ? 'search-blink-highlight' : ''}
+            />
           </div>
         )}
         {/* Tab 4: Inventory & Counts */}
         {activeKpiTab === 'inventory' && (
           <div className="grid-cols-4 tab-content-enter">
-            <div 
-              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products', 'stock value', 'valuation']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Current Stock Value"
+              value={<AnimatedCounter value={stats.stockValue} isCurrency />}
+              subtext="Valuation of current stock"
+              icon={<ShoppingBag size={20} />}
+              variant="success"
               onClick={() => setCurrentTab('inventory')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Current Stock Value</span>
-                <span className="kpi-value" style={{ color: 'var(--primary-dark)' }}><AnimatedCounter value={stats.stockValue} isCurrency /></span>
-                <span className="kpi-subtext">Valuation of current stock</span>
-              </div>
-              <div className="kpi-icon-container emerald"><ShoppingBag size={20} /></div>
-            </div>
+              className={shouldBlink(['stock', 'inventory', 'items', 'products', 'stock value', 'valuation']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total Items in Stock"
+              value={<AnimatedCounter value={stats.totalInventoryItems} />}
+              subtext="Sum of all individual items"
+              icon={<Package size={20} />}
+              variant="info"
               onClick={() => setCurrentTab('inventory')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total Items in Stock</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.totalInventoryItems} /></span>
-                <span className="kpi-subtext">Sum of all individual items</span>
-              </div>
-              <div className="kpi-icon-container blue"><Package size={20} /></div>
-            </div>
+              className={shouldBlink(['stock', 'inventory', 'items', 'products']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products', 'low stock']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Low Stock Products"
+              value={<AnimatedCounter value={stats.lowStockCount} />}
+              subtext="Below safety buffer levels"
+              icon={<AlertTriangle size={20} />}
+              variant="danger"
               onClick={() => setCurrentTab('inventory')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Low Stock Products</span>
-                <span className="kpi-value" style={{ color: stats.lowStockCount > 0 ? 'var(--color-danger)' : 'inherit' }}><AnimatedCounter value={stats.lowStockCount} /></span>
-                <span className="kpi-subtext">Below safety buffer levels</span>
-              </div>
-              <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
-            </div>
+              className={shouldBlink(['stock', 'inventory', 'items', 'products', 'low stock']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['stock', 'inventory', 'items', 'products', 'out of stock']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Out of Stock Products"
+              value={<AnimatedCounter value={stats.outOfStockCount} />}
+              subtext="Zero inventory units"
+              icon={<AlertTriangle size={20} />}
+              variant="danger"
               onClick={() => setCurrentTab('inventory')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Out of Stock Products</span>
-                <span className="kpi-value" style={{ color: stats.outOfStockCount > 0 ? 'var(--color-danger)' : 'inherit' }}><AnimatedCounter value={stats.outOfStockCount} /></span>
-                <span className="kpi-subtext">Zero inventory units</span>
-              </div>
-              <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
-            </div>
+              className={shouldBlink(['stock', 'inventory', 'items', 'products', 'out of stock']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['customers', 'customer', 'clients', 'client']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Active Customers"
+              value={<AnimatedCounter value={customers.length} />}
+              subtext="Profiles in directories"
+              icon={<Users size={20} />}
+              variant="info"
               onClick={() => setCurrentTab('customers')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Active Customers</span>
-                <span className="kpi-value"><AnimatedCounter value={customers.length} /></span>
-                <span className="kpi-subtext">Profiles in directories</span>
-              </div>
-              <div className="kpi-icon-container blue"><Users size={20} /></div>
-            </div>
+              className={shouldBlink(['customers', 'customer', 'clients', 'client']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['suppliers', 'supplier', 'vendors', 'vendor']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Active Suppliers"
+              value={<AnimatedCounter value={suppliers.length} />}
+              subtext="Suppliers registered"
+              icon={<Truck size={20} />}
+              variant="info"
               onClick={() => setCurrentTab('suppliers')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Active Suppliers</span>
-                <span className="kpi-value"><AnimatedCounter value={suppliers.length} /></span>
-                <span className="kpi-subtext">Suppliers registered</span>
-              </div>
-              <div className="kpi-icon-container blue"><Truck size={20} /></div>
-            </div>
+              className={shouldBlink(['suppliers', 'supplier', 'vendors', 'vendor']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div 
-              className={`kpi-card${shouldBlink(['invoices', 'invoice', 'sales']) ? ' search-blink-highlight' : ''}`}
+            <KpiCard
+              label="Total Invoices Raised"
+              value={<AnimatedCounter value={stats.invoicesCount} />}
+              subtext="Customer invoices generated"
+              icon={<FileText size={20} />}
+              variant="success"
               onClick={() => setCurrentTab('sales')}
-            >
-              <div className="kpi-info">
-                <span className="kpi-label">Total Invoices Raised</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.invoicesCount} /></span>
-                <span className="kpi-subtext">Customer invoices generated</span>
-              </div>
-              <div className="kpi-icon-container emerald"><FileText size={20} /></div>
-            </div>
+              className={shouldBlink(['invoices', 'invoice', 'sales']) ? 'search-blink-highlight' : ''}
+            />
 
-            <div className={`kpi-card${shouldBlink(['transactions', 'logs', 'entries']) ? ' search-blink-highlight' : ''}`}>
-              <div className="kpi-info">
-                <span className="kpi-label">Total Transactions Logs</span>
-                <span className="kpi-value"><AnimatedCounter value={stats.totalTransactions} /></span>
-                <span className="kpi-subtext">Invoice, bills, receipts, spends</span>
-              </div>
-              <div className="kpi-icon-container blue"><Activity size={20} /></div>
-            </div>
+            <KpiCard
+              label="Total Transactions Logs"
+              value={<AnimatedCounter value={stats.totalTransactions} />}
+              subtext="Invoice, bills, receipts, spends"
+              icon={<Activity size={20} />}
+              variant="info"
+              className={shouldBlink(['transactions', 'logs', 'entries']) ? 'search-blink-highlight' : ''}
+            />
           </div>
         )}
 

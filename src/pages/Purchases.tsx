@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
 import html2canvas from 'html2canvas';
@@ -2678,54 +2679,34 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Purchases KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Purchases</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800 }}>
-              {formatINR(totalPurchases)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Total billing outlays
-            </span>
-          </div>
-          <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Total Paid</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-success-dark)' }}>
-              {formatINR(totalPaid)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Cash and bank payouts
-            </span>
-          </div>
-          <div className="kpi-icon-container emerald"><CheckCircle2 size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Pending Owed</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-danger-dark)' }}>
-              {formatINR(totalOwed)}
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Accounts payable balance
-            </span>
-          </div>
-          <div className="kpi-icon-container rose"><AlertTriangle size={20} /></div>
-        </div>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info" style={{ gap: '2px' }}>
-            <span className="kpi-label" style={{ fontSize: '11px' }}>Bill Count</span>
-            <span className="kpi-value" style={{ fontSize: '20px', fontWeight: 800, color: 'var(--color-info)' }}>
-              {purchaseCount} bills
-            </span>
-            <span className="kpi-subtext" style={{ fontSize: '10px' }}>
-              Total purchase transactions
-            </span>
-          </div>
-          <div className="kpi-icon-container blue"><FileText size={20} /></div>
-        </div>
+        <KpiCard
+          label="Total Purchases"
+          value={formatINR(totalPurchases)}
+          subtext="Total billing outlays"
+          icon={<TrendingUp size={20} />}
+          variant="success"
+        />
+        <KpiCard
+          label="Total Paid"
+          value={formatINR(totalPaid)}
+          subtext="Cash and bank payouts"
+          icon={<CheckCircle2 size={20} />}
+          variant="success"
+        />
+        <KpiCard
+          label="Pending Owed"
+          value={formatINR(totalOwed)}
+          subtext="Accounts payable balance"
+          icon={<AlertTriangle size={20} />}
+          variant="danger"
+        />
+        <KpiCard
+          label="Bill Count"
+          value={`${purchaseCount} bills`}
+          subtext="Total purchase transactions"
+          icon={<FileText size={20} />}
+          variant="info"
+        />
       </div>
 
       {/* Top filter row */}

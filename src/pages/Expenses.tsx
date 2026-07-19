@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
+import { KpiCard } from '../components/KpiCard';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
@@ -355,57 +356,37 @@ export const Expenses: React.FC = () => {
     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* KPI Stats Widgets Row */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info">
-            <span className="kpi-label">Total Historical Expenses</span>
-            <span className="kpi-value" style={{ color: 'var(--color-danger)' }}>
-              {formatINR(totalExpenseAmt)}
-            </span>
-            <span className="kpi-subtext">Cumulative operational spends</span>
-          </div>
-          <div className="kpi-icon-container rose">
-            <TrendingDown size={22} />
-          </div>
-        </div>
+        <KpiCard
+          label="Total Historical Expenses"
+          value={formatINR(totalExpenseAmt)}
+          subtext="Cumulative operational spends"
+          icon={<TrendingDown size={22} />}
+          variant="danger"
+        />
 
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info">
-            <span className="kpi-label">Expenses (Current Month)</span>
-            <span className="kpi-value" style={{ color: '#E53E3E' }}>
-              {formatINR(thisMonthExpenseAmt)}
-            </span>
-            <span className="kpi-subtext">Active calendar month spending</span>
-          </div>
-          <div className="kpi-icon-container rose">
-            <Calendar size={22} />
-          </div>
-        </div>
+        <KpiCard
+          label="Expenses (Current Month)"
+          value={formatINR(thisMonthExpenseAmt)}
+          subtext="Active calendar month spending"
+          icon={<Calendar size={22} />}
+          variant="danger"
+        />
 
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info">
-            <span className="kpi-label">Top Expense Category</span>
-            <span className="kpi-value" style={{ color: 'var(--text-primary)', fontSize: '20px' }}>
-              {topCategory.name}
-            </span>
-            <span className="kpi-subtext">Total: {formatINR(topCategory.amount)}</span>
-          </div>
-          <div className="kpi-icon-container amber">
-            <Tag size={22} />
-          </div>
-        </div>
+        <KpiCard
+          label="Top Expense Category"
+          value={topCategory.name}
+          subtext={`Total: ${formatINR(topCategory.amount)}`}
+          icon={<Tag size={22} />}
+          variant="warning"
+        />
 
-        <div className="kpi-card" style={{ cursor: 'default' }}>
-          <div className="kpi-info">
-            <span className="kpi-label">Pending / Due Amount</span>
-            <span className="kpi-value" style={{ color: '#D97706' }}>
-              {formatINR(totalDueAmt)}
-            </span>
-            <span className="kpi-subtext">{totalDueCount} due {totalDueCount === 1 ? 'entry' : 'entries'} pending</span>
-          </div>
-          <div className="kpi-icon-container" style={{ background: 'rgba(217,119,6,0.12)', color: '#D97706' }}>
-            <AlertCircle size={22} />
-          </div>
-        </div>
+        <KpiCard
+          label="Pending / Due Amount"
+          value={formatINR(totalDueAmt)}
+          subtext={`${totalDueCount} due ${totalDueCount === 1 ? 'entry' : 'entries'} pending`}
+          icon={<AlertCircle size={22} />}
+          variant="warning"
+        />
       </div>
 
       <style>{`
