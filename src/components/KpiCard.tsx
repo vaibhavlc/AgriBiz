@@ -83,9 +83,10 @@ export const KpiCard: React.FC<KpiCardProps> = ({
 
       if (unscaledTextWidth > W_avail) {
         const ratio = W_avail / unscaledTextWidth;
-        // Shrink the font size by the exact ratio needed to fit, with a 2% safety margin
-        const newScale = Math.max(0.4, ratio * 0.98);
-        if (Math.abs(newScale - scale) > 0.01) {
+        // Shrink the font size by the exact ratio needed to fit, with a 5% safety margin
+        // We do not cap the minimum scale, allowing it to scale down as much as needed to fit.
+        const newScale = ratio * 0.95;
+        if (Math.abs(newScale - scale) > 0.005) {
           setScale(newScale);
         }
       } else {
@@ -115,6 +116,9 @@ export const KpiCard: React.FC<KpiCardProps> = ({
           style={{
             maxWidth: availableWidth ? `${availableWidth}px` : undefined,
             width: '100%',
+            overflow: 'hidden',
+            textOverflow: 'clip',
+            whiteSpace: 'nowrap',
           }}
         >
           <span
