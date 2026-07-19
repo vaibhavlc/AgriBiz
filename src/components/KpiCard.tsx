@@ -22,6 +22,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   style,
 }) => {
   const isClickable = typeof onClick === 'function';
+  const cardRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
   const [scale, setScale] = useState(1);
@@ -31,15 +32,15 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     setScale(1);
   }, [value]);
 
-  // Monitor size changes of the container to handle layout/window resizing
+  // Monitor size changes of the card to handle window/container resizing
   useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const card = cardRef.current;
+    if (!card) return;
 
     const observer = new ResizeObserver(() => {
       setScale(1);
     });
-    observer.observe(container);
+    observer.observe(card);
 
     return () => {
       observer.disconnect();
@@ -55,18 +56,29 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     const containerWidth = container.getBoundingClientRect().width;
     const textWidth = text.getBoundingClientRect().width;
 
-    if (textWidth > containerWidth && containerWidth > 0) {
-      const ratio = containerWidth / textWidth;
-      // Shrink scale relative to current scale with a tiny margin
-      const newScale = Math.max(0.4, scale * ratio * 0.98);
-      if (Math.abs(newScale - scale) > 0.01) {
-        setScale(newScale);
+    if (containerWidth > 0 && textWidth > 0) {
+      // Calculate the unscaled width of the text
+      const unscaledTextWidth = textWidth / scale;
+
+      if (unscaledTextWidth > containerWidth) {
+        const ratio = containerWidth / unscaledTextWidth;
+        // Shrink the font size by the exact ratio needed to fit, with a 2% safety margin
+        const newScale = Math.max(0.4, ratio * 0.98);
+        if (Math.abs(newScale - scale) > 0.01) {
+          setScale(newScale);
+        }
+      } else {
+        // If it fits at full scale, restore the original font size
+        if (scale < 0.99) {
+          setScale(1);
+        }
       }
     }
   }, [value, scale]);
 
   return (
     <div
+      ref={cardRef}
       className={`stat-card-premium variant-${variant} ${isClickable ? 'clickable' : ''} ${className}`}
       onClick={onClick}
       style={{
