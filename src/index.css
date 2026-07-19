@@ -2745,7 +2745,17 @@ body.dark-theme .lang-selector-btn:hover {
     width: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    display: flex !important;
     align-items: center !important;
+  }
+
+  .kpi-info {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-self: stretch !important;
+    min-width: 0 !important;
+    gap: 4px !important;
   }
 
   .kpi-value {
