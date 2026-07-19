@@ -84,7 +84,6 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       if (unscaledTextWidth > W_avail) {
         const ratio = W_avail / unscaledTextWidth;
         // Shrink the font size by the exact ratio needed to fit, with a 5% safety margin
-        // We do not cap the minimum scale, allowing it to scale down as much as needed to fit.
         const newScale = ratio * 0.95;
         if (Math.abs(newScale - scale) > 0.005) {
           setScale(newScale);
@@ -105,40 +104,71 @@ export const KpiCard: React.FC<KpiCardProps> = ({
       onClick={onClick}
       style={{
         ...(isClickable ? { cursor: 'pointer' } : { cursor: 'default' }),
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        justifyContent: 'space-between',
         ...style
       }}
     >
-      <div className="stat-card-body">
-        <span className="stat-card-title">{label}</span>
+      <span className="stat-card-title" style={{ width: '100%' }}>{label}</span>
+      
+      <div 
+        className="stat-card-row-content" 
+        style={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: 'center', 
+          width: '100%', 
+          gap: '12px',
+          marginTop: '4px',
+          minWidth: 0
+        }}
+      >
         <div 
-          ref={containerRef} 
-          className="stat-card-amount"
-          style={{
-            maxWidth: availableWidth ? `${availableWidth}px` : undefined,
-            width: '100%',
-            overflow: 'hidden',
-            textOverflow: 'clip',
-            whiteSpace: 'nowrap',
+          className="stat-card-amount-container" 
+          style={{ 
+            flex: 1, 
+            minWidth: 0, 
+            display: 'flex', 
+            flexDirection: 'column',
+            justifyContent: 'center'
           }}
         >
-          <span
-            ref={textRef}
+          <div 
+            ref={containerRef} 
+            className="stat-card-amount"
             style={{
-              fontSize: scale < 0.99 ? `${scale * 100}%` : 'inherit',
-              display: 'inline-block',
+              maxWidth: availableWidth ? `${availableWidth}px` : undefined,
+              width: '100%',
+              overflow: 'hidden',
+              textOverflow: 'clip',
               whiteSpace: 'nowrap',
             }}
           >
-            {value}
-          </span>
+            <span
+              ref={textRef}
+              style={{
+                fontSize: scale < 0.99 ? `${scale * 100}%` : 'inherit',
+                display: 'inline-block',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {value}
+            </span>
+          </div>
+          {subtext && <span className="stat-card-desc" style={{ marginTop: '2px' }}>{subtext}</span>}
         </div>
-        {subtext && <span className="stat-card-desc">{subtext}</span>}
-      </div>
-      <div 
-        ref={iconWrapRef}
-        className={`stat-card-icon-wrap variant-${variant}`}
-      >
-        {icon}
+
+        <div 
+          ref={iconWrapRef}
+          className={`stat-card-icon-wrap variant-${variant}`}
+          style={{
+            flexShrink: 0
+          }}
+        >
+          {icon}
+        </div>
       </div>
     </div>
   );
