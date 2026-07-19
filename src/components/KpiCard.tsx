@@ -42,12 +42,12 @@ const getCompactAmount = (val: React.ReactNode): { displayVal: React.ReactNode; 
     if (Math.abs(num) >= 10000000) {
       // Crores
       const crVal = num / 10000000;
-      const formatted = parseFloat(crVal.toFixed(2));
+      const formatted = parseFloat(crVal.toFixed(5));
       compactStr = `₹${formatted}Cr`;
     } else {
       // Lakhs
       const lVal = num / 100000;
-      const formatted = parseFloat(lVal.toFixed(2));
+      const formatted = parseFloat(lVal.toFixed(5));
       compactStr = `₹${formatted}L`;
     }
 

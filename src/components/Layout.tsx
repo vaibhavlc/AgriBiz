@@ -389,6 +389,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
     { id: 'suppliers', label: 'Suppliers', icon: <Truck size={18} /> },
     { id: 'reports', label: 'Reports', icon: <TrendingUp size={18} /> },
+    { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
   ];
 
