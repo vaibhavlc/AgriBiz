@@ -1476,7 +1476,7 @@ body.dark-theme .prem-live-dot {
   border-radius: 12px;
   padding: 24px;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-normal);
@@ -2745,6 +2745,7 @@ body.dark-theme .lang-selector-btn:hover {
     width: 100% !important;
     box-sizing: border-box !important;
     overflow: hidden !important;
+    align-items: center !important;
   }
 
   .kpi-value {
