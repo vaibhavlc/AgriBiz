@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { Modal } from './Modal';
@@ -45,11 +45,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     updateSettings,
     searchQuery,
     setSearchQuery,
+    currentInvoiceId,
     setViewInvoice,
+    currentPurchaseId,
     setViewPurchase,
+    currentCustomerId,
     setViewCustomer,
+    currentSupplierId,
     setViewSupplier,
+    isCreatingInvoice,
     setIsCreatingInvoice,
+    isEnteringPurchase,
     setIsEnteringPurchase,
     toast,
     showToast,
@@ -320,6 +326,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     document.addEventListener('click', handleOutsideClick);
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
+
+  // Scroll main container to top synchronously on page / view transitions to avoid layout flash or scroll jumping
+  useLayoutEffect(() => {
+    if (mainWrapperRef.current) {
+      mainWrapperRef.current.scrollTop = 0;
+    }
+  }, [
+    currentTab,
+    currentInvoiceId,
+    currentPurchaseId,
+    currentCustomerId,
+    currentSupplierId,
+    isCreatingInvoice,
+    isEnteringPurchase
+  ]);
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);

@@ -265,7 +265,12 @@ export const Settings: React.FC = () => {
     if (showToast) {
       showToast('Preferences saved successfully!');
     }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const mainWrapper = document.querySelector('.main-wrapper');
+    if (mainWrapper) {
+      mainWrapper.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
     setTimeout(() => setSavedSuccess(false), 3000);
   };
 
