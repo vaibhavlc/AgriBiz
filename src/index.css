@@ -714,6 +714,7 @@ body.dark-theme .prem-live-dot {
   min-height: 100vh;
   overflow-x: hidden; /* Disable horizontal overflow */
   min-width: 0; /* Enable content wrapper to shrink and scale fluidly */
+  padding-top: 80px;
 }
 
 /* Styled thin scrollbar for main content */
@@ -744,12 +745,18 @@ body.dark-theme .prem-live-dot {
 }
 
 .header-outer-wrapper {
-  position: sticky;
+  position: fixed;
   top: 0;
+  right: 0;
+  left: 264px;
   z-index: 90;
   padding: 16px 24px 8px 24px;
   pointer-events: none;
-  width: 100%;
+  transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sidebar.collapsed ~ .main-wrapper .header-outer-wrapper {
+  left: 72px;
 }
 
 .header {
@@ -3458,6 +3465,7 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   .main-wrapper {
+    padding-top: 74px !important;
     padding-bottom: 80px !important;
   }
 }
