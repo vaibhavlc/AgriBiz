@@ -62,6 +62,7 @@ export const Purchases: React.FC = () => {
     setViewSupplier,
     purchaseFormPresetSupplierId,
     setPurchaseFormPresetSupplierId,
+    setIsFormDirty,
   } = useApp();
 
   const totalPurchases = purchases.reduce((sum, p) => sum + p.grandTotal, 0);
@@ -826,6 +827,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleResetForm = (exitEditor = true) => {
+    setIsFormDirty(false);
     setEditingPurchaseId(null);
     setSelectedSupplierId('');
     setSupplierInvoiceNumber('');
@@ -1811,7 +1813,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
           </div>
         </div>
 
-        <form onSubmit={(e) => handleSavePurchaseWrapper(e, false)}>
+        <form onSubmit={(e) => handleSavePurchaseWrapper(e, false)} onChange={() => setIsFormDirty(true)}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
             
             {/* Section 1: Purchase & Voucher Details */}

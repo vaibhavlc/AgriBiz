@@ -69,7 +69,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
-  const { settings, updateSettings, resetToDefault, showToast } = useApp();
+  const { settings, updateSettings, resetToDefault, showToast, setIsFormDirty } = useApp();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -262,6 +262,7 @@ export const Settings: React.FC = () => {
     });
 
     setSavedSuccess(true);
+    setIsFormDirty(false);
     if (showToast) {
       showToast('Preferences saved successfully!');
     }
@@ -522,7 +523,7 @@ export const Settings: React.FC = () => {
         </button>
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} onChange={() => setIsFormDirty(true)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           {/* TAB 1: Business Profile & Address */}

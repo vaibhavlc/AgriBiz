@@ -53,6 +53,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setIsEnteringPurchase,
     toast,
     showToast,
+    isFormDirty,
+    setIsFormDirty,
     isPaymentFormOpen,
     setIsPaymentFormOpen,
     paymentType,
@@ -105,6 +107,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [scrolled, setScrolled] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>('en');
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
+
+  // UX Priority states
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingTab, setPendingTab] = useState<string | null>(null);
+  const [isPageLoading, setIsPageLoading] = useState(false);
 
   const LANGUAGES = [
     { code: 'en', label: 'English', nativeLabel: 'English' },
@@ -321,18 +328,60 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  const handleTabChange = (tab: string) => {
-    setCurrentTab(tab);
-    setSearchQuery(''); // Clear search on page navigation
-    setIsMobileSidebarOpen(false);
+  // Prevent unsaved changes loss on browser close / reload
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isFormDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isFormDirty]);
 
-    // Reset drill-down views
-    setViewInvoice(null);
-    setViewPurchase(null);
-    setViewCustomer(null);
-    setViewSupplier(null);
-    setIsCreatingInvoice(false);
-    setIsEnteringPurchase(false);
+  const handleTabChange = (tab: string) => {
+    if (isFormDirty) {
+      setPendingTab(tab);
+      setShowUnsavedModal(true);
+      return;
+    }
+    executeTabChange(tab);
+  };
+
+  const executeTabChange = (tab: string) => {
+    setIsPageLoading(true);
+    setTimeout(() => {
+      setCurrentTab(tab);
+      setSearchQuery(''); // Clear search on page navigation
+      setIsMobileSidebarOpen(false);
+
+      // Reset drill-down views
+      setViewInvoice(null);
+      setViewPurchase(null);
+      setViewCustomer(null);
+      setViewSupplier(null);
+      setIsCreatingInvoice(false);
+      setIsEnteringPurchase(false);
+      setIsPageLoading(false);
+
+      // Always open every page at the top after navigation
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }, 180);
+  };
+
+  const handleConfirmDiscard = () => {
+    setIsFormDirty(false);
+    setShowUnsavedModal(false);
+    if (pendingTab) {
+      executeTabChange(pendingTab);
+      setPendingTab(null);
+    }
+  };
+
+  const handleCancelDiscard = () => {
+    setShowUnsavedModal(false);
+    setPendingTab(null);
   };
 
   const toggleTheme = () => {
@@ -961,11 +1010,109 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
         </div>
 
-        <main className="content-body">{children}</main>
+        <main className="content-body">
+          {isPageLoading ? (
+            <div className="skeleton-page-container animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', width: '100%', boxSizing: 'border-box' }}>
+              {/* Header Skeleton */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className="skeleton-shimmer" style={{ width: '220px', height: '24px', borderRadius: '6px' }} />
+                <div className="skeleton-shimmer" style={{ width: '380px', height: '14px', borderRadius: '4px' }} />
+              </div>
+              
+              {/* KPI Cards Grid Skeleton */}
+              <div className="skeleton-grid" style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                gap: '20px',
+                width: '100%'
+              }}>
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="card" style={{ padding: '20px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', border: '1px solid var(--border-color)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <div className="skeleton-shimmer" style={{ width: '100px', height: '14px', borderRadius: '4px' }} />
+                      <div className="skeleton-shimmer" style={{ width: '28px', height: '28px', borderRadius: '8px' }} />
+                    </div>
+                    <div className="skeleton-shimmer" style={{ width: '150px', height: '28px', borderRadius: '6px', marginTop: '6px' }} />
+                    <div className="skeleton-shimmer" style={{ width: '120px', height: '12px', borderRadius: '4px', marginTop: '4px' }} />
+                  </div>
+                ))}
+              </div>
+
+              {/* Main Content Area Skeleton (simulated table/list) */}
+              <div className="card" style={{ padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '16px' }}>
+                  <div className="skeleton-shimmer" style={{ width: '150px', height: '18px', borderRadius: '4px' }} />
+                  <div className="skeleton-shimmer" style={{ width: '80px', height: '32px', borderRadius: '6px' }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '8px' }}>
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 0', borderBottom: '1px solid var(--border-color)' }}>
+                      <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <div className="skeleton-shimmer" style={{ width: '36px', height: '36px', borderRadius: '8px' }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                          <div className="skeleton-shimmer" style={{ width: '140px', height: '14px', borderRadius: '4px' }} />
+                          <div className="skeleton-shimmer" style={{ width: '80px', height: '10px', borderRadius: '4px' }} />
+                        </div>
+                      </div>
+                      <div className="skeleton-shimmer" style={{ width: '70px', height: '16px', borderRadius: '4px' }} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
+        </main>
       </div>
 
       {renderMobileBottomNav()}
       {renderMobileMoreBottomSheet()}
+
+      {/* Unsaved Changes Warning Modal */}
+      {showUnsavedModal && (
+        <div className="modal-overlay no-print" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', zIndex: 9999,
+          backdropFilter: 'blur(3px)',
+          animation: 'fadeIn 0.25s ease-out'
+        }}>
+          <div className="card" style={{
+            width: 'calc(100% - 32px)', maxWidth: '400px', padding: '24px',
+            borderRadius: '16px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.15)',
+            display: 'flex', flexDirection: 'column', gap: '16px',
+            background: 'var(--bg-card)', border: '1px solid var(--border-color)',
+            animation: 'slideUp 0.25s ease-out'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', color: 'var(--color-danger)' }}>
+              <AlertCircle size={22} />
+              <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Unsaved Changes!</h3>
+            </div>
+            <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              You have unsaved edits on the current page. Leaving will discard all entered draft information.
+            </p>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleCancelDiscard}
+                style={{ flex: 1, height: '42px', fontWeight: 700, fontSize: '13px', borderRadius: '8px', justifyContent: 'center' }}
+              >
+                Keep Editing
+              </button>
+              <button
+                type="button"
+                className="btn btn-danger"
+                onClick={handleConfirmDiscard}
+                style={{ flex: 1, height: '42px', fontWeight: 700, fontSize: '13px', borderRadius: '8px', justifyContent: 'center', background: 'var(--color-danger)', color: '#fff' }}
+              >
+                Discard & Leave
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Global Toast Notification */}
       {toast && (
