@@ -2077,94 +2077,106 @@ export const Reports: React.FC = () => {
               />
             </div>
 
-            {/* Desktop View */}
-            <div className="desktop-only-table">
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Invoice No</th>
-                      <th>Customer Name</th>
-                      <th>Date</th>
-                      <th style={{ textAlign: 'right' }}>Taxable Amt (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Tax collected (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Grand Total (₹)</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredInvoices.map((inv) => (
-                      <tr key={inv.id}>
-                        <td style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>{inv.invoiceNumber}</td>
-                        <td>{inv.customerName}</td>
-                        <td>{formatDate(inv.date)}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(inv.subtotal - inv.discountTotal).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(inv.gstTotal).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
-                        <td>
-                          <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                            {inv.paymentStatus}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                      <td colSpan={3}>Report Summary Total:</td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalSalesVal).replace('₹', '')}</td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Sales Table Card */}
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Sales Transaction Breakdown
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Detailed log of customer tax invoices, taxable turnover, and payment settlement statuses.
+                </p>
               </div>
-            </div>
 
-            {/* Mobile View */}
-            <div className="mobile-card-list">
-              {filteredInvoices.map((inv) => (
-                <div key={inv.id} className="mobile-list-card">
-                  <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">{inv.invoiceNumber}</h4>
-                      <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+              {/* Desktop View */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice No</th>
+                        <th>Customer Name</th>
+                        <th>Date</th>
+                        <th style={{ textAlign: 'right' }}>Taxable Amt (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Tax collected (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Grand Total (₹)</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredInvoices.map((inv) => (
+                        <tr key={inv.id}>
+                          <td style={{ fontWeight: 600, color: 'var(--primary-dark)' }}>{inv.invoiceNumber}</td>
+                          <td>{inv.customerName}</td>
+                          <td>{formatDate(inv.date)}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(inv.subtotal - inv.discountTotal).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(inv.gstTotal).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
+                          <td>
+                            <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              {inv.paymentStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                        <td colSpan={3}>Report Summary Total:</td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalSalesVal).replace('₹', '')}</td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="mobile-card-list">
+                {filteredInvoices.map((inv) => (
+                  <div key={inv.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">{inv.invoiceNumber}</h4>
+                        <span className="mobile-list-card-subtitle">{inv.customerName}</span>
+                      </div>
+                      <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                        {inv.paymentStatus}
+                      </span>
                     </div>
-                    <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                      {inv.paymentStatus}
-                    </span>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Date</span>
+                      <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Taxable Amt</span>
+                      <span className="mobile-list-card-val">{formatINR(inv.subtotal - inv.discountTotal)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Tax Collected</span>
+                      <span className="mobile-list-card-val">{formatINR(inv.gstTotal)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Grand Total</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(inv.grandTotal)}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Total Taxable</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesBase)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Date</span>
-                    <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
+                    <span className="mobile-list-card-label">Total Tax</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesTax)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Taxable Amt</span>
-                    <span className="mobile-list-card-val">{formatINR(inv.subtotal - inv.discountTotal)}</span>
+                    <span className="mobile-list-card-label">Total Value</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)', fontSize: '15px' }}>{formatINR(totalSalesVal)}</span>
                   </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Tax Collected</span>
-                    <span className="mobile-list-card-val">{formatINR(inv.gstTotal)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Grand Total</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(inv.grandTotal)}</span>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Taxable</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesBase)}</span>
-                </div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Tax</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesTax)}</span>
-                </div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Value</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)', fontSize: '15px' }}>{formatINR(totalSalesVal)}</span>
                 </div>
               </div>
             </div>
@@ -2205,94 +2217,106 @@ export const Reports: React.FC = () => {
               />
             </div>
 
-            {/* Desktop View */}
-            <div className="desktop-only-table">
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Bill Number</th>
-                      <th>Supplier Name</th>
-                      <th>Receipt Date</th>
-                      <th style={{ textAlign: 'right' }}>Base Cost (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Tax paid (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Total Cost (₹)</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredPurchases.map((pur) => (
-                      <tr key={pur.id}>
-                        <td style={{ fontWeight: 600, color: 'var(--color-info)' }}>{pur.purchaseNumber}</td>
-                        <td>{pur.supplierName}</td>
-                        <td>{formatDate(pur.date)}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(pur.subtotal).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right' }}>{formatINR(pur.gstTotal).replace('₹', '')}</td>
-                        <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
-                        <td>
-                          <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                            {pur.paymentStatus}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                      <td colSpan={3}>Report Summary Total:</td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesVal).replace('₹', '')}</td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Purchase Table Card */}
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Purchase Transaction Breakdown
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Detailed log of supplier inward purchase vouchers, input costs, and raw materials tax credit.
+                </p>
               </div>
-            </div>
 
-            {/* Mobile View */}
-            <div className="mobile-card-list">
-              {filteredPurchases.map((pur) => (
-                <div key={pur.id} className="mobile-list-card">
-                  <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">{pur.purchaseNumber}</h4>
-                      <span className="mobile-list-card-subtitle">{pur.supplierName}</span>
+              {/* Desktop View */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Bill Number</th>
+                        <th>Supplier Name</th>
+                        <th>Receipt Date</th>
+                        <th style={{ textAlign: 'right' }}>Base Cost (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Tax paid (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Total Cost (₹)</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredPurchases.map((pur) => (
+                        <tr key={pur.id}>
+                          <td style={{ fontWeight: 600, color: 'var(--color-info)' }}>{pur.purchaseNumber}</td>
+                          <td>{pur.supplierName}</td>
+                          <td>{formatDate(pur.date)}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(pur.subtotal).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right' }}>{formatINR(pur.gstTotal).replace('₹', '')}</td>
+                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
+                          <td>
+                            <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                              {pur.paymentStatus}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                        <td colSpan={3}>Report Summary Total:</td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesVal).replace('₹', '')}</td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="mobile-card-list">
+                {filteredPurchases.map((pur) => (
+                  <div key={pur.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">{pur.purchaseNumber}</h4>
+                        <span className="mobile-list-card-subtitle">{pur.supplierName}</span>
+                      </div>
+                      <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
+                        {pur.paymentStatus}
+                      </span>
                     </div>
-                    <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                      {pur.paymentStatus}
-                    </span>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Receipt Date</span>
+                      <span className="mobile-list-card-val">{formatDate(pur.date)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Base Cost</span>
+                      <span className="mobile-list-card-val">{formatINR(pur.subtotal)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Tax Paid</span>
+                      <span className="mobile-list-card-val">{formatINR(pur.gstTotal)}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Total Cost</span>
+                      <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(pur.grandTotal)}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info)', background: 'var(--bg-app)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Total Base</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalPurchasesBase)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Receipt Date</span>
-                    <span className="mobile-list-card-val">{formatDate(pur.date)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Base Cost</span>
-                    <span className="mobile-list-card-val">{formatINR(pur.subtotal)}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Tax Paid</span>
-                    <span className="mobile-list-card-val">{formatINR(pur.gstTotal)}</span>
+                    <span className="mobile-list-card-label">Total Tax</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalPurchasesTax)}</span>
                   </div>
                   <div className="mobile-list-card-row">
                     <span className="mobile-list-card-label">Total Cost</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(pur.grandTotal)}</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)', fontSize: '15px' }}>{formatINR(totalPurchasesVal)}</span>
                   </div>
-                </div>
-              ))}
-              
-              <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info)', background: 'var(--bg-app)' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Base</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalPurchasesBase)}</span>
-                </div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Tax</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalPurchasesTax)}</span>
-                </div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Cost</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)', fontSize: '15px' }}>{formatINR(totalPurchasesVal)}</span>
                 </div>
               </div>
             </div>
@@ -2333,8 +2357,15 @@ export const Reports: React.FC = () => {
               />
             </div>
 
-            <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
-              <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Expense Statement Breakdown</h4>
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Expense Statement Breakdown
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Detailed log of shop rent, light bills, transportation charges, maintenance and other operational costs.
+                </p>
+              </div>
               
               {/* Desktop view */}
               <div className="desktop-only-table">
@@ -2626,95 +2657,107 @@ export const Reports: React.FC = () => {
               />
             </div>
 
-            {/* Desktop View */}
-            <div className="desktop-only-table">
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>SKU Code</th>
-                      <th>Product Name</th>
-                      <th>Category</th>
-                      <th style={{ textAlign: 'center' }}>Available Qty</th>
-                      <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Asset Valuation (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Retail Rate (₹)</th>
-                      <th style={{ textAlign: 'right' }}>Retail Valuation (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {products.map((p) => {
-                      const itemAssetVal = p.stock * p.purchasePrice;
-                      const itemRetailVal = p.stock * p.sellingPrice;
-                      return (
-                        <tr key={p.id}>
-                          <td style={{ fontFamily: 'monospace' }}>{p.sku}</td>
-                          <td style={{ fontWeight: 600 }}>{p.name}</td>
-                          <td>{p.category}</td>
-                          <td style={{ textAlign: 'center', fontWeight: 700 }}>{p.stock}</td>
-                          <td style={{ textAlign: 'right' }}>{formatINR(p.purchasePrice).replace('₹', '')}</td>
-                          <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(itemAssetVal).replace('₹', '')}</td>
-                          <td style={{ textAlign: 'right' }}>{formatINR(p.sellingPrice).replace('₹', '')}</td>
-                          <td style={{ textAlign: 'right' }}>{formatINR(itemRetailVal).replace('₹', '')}</td>
-                        </tr>
-                      );
-                    })}
-                    <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                      <td colSpan={3}>Stock Summary Total:</td>
-                      <td style={{ textAlign: 'center' }}>{totalStockQty}</td>
-                      <td></td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalAssetVal).replace('₹', '')}</td>
-                      <td></td>
-                      <td style={{ textAlign: 'right' }}>{formatINR(totalRetailVal).replace('₹', '')}</td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Stock Table Card */}
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Inventory Stock Status Breakdown
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Detailed summary of available catalog stock quantity, unit purchase costs, and raw inventory asset valuations.
+                </p>
               </div>
-            </div>
 
-            {/* Mobile View */}
-            <div className="mobile-card-list">
-              {products.map((p) => {
-                const itemAssetVal = p.stock * p.purchasePrice;
-                const itemRetailVal = p.stock * p.sellingPrice;
-                return (
-                  <div key={p.id} className="mobile-list-card">
-                    <div className="mobile-list-card-header">
-                      <div>
-                        <h4 className="mobile-list-card-title">{p.name}</h4>
-                        <span className="mobile-list-card-subtitle">{p.category} • SKU: {p.sku}</span>
+              {/* Desktop View */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>SKU Code</th>
+                        <th>Product Name</th>
+                        <th>Category</th>
+                        <th style={{ textAlign: 'center' }}>Available Qty</th>
+                        <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Asset Valuation (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Retail Rate (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Retail Valuation (₹)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {products.map((p) => {
+                        const itemAssetVal = p.stock * p.purchasePrice;
+                        const itemRetailVal = p.stock * p.sellingPrice;
+                        return (
+                          <tr key={p.id}>
+                            <td style={{ fontFamily: 'monospace' }}>{p.sku}</td>
+                            <td style={{ fontWeight: 600 }}>{p.name}</td>
+                            <td>{p.category}</td>
+                            <td style={{ textAlign: 'center', fontWeight: 700 }}>{p.stock}</td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(p.purchasePrice).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(itemAssetVal).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(p.sellingPrice).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(itemRetailVal).replace('₹', '')}</td>
+                          </tr>
+                        );
+                      })}
+                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                        <td colSpan={3}>Stock Summary Total:</td>
+                        <td style={{ textAlign: 'center' }}>{totalStockQty}</td>
+                        <td></td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalAssetVal).replace('₹', '')}</td>
+                        <td></td>
+                        <td style={{ textAlign: 'right' }}>{formatINR(totalRetailVal).replace('₹', '')}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="mobile-card-list">
+                {products.map((p) => {
+                  const itemAssetVal = p.stock * p.purchasePrice;
+                  const itemRetailVal = p.stock * p.sellingPrice;
+                  return (
+                    <div key={p.id} className="mobile-list-card">
+                      <div className="mobile-list-card-header">
+                        <div>
+                          <h4 className="mobile-list-card-title">{p.name}</h4>
+                          <span className="mobile-list-card-subtitle">{p.category} • SKU: {p.sku}</span>
+                        </div>
+                        <span className="badge badge-info" style={{ fontWeight: 700 }}>{p.stock} Units</span>
                       </div>
-                      <span className="badge badge-info" style={{ fontWeight: 700 }}>{p.stock} Units</span>
+                      <div className="mobile-list-card-row">
+                        <span className="mobile-list-card-label">Cost / Retail Rate</span>
+                        <span className="mobile-list-card-val">{formatINR(p.purchasePrice)} / {formatINR(p.sellingPrice)}</span>
+                      </div>
+                      <div className="mobile-list-card-row">
+                        <span className="mobile-list-card-label">Asset Valuation</span>
+                        <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(itemAssetVal)}</span>
+                      </div>
+                      <div className="mobile-list-card-row">
+                        <span className="mobile-list-card-label">Retail Valuation</span>
+                        <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(itemRetailVal)}</span>
+                      </div>
                     </div>
-                    <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Cost / Retail Rate</span>
-                      <span className="mobile-list-card-val">{formatINR(p.purchasePrice)} / {formatINR(p.sellingPrice)}</span>
-                    </div>
-                    <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Asset Valuation</span>
-                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(itemAssetVal)}</span>
-                    </div>
-                    <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Retail Valuation</span>
-                      <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(itemRetailVal)}</span>
-                    </div>
+                  );
+                })}
+                
+                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Stock Summary Total</div>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Total Qty</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{totalStockQty} items</span>
                   </div>
-                );
-              })}
-              
-              <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
-                <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Stock Summary Total</div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Qty</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{totalStockQty} items</span>
-                </div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Asset Value</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)' }}>{formatINR(totalAssetVal)}</span>
-                </div>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label">Total Retail Value</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 800 }}>{formatINR(totalRetailVal)}</span>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Total Asset Value</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)' }}>{formatINR(totalAssetVal)}</span>
+                  </div>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label">Total Retail Value</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800 }}>{formatINR(totalRetailVal)}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -2757,9 +2800,15 @@ export const Reports: React.FC = () => {
             </div>
 
             {/* GST summary log */}
-            <div className="card" style={{ border: '1px solid var(--border-color)', boxShadow: 'none' }}>
-              <h3 className="card-title" style={{ padding: '20px 20px 0 20px', margin: 0, fontWeight: 700 }}>GSTR Summary Ledger Logs</h3>
-              <div style={{ padding: '20px' }}>
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  GSTR Summary Ledger Logs
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Aggregated GST summary statement of output tax liability and input tax credit (ITC) offsets.
+                </p>
+              </div>
                 {/* Desktop View */}
                 <div className="desktop-only-table">
                   <div className="table-wrapper">
@@ -2883,7 +2932,6 @@ export const Reports: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              </div>
             </div>
           </div>
         );
@@ -2922,88 +2970,100 @@ export const Reports: React.FC = () => {
               />
             </div>
 
-            {/* Desktop View */}
-            <div className="desktop-only-table">
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Customer ID</th>
-                      <th>Customer Name</th>
-                      <th>Phone Number</th>
-                      <th>GSTIN Identification</th>
-                      <th style={{ textAlign: 'right' }}>Outstanding Balance (₹)</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {customers.map((c) => (
-                      <tr key={c.id}>
-                        <td style={{ fontFamily: 'monospace' }}>{c.id}</td>
-                        <td style={{ fontWeight: 600 }}>{c.name}</td>
-                        <td>{c.phone}</td>
-                        <td style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</td>
-                        <td
-                          style={{
-                            textAlign: 'right',
-                            fontWeight: 700,
-                            color: c.outstanding > 0 ? 'var(--color-danger)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit',
-                          }}
-                        >
-                          {formatINR(c.outstanding)}
-                        </td>
-                        <td>
-                          <span className={`badge ${c.outstanding === 0 ? 'badge-success' : c.outstanding > 0 ? 'badge-warning' : 'badge-info'}`}>
-                            {c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                      <td colSpan={4}>Accumulated Customer Dues:</td>
-                      <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
-                        {formatINR(pendingReceivables)}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Customer Ledger Table Card */}
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Customer Outstanding Ledger
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Detailed ledger balances showing outstanding dues pending and advance customer accounts.
+                </p>
               </div>
-            </div>
 
-            {/* Mobile View */}
-            <div className="mobile-card-list">
-              {customers.map((c) => (
-                <div key={c.id} className="mobile-list-card">
-                  <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">{c.name}</h4>
-                      <span className="mobile-list-card-subtitle">ID: {c.id} • {c.phone}</span>
+              {/* Desktop View */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Customer ID</th>
+                        <th>Customer Name</th>
+                        <th>Phone Number</th>
+                        <th>GSTIN Identification</th>
+                        <th style={{ textAlign: 'right' }}>Outstanding Balance (₹)</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {customers.map((c) => (
+                        <tr key={c.id}>
+                          <td style={{ fontFamily: 'monospace' }}>{c.id}</td>
+                          <td style={{ fontWeight: 600 }}>{c.name}</td>
+                          <td>{c.phone}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</td>
+                          <td
+                            style={{
+                              textAlign: 'right',
+                              fontWeight: 700,
+                              color: c.outstanding > 0 ? 'var(--color-danger)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit',
+                            }}
+                          >
+                            {formatINR(c.outstanding)}
+                          </td>
+                          <td>
+                            <span className={`badge ${c.outstanding === 0 ? 'badge-success' : c.outstanding > 0 ? 'badge-warning' : 'badge-info'}`}>
+                              {c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                        <td colSpan={4}>Accumulated Customer Dues:</td>
+                        <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
+                          {formatINR(pendingReceivables)}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="mobile-card-list">
+                {customers.map((c) => (
+                  <div key={c.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">{c.name}</h4>
+                        <span className="mobile-list-card-subtitle">ID: {c.id} • {c.phone}</span>
+                      </div>
+                      <span className={`badge ${c.outstanding === 0 ? 'badge-success' : c.outstanding > 0 ? 'badge-warning' : 'badge-info'}`}>
+                        {c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'}
+                      </span>
                     </div>
-                    <span className={`badge ${c.outstanding === 0 ? 'badge-success' : c.outstanding > 0 ? 'badge-warning' : 'badge-info'}`}>
-                      {c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'}
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">GSTIN</span>
+                      <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Outstanding Balance</span>
+                      <span className="mobile-list-card-val" style={{
+                        fontWeight: 700,
+                        color: c.outstanding > 0 ? 'var(--color-danger)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit',
+                      }}>{formatINR(c.outstanding)}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-danger)', background: 'var(--bg-app)' }}>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Customer Dues</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
+                      {formatINR(pendingReceivables)}
                     </span>
                   </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">GSTIN</span>
-                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Outstanding Balance</span>
-                    <span className="mobile-list-card-val" style={{
-                      fontWeight: 700,
-                      color: c.outstanding > 0 ? 'var(--color-danger)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit',
-                    }}>{formatINR(c.outstanding)}</span>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-danger)', background: 'var(--bg-app)' }}>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Customer Dues</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
-                    {formatINR(pendingReceivables)}
-                  </span>
                 </div>
               </div>
             </div>
@@ -3044,88 +3104,100 @@ export const Reports: React.FC = () => {
               />
             </div>
 
-            {/* Desktop View */}
-            <div className="desktop-only-table">
-              <div className="table-wrapper">
-                <table className="data-table">
-                  <thead>
-                    <tr>
-                      <th>Supplier ID</th>
-                      <th>Company / Supplier Name</th>
-                      <th>Phone / Contact</th>
-                      <th>GSTIN Identification</th>
-                      <th style={{ textAlign: 'right' }}>Balance Owed (₹)</th>
-                      <th>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {suppliers.map((s) => (
-                      <tr key={s.id}>
-                        <td style={{ fontFamily: 'monospace' }}>{s.id}</td>
-                        <td style={{ fontWeight: 600 }}>{s.name}</td>
-                        <td>{s.phone}</td>
-                        <td style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</td>
-                        <td
-                          style={{
-                            textAlign: 'right',
-                            fontWeight: 700,
-                            color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit',
-                          }}
-                        >
-                          {formatINR(s.outstanding)}
-                        </td>
-                        <td>
-                          <span className={`badge ${s.outstanding === 0 ? 'badge-success' : 'badge-warning'}`}>
-                            {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                    <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                      <td colSpan={4}>Accumulated We Owe Suppliers:</td>
-                      <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
-                        {formatINR(pendingPayables)}
-                      </td>
-                      <td></td>
-                    </tr>
-                  </tbody>
-                </table>
+            {/* Supplier Ledger Table Card */}
+            <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
+              <div style={{ marginBottom: '16px' }}>
+                <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  Supplier Outstanding Ledger
+                </h3>
+                <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
+                  Detailed ledger balances showing raw material accounts payable costs and pending supplier settlements.
+                </p>
               </div>
-            </div>
 
-            {/* Mobile View */}
-            <div className="mobile-card-list">
-              {suppliers.map((s) => (
-                <div key={s.id} className="mobile-list-card">
-                  <div className="mobile-list-card-header">
-                    <div>
-                      <h4 className="mobile-list-card-title">{s.name}</h4>
-                      <span className="mobile-list-card-subtitle">ID: {s.id} • {s.phone}</span>
+              {/* Desktop View */}
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Supplier ID</th>
+                        <th>Company / Supplier Name</th>
+                        <th>Phone / Contact</th>
+                        <th>GSTIN Identification</th>
+                        <th style={{ textAlign: 'right' }}>Balance Owed (₹)</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {suppliers.map((s) => (
+                        <tr key={s.id}>
+                          <td style={{ fontFamily: 'monospace' }}>{s.id}</td>
+                          <td style={{ fontWeight: 600 }}>{s.name}</td>
+                          <td>{s.phone}</td>
+                          <td style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</td>
+                          <td
+                            style={{
+                              textAlign: 'right',
+                              fontWeight: 700,
+                              color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit',
+                            }}
+                          >
+                            {formatINR(s.outstanding)}
+                          </td>
+                          <td>
+                            <span className={`badge ${s.outstanding === 0 ? 'badge-success' : 'badge-warning'}`}>
+                              {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                      <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
+                        <td colSpan={4}>Accumulated We Owe Suppliers:</td>
+                        <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
+                          {formatINR(pendingPayables)}
+                        </td>
+                        <td></td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile View */}
+              <div className="mobile-card-list">
+                {suppliers.map((s) => (
+                  <div key={s.id} className="mobile-list-card">
+                    <div className="mobile-list-card-header">
+                      <div>
+                        <h4 className="mobile-list-card-title">{s.name}</h4>
+                        <span className="mobile-list-card-subtitle">ID: {s.id} • {s.phone}</span>
+                      </div>
+                      <span className={`badge ${s.outstanding === 0 ? 'badge-success' : s.outstanding >-1 ? 'badge-warning' : 'badge-info'}`}>
+                        {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
+                      </span>
                     </div>
-                    <span className={`badge ${s.outstanding === 0 ? 'badge-success' : s.outstanding >-1 ? 'badge-warning' : 'badge-info'}`}>
-                      {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">GSTIN</span>
+                      <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</span>
+                    </div>
+                    <div className="mobile-list-card-row">
+                      <span className="mobile-list-card-label">Balance Owed</span>
+                      <span className="mobile-list-card-val" style={{
+                        fontWeight: 700,
+                        color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit',
+                      }}>{formatINR(s.outstanding)}</span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-danger)', background: 'var(--bg-app)' }}>
+                  <div className="mobile-list-card-row">
+                    <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Owed Balance</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
+                      {formatINR(pendingPayables)}
                     </span>
                   </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">GSTIN</span>
-                    <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</span>
-                  </div>
-                  <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Balance Owed</span>
-                    <span className="mobile-list-card-val" style={{
-                      fontWeight: 700,
-                      color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit',
-                    }}>{formatINR(s.outstanding)}</span>
-                  </div>
-                </div>
-              ))}
-              
-              <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-danger)', background: 'var(--bg-app)' }}>
-                <div className="mobile-list-card-row">
-                  <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Owed Balance</span>
-                  <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
-                    {formatINR(pendingPayables)}
-                  </span>
                 </div>
               </div>
             </div>
