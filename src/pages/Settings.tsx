@@ -889,7 +889,7 @@ export const Settings: React.FC = () => {
                           <Upload size={14} /> Change Logo
                           <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
                         </label>
-                        <button type="button" onClick={handleRemoveLogo} className="btn btn-danger btn-sm" style={{ color: 'var(--color-danger)' }}>
+                        <button type="button" onClick={handleRemoveLogo} className="btn btn-danger btn-sm">
                           <Trash2 size={14} /> Remove Logo
                         </button>
                       </div>
@@ -933,7 +933,7 @@ export const Settings: React.FC = () => {
                           <Upload size={14} /> Change Watermark
                           <input type="file" accept="image/*" onChange={handleWatermarkLogoUpload} style={{ display: 'none' }} />
                         </label>
-                        <button type="button" onClick={handleRemoveWatermarkLogo} className="btn btn-danger btn-sm" style={{ color: 'var(--color-danger)' }}>
+                        <button type="button" onClick={handleRemoveWatermarkLogo} className="btn btn-danger btn-sm">
                           <Trash2 size={14} /> Remove Watermark
                         </button>
                       </div>
@@ -972,7 +972,7 @@ export const Settings: React.FC = () => {
                       <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '12px', width: '240px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
                         <img src={savedSignature} alt="E-Signature Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                       </div>
-                      <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm" style={{ color: 'var(--color-danger)' }}>
+                      <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm">
                         <Trash2 size={14} /> Remove Signature
                       </button>
                     </div>

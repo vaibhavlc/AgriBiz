@@ -107,6 +107,7 @@ export const Sales: React.FC = () => {
   const [referenceNumber, setReferenceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
+  const [showSignature, setShowSignature] = useState(true);
 
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
@@ -139,6 +140,7 @@ export const Sales: React.FC = () => {
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setAmountPaid(0);
       setNotes('');
+      setShowSignature(true);
       // Open modal
       setIsCreatingInvoice(true);
       // Consume preset
@@ -604,6 +606,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setReferenceNumber('');
     setDueDate('');
     setNotes('');
+    setShowSignature(true);
     setIsCreatingInvoice(true);
   };
 
@@ -624,6 +627,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setReferenceNumber(inv.referenceNumber || '');
     setDueDate(inv.dueDate || '');
     setNotes(inv.notes || '');
+    setShowSignature(inv.showSignature !== false);
     setIsCreatingInvoice(true);
   };
 
@@ -711,6 +715,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         referenceNumber: (amountPaid > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
         dueDate: (balanceDue > 0 && dueDate) ? dueDate : undefined,
         notes: notes.trim() || undefined,
+        showSignature,
       });
 
       showToast(`Invoice ${originalInvoice.invoiceNumber} updated successfully!`);
@@ -743,6 +748,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         referenceNumber: (amountPaid > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
         dueDate: (balanceDue > 0 && dueDate) ? dueDate : undefined,
         notes: notes.trim() || undefined,
+        showSignature,
       });
 
       showToast(`Invoice created successfully for ${customer.name}!`);
@@ -1437,7 +1443,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
                 <div style={{ height: "6px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                  {settings.signature ? (
+                  {settings.signature && selectedInvoice.showSignature !== false ? (
                     <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "22px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
                   ) : null}
                 </div>
@@ -2472,6 +2478,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     style={{ fontSize: '13px', resize: 'vertical' }}
                   />
                 </div>
+
+                {settings.signature && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '14px', padding: '12px 14px', borderRadius: '8px', background: 'var(--bg-app)', border: '1.5px solid var(--border-color)' }}>
+                    <input
+                      id="invoice-show-signature"
+                      type="checkbox"
+                      checked={showSignature}
+                      onChange={(e) => setShowSignature(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', margin: 0 }}
+                    />
+                    <label htmlFor="invoice-show-signature" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', margin: 0, userSelect: 'none' }}>
+                      Include Authorized Signatory E-Signature on Printed Invoice
+                    </label>
+                  </div>
+                )}
               </div>
             </div>
 

@@ -62,6 +62,7 @@ export interface Invoice {
   referenceNumber?: string;  // UPI txn ID / Cheque No / Transfer ref
   dueDate?: string;          // Expected date to clear balance due
   notes?: string;
+  showSignature?: boolean;
 }
 
 export interface QuotationItem {
