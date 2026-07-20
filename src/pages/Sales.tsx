@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
-import { useApp } from '../context/AppContext';
+import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -87,6 +87,9 @@ export const Sales: React.FC = () => {
   const [deletingQuotation, setDeletingQuotation] = useState<{ id: string; quotationNumber: string } | null>(null);
   const [activeMenuQuotationId, setActiveMenuQuotationId] = useState<string | null>(null);
 
+  const [initialInvoiceValues, setInitialInvoiceValues] = useState<any>(null);
+  const [initialQuotationValues, setInitialQuotationValues] = useState<any>(null);
+
   // Local state for quotation validity
   const [validUntil, setValidUntil] = useState('2026-07-31');
 
@@ -108,6 +111,28 @@ export const Sales: React.FC = () => {
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [showSignature, setShowSignature] = useState(true);
+  const currentInvoiceValues = {
+    selectedCustomerId,
+    invoiceDate,
+    items,
+    amountPaid,
+    paymentMethod,
+    referenceNumber,
+    dueDate,
+    notes,
+    showSignature,
+  };
+
+  const currentQuotationValues = {
+    selectedCustomerId,
+    invoiceDate,
+    validUntil,
+    items,
+    notes,
+  };
+
+  useUnsavedChanges('invoice-form', currentInvoiceValues, initialInvoiceValues, isCreatingInvoice && !!initialInvoiceValues);
+  useUnsavedChanges('quotation-form', currentQuotationValues, initialQuotationValues, isCreatingQuotation && !!initialQuotationValues);
 
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
@@ -597,6 +622,17 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   // --- Save / Edit Invoice Handlers ---
 
   const handleStartNewInvoice = () => {
+    const defaults = {
+      selectedCustomerId: '',
+      invoiceDate: '2026-07-01',
+      items: [{ productId: '', quantity: 1, price: 0, discount: 0 }],
+      amountPaid: 0,
+      paymentMethod: 'UPI',
+      referenceNumber: '',
+      dueDate: '',
+      notes: '',
+      showSignature: true,
+    };
     setEditingInvoiceId(null);
     setSelectedCustomerId('');
     setInvoiceDate('2026-07-01');
@@ -607,10 +643,27 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setDueDate('');
     setNotes('');
     setShowSignature(true);
+    setInitialInvoiceValues(defaults);
     setIsCreatingInvoice(true);
   };
 
   const handleStartEditInvoice = (inv: Invoice) => {
+    const values = {
+      selectedCustomerId: inv.customerId,
+      invoiceDate: inv.date,
+      items: inv.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+      })),
+      amountPaid: inv.amountPaid,
+      paymentMethod: inv.paymentMethod || 'UPI',
+      referenceNumber: inv.referenceNumber || '',
+      dueDate: inv.dueDate || '',
+      notes: inv.notes || '',
+      showSignature: inv.showSignature !== false,
+    };
     setEditingInvoiceId(inv.id || inv.invoiceNumber);
     setSelectedCustomerId(inv.customerId);
     setInvoiceDate(inv.date);
@@ -628,6 +681,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setDueDate(inv.dueDate || '');
     setNotes(inv.notes || '');
     setShowSignature(inv.showSignature !== false);
+    setInitialInvoiceValues(values);
     setIsCreatingInvoice(true);
   };
 
@@ -855,7 +909,38 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     }
   };
 
+  const handleStartNewQuotation = () => {
+    const defaultDate = new Date().toISOString().split('T')[0];
+    const defaultValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const defaults = {
+      selectedCustomerId: '',
+      invoiceDate: defaultDate,
+      validUntil: defaultValidUntil,
+      items: [{ productId: '', quantity: 1, price: 0, discount: 0 }],
+      notes: '',
+    };
+    setSelectedCustomerId('');
+    setInvoiceDate(defaultDate);
+    setValidUntil(defaultValidUntil);
+    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+    setNotes('');
+    setInitialQuotationValues(defaults);
+    setIsCreatingQuotation(true);
+  };
+
   const handleStartEditQuotation = (q: Quotation) => {
+    const values = {
+      selectedCustomerId: q.customerId,
+      invoiceDate: q.date,
+      validUntil: q.validUntil,
+      notes: q.notes || '',
+      items: q.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        discount: item.discount,
+      })),
+    };
     setEditingQuotationId(q.id);
     setSelectedCustomerId(q.customerId);
     setInvoiceDate(q.date);
@@ -869,6 +954,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         discount: item.discount,
       }))
     );
+    setInitialQuotationValues(values);
     setIsCreatingQuotation(true);
   };
 
@@ -3316,14 +3402,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <Plus size={16} /> New Invoice
             </button>
           ) : (
-            <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' }} onClick={() => {
-              setSelectedCustomerId('');
-              setInvoiceDate(new Date().toISOString().split('T')[0]);
-              setValidUntil(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-              setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
-              setNotes('');
-              setIsCreatingQuotation(true);
-            }}>
+            <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' }} onClick={handleStartNewQuotation}>
               <Plus size={16} /> New Quotation
             </button>
           )}

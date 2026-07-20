@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
-import { useApp } from '../context/AppContext';
+import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Customer } from '../types';
 
 const INDIAN_STATES = [
@@ -24,7 +24,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   onSaveCallback,
   editCustomerData = null,
 }) => {
-  const { addCustomer, editCustomer } = useApp();
+  const { addCustomer, editCustomer, requestNavigation } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -32,6 +32,32 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [gstin, setGstin] = useState('');
   const [state, setState] = useState('Madhya Pradesh');
   const [outstanding, setOutstanding] = useState(0);
+
+  const currentValues = {
+    name,
+    phone,
+    email,
+    address,
+    state,
+    gstin,
+    outstanding,
+  };
+
+  const initialValues = {
+    name: editCustomerData?.name || '',
+    phone: editCustomerData?.phone || '',
+    email: editCustomerData?.email || '',
+    address: editCustomerData?.address || '',
+    state: editCustomerData?.state || 'Madhya Pradesh',
+    gstin: editCustomerData?.gstin || '',
+    outstanding: editCustomerData?.outstanding || 0,
+  };
+
+  useUnsavedChanges('customer-modal-form', currentValues, initialValues, isOpen);
+
+  const handleCloseClick = () => {
+    requestNavigation(onClose);
+  };
 
   useEffect(() => {
     if (editCustomerData) {
@@ -88,7 +114,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCloseClick}
       title={editCustomerData ? 'Edit Customer Info' : 'Add New Customer'}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
@@ -197,7 +223,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
           {/* Footer Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ minWidth: '90px' }}>
+            <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" style={{ minWidth: '110px' }}>

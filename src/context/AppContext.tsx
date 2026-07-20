@@ -43,6 +43,15 @@ interface AppContextType {
   toast: { message: string; type: 'success' | 'error' | 'info' } | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 
+  isFormDirty: boolean;
+  setFormDirty: (formId: string, isDirty: boolean) => void;
+  clearAllDirtyForms: () => void;
+  requestNavigation: (callback: () => void) => void;
+  showUnsavedModal: boolean;
+  setShowUnsavedModal: (show: boolean) => void;
+  pendingNavigation: (() => void) | null;
+  setPendingNavigation: (callback: (() => void) | null) => void;
+
   setCurrentTab: (tab: string) => void;
   setViewInvoice: (id: string | null) => void;
   setViewQuotation: (id: string | null) => void;
@@ -232,19 +241,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return local ? JSON.parse(local) : [];
   });
 
+  // Unsaved Changes Protection State & Logic
+  const [dirtyForms, setDirtyForms] = useState<Record<string, boolean>>({});
+  const [showUnsavedModal, setShowUnsavedModal] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
+
+  const isFormDirty = Object.values(dirtyForms).some(Boolean);
+
+  const setFormDirty = (formId: string, isDirty: boolean) => {
+    setDirtyForms((prev) => {
+      if (prev[formId] === isDirty) return prev;
+      return { ...prev, [formId]: isDirty };
+    });
+  };
+
+  const clearAllDirtyForms = () => {
+    setDirtyForms({});
+  };
+
+  const requestNavigation = (callback: () => void) => {
+    if (Object.values(dirtyForms).some(Boolean)) {
+      setPendingNavigation(() => callback);
+      setShowUnsavedModal(true);
+    } else {
+      callback();
+    }
+  };
+
   // UI State
-  const [currentTab, setCurrentTab] = useState<string>('dashboard');
-  const [currentInvoiceId, setViewInvoice] = useState<string | null>(null);
-  const [currentQuotationId, setViewQuotation] = useState<string | null>(null);
-  const [currentPurchaseId, setViewPurchase] = useState<string | null>(null);
-  const [currentCustomerId, setViewCustomer] = useState<string | null>(null);
-  const [currentSupplierId, setViewSupplier] = useState<string | null>(null);
-  const [isCreatingInvoice, setIsCreatingInvoice] = useState<boolean>(false);
-  const [isCreatingQuotation, setIsCreatingQuotation] = useState<boolean>(false);
-  const [isEnteringPurchase, setIsEnteringPurchase] = useState<boolean>(false);
-  const [isEditingProduct, setIsEditingProduct] = useState<Product | null>(null);
-  const [isEditingCustomer, setIsEditingCustomer] = useState<Customer | null>(null);
-  const [isEditingSupplier, setIsEditingSupplier] = useState<Supplier | null>(null);
+  const [currentTab, _setCurrentTab] = useState<string>('dashboard');
+  const [currentInvoiceId, _setViewInvoice] = useState<string | null>(null);
+  const [currentQuotationId, _setViewQuotation] = useState<string | null>(null);
+  const [currentPurchaseId, _setViewPurchase] = useState<string | null>(null);
+  const [currentCustomerId, _setViewCustomer] = useState<string | null>(null);
+  const [currentSupplierId, _setViewSupplier] = useState<string | null>(null);
+  const [isCreatingInvoice, _setIsCreatingInvoice] = useState<boolean>(false);
+  const [isCreatingQuotation, _setIsCreatingQuotation] = useState<boolean>(false);
+  const [isEnteringPurchase, _setIsEnteringPurchase] = useState<boolean>(false);
+  const [isEditingProduct, _setIsEditingProduct] = useState<Product | null>(null);
+  const [isEditingCustomer, _setIsEditingCustomer] = useState<Customer | null>(null);
+  const [isEditingSupplier, _setIsEditingSupplier] = useState<Supplier | null>(null);
+
+  const setCurrentTab = (tab: string) => requestNavigation(() => _setCurrentTab(tab));
+  const setViewInvoice = (id: string | null) => requestNavigation(() => _setViewInvoice(id));
+  const setViewQuotation = (id: string | null) => requestNavigation(() => _setViewQuotation(id));
+  const setViewPurchase = (id: string | null) => requestNavigation(() => _setViewPurchase(id));
+  const setViewCustomer = (id: string | null) => requestNavigation(() => _setViewCustomer(id));
+  const setViewSupplier = (id: string | null) => requestNavigation(() => _setViewSupplier(id));
+  const setIsCreatingInvoice = (val: boolean) => requestNavigation(() => _setIsCreatingInvoice(val));
+  const setIsCreatingQuotation = (val: boolean) => requestNavigation(() => _setIsCreatingQuotation(val));
+  const setIsEnteringPurchase = (val: boolean) => requestNavigation(() => _setIsEnteringPurchase(val));
+  const setIsEditingProduct = (product: Product | null) => requestNavigation(() => _setIsEditingProduct(product));
+  const setIsEditingCustomer = (customer: Customer | null) => requestNavigation(() => _setIsEditingCustomer(customer));
+  const setIsEditingSupplier = (supplier: Supplier | null) => requestNavigation(() => _setIsEditingSupplier(supplier));
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
@@ -263,6 +312,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
   const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
+  const [initialPaymentValues, setInitialPaymentValues] = useState<any>(null);
+
+  useEffect(() => {
+    if (!isPaymentFormOpen || !initialPaymentValues) {
+      setFormDirty('payment-form', false);
+      return;
+    }
+    const currentValues = {
+      paymentType,
+      contactId,
+      paymentDate,
+      amount,
+      paymentMethod,
+      referenceNumber,
+      notes,
+    };
+    const isDirty = !isDeepEqual(currentValues, initialPaymentValues);
+    setFormDirty('payment-form', isDirty);
+  }, [
+    isPaymentFormOpen,
+    initialPaymentValues,
+    paymentType,
+    contactId,
+    paymentDate,
+    amount,
+    paymentMethod,
+    referenceNumber,
+    notes,
+  ]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
@@ -273,6 +351,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const openNewPaymentForm = (preset?: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' }) => {
+    const defaults = {
+      paymentType: preset ? preset.type : 'CustomerReceipt',
+      contactId: preset ? preset.contactId : '',
+      paymentDate: new Date().toISOString().split('T')[0],
+      amount: 0,
+      paymentMethod: 'UPI',
+      referenceNumber: '',
+      notes: '',
+    };
     setEditingPaymentId(null);
     if (preset) {
       setPaymentType(preset.type);
@@ -286,10 +373,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPaymentMethod('UPI');
     setReferenceNumber('');
     setNotes('');
+    setInitialPaymentValues(defaults);
     setIsPaymentFormOpen(true);
   };
 
   const openEditPaymentForm = (pay: Payment) => {
+    const values = {
+      paymentType: pay.type,
+      contactId: pay.contactId,
+      paymentDate: pay.date,
+      amount: pay.amount,
+      paymentMethod: pay.paymentMethod as any,
+      referenceNumber: pay.referenceNumber || '',
+      notes: pay.notes || '',
+    };
     setEditingPaymentId(pay.id);
     setPaymentType(pay.type);
     setContactId(pay.contactId);
@@ -298,6 +395,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setPaymentMethod(pay.paymentMethod as any);
     setReferenceNumber(pay.referenceNumber || '');
     setNotes(pay.notes || '');
+    setInitialPaymentValues(values);
     setIsPaymentFormOpen(true);
   };
 
@@ -1360,6 +1458,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         purchases,
         payments,
         settings,
+        isFormDirty,
+        setFormDirty,
+        clearAllDirtyForms,
+        requestNavigation,
+        showUnsavedModal,
+        setShowUnsavedModal,
+        pendingNavigation,
+        setPendingNavigation,
         currentTab,
         currentInvoiceId,
         currentQuotationId,
@@ -1471,4 +1577,36 @@ export const useApp = () => {
     throw new Error('useApp must be used within an AppProvider');
   }
   return context;
+};
+
+// Reusable deep comparison helper
+function isDeepEqual(a: any, b: any): boolean {
+  if (a === b) return true;
+  if (a && b && typeof a === 'object' && typeof b === 'object') {
+    if (Array.isArray(a) !== Array.isArray(b)) return false;
+    const keys = Object.keys(a);
+    if (keys.length !== Object.keys(b).length) return false;
+    for (const key of keys) {
+      if (!isDeepEqual(a[key], b[key])) return false;
+    }
+    return true;
+  }
+  return false;
+}
+
+export const useUnsavedChanges = (formId: string, currentValues: any, initialValues: any, active: boolean = true) => {
+  const { setFormDirty } = useApp();
+  
+  useEffect(() => {
+    if (!active) {
+      setFormDirty(formId, false);
+      return;
+    }
+    const isDirty = !isDeepEqual(currentValues, initialValues);
+    setFormDirty(formId, isDirty);
+    
+    return () => {
+      setFormDirty(formId, false);
+    };
+  }, [formId, currentValues, initialValues, active, setFormDirty]);
 };

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
-import { useApp } from '../context/AppContext';
+import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Supplier } from '../types';
 
 interface SupplierModalProps {
@@ -16,13 +16,37 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
   onSaveCallback,
   editSupplierData = null,
 }) => {
-  const { addSupplier, editSupplier } = useApp();
+  const { addSupplier, editSupplier, requestNavigation } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [address, setAddress] = useState('');
   const [gstin, setGstin] = useState('');
   const [outstanding, setOutstanding] = useState(0);
+
+  const currentValues = {
+    name,
+    phone,
+    email,
+    address,
+    gstin,
+    outstanding,
+  };
+
+  const initialValues = {
+    name: editSupplierData?.name || '',
+    phone: editSupplierData?.phone || '',
+    email: editSupplierData?.email || '',
+    address: editSupplierData?.address || '',
+    gstin: editSupplierData?.gstin || '',
+    outstanding: editSupplierData?.outstanding || 0,
+  };
+
+  useUnsavedChanges('supplier-modal-form', currentValues, initialValues, isOpen);
+
+  const handleCloseClick = () => {
+    requestNavigation(onClose);
+  };
 
   useEffect(() => {
     if (editSupplierData) {
@@ -75,7 +99,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCloseClick}
       title={editSupplierData ? 'Edit Supplier Info' : 'Add New Supplier'}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
@@ -167,7 +191,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
 
           {/* Footer Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
-            <button type="button" className="btn btn-secondary" onClick={onClose} style={{ minWidth: '90px' }}>
+            <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" style={{ minWidth: '110px' }}>

@@ -59,6 +59,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setIsEnteringPurchase,
     toast,
     showToast,
+    isFormDirty,
+    clearAllDirtyForms,
+    showUnsavedModal,
+    setShowUnsavedModal,
+    pendingNavigation,
+    setPendingNavigation,
+    requestNavigation,
     isPaymentFormOpen,
     setIsPaymentFormOpen,
     paymentType,
@@ -127,6 +134,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
+
+  // Browser native beforeunload warning for page refresh/closing
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isFormDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+        return '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [isFormDirty]);
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -332,6 +354,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     isCreatingInvoice,
     isEnteringPurchase
   ]);
+
+  const confirmStay = () => {
+    setShowUnsavedModal(false);
+    setPendingNavigation(null);
+  };
+
+  const confirmLeave = () => {
+    clearAllDirtyForms();
+    setShowUnsavedModal(false);
+    if (pendingNavigation) {
+      pendingNavigation();
+      setPendingNavigation(null);
+    }
+  };
 
   const handleTabChange = (tab: string) => {
     setCurrentTab(tab);
@@ -998,10 +1034,48 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
+      {/* Unsaved Changes Confirmation Modal */}
+      {showUnsavedModal && (
+        <Modal
+          isOpen={showUnsavedModal}
+          onClose={confirmStay}
+          title="Unsaved Changes"
+        >
+          <div style={{ padding: '8px 4px 4px 4px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5', margin: 0 }}>
+              You have unsaved changes. If you leave this page now, your changes will be lost.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+              <button 
+                type="button" 
+                className="btn btn-secondary" 
+                onClick={confirmStay} 
+                style={{ minWidth: '90px' }}
+              >
+                Stay
+              </button>
+              <button 
+                type="button" 
+                className="btn btn-danger" 
+                onClick={confirmLeave} 
+                style={{ 
+                  minWidth: '90px', 
+                  backgroundColor: 'var(--color-danger)', 
+                  borderColor: 'var(--color-danger)',
+                  color: '#ffffff'
+                }}
+              >
+                Leave
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
       {/* Global Record/Edit Payment Modal */}
       <Modal 
         isOpen={isPaymentFormOpen} 
-        onClose={() => setIsPaymentFormOpen(false)} 
+        onClose={() => requestNavigation(() => setIsPaymentFormOpen(false))} 
         title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}
       >
         <form onSubmit={handleSavePayment}>
@@ -1181,7 +1255,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           <div className="modal-form-actions no-print">
-            <button type="button" className="btn btn-secondary" onClick={() => setIsPaymentFormOpen(false)} style={{ borderRadius: '8px' }}>
+            <button type="button" className="btn btn-secondary" onClick={() => requestNavigation(() => setIsPaymentFormOpen(false))} style={{ borderRadius: '8px' }}>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" style={{

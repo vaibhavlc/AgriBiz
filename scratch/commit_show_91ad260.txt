@@ -1,0 +1,393 @@
+﻿commit 91ad2606b7bd50f865ebb0dccd9199eeccd2f4e7
+Author: vaibhav <vaibhavc3040@gmail.com>
+Date:   Mon Jul 13 11:12:31 2026 +0530
+
+    Standardize language icon sizing, fix toast visibility on mobile, redevelop sales page filters to 2x2 grid, add item list details to mobile cards, and reduce card spacing
+
+diff --git a/src/components/Layout.tsx b/src/components/Layout.tsx
+index fbde198..af883ce 100644
+--- a/src/components/Layout.tsx
++++ b/src/components/Layout.tsx
+@@ -713,9 +713,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
+                 className={`lang-selector-btn${isLangDropdownOpen ? ' active' : ''}`}
+                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
+                 title="Select Language"
+-                style={{ padding: '9px 10px' }}
+               >
+-                <Globe size={16} className="lang-selector-globe" style={{ margin: 0 }} />
++                <Globe size={18} className="lang-selector-globe" style={{ margin: 0 }} />
+               </button>
+               {isLangDropdownOpen && (
+                 <div className="lang-dropdown animate-fade-in-scale">
+diff --git a/src/index.css b/src/index.css
+index 72fb238..86fd8f0 100644
+--- a/src/index.css
++++ b/src/index.css
+@@ -2315,7 +2315,8 @@ body.dark-theme select.form-control {
+   display: flex;
+   align-items: center;
+   justify-content: center;
+-  padding: 8px;
++  width: 40px;
++  height: 40px;
+   border-radius: 8px;
+   border: none;
+   background: transparent;
+@@ -2339,7 +2340,7 @@ body.dark-theme .lang-selector-btn:hover {
+ }
+ 
+ .lang-selector-globe {
+-  font-size: 16px;
++  font-size: 18px;
+   flex-shrink: 0;
+ }
+ 
+@@ -3024,6 +3025,35 @@ body.dark-theme .lang-selector-btn:hover {
+   }
+ }
+ 
++@media (max-width: 768px) {
++  .toast-container {
++    left: 16px;
++    right: auto !important;
++    top: 80px !important;
++    bottom: auto !important;
++    align-items: flex-start;
++  }
++
++  .toast {
++    min-width: 240px;
++    width: auto;
++    max-width: calc(100vw - 32px);
++    box-sizing: border-box;
++    animation: toastSlideInLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
++  }
++}
++
++@keyframes toastSlideInLeft {
++  from {
++    transform: translateX(-100%);
++    opacity: 0;
++  }
++  to {
++    transform: translateX(0);
++    opacity: 1;
++  }
++}
++
+ /* Thermal Printer POS 3-Inch Template styling */
+ .print-invoice-layout.thermal {
+   max-width: 300px;
+@@ -3846,46 +3876,99 @@ body.dark-theme .lang-selector-btn:hover {
+ 
+ @media (max-width: 640px) {
+   .filters-row-unified {
+-    flex-direction: column;
+-    align-items: stretch;
+-    gap: 8px;
++    display: grid !important;
++    grid-template-columns: 1fr 1fr !important;
++    gap: 8px !important;
++    width: 100% !important;
+   }
+ 
+-  .filters-group-one {
+-    width: 100%;
+-    gap: 8px;
++  .filters-group-one,
++  .filters-group-two {
++    display: contents !important;
+   }
+ 
+-  .filters-group-two {
+-    width: 100%;
+-    gap: 8px;
+-    justify-content: space-between;
++  /* Equal sizing for all four elements (Search, Status Filter, Sort select, Action button) */
++  .sales-search-wrapper,
++  .mobile-status-select-wrapper,
++  .sales-sort-wrapper,
++  .filters-row-unified button.btn,
++  .filters-row-unified .btn {
++    width: 100% !important;
++    height: 40px !important;
++    min-width: 0 !important;
++    max-width: 100% !important;
++    box-sizing: border-box !important;
++    display: flex !important;
++    align-items: center !important;
++    margin: 0 !important;
++    padding: 0 !important;
++    position: relative !important;
+   }
+ 
+-  .filters-group-two > select,
+-  .filters-group-two > div,
+-  .filters-group-two > button,
+-  .filters-group-two > .btn {
+-    flex: 1;
+-    min-width: 0;
+-    width: 100%;
++  /* Make sure internal input/select/button elements behave correctly */
++  .sales-search-wrapper input {
++    height: 40px !important;
++    line-height: 40px !important;
++    width: 100% !important;
++    box-sizing: border-box !important;
++    padding: 0 12px 0 36px !important;
++    border-radius: 10px !important;
++    border: 1.5px solid var(--border-color) !important;
++    background-color: var(--bg-card) !important;
++    color: var(--text-primary) !important;
+   }
+ 
+-  /* Make sure select wrapper input also behaves correctly */
+-  .filters-group-two select.filter-select {
+-    width: 100%;
+-    padding: 8px 32px 8px 12px;
+-    font-size: 13px;
++  .mobile-status-select-wrapper select {
++    width: 100% !important;
++    height: 40px !important;
++    line-height: 40px !important;
++    box-sizing: border-box !important;
++    padding: 0 28px 0 12px !important;
++    font-size: 12px !important;
++    border-radius: 10px !important;
++    border: 1.5px solid var(--border-color) !important;
++    background-color: var(--bg-card) !important;
++    color: var(--text-primary) !important;
++  }
++
++  .sales-sort-wrapper select {
++    width: 100% !important;
++    height: 40px !important;
++    line-height: 40px !important;
++    box-sizing: border-box !important;
++    padding: 0 28px 0 36px !important; /* 36px left padding clears the Lucide sort icon */
++    font-size: 12px !important;
++    border-radius: 10px !important;
++    border: 1.5px solid var(--border-color) !important;
++    background-color: var(--bg-card) !important;
++    color: var(--text-primary) !important;
++  }
++
++  .filters-row-unified button.btn,
++  .filters-row-unified .btn {
++    justify-content: center !important;
++    font-size: 13px !important;
++    border-radius: 10px !important;
++    height: 40px !important;
++    display: inline-flex !important;
++    width: 100% !important;
++  }
++
++  .sales-segmented-tabs {
++    display: flex !important;
++    gap: 8px !important;
++    width: 100% !important;
++    grid-column: span 2 !important; /* Spans across full width above grid */
+   }
+   
+-  .filters-group-two .btn,
+-  .filters-group-two button {
+-    display: inline-flex;
+-    justify-content: center;
+-    align-items: center;
+-    padding: 9px 16px;
+-    font-size: 13px;
+-    height: 38px;
++  .sales-segmented-tabs button {
++    flex: 1 !important;
++    justify-content: center !important;
++    text-align: center !important;
++    padding: 10px 8px !important;
++    font-size: 13px !important;
++    height: 42px !important;
++    box-sizing: border-box !important;
+   }
+ 
+   .segmented-control-inventory {
+@@ -4973,22 +5056,6 @@ body.dark-theme .lang-selector-btn:hover {
+   
+   .mobile-status-select-wrapper {
+     display: block !important;
+-    width: 50% !important;
+-    flex: 1 1 50% !important;
+-    box-sizing: border-box !important;
+-  }
+-  
+-  .sales-search-wrapper {
+-    width: 50% !important;
+-    flex: 1 1 50% !important;
+-    box-sizing: border-box !important;
+-  }
+-
+-  .mobile-status-select-wrapper .status-select-field {
+-    width: 100% !important;
+-    height: 38px !important;
+-    font-size: 13px !important;
+-    padding: 8px 32px 8px 12px !important;
+   }
+ }
+ 
+diff --git a/src/pages/Sales.tsx b/src/pages/Sales.tsx
+index 6424f4e..4a52917 100644
+--- a/src/pages/Sales.tsx
++++ b/src/pages/Sales.tsx
+@@ -23,6 +23,7 @@ import {
+   ChevronRight,
+   Store,
+   Calendar,
++  TrendingUp,
+ } from 'lucide-react';
+ 
+ interface InvoiceItemLocal {
+@@ -2688,7 +2689,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+   return (
+     <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+       {/* Segmented Tab Control */}
+-      <div className="no-print" style={{ 
++      <div className="no-print sales-segmented-tabs" style={{ 
+         display: 'flex', 
+         gap: '8px', 
+         borderBottom: '1px solid var(--border-color)', 
+@@ -2758,6 +2759,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Total billing revenue
+               </span>
+             </div>
++            <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
+           </div>
+           <div className="kpi-card" style={{ cursor: 'default' }}>
+             <div className="kpi-info" style={{ gap: '2px' }}>
+@@ -2769,6 +2771,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Cash and digital collection
+               </span>
+             </div>
++            <div className="kpi-icon-container emerald"><Plus size={20} /></div>
+           </div>
+           <div className="kpi-card" style={{ cursor: 'default' }}>
+             <div className="kpi-info" style={{ gap: '2px' }}>
+@@ -2780,6 +2783,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Accounts receivable dues
+               </span>
+             </div>
++            <div className="kpi-icon-container amber"><AlertTriangle size={20} /></div>
+           </div>
+           <div className="kpi-card" style={{ cursor: 'default' }}>
+             <div className="kpi-info" style={{ gap: '2px' }}>
+@@ -2791,6 +2795,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Total sales transactions
+               </span>
+             </div>
++            <div className="kpi-icon-container blue"><FileText size={20} /></div>
+           </div>
+         </div>
+       ) : (
+@@ -2805,6 +2810,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Active quoted value
+               </span>
+             </div>
++            <div className="kpi-icon-container blue"><FileText size={20} /></div>
+           </div>
+           <div className="kpi-card" style={{ cursor: 'default' }}>
+             <div className="kpi-info" style={{ gap: '2px' }}>
+@@ -2816,6 +2822,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Estimates won or converted
+               </span>
+             </div>
++            <div className="kpi-icon-container emerald"><TrendingUp size={20} /></div>
+           </div>
+           <div className="kpi-card" style={{ cursor: 'default' }}>
+             <div className="kpi-info" style={{ gap: '2px' }}>
+@@ -2827,6 +2834,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Drafts and sent estimates
+               </span>
+             </div>
++            <div className="kpi-icon-container amber"><Calendar size={20} /></div>
+           </div>
+           <div className="kpi-card" style={{ cursor: 'default' }}>
+             <div className="kpi-info" style={{ gap: '2px' }}>
+@@ -2838,6 +2846,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                 Total quotations logged
+               </span>
+             </div>
++            <div className="kpi-icon-container blue"><FileText size={20} /></div>
+           </div>
+         </div>
+       )}
+@@ -2914,7 +2923,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+ 
+         <div className="filters-group-two">
+           {/* Sort Dropdown */}
+-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
++          <div className="sales-sort-wrapper" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+             <span style={{ position: 'absolute', left: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+               <ArrowUpDown size={13} />
+             </span>
+@@ -2929,11 +2938,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+               <option value="amount-desc">Amount: High to Low</option>
+               <option value="amount-asc">Amount: Low to High</option>
+             </select>
+-            <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
+-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+-                <polyline points="6 9 12 15 18 9"></polyline>
+-              </svg>
+-            </span>
+           </div>
+ 
+           {/* Action button */}
+@@ -3133,11 +3137,22 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                         )}
+                       </div>
+                     </div>
+-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '8px' }}>
++                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px' }}>
+                       <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(inv.date)}</span>
+                       <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>{inv.paymentStatus}</span>
+                     </div>
+-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px' }}>
++                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
++                      <span style={{ color: 'var(--text-muted)' }}>Items:</span>
++                      {inv.items && inv.items.length > 0 ? (
++                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
++                          {inv.items[0].productName}
++                          {inv.items.length > 1 ? ` +${inv.items.length - 1}` : ''}
++                        </span>
++                      ) : (
++                        <span>No items</span>
++                      )}
++                    </div>
++                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '6px', paddingTop: '6px' }}>
+                       <span>Total: {formatINR(inv.grandTotal)}</span>
+                       <span style={{ color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
+                         Due: {formatINR(inv.balanceDue)}
+@@ -3377,7 +3392,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                         )}
+                       </div>
+                     </div>
+-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '8px' }}>
++                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginTop: '2px' }}>
+                       <span style={{ color: 'var(--text-muted)' }}>Date: {formatDate(q.date)}</span>
+                       <span className={`badge ${
+                         q.status === 'Converted' ? 'badge-success' : 
+@@ -3386,7 +3401,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+                         'badge-secondary'
+                       }`}>{q.status}</span>
+                     </div>
+-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '8px', paddingTop: '8px' }}>
++                    <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '4px' }}>
++                      <span style={{ color: 'var(--text-muted)' }}>Items:</span>
++                      {q.items && q.items.length > 0 ? (
++                        <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
++                          {q.items[0].productName}
++                          {q.items.length > 1 ? ` +${q.items.length - 1}` : ''}
++                        </span>
++                      ) : (
++                        <span>No items</span>
++                      )}
++                    </div>
++                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 700, borderTop: '1px solid var(--border-color)', marginTop: '6px', paddingTop: '6px' }}>
+                       <span>Total Value: {formatINR(q.grandTotal)}</span>
+                       <span style={{ color: 'var(--text-muted)' }}>
+                         Valid: {formatDate(q.validUntil)}

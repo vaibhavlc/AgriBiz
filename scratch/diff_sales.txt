@@ -1,0 +1,889 @@
+﻿diff --git a/src/pages/Sales.tsx.bak b/src/pages/Sales.tsx
+index cee3407..ef0e37e 100644
+--- a/src/pages/Sales.tsx.bak
++++ b/src/pages/Sales.tsx
+@@ -1,5 +1,7 @@
+ import React, { useState, useEffect } from 'react';
+ import { createPortal } from 'react-dom';
++import html2canvas from 'html2canvas';
++import { jsPDF } from 'jspdf';
+ import { useApp } from '../context/AppContext';
+ import { CustomerModal } from '../components/CustomerModal';
+ import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+@@ -147,112 +149,160 @@ export const Sales: React.FC = () => {
+     window.print();
+   };
+ 
+-  const handleDownload = () => {
+-    const element = document.querySelector('.print-invoice-layout') as HTMLElement;
+-    if (!element) {
++  const handleDownload = async () => {
++    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
++    if (!originalEl) {
+       showToast('Could not find layout element.', 'error');
+       return;
+     }
+ 
+     showToast('Compiling high-definition PDF document...', 'info');
+ 
+-    const generatePDF = (html2pdfLib: any) => {
+-      const fileName = selectedInvoice 
+-        ? `${selectedInvoice.invoiceNumber}.pdf` 
+-        : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
++    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
++    const tempEl = originalEl.cloneNode(true) as HTMLElement;
++    tempEl.style.setProperty('position', 'absolute', 'important');
++    tempEl.style.setProperty('top', '9999px', 'important');
++    tempEl.style.setProperty('left', '0', 'important');
++    tempEl.style.setProperty('z-index', '999998', 'important');
++    tempEl.style.setProperty('zoom', 'normal', 'important');
++    tempEl.style.setProperty('transform', 'none', 'important');
++    tempEl.style.setProperty('box-shadow', 'none', 'important');
++    tempEl.style.setProperty('border-radius', '0', 'important');
++    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
++    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
++    tempEl.style.setProperty('margin', '0', 'important');
++    tempEl.style.setProperty('display', 'block', 'important');
++
++    document.body.appendChild(tempEl);
++
++    try {
++      // Small timeout for layout calculation
++      await new Promise((resolve) => setTimeout(resolve, 80));
++
++      // Restructure A5 layout to bypass html2canvas vertical flex rendering bug
++      if (printTemplate === 'A5') {
++        const topKids: HTMLElement[] = [];
++        const bottomKids: HTMLElement[] = [];
++        
++        const kids = Array.from(tempEl.children) as HTMLElement[];
++        kids.forEach((kid) => {
++          const position = kid.style.position || window.getComputedStyle(kid).position;
++          if (position === 'absolute') {
++            return;
++          }
++          
++          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
++          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
++          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
++          
++          if (isSvgIllustration || isSignatureRow || isFooterMessage) {
++            bottomKids.push(kid);
++          } else {
++            topKids.push(kid);
++          }
++        });
++
++        if (topKids.length > 0 && bottomKids.length > 0) {
++          // Read measured gaps from original screen element
++          const headerEl = originalEl.querySelector('.invoice-header-bar') as HTMLElement;
++          const billingEl = originalEl.querySelector('.invoice-billing-details') as HTMLElement;
++          const tableEl = originalEl.querySelector('.invoice-table') as HTMLElement;
++          const summaryEl = originalEl.querySelector('.invoice-table + div, table + div') as HTMLElement;
++
++          let gap1 = 6; // default fallback gaps in px
++          let gap2 = 6;
++          let gap3 = 6;
++
++          if (headerEl && billingEl && tableEl) {
++            const hRect = headerEl.getBoundingClientRect();
++            const bRect = billingEl.getBoundingClientRect();
++            const tRect = tableEl.getBoundingClientRect();
++            
++            const zoom = parseFloat(window.getComputedStyle(originalEl).zoom) || 1;
++            
++            gap1 = Math.max(6, (bRect.top - hRect.bottom) / zoom);
++            gap2 = Math.max(6, (tRect.top - bRect.bottom) / zoom);
+ 
+-      const opt = {
+-        margin:       0,
+-        filename:     fileName,
+-        image:        { type: 'jpeg', quality: 0.98 },
+-        html2canvas:  { 
+-          scale: 2, 
+-          useCORS: true, 
+-          scrollX: 0, 
+-          scrollY: 0,
+-          windowWidth: 1024,
+-          onclone: (clonedDoc: Document) => {
+-            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+-            if (clonedEl) {
+-              // 1. Recursively hide all siblings of the element and all siblings of its ancestors
+-              let current: HTMLElement | null = clonedEl;
+-              while (current && current !== clonedDoc.body) {
+-                const parentEl: HTMLElement | null = current.parentElement;
+-                if (parentEl) {
+-                  Array.from(parentEl.children).forEach((sibling) => {
+-                    if (sibling !== current) {
+-                      (sibling as HTMLElement).style.setProperty('display', 'none', 'important');
+-                    }
+-                  });
+-                }
+-                current = parentEl;
+-              }
+-
+-              // 2. Reset container spacing
+-              const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+-              if (wrapper) {
+-                wrapper.style.setProperty('padding', '0', 'important');
+-                wrapper.style.setProperty('margin', '0', 'important');
+-                wrapper.style.setProperty('display', 'block', 'important');
+-              }
+-              clonedDoc.body.style.margin = '0';
+-              clonedDoc.body.style.padding = '0';
+-
+-              // 3. Reset scroll positions of all elements in the clone
+-              const allElements = clonedDoc.querySelectorAll('*');
+-              allElements.forEach((el) => {
+-                el.scrollTop = 0;
+-                el.scrollLeft = 0;
+-              });
+-
+-              // 4. Force standard print styling on the cloned invoice
+-              clonedEl.style.setProperty('zoom', '1', 'important');
+-              clonedEl.style.setProperty('transform', 'none', 'important');
+-              clonedEl.style.setProperty('border', 'none', 'important');
+-              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+-              clonedEl.style.setProperty('border-radius', '0', 'important');
+-              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+-              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+-              clonedEl.style.setProperty('margin', '0', 'important');
++            if (summaryEl) {
++              const sRect = summaryEl.getBoundingClientRect();
++              gap3 = Math.max(6, (sRect.top - tRect.bottom) / zoom);
+             }
+           }
+-        },
+-        jsPDF:        { 
+-          unit: 'mm', 
+-          format: printTemplate === 'A5' ? 'a5' : [80, 200], 
+-          orientation: 'portrait' 
++
++          const topWrapper = document.createElement('div');
++          topWrapper.style.setProperty('display', 'flex', 'important');
++          topWrapper.style.setProperty('flex-direction', 'column', 'important');
++          topWrapper.style.setProperty('width', '100%', 'important');
++          
++          const bottomWrapper = document.createElement('div');
++          bottomWrapper.style.setProperty('position', 'absolute', 'important');
++          bottomWrapper.style.setProperty('bottom', '38px', 'important'); // Pinned exactly 38px from bottom of the 210mm card
++          bottomWrapper.style.setProperty('left', '24px', 'important');
++          bottomWrapper.style.setProperty('right', '24px', 'important');
++          bottomWrapper.style.setProperty('display', 'flex', 'important');
++          bottomWrapper.style.setProperty('flex-direction', 'column', 'important');
++          bottomWrapper.style.setProperty('gap', '6px', 'important');
++          bottomWrapper.style.setProperty('width', 'calc(100% - 48px)', 'important');
++          
++          // Move elements
++          topKids.forEach(kid => {
++            if (kid.parentNode) kid.parentNode.removeChild(kid);
++            topWrapper.appendChild(kid);
++          });
++          bottomKids.forEach(kid => {
++            if (kid.parentNode) kid.parentNode.removeChild(kid);
++            bottomWrapper.appendChild(kid);
++          });
++
++          // Apply margins to cloned kids inside topWrapper
++          const clonedHeader = topWrapper.querySelector('.invoice-header-bar') as HTMLElement;
++          const clonedBilling = topWrapper.querySelector('.invoice-billing-details') as HTMLElement;
++          const clonedTable = topWrapper.querySelector('.invoice-table') as HTMLElement;
++
++          if (clonedHeader) clonedHeader.style.setProperty('margin-bottom', `${gap1}px`, 'important');
++          if (clonedBilling) clonedBilling.style.setProperty('margin-bottom', `${gap2}px`, 'important');
++          if (clonedTable) clonedTable.style.setProperty('margin-bottom', `${gap3}px`, 'important');
++          
++          tempEl.appendChild(topWrapper);
++          tempEl.appendChild(bottomWrapper);
+         }
+-      };
+-      
+-      html2pdfLib().from(element).set(opt).save().then(() => {
+-        showToast('PDF downloaded successfully!');
+-      }).catch((err: any) => {
+-        console.error(err);
+-        showToast('Error exporting PDF document.', 'error');
++      }
++
++      const canvas = await html2canvas(tempEl, {
++        scale: 2.5,
++        useCORS: true,
++        logging: false,
+       });
+-    };
+ 
+-    const globalWindow = window as any;
+-    if (globalWindow.html2pdf) {
+-      generatePDF(globalWindow.html2pdf);
+-    } else {
+-      const script = document.createElement('script');
+-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+-      script.crossOrigin = 'anonymous';
+-      script.onload = () => {
+-        if (globalWindow.html2pdf) {
+-          generatePDF(globalWindow.html2pdf);
+-        }
+-      };
+-      script.onerror = () => {
+-        showToast('Failed to load PDF engine from CDN.', 'error');
+-      };
+-      document.body.appendChild(script);
++      const imgData = canvas.toDataURL('image/jpeg', 0.98);
++      const fileName = selectedInvoice 
++        ? `${selectedInvoice.invoiceNumber}.pdf` 
++        : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
++
++      const imgWidth = printTemplate === 'A5' ? 148 : 80;
++      const imgHeight = printTemplate === 'A5' ? 210 : (canvas.height * imgWidth) / canvas.width;
++
++      const doc = new jsPDF({
++        orientation: 'portrait',
++        unit: 'mm',
++        format: printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
++      });
++
++      doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
++      doc.save(fileName);
++      showToast('PDF downloaded successfully!');
++    } catch (err) {
++      console.error(err);
++      showToast('Error exporting PDF document.', 'error');
++    } finally {
++      if (tempEl.parentNode) {
++        document.body.removeChild(tempEl);
++      }
+     }
+   };
+ 
+ 
+-  const handleWhatsAppShare = () => {
++  const handleWhatsAppShare = async () => {
+     const activeDoc = selectedInvoice 
+       ? { 
+           id: selectedInvoice.id, 
+@@ -290,141 +340,187 @@ export const Sales: React.FC = () => {
+ 
+     if (!activeDoc) return;
+     const customerDetail = customers.find((c) => c.id === activeDoc.customerId);
+-    const element = document.querySelector('.print-invoice-layout') as HTMLElement;
+-    if (!element) {
++    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
++    if (!originalEl) {
+       showToast('Could not find layout element.', 'error');
+       return;
+     }
+ 
+     showToast('Compiling PDF for sharing...', 'info');
+ 
+-    const sharePDF = (html2pdfLib: any) => {
+-      const opt = {
+-        margin:       0,
+-        filename:     `${activeDoc.number}.pdf`,
+-        image:        { type: 'jpeg', quality: 0.98 },
+-        html2canvas:  { 
+-          scale: 2, 
+-          useCORS: true, 
+-          scrollX: 0, 
+-          scrollY: 0,
+-          windowWidth: 1024,
+-          onclone: (clonedDoc: Document) => {
+-            const clonedEl = clonedDoc.querySelector('.print-invoice-layout') as HTMLElement;
+-            if (clonedEl) {
+-              // 1. Recursively hide all siblings of the element and all siblings of its ancestors
+-              let current: HTMLElement | null = clonedEl;
+-              while (current && current !== clonedDoc.body) {
+-                const parentEl: HTMLElement | null = current.parentElement;
+-                if (parentEl) {
+-                  Array.from(parentEl.children).forEach((sibling) => {
+-                    if (sibling !== current) {
+-                      (sibling as HTMLElement).style.setProperty('display', 'none', 'important');
+-                    }
+-                  });
+-                }
+-                current = parentEl;
+-              }
+-
+-              // 2. Reset container spacing
+-              const wrapper = clonedDoc.querySelector('.invoice-mockup-wrapper') as HTMLElement;
+-              if (wrapper) {
+-                wrapper.style.setProperty('padding', '0', 'important');
+-                wrapper.style.setProperty('margin', '0', 'important');
+-                wrapper.style.setProperty('display', 'block', 'important');
+-              }
+-              clonedDoc.body.style.margin = '0';
+-              clonedDoc.body.style.padding = '0';
+-
+-              // 3. Reset scroll positions of all elements in the clone
+-              const allElements = clonedDoc.querySelectorAll('*');
+-              allElements.forEach((el) => {
+-                el.scrollTop = 0;
+-                el.scrollLeft = 0;
+-              });
+-
+-              // 4. Force standard print styling on the cloned invoice
+-              clonedEl.style.setProperty('zoom', '1', 'important');
+-              clonedEl.style.setProperty('transform', 'none', 'important');
+-              clonedEl.style.setProperty('border', 'none', 'important');
+-              clonedEl.style.setProperty('box-shadow', 'none', 'important');
+-              clonedEl.style.setProperty('border-radius', '0', 'important');
+-              clonedEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+-              clonedEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+-              clonedEl.style.setProperty('margin', '0', 'important');
++    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
++    const tempEl = originalEl.cloneNode(true) as HTMLElement;
++    tempEl.style.setProperty('position', 'absolute', 'important');
++    tempEl.style.setProperty('top', '9999px', 'important');
++    tempEl.style.setProperty('left', '0', 'important');
++    tempEl.style.setProperty('z-index', '999998', 'important');
++    tempEl.style.setProperty('zoom', 'normal', 'important');
++    tempEl.style.setProperty('transform', 'none', 'important');
++    tempEl.style.setProperty('box-shadow', 'none', 'important');
++    tempEl.style.setProperty('border-radius', '0', 'important');
++    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
++    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
++    tempEl.style.setProperty('margin', '0', 'important');
++    tempEl.style.setProperty('display', 'block', 'important');
++
++    document.body.appendChild(tempEl);
++
++    try {
++      // Small timeout for layout calculation
++      await new Promise((resolve) => setTimeout(resolve, 80));
++
++      // Restructure A5 layout to bypass html2canvas vertical flex rendering bug
++      if (printTemplate === 'A5') {
++        const topKids: HTMLElement[] = [];
++        const bottomKids: HTMLElement[] = [];
++        
++        const kids = Array.from(tempEl.children) as HTMLElement[];
++        kids.forEach((kid) => {
++          const position = kid.style.position || window.getComputedStyle(kid).position;
++          if (position === 'absolute') {
++            return;
++          }
++          
++          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
++          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
++          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
++          
++          if (isSvgIllustration || isSignatureRow || isFooterMessage) {
++            bottomKids.push(kid);
++          } else {
++            topKids.push(kid);
++          }
++        });
++
++        if (topKids.length > 0 && bottomKids.length > 0) {
++          // Read measured gaps from original screen element
++          const headerEl = originalEl.querySelector('.invoice-header-bar') as HTMLElement;
++          const billingEl = originalEl.querySelector('.invoice-billing-details') as HTMLElement;
++          const tableEl = originalEl.querySelector('.invoice-table') as HTMLElement;
++          const summaryEl = originalEl.querySelector('.invoice-table + div, table + div') as HTMLElement;
++
++          let gap1 = 6; // default fallback gaps in px
++          let gap2 = 6;
++          let gap3 = 6;
++
++          if (headerEl && billingEl && tableEl) {
++            const hRect = headerEl.getBoundingClientRect();
++            const bRect = billingEl.getBoundingClientRect();
++            const tRect = tableEl.getBoundingClientRect();
++            
++            const zoom = parseFloat(window.getComputedStyle(originalEl).zoom) || 1;
++            
++            gap1 = Math.max(6, (bRect.top - hRect.bottom) / zoom);
++            gap2 = Math.max(6, (tRect.top - bRect.bottom) / zoom);
++
++            if (summaryEl) {
++              const sRect = summaryEl.getBoundingClientRect();
++              gap3 = Math.max(6, (sRect.top - tRect.bottom) / zoom);
+             }
+           }
+-        },
+-        jsPDF:        { 
+-          unit: 'mm', 
+-          format: printTemplate === 'A5' ? 'a5' : [80, 200], 
+-          orientation: 'portrait' 
++
++          const topWrapper = document.createElement('div');
++          topWrapper.style.setProperty('display', 'flex', 'important');
++          topWrapper.style.setProperty('flex-direction', 'column', 'important');
++          topWrapper.style.setProperty('width', '100%', 'important');
++          
++          const bottomWrapper = document.createElement('div');
++          bottomWrapper.style.setProperty('position', 'absolute', 'important');
++          bottomWrapper.style.setProperty('bottom', '38px', 'important'); // Pinned exactly 38px from bottom of the 210mm card
++          bottomWrapper.style.setProperty('left', '24px', 'important');
++          bottomWrapper.style.setProperty('right', '24px', 'important');
++          bottomWrapper.style.setProperty('display', 'flex', 'important');
++          bottomWrapper.style.setProperty('flex-direction', 'column', 'important');
++          bottomWrapper.style.setProperty('gap', '6px', 'important');
++          bottomWrapper.style.setProperty('width', 'calc(100% - 48px)', 'important');
++          
++          // Move elements
++          topKids.forEach(kid => {
++            if (kid.parentNode) kid.parentNode.removeChild(kid);
++            topWrapper.appendChild(kid);
++          });
++          bottomKids.forEach(kid => {
++            if (kid.parentNode) kid.parentNode.removeChild(kid);
++            bottomWrapper.appendChild(kid);
++          });
++
++          // Apply margins to cloned kids inside topWrapper
++          const clonedHeader = topWrapper.querySelector('.invoice-header-bar') as HTMLElement;
++          const clonedBilling = topWrapper.querySelector('.invoice-billing-details') as HTMLElement;
++          const clonedTable = topWrapper.querySelector('.invoice-table') as HTMLElement;
++
++          if (clonedHeader) clonedHeader.style.setProperty('margin-bottom', `${gap1}px`, 'important');
++          if (clonedBilling) clonedBilling.style.setProperty('margin-bottom', `${gap2}px`, 'important');
++          if (clonedTable) clonedTable.style.setProperty('margin-bottom', `${gap3}px`, 'important');
++          
++          tempEl.appendChild(topWrapper);
++          tempEl.appendChild(bottomWrapper);
+         }
+-      };
++      }
++
++      const canvas = await html2canvas(tempEl, {
++        scale: 2.5,
++        useCORS: true,
++        logging: false,
++      });
++
++      const imgData = canvas.toDataURL('image/jpeg', 0.98);
++      const imgWidth = printTemplate === 'A5' ? 148 : 80;
++      const imgHeight = printTemplate === 'A5' ? 210 : (canvas.height * imgWidth) / canvas.width;
++
++      const doc = new jsPDF({
++        orientation: 'portrait',
++        unit: 'mm',
++        format: printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
++      });
++
++      doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+       
+-      html2pdfLib().from(element).set(opt).outputPdf('blob').then((pdfBlob: Blob) => {
+-        const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
+-        
+-        const nav = navigator as any;
+-        if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
+-          nav.share({
+-            files: [pdfFile],
+-            title: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} ${activeDoc.number}`,
+-            text: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} from ${settings.businessName}`
+-          }).then(() => {
+-            showToast('Document shared successfully!');
+-          }).catch((err: any) => {
+-            console.log('Share canceled', err);
+-          });
+-        } else {
+-          const downloadUrl = URL.createObjectURL(pdfBlob);
+-          const link = document.createElement('a');
+-          link.href = downloadUrl;
+-          link.download = `${activeDoc.number}.pdf`;
+-          document.body.appendChild(link);
+-          link.click();
+-          document.body.removeChild(link);
+-          URL.revokeObjectURL(downloadUrl);
+-
+-          const message = `Hello ${activeDoc.customerName},
++      const pdfBlob = doc.output('blob');
++      const pdfFile = new File([pdfBlob], `${activeDoc.number}.pdf`, { type: 'application/pdf' });
++      
++      const nav = navigator as any;
++      if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
++        await nav.share({
++          files: [pdfFile],
++          title: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} ${activeDoc.number}`,
++          text: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} from ${settings.businessName}`
++        });
++        showToast('Document shared successfully!');
++      } else {
++        const downloadUrl = URL.createObjectURL(pdfBlob);
++        const link = document.createElement('a');
++        link.href = downloadUrl;
++        link.download = `${activeDoc.number}.pdf`;
++        document.body.appendChild(link);
++        link.click();
++        document.body.removeChild(link);
++        URL.revokeObjectURL(downloadUrl);
++
++        const message = `Hello ${activeDoc.customerName},
+ 
+ ${activeDoc.msgText}
+ 
+ We have downloaded the PDF document to your device. Please attach it in the chat.`;
+ 
+-          const encoded = encodeURIComponent(message);
+-          const phoneNum = customerDetail?.phone ? customerDetail.phone.replace(/[^0-9]/g, '') : '';
+-          const targetPhone = phoneNum.length === 10 ? `91${phoneNum}` : phoneNum;
++        const encoded = encodeURIComponent(message);
++        const phoneNum = customerDetail?.phone ? customerDetail.phone.replace(/[^0-9]/g, '') : '';
++        const targetPhone = phoneNum.length === 10 ? `91${phoneNum}` : phoneNum;
++        
++        const url = targetPhone 
++          ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
++          : `https://api.whatsapp.com/send?text=${encoded}`;
+           
+-          const url = targetPhone 
+-            ? `https://api.whatsapp.com/send?phone=${targetPhone}&text=${encoded}`
+-            : `https://api.whatsapp.com/send?text=${encoded}`;
+-            
+-          window.open(url, '_blank');
+-          showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
+-        }
+-      }).catch((err: any) => {
+-        console.error(err);
+-        showToast('Error generating PDF for WhatsApp sharing.', 'error');
+-      });
+-    };
+-
+-    const globalWindow = window as any;
+-    if (globalWindow.html2pdf) {
+-      sharePDF(globalWindow.html2pdf);
+-    } else {
+-      const script = document.createElement('script');
+-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+-      script.crossOrigin = 'anonymous';
+-      script.onload = () => {
+-        if (globalWindow.html2pdf) {
+-          sharePDF(globalWindow.html2pdf);
+-        }
+-      };
+-      script.onerror = () => {
+-        showToast('Failed to load PDF engine from CDN.', 'error');
+-      };
+-      document.body.appendChild(script);
++        window.open(url, '_blank');
++        showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
++      }
++    } catch (err) {
++      console.error(err);
++      showToast('Error generating PDF for WhatsApp sharing.', 'error');
++    } finally {
++      if (tempEl.parentNode) {
++        document.body.removeChild(tempEl);
++      }
+     }
+   };
+ 
+@@ -843,6 +939,153 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+   const selectedInvoice = invoices.find((inv) => inv.id === currentInvoiceId || inv.invoiceNumber === currentInvoiceId);
+   const selectedQuotation = quotations.find((q) => q.id === currentQuotationId || q.quotationNumber === currentQuotationId);
+ 
++  const renderPortalModals = () => {
++    return (
++      <>
++        {/* Delete Invoice modal */}
++        {deletingInvoice && createPortal(
++          <div className="modal-overlay" style={{ zIndex: 1000 }}>
++            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
++              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
++                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
++                  <AlertTriangle size={28} />
++                </div>
++                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Invoice</h3>
++                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
++                  Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
++                </p>
++                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
++                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingInvoice(null)}>
++                    Cancel
++                  </button>
++                  <button
++                    className="btn btn-primary"
++                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
++                    onClick={async () => {
++                      const idToDelete = deletingInvoice.id;
++                      const invoiceNo = deletingInvoice.invoiceNumber;
++                      setDeletingInvoice(null);
++                      try {
++                        deleteInvoice(idToDelete);
++                        showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
++                        setViewInvoice(null);
++                      } catch (error: any) {
++                        console.error("Delete invoice error:", error);
++                        showToast(`Failed to delete: ${error.message || error}`, 'error');
++                      }
++                    }}
++                  >
++                    Delete
++                  </button>
++                </div>
++              </div>
++            </div>
++          </div>,
++          document.body
++        )}
++
++        {/* Delete Quotation modal */}
++        {deletingQuotation && createPortal(
++          <div className="modal-overlay" style={{ zIndex: 1000 }}>
++            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
++              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
++                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
++                  <AlertTriangle size={28} />
++                </div>
++                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Quotation</h3>
++                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
++                  Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
++                </p>
++                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
++                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingQuotation(null)}>
++                    Cancel
++                  </button>
++                  <button
++                    className="btn btn-primary"
++                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
++                    onClick={() => {
++                      deleteQuotation(deletingQuotation.id);
++                      showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
++                      setDeletingQuotation(null);
++                      setViewQuotation(null);
++                    }}
++                  >
++                    Delete
++                  </button>
++                </div>
++              </div>
++            </div>
++          </div>,
++          document.body
++        )}
++
++        {/* Convert Quotation to Invoice Modal */}
++        {isConvertModalOpen && convertQuotationId && createPortal(
++          <div className="modal-overlay" style={{ zIndex: 1000 }}>
++            <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
++              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
++              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
++                Create a sales invoice from this quotation. Please confirm payment collection details.
++              </p>
++              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
++                <div className="form-group" style={{ margin: 0 }}>
++                  <label className="form-label">Amount Collected (₹)</label>
++                  <input 
++                    type="number" 
++                    className="form-control" 
++                    value={convertAmountPaid || ''} 
++                    onChange={(e) => setConvertAmountPaid(parseFloat(e.target.value) || 0)} 
++                    placeholder="0.00" 
++                  />
++                </div>
++                {convertAmountPaid > 0 && (
++                  <div className="form-group" style={{ margin: 0 }}>
++                    <label className="form-label">Payment Method</label>
++                    <select 
++                      className="form-control" 
++                      value={convertPaymentMethod} 
++                      onChange={(e) => setConvertPaymentMethod(e.target.value)}
++                    >
++                      <option value="UPI">UPI / GPay / PhonePe</option>
++                      <option value="Cash">Cash</option>
++                      <option value="Bank Transfer">Bank Transfer</option>
++                      <option value="Cheque">Cheque</option>
++                    </select>
++                  </div>
++                )}
++              </div>
++              <div style={{ display: 'flex', gap: '12px' }}>
++                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setIsConvertModalOpen(false); setConvertQuotationId(null); }}>
++                  Cancel
++                </button>
++                <button 
++                  className="btn btn-primary" 
++                  style={{ flex: 1 }} 
++                  onClick={() => {
++                    try {
++                      const invoiceId = convertQuotationToInvoice(convertQuotationId, convertAmountPaid, convertPaymentMethod);
++                      showToast("Quotation converted to Invoice successfully!");
++                      setIsConvertModalOpen(false);
++                      setConvertQuotationId(null);
++                      setSalesActiveTab('invoices');
++                      setViewInvoice(invoiceId);
++                      setViewQuotation(null);
++                    } catch (err: any) {
++                      showToast(err.message || "Failed to convert quotation", "error");
++                    }
++                  }}
++                >
++                  Convert
++                </button>
++              </div>
++            </div>
++          </div>,
++          document.body
++        )}
++      </>
++    );
++  };
++
+   // --- RENDERING ---
+ 
+ 
+@@ -1233,6 +1476,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+             <Trash2 size={16} /> Delete & Reset Stock
+           </button>
+         </div>
++        {renderPortalModals()}
+       </div>
+     );
+   }
+@@ -1773,6 +2017,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+             <Trash2 size={16} /> Delete Quotation
+           </button>
+         </div>
++        {renderPortalModals()}
+       </div>
+     );
+   }
+@@ -3521,147 +3766,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
+       </div>
+ 
+       {/* PORTAL MODALS */}
+-
+-      {/* Delete Invoice modal */}
+-      {deletingInvoice && createPortal(
+-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+-          <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+-              <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+-                <AlertTriangle size={28} />
+-              </div>
+-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Invoice</h3>
+-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+-                Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
+-              </p>
+-              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+-                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingInvoice(null)}>
+-                  Cancel
+-                </button>
+-                <button
+-                  className="btn btn-primary"
+-                  style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+-                  onClick={async () => {
+-                    const idToDelete = deletingInvoice.id;
+-                    const invoiceNo = deletingInvoice.invoiceNumber;
+-                    setDeletingInvoice(null);
+-                    try {
+-                      deleteInvoice(idToDelete);
+-                      showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
+-                      setViewInvoice(null);
+-                    } catch (error: any) {
+-                      console.error("Delete invoice error:", error);
+-                      showToast(`Failed to delete: ${error.message || error}`, 'error');
+-                    }
+-                  }}
+-                >
+-                  Delete
+-                </button>
+-              </div>
+-            </div>
+-          </div>
+-        </div>,
+-        document.body
+-      )}
+-
+-      {/* Delete Quotation modal */}
+-      {deletingQuotation && createPortal(
+-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+-          <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
+-              <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
+-                <AlertTriangle size={28} />
+-              </div>
+-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Quotation</h3>
+-              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+-                Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
+-              </p>
+-              <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
+-                <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingQuotation(null)}>
+-                  Cancel
+-                </button>
+-                <button
+-                  className="btn btn-primary"
+-                  style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+-                  onClick={() => {
+-                    deleteQuotation(deletingQuotation.id);
+-                    showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
+-                    setDeletingQuotation(null);
+-                    setViewQuotation(null);
+-                  }}
+-                >
+-                  Delete
+-                </button>
+-              </div>
+-            </div>
+-          </div>
+-        </div>,
+-        document.body
+-      )}
+-
+-      {/* Convert Quotation to Invoice Modal */}
+-      {isConvertModalOpen && convertQuotationId && createPortal(
+-        <div className="modal-overlay" style={{ zIndex: 1000 }}>
+-          <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
+-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
+-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
+-              Create a sales invoice from this quotation. Please confirm payment collection details.
+-            </p>
+-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
+-              <div className="form-group" style={{ margin: 0 }}>
+-                <label className="form-label">Amount Collected (₹)</label>
+-                <input 
+-                  type="number" 
+-                  className="form-control" 
+-                  value={convertAmountPaid || ''} 
+-                  onChange={(e) => setConvertAmountPaid(parseFloat(e.target.value) || 0)} 
+-                  placeholder="0.00" 
+-                />
+-              </div>
+-              {convertAmountPaid > 0 && (
+-                <div className="form-group" style={{ margin: 0 }}>
+-                  <label className="form-label">Payment Method</label>
+-                  <select 
+-                    className="form-control" 
+-                    value={convertPaymentMethod} 
+-                    onChange={(e) => setConvertPaymentMethod(e.target.value)}
+-                  >
+-                    <option value="UPI">UPI / GPay / PhonePe</option>
+-                    <option value="Cash">Cash</option>
+-                    <option value="Bank Transfer">Bank Transfer</option>
+-                    <option value="Cheque">Cheque</option>
+-                  </select>
+-                </div>
+-              )}
+-            </div>
+-            <div style={{ display: 'flex', gap: '12px' }}>
+-              <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setIsConvertModalOpen(false); setConvertQuotationId(null); }}>
+-                Cancel
+-              </button>
+-              <button 
+-                className="btn btn-primary" 
+-                style={{ flex: 1 }} 
+-                onClick={() => {
+-                  try {
+-                    const invoiceId = convertQuotationToInvoice(convertQuotationId, convertAmountPaid, convertPaymentMethod);
+-                    showToast("Quotation converted to Invoice successfully!");
+-                    setIsConvertModalOpen(false);
+-                    setConvertQuotationId(null);
+-                    setSalesActiveTab('invoices');
+-                    setViewInvoice(invoiceId);
+-                    setViewQuotation(null);
+-                  } catch (err: any) {
+-                    showToast(err.message || "Failed to convert quotation", "error");
+-                  }
+-                }}
+-              >
+-                Convert
+-              </button>
+-            </div>
+-          </div>
+-        </div>,
+-        document.body
+-      )}
++      {renderPortalModals()}
+     </div>
+   );
+ };

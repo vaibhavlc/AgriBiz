@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useApp } from '../context/AppContext';
+import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
@@ -73,6 +73,7 @@ export const Purchases: React.FC = () => {
   const [activeMenuPurchaseId, setActiveMenuPurchaseId] = useState<string | null>(null);
   const [editingPurchaseId, setEditingPurchaseId] = useState<string | null>(null);
   const [activePreviewPurchase, setActivePreviewPurchase] = useState<Purchase | null>(null);
+  const [initialPurchaseValues, setInitialPurchaseValues] = useState<any>(null);
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
   const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
 
@@ -110,6 +111,27 @@ export const Purchases: React.FC = () => {
   // GST Type Selection
   const [gstType, setGstType] = useState<'IntraState' | 'InterState'>('IntraState');
 
+  const currentPurchaseValues = {
+    selectedSupplierId,
+    purchaseDate,
+    supplierInvoiceNumber,
+    supplierInvoiceDate,
+    purchaseType,
+    dueDate,
+    purchaseStatus,
+    items,
+    transportCharges,
+    loadingCharges,
+    otherCharges,
+    notes,
+    paymentMethod,
+    amountPaid,
+    transactionReference,
+    gstType,
+  };
+
+  useUnsavedChanges('purchase-form', currentPurchaseValues, initialPurchaseValues, isEnteringPurchase && !!initialPurchaseValues);
+
   // Attachments
   const [attachedFileName, setAttachedFileName] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
@@ -141,13 +163,38 @@ export const Purchases: React.FC = () => {
 
   useEffect(() => {
     if (purchaseFormPresetSupplierId) {
+      const defaultDate = new Date().toISOString().split('T')[0];
+      const defaultDueDate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split('T')[0];
+      })();
+      const defaults = {
+        selectedSupplierId: purchaseFormPresetSupplierId,
+        purchaseDate: defaultDate,
+        supplierInvoiceNumber: '',
+        supplierInvoiceDate: defaultDate,
+        purchaseType: 'Credit',
+        dueDate: defaultDueDate,
+        purchaseStatus: 'Received',
+        items: [{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }],
+        transportCharges: 0,
+        loadingCharges: 0,
+        otherCharges: 0,
+        notes: '',
+        paymentMethod: 'Bank Transfer',
+        amountPaid: 0,
+        transactionReference: '',
+        gstType: 'IntraState',
+      };
       setEditingPurchaseId(null);
       setSelectedSupplierId(purchaseFormPresetSupplierId);
       setPurchaseBillNumber(`BILL-${Date.now().toString().slice(-4)}`);
-      setPurchaseDate(new Date().toISOString().split('T')[0]);
+      setPurchaseDate(defaultDate);
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }]);
       setAmountPaid(0);
       setNotes('');
+      setInitialPurchaseValues(defaults);
       setIsEnteringPurchase(true);
       setPurchaseFormPresetSupplierId(null);
     }
@@ -825,6 +872,54 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setItems((prev) => prev.filter((_, idx) => idx !== index));
   };
 
+  const handleStartNewPurchase = () => {
+    const defaultDate = new Date().toISOString().split('T')[0];
+    const defaultDueDate = (() => {
+      const d = new Date();
+      d.setDate(d.getDate() + 30);
+      return d.toISOString().split('T')[0];
+    })();
+    const defaults = {
+      selectedSupplierId: '',
+      purchaseDate: defaultDate,
+      supplierInvoiceNumber: '',
+      supplierInvoiceDate: defaultDate,
+      purchaseType: 'Credit',
+      dueDate: defaultDueDate,
+      purchaseStatus: 'Received',
+      items: [{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }],
+      transportCharges: 0,
+      loadingCharges: 0,
+      otherCharges: 0,
+      notes: '',
+      paymentMethod: 'Bank Transfer',
+      amountPaid: 0,
+      transactionReference: '',
+      gstType: 'IntraState',
+    };
+    
+    setEditingPurchaseId(null);
+    setSelectedSupplierId('');
+    setSupplierInvoiceNumber('');
+    setSupplierInvoiceDate(defaultDate);
+    setPurchaseType('Credit');
+    setDueDate(defaultDueDate);
+    setPurchaseStatus('Received');
+    setItems([{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }]);
+    setTransportCharges(0);
+    setLoadingCharges(0);
+    setOtherCharges(0);
+    setNotes('');
+    setPaymentMethod('Bank Transfer');
+    setAmountPaid(0);
+    setTransactionReference('');
+    setGstType('IntraState');
+    setAttachedFileName('');
+    setAttachedFile(null);
+    setInitialPurchaseValues(defaults);
+    setIsEnteringPurchase(true);
+  };
+
   const handleResetForm = (exitEditor = true) => {
     setEditingPurchaseId(null);
     setSelectedSupplierId('');
@@ -919,6 +1014,30 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       }
     }
 
+    const values = {
+      selectedSupplierId: pur.supplierId,
+      purchaseDate: pur.date,
+      supplierInvoiceNumber: supplierInvoiceNo,
+      supplierInvoiceDate: supplierInvoiceDt,
+      purchaseType: type,
+      dueDate: dueDt,
+      purchaseStatus: status,
+      items: pur.items.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        price: item.price,
+        discount: 0,
+        gstRate: item.gstRate,
+      })),
+      transportCharges: transport,
+      loadingCharges: loading,
+      otherCharges: other,
+      notes: remarks,
+      paymentMethod: pur.paymentMethod || 'Bank Transfer',
+      amountPaid: pur.amountPaid,
+      transactionReference: txnRef,
+      gstType: gstType,
+    };
     setSupplierInvoiceNumber(supplierInvoiceNo);
     setSupplierInvoiceDate(supplierInvoiceDt);
     setPurchaseType(type);
@@ -944,6 +1063,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     if (pur.paymentMethod) {
       setPaymentMethod(pur.paymentMethod as any);
     }
+    setInitialPurchaseValues(values);
     setIsEnteringPurchase(true);
     setViewPurchase(null);
   };
@@ -2794,7 +2914,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             </select>
           </div>
 
-          <button className="btn btn-primary" onClick={() => setIsEnteringPurchase(true)}>
+          <button className="btn btn-primary" onClick={handleStartNewPurchase}>
             <Plus size={16} /> Enter Purchase
           </button>
         </div>
@@ -2809,7 +2929,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <p className="empty-state-desc">
               No supplier purchases match your filters or searching criteria.
             </p>
-            <button className="btn btn-primary" onClick={() => setIsEnteringPurchase(true)}>
+            <button className="btn btn-primary" onClick={handleStartNewPurchase}>
               Log New Purchase
             </button>
           </div>

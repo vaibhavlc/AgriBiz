@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
-import { useApp } from '../context/AppContext';
+import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Product } from '../types';
 
 interface ProductModalProps {
@@ -19,7 +19,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   editProductData = null,
   onSaveCallback,
 }) => {
-  const { addProduct, editProduct } = useApp();
+  const { addProduct, editProduct, requestNavigation } = useApp();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -29,6 +29,36 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   const [sellingPrice, setSellingPrice] = useState<number | ''>(0);
   const [gstRate, setGstRate] = useState(18);
   const [hsn, setHsn] = useState('');
+
+  const currentValues = {
+    name,
+    sku,
+    category,
+    stock,
+    minStock,
+    purchasePrice,
+    sellingPrice,
+    gstRate,
+    hsn,
+  };
+
+  const initialValues = {
+    name: editProductData?.name || '',
+    sku: editProductData?.sku || '',
+    category: editProductData?.category || CATEGORIES[0],
+    stock: editProductData?.stock ?? 0,
+    minStock: editProductData?.minStock ?? 5,
+    purchasePrice: editProductData?.purchasePrice ?? 0,
+    sellingPrice: editProductData?.sellingPrice ?? 0,
+    gstRate: editProductData?.gstRate ?? 18,
+    hsn: editProductData?.hsn || '',
+  };
+
+  useUnsavedChanges('product-modal-form', currentValues, initialValues, isOpen);
+
+  const handleCloseClick = () => {
+    requestNavigation(onClose);
+  };
 
   useEffect(() => {
     if (editProductData) {
@@ -113,7 +143,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   return (
     <Modal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleCloseClick}
       title={editProductData ? 'Edit Product Details' : 'Add New Agricultural Product'}
     >
       <form onSubmit={handleSubmit}>
@@ -255,7 +285,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         </div>
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
-          <button type="button" className="btn btn-secondary" onClick={onClose}>
+          <button type="button" className="btn btn-secondary" onClick={handleCloseClick}>
             Cancel
           </button>
           <button type="submit" className="btn btn-primary">
