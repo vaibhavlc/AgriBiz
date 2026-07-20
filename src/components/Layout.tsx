@@ -973,7 +973,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </header>
         </div>
 
-        <main className="content-body">{children}</main>
+        <main className="content-body">
+          <div 
+            key={`${currentTab}-${currentInvoiceId || ''}-${currentPurchaseId || ''}-${currentCustomerId || ''}-${currentSupplierId || ''}-${isCreatingInvoice}-${isEnteringPurchase}`} 
+            className="page-transition-wrapper"
+          >
+            {children}
+          </div>
+        </main>
       </div>
 
       {renderMobileBottomNav()}

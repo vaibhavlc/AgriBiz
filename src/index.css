@@ -1426,6 +1426,29 @@ body.dark-theme .prem-live-dot {
   flex: 1;
 }
 
+.page-transition-wrapper {
+  animation: pageFadeIn 0.18s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+  width: 100%;
+  will-change: transform, opacity;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition-wrapper {
+    animation: none !important;
+  }
+}
+
 /* Grid Utilities */
 .grid-cols-4 {
   display: grid;
