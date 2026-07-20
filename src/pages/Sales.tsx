@@ -67,7 +67,6 @@ export const Sales: React.FC = () => {
     setCurrentTab,
     salesFormPresetCustomerId,
     setSalesFormPresetCustomerId,
-    setIsFormDirty,
   } = useApp();
 
   const totalSales = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
@@ -722,7 +721,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Invoice ${originalInvoice.invoiceNumber} updated successfully!`);
 
       // Reset states
-      setIsFormDirty(false);
       setEditingInvoiceId(null);
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
@@ -756,7 +754,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Invoice created successfully for ${customer.name}!`);
 
       // Reset states and redirect to details print view
-      setIsFormDirty(false);
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setAmountPaid(0);
@@ -826,7 +823,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Quotation ${originalQuotation.quotationNumber} updated successfully!`);
 
       // Reset states
-      setIsFormDirty(false);
       setEditingQuotationId(null);
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
@@ -851,7 +847,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Quotation created successfully for ${customer.name}!`);
 
       // Reset states
-      setIsFormDirty(false);
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setNotes('');
@@ -2112,7 +2107,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     return (
       <div style={{ animation: 'fadeIn 0.2s ease-out', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-        <form onSubmit={handleSaveInvoice} onChange={() => setIsFormDirty(true)}>
+        <form onSubmit={handleSaveInvoice}>
           
           {/* Section 1 & 2: Designed Banner Header */}
           <div className="creator-banner-header" style={{
@@ -2131,7 +2126,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => {
-                  setIsFormDirty(false);
                   setIsCreatingInvoice(false);
                   setEditingInvoiceId(null);
                   setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
@@ -2636,7 +2630,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   type="button"
                   className="btn btn-secondary"
                   onClick={() => {
-                    setIsFormDirty(false);
                     setIsCreatingInvoice(false);
                     setEditingInvoiceId(null);
                     setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
@@ -2674,7 +2667,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     return (
       <div style={{ animation: 'fadeIn 0.2s ease-out', width: '100%', maxWidth: '100%', boxSizing: 'border-box' }}>
-        <form onSubmit={handleSaveQuotation} onChange={() => setIsFormDirty(true)}>
+        <form onSubmit={handleSaveQuotation}>
 
           {/* Section 1 & 2: Designed Banner Header */}
           <div className="creator-banner-header" style={{
@@ -2693,7 +2686,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => {
-                  setIsFormDirty(false);
                   setIsCreatingQuotation(false);
                   setEditingQuotationId(null);
                   setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
@@ -3073,7 +3065,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     type="button"
                     className="btn btn-secondary"
                     onClick={() => {
-                      setIsFormDirty(false);
                       setIsCreatingQuotation(false);
                       setEditingQuotationId(null);
                       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);

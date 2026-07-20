@@ -43,9 +43,6 @@ interface AppContextType {
   toast: { message: string; type: 'success' | 'error' | 'info' } | null;
   showToast: (message: string, type?: 'success' | 'error' | 'info') => void;
 
-  isFormDirty: boolean;
-  setIsFormDirty: (val: boolean) => void;
-
   setCurrentTab: (tab: string) => void;
   setViewInvoice: (id: string | null) => void;
   setViewQuotation: (id: string | null) => void;
@@ -250,8 +247,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isEditingSupplier, setIsEditingSupplier] = useState<Supplier | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-
-  const [isFormDirty, setIsFormDirty] = useState(false);
 
   const [salesActiveTab, setSalesActiveTab] = useState<'invoices' | 'quotations'>('invoices');
 
@@ -1381,9 +1376,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSearchQuery,
         toast,
         showToast,
-
-        isFormDirty,
-        setIsFormDirty,
 
         setCurrentTab,
         setViewInvoice,
