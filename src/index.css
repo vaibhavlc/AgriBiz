@@ -4678,20 +4678,13 @@ body.dark-theme .lang-selector-btn:hover {
   margin-bottom: 24px;
   white-space: nowrap;
   border-bottom: 1px solid var(--border-color);
-  scrollbar-width: thin;
+  scrollbar-width: none; /* Hide scrollbar for clean look */
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
 }
 
 .report-tabs-horizontal::-webkit-scrollbar {
-  height: 6px;
-}
-
-.report-tabs-horizontal::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.report-tabs-horizontal::-webkit-scrollbar-thumb {
-  background-color: var(--border-color);
-  border-radius: 4px;
+  display: none;
 }
 
 .report-tab-pill {
