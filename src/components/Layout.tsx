@@ -145,27 +145,41 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     let touchStartX = 0;
     let touchStartY = 0;
 
+    const isHorizontallyScrollable = (element: HTMLElement | null): boolean => {
+      if (!element) return false;
+      let curr: HTMLElement | null = element;
+      while (curr && curr !== document.body) {
+        const style = window.getComputedStyle(curr);
+        const overflowX = style.overflowX;
+        const isScrollable = overflowX === 'auto' || overflowX === 'scroll';
+        const hasScrollableContent = curr.scrollWidth > curr.clientWidth;
+        
+        if (isScrollable && hasScrollableContent) {
+          return true;
+        }
+        curr = curr.parentElement;
+      }
+      return false;
+    };
+
     const handleTouchStart = (e: TouchEvent) => {
       if (window.innerWidth > 1024) return;
 
       const target = e.target as HTMLElement;
-      // If we are on reports tab, only allow layout page swiping if target is NOT inside report body/tabs
-      if (currentTab === 'reports') {
-        if (target.closest('.report-content-container') || target.closest('.report-tabs-horizontal')) {
-          return;
-        }
+
+      // Do not trigger swipe page navigation inside any horizontally scrollable container
+      if (isHorizontallyScrollable(target)) {
+        return;
       }
 
-      // Do not trigger swipe inside scrollable horizontal tables, modals, selectors, or input controls
+      // Do not trigger swipe inside modals, inputs, and controls
       if (
-        target.closest('.table-wrapper') ||
         target.closest('.modal') ||
         target.closest('input') ||
         target.closest('textarea') ||
         target.closest('select') ||
         target.closest('button') ||
         target.closest('a') ||
-        target.closest('.pill-filter-bar') ||
         target.closest('.prem-nav-menu')
       ) {
         return;
