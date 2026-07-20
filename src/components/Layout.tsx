@@ -120,18 +120,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   useEffect(() => {
     const handleScroll = () => {
-      if (mainWrapperRef.current) {
-        setScrolled(mainWrapperRef.current.scrollTop > 8);
-      }
+      setScrolled(window.scrollY > 8);
     };
-    const wrapper = mainWrapperRef.current;
-    if (wrapper) {
-      wrapper.addEventListener('scroll', handleScroll, { passive: true });
-    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => {
-      if (wrapper) {
-        wrapper.removeEventListener('scroll', handleScroll);
-      }
+      window.removeEventListener('scroll', handleScroll);
     };
   }, []);
 
@@ -327,11 +320,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Scroll main container to top synchronously on page / view transitions to avoid layout flash or scroll jumping
+  // Scroll page to top synchronously on page / view transitions to avoid layout flash or scroll jumping
   useLayoutEffect(() => {
-    if (mainWrapperRef.current) {
-      mainWrapperRef.current.scrollTop = 0;
-    }
+    window.scrollTo({ top: 0, behavior: 'auto' });
   }, [
     currentTab,
     currentInvoiceId,
