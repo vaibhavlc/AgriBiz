@@ -591,7 +591,7 @@ body.dark-theme .prem-nav-item:hover .prem-nav-icon {
 
 /* ---- Sidebar Floating Edge Collapse Toggle ---- */
 .prem-edge-collapse-btn {
-  position: absolute;
+  position: fixed;
   top: 50%;
   transform: translateY(-50%);
   width: 24px;
@@ -604,7 +604,7 @@ body.dark-theme .prem-nav-item:hover .prem-nav-icon {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 150;
+  z-index: 1050;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   transition: left 0.35s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   outline: none;
@@ -1801,6 +1801,26 @@ body.dark-theme .prem-live-dot {
 
 .text-nowrap {
   white-space: nowrap !important;
+}
+
+@media (min-width: 1025px) {
+  .expense-table-fit {
+    table-layout: fixed !important;
+    width: 100% !important;
+  }
+  .expense-table-fit th,
+  .expense-table-fit td {
+    padding: 10px 6px !important;
+    font-size: 12px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .expense-table-fit th {
+    white-space: normal !important;
+    line-height: 1.2;
+    vertical-align: middle;
+  }
 }
 
 .data-table tr:last-child td {

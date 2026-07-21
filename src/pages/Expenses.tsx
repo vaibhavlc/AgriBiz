@@ -737,19 +737,19 @@ export const Expenses: React.FC = () => {
             {/* Desktop Table View */}
             <div className="desktop-only-table">
               <div className="table-wrapper">
-                <table className="data-table">
+                <table className="data-table expense-table-fit">
                   <thead>
                     <tr>
-                      <th className="text-nowrap">Expense Date</th>
-                      <th className="text-nowrap">Voucher ID</th>
-                      <th>Category</th>
-                      <th>Payee (Paid To)</th>
-                      <th className="text-nowrap" style={{ textAlign: 'right' }}>Amount (₹)</th>
-                      <th className="text-nowrap">Status</th>
-                      <th className="text-nowrap">Payment Method</th>
-                      <th className="text-nowrap">Reference Number</th>
-                      <th>Notes / Remarks</th>
-                      <th className="text-nowrap" style={{ textAlign: 'center' }}>Actions</th>
+                      <th style={{ width: '10%' }}>Expense Date</th>
+                      <th style={{ width: '9%' }}>Voucher ID</th>
+                      <th style={{ width: '12%' }}>Category</th>
+                      <th style={{ width: '13%' }}>Payee (Paid To)</th>
+                      <th style={{ width: '11%', textAlign: 'right' }}>Amount (₹)</th>
+                      <th style={{ width: '8%' }}>Status</th>
+                      <th style={{ width: '9%' }}>Payment Method</th>
+                      <th style={{ width: '11%' }}>Reference Number</th>
+                      <th style={{ width: '12%' }}>Notes / Remarks</th>
+                      <th style={{ width: '5%', textAlign: 'center' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
