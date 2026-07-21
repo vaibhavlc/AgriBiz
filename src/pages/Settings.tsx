@@ -563,7 +563,7 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleThemeChange = (theme: 'light' | 'dark') => {
+  const handleThemeChange = (theme: 'light' | 'dark' | 'system') => {
     updateSettings({
       ...settings,
       theme,
@@ -1267,6 +1267,15 @@ export const Settings: React.FC = () => {
                   >
                     <Moon size={18} />
                     <span>Dark Theme Mode</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${settings.theme === 'system' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, minWidth: '150px', justifyContent: 'center' }}
+                    onClick={() => handleThemeChange('system')}
+                  >
+                    <Sliders size={18} />
+                    <span>Follow System Theme</span>
                   </button>
                 </div>
               </div>

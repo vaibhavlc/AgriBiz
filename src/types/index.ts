@@ -190,7 +190,7 @@ export interface BusinessSettings {
   showTerms: boolean;
 
   // Application Preferences
-  theme: 'light' | 'dark';
+  theme: 'light' | 'dark' | 'system';
   currencySymbol: string;
   dateFormat: string;
 

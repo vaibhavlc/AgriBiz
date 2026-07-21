@@ -42,6 +42,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     currentTab,
     setCurrentTab,
     settings,
+    activeTheme,
     updateSettings,
     searchQuery,
     setSearchQuery,
@@ -386,7 +387,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const toggleTheme = () => {
     updateSettings({
       ...settings,
-      theme: settings.theme === 'light' ? 'dark' : 'light',
+      theme: activeTheme === 'light' ? 'dark' : 'light',
     });
   };
 
@@ -675,10 +676,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       <aside
         className={`sidebar no-print${isMobileSidebarOpen ? ' open' : ''}${isSidebarCollapsed ? ' collapsed' : ''}`}
         style={{
-          background: settings.theme === 'dark'
+          background: activeTheme === 'dark'
             ? 'linear-gradient(180deg, #070a13 0%, #0f1420 100%)'
             : 'linear-gradient(180deg, #ffffff 0%, #fafbfc 100%)',
-          borderRight: `1px solid ${settings.theme === 'dark' ? 'rgba(255,255,255,0.055)' : '#e8edf2'}`,
+          borderRight: `1px solid ${activeTheme === 'dark' ? 'rgba(255,255,255,0.055)' : '#e8edf2'}`,
         }}
       >
         {/* ── Logo-only branding area ── */}
@@ -809,9 +810,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button
               className="theme-toggle-btn"
               onClick={toggleTheme}
-              title={settings.theme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={activeTheme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
             >
-              {settings.theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+              {activeTheme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
             {/* Language Selector (Farma Style - Non-functional) */}

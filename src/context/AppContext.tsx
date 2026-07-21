@@ -26,6 +26,7 @@ interface AppContextType {
   purchases: Purchase[];
   payments: Payment[];
   settings: BusinessSettings;
+  activeTheme: 'light' | 'dark';
   currentTab: string;
   currentInvoiceId: string | null;
   currentQuotationId: string | null;
@@ -224,6 +225,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       businessName: toTitleCase(raw.businessName),
       ownerName: toTitleCase(raw.ownerName),
     };
+  });
+
+  const [activeTheme, setActiveTheme] = useState<'light' | 'dark'>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('agribiz_settings');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed.theme === 'dark') return 'dark';
+          if (parsed.theme === 'light') return 'light';
+        } catch (e) {}
+      }
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    return 'light';
   });
 
   const [expenses, setExpenses] = useState<Expense[]>(() => {
@@ -482,11 +498,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     localStorage.setItem('agribiz_settings', JSON.stringify(settings));
-    // Apply body theme class
-    document.body.className = settings.theme === 'dark' ? 'dark-theme' : 'light-theme';
-    // Update browser tab title dynamically
     document.title = settings.businessName || 'AgriBiz';
   }, [settings]);
+
+  useEffect(() => {
+    const updateActiveTheme = () => {
+      if (settings.theme === 'system') {
+        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        setActiveTheme(isDark ? 'dark' : 'light');
+      } else {
+        setActiveTheme(settings.theme || 'light');
+      }
+    };
+
+    updateActiveTheme();
+
+    if (settings.theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handleChange = () => {
+        updateActiveTheme();
+      };
+      if (mediaQuery.addEventListener) {
+        mediaQuery.addEventListener('change', handleChange);
+      } else {
+        mediaQuery.addListener(handleChange);
+      }
+      return () => {
+        if (mediaQuery.removeEventListener) {
+          mediaQuery.removeEventListener('change', handleChange);
+        } else {
+          mediaQuery.removeListener(handleChange);
+        }
+      };
+    }
+  }, [settings.theme]);
+
+  useEffect(() => {
+    // Apply body theme class
+    document.body.className = activeTheme === 'dark' ? 'dark-theme' : 'light-theme';
+    
+    // Dynamically update status bar / theme-color meta tag
+    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+    if (!metaThemeColor) {
+      metaThemeColor = document.createElement('meta');
+      metaThemeColor.setAttribute('name', 'theme-color');
+      document.head.appendChild(metaThemeColor);
+    }
+    const color = activeTheme === 'dark' ? '#0b0f19' : '#f8fafc';
+    metaThemeColor.setAttribute('content', color);
+  }, [activeTheme]);
 
   useEffect(() => {
     localStorage.setItem('agribiz_expenses', JSON.stringify(expenses));
@@ -1458,6 +1518,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         purchases,
         payments,
         settings,
+        activeTheme,
         isFormDirty,
         setFormDirty,
         clearAllDirtyForms,

@@ -4,8 +4,7 @@
   "description": "Daivyog Dealer Management System",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#1a5c2a",
+  "background_color": "#f8fafc",
   "orientation": "any",
   "icons": [
     {

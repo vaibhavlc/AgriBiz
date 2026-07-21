@@ -679,7 +679,7 @@ export const initialSettings: BusinessSettings = {
   showTerms: true,
 
   // Application Preferences
-  theme: 'light',
+  theme: 'system',
   currencySymbol: '₹',
   dateFormat: 'DD/MM/YYYY',
 

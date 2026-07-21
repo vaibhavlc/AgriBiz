@@ -4,8 +4,29 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/logo-192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#1a5c2a" />
+    <meta name="theme-color" content="#f8fafc" />
+    <script>
+      (function() {
+        try {
+          const localSettings = localStorage.getItem('agribiz_settings');
+          let theme = 'system';
+          if (localSettings) {
+            theme = JSON.parse(localSettings).theme || 'system';
+          }
+          let active = 'light';
+          if (theme === 'system') {
+            active = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          } else {
+            active = theme;
+          }
+          const themeColor = active === 'dark' ? '#0b0f19' : '#f8fafc';
+          const metaTag = document.querySelector('meta[name="theme-color"]');
+          if (metaTag) metaTag.setAttribute('content', themeColor);
+        } catch (e) {
+          // ignore
+        }
+      })();
+    </script>
     <title>Daivyog – Agricultural Dealer Management System</title>
   </head>
   <body>
