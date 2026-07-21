@@ -1,5 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
+import { useAuth } from '../auth/AuthContext';
+import { authService } from '../auth/authService';
+import { ALL_PAGE_PERMISSIONS, ROLE_PERMISSIONS } from '../auth/permissions';
+import type { UserRole, User } from '../types';
+import { Modal } from '../components/Modal';
 import {
   Store,
   FileText,
@@ -15,6 +20,14 @@ import {
   Briefcase,
   Upload,
   Trash2,
+  Users,
+  UserPlus,
+  ShieldAlert,
+  KeyRound,
+  Search,
+  Edit2,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 import { getFullAddress, initialSettings } from '../utils/dummyData';
 
@@ -71,24 +84,133 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 export const Settings: React.FC = () => {
   const { settings, updateSettings, resetToDefault, showToast } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   const settingsTabsRef = useRef<HTMLDivElement>(null);
 
-  // Center active settings tab item when activeTab changes
+  // Center active settings tab item when activeTab changes without scrolling window vertically
   useEffect(() => {
     if (settingsTabsRef.current) {
-      const activeTabElement = settingsTabsRef.current.querySelector('[data-active="true"]');
+      const activeTabElement = settingsTabsRef.current.querySelector('[data-active="true"]') as HTMLElement;
       if (activeTabElement) {
-        activeTabElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
+        const container = settingsTabsRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const childRect = activeTabElement.getBoundingClientRect();
+        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
       }
     }
   }, [activeTab]);
+
+  const { currentUser, currentCompany } = useAuth();
+  const [usersList, setUsersList] = useState<User[]>(() => {
+    return currentCompany ? authService.getCompanyUsers(currentCompany.id) : [];
+  });
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<'All' | UserRole>('All');
+  const [userStatusFilter, setUserStatusFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
+
+  // Employee Modal state
+  const [isAddUserModalOpen, setIsAddUserModalOpen] = useState(false);
+  const [editingStaffUser, setEditingStaffUser] = useState<User | null>(null);
+  const [staffName, setStaffName] = useState('');
+  const [staffMobile, setStaffMobile] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [staffRole, setStaffRole] = useState<UserRole>('Accounts');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffCustomPermissions, setStaffCustomPermissions] = useState<string[]>([]);
+
+  // Password reset modal state
+  const [resetStaffUser, setResetStaffUser] = useState<User | null>(null);
+  const [newResetPass, setNewResetPass] = useState('');
+
+  const refreshUsersList = () => {
+    if (currentCompany) {
+      setUsersList(authService.getCompanyUsers(currentCompany.id));
+    }
+  };
+
+  const handleStaffRoleChange = (newRole: UserRole) => {
+    setStaffRole(newRole);
+    if (newRole === 'Owner') {
+      setStaffCustomPermissions(['*']);
+    } else {
+      setStaffCustomPermissions([...(ROLE_PERMISSIONS[newRole] || [])]);
+    }
+  };
+
+  const handleSaveStaffUser = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentCompany) return;
+
+    const finalPermissions = staffRole === 'Owner' ? ['*'] : staffCustomPermissions;
+
+    if (editingStaffUser) {
+      const updated: User = {
+        ...editingStaffUser,
+        name: staffName.trim(),
+        role: staffRole,
+        email: staffEmail.trim() || undefined,
+        customPermissions: finalPermissions,
+      };
+      if (staffPassword.trim()) {
+        updated.password = staffPassword.trim();
+      }
+      authService.updateUser(updated);
+      showToast(`Staff member ${updated.name} details & permissions updated!`, 'success');
+    } else {
+      if (!staffName || !staffMobile || !staffPassword) {
+        showToast('Please fill all required fields.', 'error');
+        return;
+      }
+      const res = authService.addUser({
+        companyId: currentCompany.id,
+        name: staffName,
+        mobile: staffMobile,
+        password: staffPassword,
+        role: staffRole,
+        email: staffEmail,
+        customPermissions: finalPermissions,
+      });
+      if (!res.success) {
+        showToast(res.message, 'error');
+        return;
+      }
+      showToast(res.message, 'success');
+    }
+
+    setIsAddUserModalOpen(false);
+    setEditingStaffUser(null);
+    setStaffName('');
+    setStaffMobile('');
+    setStaffPassword('');
+    setStaffRole('Accounts');
+    setStaffEmail('');
+    setStaffCustomPermissions([]);
+    refreshUsersList();
+  };
+
+  const handleToggleUserStatus = (u: User) => {
+    const res = authService.toggleUserStatus(u.id);
+    if (res.success) {
+      showToast(`${u.name} status set to ${res.newStatus}`, 'info');
+      refreshUsersList();
+    }
+  };
+
+  const handleResetUserPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetStaffUser || !newResetPass || newResetPass.length < 6) {
+      showToast('Password must be at least 6 characters.', 'error');
+      return;
+    }
+    authService.resetUserPassword(resetStaffUser.id, newResetPass);
+    showToast(`Password for ${resetStaffUser.name} reset successfully!`, 'success');
+    setResetStaffUser(null);
+    setNewResetPass('');
+    refreshUsersList();
+  };
 
   // Business Information
   const [businessName, setBusinessName] = useState(settings.businessName || '');
@@ -613,6 +735,14 @@ export const Settings: React.FC = () => {
           data-active={activeTab === 'system'}
         >
           <Sliders size={15} /> Print & System
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('users')}
+          className={`settings-tab-pill ${activeTab === 'users' ? 'active' : ''}`}
+          data-active={activeTab === 'users'}
+        >
+          <Users size={15} /> Staff & Roles
         </button>
       </div>
 
@@ -1457,38 +1587,541 @@ export const Settings: React.FC = () => {
             </>
           )}
 
-          {/* Persistent Action Footer with Inline Success Banner */}
-          <div className="settings-footer-unified">
-            <div style={{ flex: 1 }}>
-              {savedSuccess && (
-                <div style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  color: '#065f46',
-                  backgroundColor: '#ecfdf5',
-                  border: '1px solid rgba(16, 185, 129, 0.2)',
-                  padding: '8px 16px',
-                  borderRadius: '8px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  animation: 'fadeIn 0.2s ease-out',
-                  width: '100%',
-                  justifyContent: 'center'
-                }}>
-                  <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-                  <span>Preferences saved successfully!</span>
+          {/* TAB 6: Staff & Roles Management (Redeveloped From Scratch) */}
+          {activeTab === 'users' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              {currentUser?.role !== 'Owner' ? (
+                <div className="card" style={{ padding: '32px 24px', textAlign: 'center', backgroundColor: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px' }}>
+                  <ShieldAlert size={42} style={{ color: 'var(--color-danger)', margin: '0 auto 14px auto' }} />
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Restricted Access</h3>
+                  <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', maxWidth: '440px', marginLeft: 'auto', marginRight: 'auto' }}>
+                    Staff & Employee Management is restricted exclusively to the Business Owner. Please contact your administrator for permission updates.
+                  </p>
                 </div>
+              ) : (
+                <>
+                  {/* Top Summary & Action Header */}
+                  <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                    <div>
+                      <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                        Staff & Roles Management
+                      </h3>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
+                        Control team access permissions, role assignments, and account security
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      {/* Metric Badges */}
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
+                          Total: {usersList.length}
+                        </span>
+                        <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)' }}>
+                          Active: {usersList.filter((u) => u.status === 'Active').length}
+                        </span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setEditingStaffUser(null);
+                          setStaffName('');
+                          setStaffMobile('');
+                          setStaffPassword('');
+                          setStaffRole('Accounts');
+                          setStaffEmail('');
+                          setStaffCustomPermissions([...(ROLE_PERMISSIONS['Accounts'] || [])]);
+                          setIsAddUserModalOpen(true);
+                        }}
+                        style={{ borderRadius: '10px', padding: '9px 18px', fontWeight: 700, boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
+                      >
+                        <UserPlus size={16} /> Add Staff Member
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Filter & Search Bar */}
+                  <div className="card staff-filters-row" style={{ padding: '14px 20px', borderRadius: '16px' }}>
+                    <div className="staff-search-input-wrapper">
+                      <Search size={16} style={{ position: 'absolute', left: '12px', color: 'var(--text-muted)' }} />
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Search staff by name or mobile number..."
+                        value={userSearch}
+                        onChange={(e) => setUserSearch(e.target.value)}
+                        style={{ paddingLeft: '36px', height: '40px', borderRadius: '10px', fontSize: '13px', width: '100%' }}
+                      />
+                    </div>
+
+                    <div className="staff-filters-wrapper">
+                      <select
+                        className="form-control"
+                        value={userRoleFilter}
+                        onChange={(e) => setUserRoleFilter(e.target.value as any)}
+                        style={{ height: '40px', borderRadius: '10px', fontSize: '13px' }}
+                      >
+                        <option value="All">All Roles</option>
+                        <option value="Owner">Owner</option>
+                        <option value="Accounts">Accounts</option>
+                        <option value="Cashier">Cashier</option>
+                      </select>
+
+                      <select
+                        className="form-control"
+                        value={userStatusFilter}
+                        onChange={(e) => setUserStatusFilter(e.target.value as any)}
+                        style={{ height: '40px', borderRadius: '10px', fontSize: '13px' }}
+                      >
+                        <option value="All">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Disabled</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Desktop Employee Table (Hidden on Mobile <= 640px) */}
+                  <div className="card desktop-only-table" style={{ padding: 0, borderRadius: '16px', overflow: 'hidden' }}>
+                    <div className="table-responsive">
+                      <table className="table" style={{ margin: 0, width: '100%' }}>
+                        <thead>
+                          <tr style={{ background: 'var(--bg-app)' }}>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Staff Member</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Mobile (Login ID)</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>System Role</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Account Status</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Last Login</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {usersList
+                            .filter((u) => {
+                              const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.mobile.includes(userSearch);
+                              const matchRole = userRoleFilter === 'All' || u.role === userRoleFilter;
+                              const matchStatus = userStatusFilter === 'All' || u.status === userStatusFilter;
+                              return matchSearch && matchRole && matchStatus;
+                            })
+                            .map((u) => (
+                              <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{
+                                      width: '36px', height: '36px', borderRadius: '50%',
+                                      backgroundColor: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0,
+                                      border: '1px solid rgba(16, 185, 129, 0.2)'
+                                    }}>
+                                      {u.name.charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                      <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)' }}>{u.name}</div>
+                                      {u.email && <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{u.email}</div>}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontWeight: 700, fontSize: '13px' }}>
+                                  +91 {u.mobile}
+                                </td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <span style={{
+                                    fontSize: '11px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px',
+                                    backgroundColor: u.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : u.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                    color: u.role === 'Owner' ? 'var(--primary)' : u.role === 'Accounts' ? '#6366F1' : '#D97706',
+                                    border: u.role === 'Owner' ? '1px solid rgba(16, 185, 129, 0.25)' : u.role === 'Accounts' ? '1px solid rgba(99, 102, 241, 0.25)' : '1px solid rgba(245, 158, 11, 0.25)'
+                                  }}>
+                                    {u.role === 'Owner' ? '👑 Owner' : u.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '16px 20px' }}>
+                                  <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px', padding: '3px 8px' }}>
+                                    {u.status}
+                                  </span>
+                                </td>
+                                <td style={{ padding: '16px 20px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                                  {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                                </td>
+                                <td style={{ padding: '16px 20px', textAlign: 'right' }}>
+                                  <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary btn-sm"
+                                      title="Edit details & role"
+                                      onClick={() => {
+                                        setEditingStaffUser(u);
+                                        setStaffName(u.name);
+                                        setStaffMobile(u.mobile);
+                                        setStaffRole(u.role);
+                                        setStaffEmail(u.email || '');
+                                        setStaffPassword('');
+                                        setStaffCustomPermissions(u.customPermissions ? [...u.customPermissions] : [...(ROLE_PERMISSIONS[u.role] || [])]);
+                                        setIsAddUserModalOpen(true);
+                                      }}
+                                    >
+                                      <Edit2 size={13} /> Edit
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className={`btn btn-sm ${u.status === 'Active' ? 'btn-secondary danger' : 'btn-secondary'}`}
+                                      title={u.status === 'Active' ? 'Disable Account' : 'Enable Account'}
+                                      disabled={u.id === currentUser.id}
+                                      onClick={() => handleToggleUserStatus(u)}
+                                    >
+                                      {u.status === 'Active' ? <UserX size={13} /> : <UserCheck size={13} />}
+                                      {u.status === 'Active' ? 'Disable' : 'Enable'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary btn-sm"
+                                      title="Reset Password"
+                                      onClick={() => {
+                                        setResetStaffUser(u);
+                                        setNewResetPass('');
+                                      }}
+                                    >
+                                      <KeyRound size={13} /> Reset
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* Mobile Staff Card List (Hidden on Desktop > 640px, Shown on Mobile <= 640px) */}
+                  <div className="mobile-card-list">
+                    {usersList
+                      .filter((u) => {
+                        const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.mobile.includes(userSearch);
+                        const matchRole = userRoleFilter === 'All' || u.role === userRoleFilter;
+                        const matchStatus = userStatusFilter === 'All' || u.status === userStatusFilter;
+                        return matchSearch && matchRole && matchStatus;
+                      })
+                      .map((u) => (
+                        <div key={u.id} className="mobile-list-card" style={{ borderRadius: '14px', padding: '16px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                              <div style={{
+                                width: '38px', height: '38px', borderRadius: '50%',
+                                backgroundColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px'
+                              }}>
+                                {u.name.charAt(0).toUpperCase()}
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>{u.name}</div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 600 }}>+91 {u.mobile}</div>
+                              </div>
+                            </div>
+                            <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px' }}>
+                              {u.status}
+                            </span>
+                          </div>
+
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', marginTop: '4px', borderTop: '1px dashed var(--border-color)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Role:</span>
+                              <span style={{
+                                fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '8px',
+                                backgroundColor: u.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : u.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                color: u.role === 'Owner' ? 'var(--primary)' : u.role === 'Accounts' ? '#6366F1' : '#D97706'
+                              }}>
+                                {u.role === 'Owner' ? '👑 Owner' : u.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '6px' }}>
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '5px 10px', fontSize: '12px' }}
+                                onClick={() => {
+                                  setEditingStaffUser(u);
+                                  setStaffName(u.name);
+                                  setStaffMobile(u.mobile);
+                                  setStaffRole(u.role);
+                                  setStaffEmail(u.email || '');
+                                  setStaffPassword('');
+                                  setStaffCustomPermissions(u.customPermissions ? [...u.customPermissions] : [...(ROLE_PERMISSIONS[u.role] || [])]);
+                                  setIsAddUserModalOpen(true);
+                                }}
+                              >
+                                <Edit2 size={12} /> Edit
+                              </button>
+                              <button
+                                type="button"
+                                className={`btn btn-sm ${u.status === 'Active' ? 'btn-secondary danger' : 'btn-secondary'}`}
+                                style={{ padding: '5px 10px', fontSize: '12px' }}
+                                disabled={u.id === currentUser.id}
+                                onClick={() => handleToggleUserStatus(u)}
+                              >
+                                {u.status === 'Active' ? 'Disable' : 'Enable'}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                style={{ padding: '5px 10px', fontSize: '12px' }}
+                                onClick={() => {
+                                  setResetStaffUser(u);
+                                  setNewResetPass('');
+                                }}
+                              >
+                                <KeyRound size={12} /> Reset
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </>
               )}
             </div>
-            <button type="submit" className="btn btn-primary" style={{ padding: '12px 28px', fontWeight: 700 }}>
-              Save Settings
-            </button>
-          </div>
+          )}
+
+          {/* Persistent Action Footer with Inline Success Banner (Only for form tabs) */}
+          {activeTab !== 'users' && (
+            <div className="settings-footer-unified">
+              <div style={{ flex: 1 }}>
+                {savedSuccess && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    color: '#065f46',
+                    backgroundColor: '#ecfdf5',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    padding: '8px 16px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    animation: 'fadeIn 0.2s ease-out',
+                    width: '100%',
+                    justifyContent: 'center'
+                  }}>
+                    <CheckCircle2 size={16} style={{ color: '#10b981' }} />
+                    <span>Preferences saved successfully!</span>
+                  </div>
+                )}
+              </div>
+              <button type="submit" className="btn btn-primary" style={{ padding: '12px 28px', fontWeight: 700 }}>
+                Save Settings
+              </button>
+            </div>
+          )}
 
         </div>
       </form>
+      {/* Add / Edit Staff User Modal */}
+      {isAddUserModalOpen && (
+        <Modal
+          isOpen={isAddUserModalOpen}
+          onClose={() => {
+            setIsAddUserModalOpen(false);
+            setEditingStaffUser(null);
+          }}
+          title={editingStaffUser ? `Edit Staff Member - ${editingStaffUser.name}` : 'Add New Staff Employee'}
+        >
+          <form onSubmit={handleSaveStaffUser} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                Full Name *
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. Ramesh Sharma"
+                value={staffName}
+                onChange={(e) => setStaffName(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                Mobile Number (Login ID) *
+              </label>
+              <input
+                type="tel"
+                className="form-control"
+                placeholder="10-digit mobile number"
+                value={staffMobile}
+                onChange={(e) => setStaffMobile(e.target.value)}
+                disabled={!!editingStaffUser}
+                maxLength={10}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                Assigned System Role *
+              </label>
+              <select
+                className="form-control"
+                value={staffRole}
+                onChange={(e) => handleStaffRoleChange(e.target.value as UserRole)}
+                required
+              >
+                <option value="Accounts">Accounts (Purchases, Inventory, Expenses, Reports, GST)</option>
+                <option value="Cashier">Cashier (Billing, POS Invoices, Payments)</option>
+                <option value="Owner">Owner (Full System Access)</option>
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                Email Address <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Optional)</span>
+              </label>
+              <input
+                type="email"
+                className="form-control"
+                placeholder="e.g. staff@agribizstore.com"
+                value={staffEmail}
+                onChange={(e) => setStaffEmail(e.target.value)}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                {editingStaffUser ? 'New Password (leave blank to keep current)' : 'Password *'}
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder={editingStaffUser ? 'Enter new password if changing' : 'Enter password (min 6 chars)'}
+                value={staffPassword}
+                onChange={(e) => setStaffPassword(e.target.value)}
+                required={!editingStaffUser}
+              />
+            </div>
+
+            {/* Custom Page Access Checkboxes */}
+            <div className="form-group" style={{ marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', margin: 0 }}>
+                  Custom Page Access Permissions
+                </label>
+                {staffRole !== 'Owner' && (
+                  <button
+                    type="button"
+                    className="btn btn-secondary btn-sm"
+                    style={{ fontSize: '11px', padding: '2px 8px' }}
+                    onClick={() => setStaffCustomPermissions([...(ROLE_PERMISSIONS[staffRole] || [])])}
+                  >
+                    Reset to {staffRole} Defaults
+                  </button>
+                )}
+              </div>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
+                Check individual pages to grant custom module permissions for this staff member:
+              </p>
+
+              {staffRole === 'Owner' ? (
+                <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', fontSize: '12px', fontWeight: 700 }}>
+                  👑 Owner role possesses full access to all system pages & administrative modules.
+                </div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '10px', border: '1px solid var(--border-color)', borderRadius: '10px', backgroundColor: 'var(--bg-app)' }}>
+                  {ALL_PAGE_PERMISSIONS.map((perm) => {
+                    const isChecked = staffCustomPermissions.includes('*') || staffCustomPermissions.includes(perm.id);
+                    return (
+                      <label
+                        key={perm.id}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '6px 10px',
+                          borderRadius: '6px',
+                          backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.08)' : 'var(--card-bg)',
+                          border: isChecked ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-color)',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          fontWeight: isChecked ? 700 : 500
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setStaffCustomPermissions((prev) => [...prev.filter((p) => p !== '*'), perm.id]);
+                            } else {
+                              setStaffCustomPermissions((prev) => prev.filter((p) => p !== perm.id && p !== '*'));
+                            }
+                          }}
+                          style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' }}
+                        />
+                        <span>{perm.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setIsAddUserModalOpen(false);
+                  setEditingStaffUser(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                {editingStaffUser ? 'Update Staff Member' : 'Create Staff Member'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Reset Employee Password Modal */}
+      {resetStaffUser && (
+        <Modal
+          isOpen={!!resetStaffUser}
+          onClose={() => setResetStaffUser(null)}
+          title={`Reset Password for ${resetStaffUser.name}`}
+        >
+          <form onSubmit={handleResetUserPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+              Set a new login password for <strong>+91 {resetStaffUser.mobile}</strong>.
+            </p>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                New Password *
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter at least 6 characters"
+                value={newResetPass}
+                onChange={(e) => setNewResetPass(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
+              <button type="button" className="btn btn-secondary" onClick={() => setResetStaffUser(null)}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary">
+                Reset Password
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
     </div>
   );
-
 };

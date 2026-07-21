@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
+import { AuthProvider } from './auth/AuthProvider';
+import { ProtectedRoute } from './auth/ProtectedRoute';
+import { useAuth } from './auth/AuthContext';
 import { Layout } from './components/Layout';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+import { ForgotPassword } from './pages/ForgotPassword';
 import { Dashboard } from './pages/Dashboard';
 import { Sales } from './pages/Sales';
 import { Purchases } from './pages/Purchases';
@@ -13,10 +19,49 @@ import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { RecycleBin } from './pages/RecycleBin';
 
+const AuthApp: React.FC = () => {
+  const [authView, setAuthView] = useState<'login' | 'register' | 'forgot'>('login');
+
+  switch (authView) {
+    case 'register':
+      return <Register onSwitchToLogin={() => setAuthView('login')} />;
+    case 'forgot':
+      return <ForgotPassword onSwitchToLogin={() => setAuthView('login')} />;
+    case 'login':
+    default:
+      return (
+        <Login
+          onSwitchToRegister={() => setAuthView('register')}
+          onSwitchToForgot={() => setAuthView('forgot')}
+        />
+      );
+  }
+};
+
 const AppContent: React.FC = () => {
-  const { currentTab } = useApp();
+  const { currentTab, setCurrentTab } = useApp();
+  const { hasPermission } = useAuth();
+
+  // Guarantee initial scroll position at top right below header on app load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // If user lacks permission for currentTab, automatically redirect to first permitted tab
+  useEffect(() => {
+    if (!hasPermission(currentTab)) {
+      if (hasPermission('dashboard')) setCurrentTab('dashboard');
+      else if (hasPermission('sales')) setCurrentTab('sales');
+      else if (hasPermission('purchases')) setCurrentTab('purchases');
+      else setCurrentTab('inventory');
+    }
+  }, [currentTab, hasPermission, setCurrentTab]);
 
   const renderActivePage = () => {
+    if (!hasPermission(currentTab)) {
+      return <Dashboard />;
+    }
+
     switch (currentTab) {
       case 'dashboard':
         return <Dashboard />;
@@ -50,11 +95,14 @@ const AppContent: React.FC = () => {
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <AppContent />
-    </AppProvider>
+    <AuthProvider>
+      <AppProvider>
+        <ProtectedRoute fallback={<AuthApp />}>
+          <AppContent />
+        </ProtectedRoute>
+      </AppProvider>
+    </AuthProvider>
   );
 };
 
 export default App;
-

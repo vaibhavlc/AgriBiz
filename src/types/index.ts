@@ -20,6 +20,7 @@ export interface Customer {
   state?: string;
   gstin?: string;
   outstanding: number;
+  allowedStaffActions?: string[];
 }
 
 export interface Supplier {
@@ -223,4 +224,49 @@ export interface RecycleBinItem {
   deletedAt: string;
   deletedBy: string;
   originalData: any;
+}
+
+export type UserRole = 'Owner' | 'Accounts' | 'Cashier';
+
+export interface Company {
+  id: string;
+  businessName: string;
+  ownerName: string;
+  mobile: string;
+  email?: string;
+  gstin?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  logo?: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  // Future backend subscription placeholders
+  plan?: string;
+  subscriptionStatus?: 'Active' | 'Expired' | 'Trial';
+  planExpiry?: string;
+}
+
+export interface User {
+  id: string;
+  companyId: string;
+  name: string;
+  mobile: string;
+  email?: string;
+  password?: string;
+  role: UserRole;
+  customPermissions?: string[];
+  status: 'Active' | 'Inactive';
+  avatar?: string;
+  lastLogin?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AuthSession {
+  currentUserId: string;
+  companyId: string;
+  token: string;
+  rememberMe: boolean;
 }

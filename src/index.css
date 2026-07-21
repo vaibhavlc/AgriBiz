@@ -1228,18 +1228,19 @@ body.dark-theme .prem-live-dot {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 6px 10px;
-  border-radius: 10px;
+  padding: 4px 12px 4px 6px;
+  border-radius: 30px;
   cursor: pointer;
-  background: none;
-  border: none;
+  background-color: var(--bg-app);
+  border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
+  max-width: 220px;
 }
 
 .profile-trigger:hover {
-  background-color: var(--bg-app);
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.12);
   transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
 }
 
 .avatar-wrapper {
@@ -1256,8 +1257,9 @@ body.dark-theme .prem-live-dot {
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+  font-weight: 800;
+  box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
+  flex-shrink: 0;
 }
 
 .status-indicator {
@@ -1279,19 +1281,32 @@ body.dark-theme .prem-live-dot {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  line-height: 1.15;
+  min-width: 0;
+  flex: 1;
 }
 
 .profile-username {
-  font-size: 12px;
-  font-weight: 600;
+  font-size: 13px;
+  font-weight: 700;
   color: var(--text-primary);
-  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 130px;
+  display: block;
 }
 
 .profile-status {
   font-size: 10px;
-  font-weight: 500;
+  font-weight: 600;
   color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
 }
 
 .profile-dropdown {
@@ -1306,7 +1321,7 @@ body.dark-theme .prem-live-dot {
   box-shadow: var(--navbar-dropdown-shadow);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  z-index: 100;
+  z-index: 1050;
   padding: 8px;
   animation: fadeInScale 0.25s ease-out forwards;
 }
@@ -1315,6 +1330,57 @@ body.dark-theme .prem-live-dot {
   padding: 8px 12px 12px 12px;
   border-bottom: 1px solid var(--navbar-dropdown-separator);
   margin-bottom: 6px;
+}
+
+/* Staff & Roles Filter Bar Responsiveness */
+.staff-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-direction: row;
+}
+
+.staff-search-input-wrapper {
+  flex: 1;
+  min-width: 220px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.staff-filters-wrapper {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.staff-filters-wrapper select {
+  min-width: 140px;
+}
+
+@media (max-width: 640px) {
+  .staff-filters-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .staff-search-input-wrapper {
+    width: 100%;
+    min-width: 100%;
+  }
+
+  .staff-filters-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .staff-filters-wrapper select {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .profile-dropdown-name {

@@ -276,27 +276,39 @@ export const Dashboard: React.FC = () => {
     }
   }, [searchQuery, activeKpiTab]);
 
-  // Center active KPI tab in header scroll container
+  // Center active KPI tab in header scroll container without scrolling window vertically
   useEffect(() => {
     const activeBtn = document.getElementById(`kpi-tab-button-${activeKpiTab}`);
-    if (activeBtn) {
-      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const container = activeBtn?.parentElement;
+    if (activeBtn && container) {
+      const containerRect = container.getBoundingClientRect();
+      const childRect = activeBtn.getBoundingClientRect();
+      const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+      container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
     }
   }, [activeKpiTab]);
 
-  // Center active Analysis tab in header scroll container
+  // Center active Analysis tab in header scroll container without scrolling window vertically
   useEffect(() => {
     const activeBtn = document.getElementById(`analysis-tab-button-${activeAnalysisTab}`);
-    if (activeBtn) {
-      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const container = activeBtn?.parentElement;
+    if (activeBtn && container) {
+      const containerRect = container.getBoundingClientRect();
+      const childRect = activeBtn.getBoundingClientRect();
+      const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+      container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
     }
   }, [activeAnalysisTab]);
 
-  // Center active duration pill in horizontal scroll container
+  // Center active duration pill in horizontal scroll container without scrolling window vertically
   useEffect(() => {
     const activeBtn = document.getElementById(`duration-pill-button-${filterType}`);
-    if (activeBtn) {
-      activeBtn.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    const container = activeBtn?.parentElement;
+    if (activeBtn && container) {
+      const containerRect = container.getBoundingClientRect();
+      const childRect = activeBtn.getBoundingClientRect();
+      const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+      container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
     }
   }, [filterType]);
 

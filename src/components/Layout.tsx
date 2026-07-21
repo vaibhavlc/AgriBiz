@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
+import { useAuth } from '../auth/AuthContext';
 import { Modal } from './Modal';
 import { formatINR } from '../utils/dummyData';
 import {
@@ -88,6 +89,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     customers,
     suppliers,
   } = useApp();
+
+  const { currentUser, currentCompany, hasPermission, logout } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -276,16 +279,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [currentTab]);
 
-  // Center the active mobile bottom nav tab item when currentTab changes
+  // Center the active mobile bottom nav tab item when currentTab changes without scrolling window vertically
   useEffect(() => {
+    window.scrollTo(0, 0);
     if (bottomNavRef.current) {
-      const activeBtn = bottomNavRef.current.querySelector('[data-active="true"]');
+      const activeBtn = bottomNavRef.current.querySelector('[data-active="true"]') as HTMLElement;
       if (activeBtn) {
-        activeBtn.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
+        const container = bottomNavRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const childRect = activeBtn.getBoundingClientRect();
+        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
       }
     }
   }, [currentTab]);
@@ -456,43 +460,50 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
   ];
 
+  const permittedBottomNavItems = bottomNavItems.filter((item) => hasPermission(item.id));
+
   const handleBottomNavClick = (tabId: string) => {
     handleTabChange(tabId);
   };
 
-  const renderNavGroup = (title: string, items: typeof operationsItems) => (
-    <div className="prem-nav-group">
-      <div className="prem-nav-group-label">{title}</div>
-      {items.map((item) => {
-        const isActive = currentTab === item.id;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            className={`prem-nav-item${isActive ? ' active' : ''}`}
-            onClick={() => handleTabChange(item.id)}
-            onMouseEnter={(e) => {
-              if (isSidebarCollapsed) {
-                const rect = e.currentTarget.getBoundingClientRect();
-                setNavTooltip({ label: item.label, top: rect.top + rect.height / 2 });
-              }
-            }}
-            onMouseLeave={() => setNavTooltip(null)}
-            style={{ '--prem-nav-active-color': item.color, '--prem-icon-active-bg': item.glow } as React.CSSProperties}
-            title={isSidebarCollapsed ? item.label : undefined}
-          >
-            <span
-              className="prem-nav-icon"
-              style={{ color: isActive ? item.color : undefined }}
+  const renderNavGroup = (title: string, items: typeof operationsItems) => {
+    const permittedItems = items.filter((item) => hasPermission(item.id));
+    if (permittedItems.length === 0) return null;
+
+    return (
+      <div className="prem-nav-group">
+        <div className="prem-nav-group-label">{title}</div>
+        {permittedItems.map((item) => {
+          const isActive = currentTab === item.id;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className={`prem-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => handleTabChange(item.id)}
+              onMouseEnter={(e) => {
+                if (isSidebarCollapsed) {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  setNavTooltip({ label: item.label, top: rect.top + rect.height / 2 });
+                }
+              }}
+              onMouseLeave={() => setNavTooltip(null)}
+              style={{ '--prem-nav-active-color': item.color, '--prem-icon-active-bg': item.glow } as React.CSSProperties}
+              title={isSidebarCollapsed ? item.label : undefined}
             >
-              {item.icon}
-            </span>
-            <span className="prem-nav-label">{item.label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
+              <span
+                className="prem-nav-icon"
+                style={{ color: isActive ? item.color : undefined }}
+              >
+                {item.icon}
+              </span>
+              <span className="prem-nav-label">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderMobileMoreBottomSheet = () => {
     if (!isMobileMoreOpen) return null;
@@ -505,7 +516,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       { id: 'reports', label: 'Tax & Reports', icon: <TrendingUp size={20} />, desc: 'GSTR & P&L Analytics', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
       { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={20} />, desc: 'Restore deleted records', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
       { id: 'settings', label: 'Settings', icon: <SettingsIcon size={20} />, desc: 'Store Preferences', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' },
-    ];
+    ].filter((item) => hasPermission(item.id));
 
     return createPortal(
       <div style={{
@@ -598,7 +609,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const renderMobileBottomNav = () => {
     return (
       <div className="mobile-bottom-nav no-print" ref={bottomNavRef}>
-        {bottomNavItems.map((item) => {
+        {permittedBottomNavItems.map((item) => {
           const isSelected = currentTab === item.id;
           return (
             <button
@@ -923,15 +934,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 <div className="avatar-wrapper">
                   <div className="avatar-circle">
-                    {settings.ownerName ? settings.ownerName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() : 'KC'}
+                    {currentUser ? currentUser.name.slice(0, 2).toUpperCase() : 'VP'}
                   </div>
                   <span className={`status-indicator ${userStatus}`}></span>
                 </div>
                 <div className="profile-details">
                   <span className="profile-username">
-                    {settings.ownerName ? settings.ownerName.split(' ')[0] + ' ' + (settings.ownerName.split(' ')[1] ? settings.ownerName.split(' ')[1][0] + '.' : '') : 'Kunal C.'}
+                    👤 {currentUser ? currentUser.name : 'Vaibhav Patel'}
                   </span>
-                  <span className="profile-status">{userStatus.charAt(0).toUpperCase() + userStatus.slice(1)}</span>
+                  <span className="profile-status">
+                    <span style={{
+                      fontWeight: 800,
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                      fontSize: '10px',
+                      backgroundColor: currentUser?.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : currentUser?.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                      color: currentUser?.role === 'Owner' ? 'var(--primary, #10b981)' : currentUser?.role === 'Accounts' ? '#6366F1' : '#D97706'
+                    }}>
+                      {currentUser ? currentUser.role : 'Owner'}
+                    </span>
+                  </span>
                 </div>
                 <ChevronDown size={14} className="profile-chevron" style={{ color: 'var(--text-secondary)' }} />
               </button>
@@ -939,20 +961,29 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {isProfileDropdownOpen && (
                 <div className="profile-dropdown">
                   <div className="profile-dropdown-user">
-                    <div className="profile-dropdown-name">{settings.ownerName || 'Kunal Chaudhari'}</div>
-                    <div className="profile-dropdown-role">Owner • {settings.businessName || 'AgriBiz'}</div>
+                    <div className="profile-dropdown-name">👤 {currentUser ? currentUser.name : 'Vaibhav Patel'}</div>
+                    <div className="profile-dropdown-role">
+                      <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{currentUser ? currentUser.role : 'Owner'}</span> • {currentCompany ? currentCompany.businessName : settings.businessName}
+                    </div>
+                    {currentUser?.mobile && (
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        📱 +91 {currentUser.mobile}
+                      </div>
+                    )}
                   </div>
                   
-                  <button
-                    className="profile-dropdown-item"
-                    onClick={() => {
-                      handleTabChange('settings');
-                      setIsProfileDropdownOpen(false);
-                    }}
-                  >
-                    <User size={14} />
-                    <span>Profile Settings</span>
-                  </button>
+                  {hasPermission('settings') && (
+                    <button
+                      className="profile-dropdown-item"
+                      onClick={() => {
+                        handleTabChange('settings');
+                        setIsProfileDropdownOpen(false);
+                      }}
+                    >
+                      <User size={14} />
+                      <span>Profile & Settings</span>
+                    </button>
+                  )}
 
                   <div className="status-selector-header">Set Status</div>
                   <div className="status-selector">
@@ -996,12 +1027,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <button
                     className="profile-dropdown-item logout"
                     onClick={() => {
-                      showToast('Logout simulation triggered', 'info');
                       setIsProfileDropdownOpen(false);
+                      logout();
+                      showToast('Logged out successfully', 'info');
                     }}
                   >
                     <LogOut size={14} />
-                    <span>Sign Out</span>
+                    <span>Sign Out / Logout</span>
                   </button>
                 </div>
               )}

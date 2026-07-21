@@ -790,38 +790,119 @@ export const Expenses: React.FC = () => {
                         <td style={{ fontStyle: 'italic', fontSize: '13px', maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {exp.notes || '—'}
                         </td>
-                        <td style={{ textAlign: 'center' }}>
-                          <div style={{ display: 'inline-flex', gap: '6px', alignItems: 'center' }}>
-                            {exp.status === 'Due' && (
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                style={{ padding: '3px 8px', fontSize: '10px', fontWeight: 700, color: 'var(--primary)', borderColor: 'rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.05)' }}
-                                onClick={() => handleMarkAsPaid(exp)}
-                                title="Mark this expense as fully Paid"
-                              >
-                                Mark Paid
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              style={{ padding: '6px' }}
-                              onClick={() => handleEditClick(exp)}
-                              title="Edit record details"
-                            >
-                              <Edit2 size={13} />
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm danger"
-                              style={{ padding: '6px' }}
-                              onClick={() => handleDeleteExpense(exp.id, exp.category, exp.amount)}
-                              title="Delete record"
-                            >
-                              <Trash size={13} />
-                            </button>
-                          </div>
+                        <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
+                          <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveMenuExpId(activeMenuExpId === exp.id ? null : exp.id);
+                            }}
+                            title="Actions"
+                          >
+                            <MoreVertical size={16} />
+                          </button>
+                          
+                          {activeMenuExpId === exp.id && (
+                            <>
+                              {/* Overlay to close the menu on clicking outside */}
+                              <div 
+                                style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 998 }} 
+                                onClick={() => setActiveMenuExpId(null)}
+                              />
+                              
+                              {/* Dropdown Menu */}
+                              <div className="card" style={{
+                                position: 'absolute',
+                                right: '100%',
+                                top: '50%',
+                                transform: 'translateY(-50%)',
+                                marginRight: '8px',
+                                zIndex: 999,
+                                minWidth: '150px',
+                                padding: '6px 0',
+                                boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '2px',
+                                backgroundColor: 'var(--card-bg, #ffffff)',
+                                border: '1px solid var(--border-color)',
+                              }}>
+                                {exp.status === 'Due' && (
+                                  <button 
+                                    className="dropdown-item" 
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '8px',
+                                      width: '100%',
+                                      padding: '8px 16px',
+                                      border: 'none',
+                                      background: 'none',
+                                      textAlign: 'left',
+                                      cursor: 'pointer',
+                                      fontSize: '13px',
+                                      color: 'var(--primary)',
+                                      fontWeight: 600,
+                                    }}
+                                    onClick={() => {
+                                      setActiveMenuExpId(null);
+                                      handleMarkAsPaid(exp);
+                                    }}
+                                  >
+                                    <CheckCircle2 size={14} /> Mark as Paid
+                                  </button>
+                                )}
+                                
+                                <button 
+                                  className="dropdown-item" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    background: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: 'var(--text-primary)',
+                                  }}
+                                  onClick={() => {
+                                    setActiveMenuExpId(null);
+                                    handleEditClick(exp);
+                                  }}
+                                >
+                                  <Edit2 size={14} /> Edit Record
+                                </button>
+                                
+                                <button 
+                                  className="dropdown-item danger" 
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    width: '100%',
+                                    padding: '8px 16px',
+                                    border: 'none',
+                                    background: 'none',
+                                    textAlign: 'left',
+                                    cursor: 'pointer',
+                                    fontSize: '13px',
+                                    color: 'var(--color-danger)',
+                                  }}
+                                  onClick={() => {
+                                    setActiveMenuExpId(null);
+                                    handleDeleteExpense(exp.id, exp.category, exp.amount);
+                                  }}
+                                >
+                                  <Trash size={14} /> Delete Record
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </td>
                       </tr>
                     ))}

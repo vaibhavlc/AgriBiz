@@ -73,16 +73,16 @@ export const Reports: React.FC = () => {
 
   const reportTabsRef = useRef<HTMLDivElement>(null);
 
-  // Center active report tab item when activeReport changes
+  // Center active report tab item when activeReport changes without scrolling window vertically
   useEffect(() => {
     if (reportTabsRef.current) {
-      const activeTabElement = reportTabsRef.current.querySelector('[data-active="true"]');
+      const activeTabElement = reportTabsRef.current.querySelector('[data-active="true"]') as HTMLElement;
       if (activeTabElement) {
-        activeTabElement.scrollIntoView({
-          behavior: 'smooth',
-          block: 'nearest',
-          inline: 'center'
-        });
+        const container = reportTabsRef.current;
+        const containerRect = container.getBoundingClientRect();
+        const childRect = activeTabElement.getBoundingClientRect();
+        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
       }
     }
   }, [activeReport]);
