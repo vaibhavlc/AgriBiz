@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
-import { authService } from '../auth/authService';
+import api from '../utils/api';
 import { ALL_PAGE_PERMISSIONS, ROLE_PERMISSIONS } from '../auth/permissions';
 import type { UserRole, User } from '../types';
 import { Modal } from '../components/Modal';
@@ -29,7 +29,7 @@ import {
   UserCheck,
   UserX,
 } from 'lucide-react';
-import { getFullAddress, initialSettings } from '../utils/dummyData';
+import { getFullAddress, initialSettings, toTitleCase } from '../utils/dummyData';
 
 const INDIAN_STATES = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
@@ -104,9 +104,7 @@ export const Settings: React.FC = () => {
   }, [activeTab]);
 
   const { currentUser, currentCompany } = useAuth();
-  const [usersList, setUsersList] = useState<User[]>(() => {
-    return currentCompany ? authService.getCompanyUsers(currentCompany.id) : [];
-  });
+  const [usersList, setUsersList] = useState<User[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'All' | UserRole>('All');
   const [userStatusFilter, setUserStatusFilter] = useState<'All' | 'Active' | 'Inactive'>('All');
@@ -125,11 +123,23 @@ export const Settings: React.FC = () => {
   const [resetStaffUser, setResetStaffUser] = useState<User | null>(null);
   const [newResetPass, setNewResetPass] = useState('');
 
-  const refreshUsersList = () => {
-    if (currentCompany) {
-      setUsersList(authService.getCompanyUsers(currentCompany.id));
+  const refreshUsersList = async () => {
+    if (!currentCompany) return;
+    try {
+      const res = await api.get('/users');
+      if (res.data.success) {
+        setUsersList(res.data.users);
+      }
+    } catch (err: any) {
+      console.error('Failed to load staff users:', err);
     }
   };
+
+  useEffect(() => {
+    if (activeTab === 'users' && currentCompany) {
+      refreshUsersList();
+    }
+  }, [activeTab, currentCompany]);
 
   const handleStaffRoleChange = (newRole: UserRole) => {
     setStaffRole(newRole);
@@ -140,76 +150,91 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleSaveStaffUser = (e: React.FormEvent) => {
+  const handleSaveStaffUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentCompany) return;
 
     const finalPermissions = staffRole === 'Owner' ? ['*'] : staffCustomPermissions;
 
-    if (editingStaffUser) {
-      const updated: User = {
-        ...editingStaffUser,
-        name: staffName.trim(),
-        role: staffRole,
-        email: staffEmail.trim() || undefined,
-        customPermissions: finalPermissions,
-      };
-      if (staffPassword.trim()) {
-        updated.password = staffPassword.trim();
+    try {
+      if (editingStaffUser) {
+        const payload: any = {
+          name: staffName.trim(),
+          role: staffRole,
+          email: staffEmail.trim() || undefined,
+          customPermissions: finalPermissions,
+        };
+        if (staffPassword.trim()) {
+          payload.password = staffPassword.trim();
+        }
+        const res = await api.put(`/users/${editingStaffUser.id}`, payload);
+        if (res.data.success) {
+          showToast(`Staff member ${payload.name} details & permissions updated!`, 'success');
+        }
+      } else {
+        if (!staffName || !staffMobile || !staffPassword) {
+          showToast('Please fill all required fields.', 'error');
+          return;
+        }
+        const payload = {
+          id: `USR-${staffRole.toUpperCase().slice(0, 4)}-${Date.now().toString().slice(-4)}`,
+          name: staffName.trim(),
+          mobile: staffMobile.replace(/\D/g, ''),
+          password: staffPassword.trim(),
+          role: staffRole,
+          email: staffEmail.trim(),
+          customPermissions: finalPermissions,
+        };
+        const res = await api.post('/users', payload);
+        if (res.data.success) {
+          showToast(`Staff member ${payload.name} added successfully as ${payload.role}!`, 'success');
+        }
       }
-      authService.updateUser(updated);
-      showToast(`Staff member ${updated.name} details & permissions updated!`, 'success');
-    } else {
-      if (!staffName || !staffMobile || !staffPassword) {
-        showToast('Please fill all required fields.', 'error');
-        return;
-      }
-      const res = authService.addUser({
-        companyId: currentCompany.id,
-        name: staffName,
-        mobile: staffMobile,
-        password: staffPassword,
-        role: staffRole,
-        email: staffEmail,
-        customPermissions: finalPermissions,
-      });
-      if (!res.success) {
-        showToast(res.message, 'error');
-        return;
-      }
-      showToast(res.message, 'success');
-    }
 
-    setIsAddUserModalOpen(false);
-    setEditingStaffUser(null);
-    setStaffName('');
-    setStaffMobile('');
-    setStaffPassword('');
-    setStaffRole('Accounts');
-    setStaffEmail('');
-    setStaffCustomPermissions([]);
-    refreshUsersList();
-  };
-
-  const handleToggleUserStatus = (u: User) => {
-    const res = authService.toggleUserStatus(u.id);
-    if (res.success) {
-      showToast(`${u.name} status set to ${res.newStatus}`, 'info');
+      setIsAddUserModalOpen(false);
+      setEditingStaffUser(null);
+      setStaffName('');
+      setStaffMobile('');
+      setStaffPassword('');
+      setStaffRole('Accounts');
+      setStaffEmail('');
+      setStaffCustomPermissions([]);
       refreshUsersList();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Operation failed. Please try again.', 'error');
     }
   };
 
-  const handleResetUserPassword = (e: React.FormEvent) => {
+  const handleToggleUserStatus = async (u: User) => {
+    const newStatus = u.status === 'Active' ? 'Inactive' : 'Active';
+    try {
+      const res = await api.put(`/users/${u.id}`, { status: newStatus });
+      if (res.data.success) {
+        showToast(`${u.name} status set to ${newStatus}`, 'info');
+        refreshUsersList();
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update user status.', 'error');
+    }
+  };
+
+  const handleResetUserPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!resetStaffUser || !newResetPass || newResetPass.length < 6) {
       showToast('Password must be at least 6 characters.', 'error');
       return;
     }
-    authService.resetUserPassword(resetStaffUser.id, newResetPass);
-    showToast(`Password for ${resetStaffUser.name} reset successfully!`, 'success');
-    setResetStaffUser(null);
-    setNewResetPass('');
-    refreshUsersList();
+    try {
+      const res = await api.put(`/users/${resetStaffUser.id}`, { password: newResetPass });
+      if (res.data.success) {
+        showToast(`Password for ${resetStaffUser.name} reset successfully!`, 'success');
+        setResetStaffUser(null);
+        setNewResetPass('');
+        refreshUsersList();
+      }
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to reset password.', 'error');
+    }
   };
 
   // Business Information
@@ -417,6 +442,19 @@ export const Settings: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const formattedBusinessName = toTitleCase(businessName);
+    const formattedOwnerName = toTitleCase(ownerName);
+    const formattedGSTIN = gstin.toUpperCase();
+    const formattedPAN = panNumber.toUpperCase();
+    const formattedIFSC = ifscCode.toUpperCase();
+
+    // Update local state to match formatted context values
+    setBusinessName(formattedBusinessName);
+    setOwnerName(formattedOwnerName);
+    setGstin(formattedGSTIN);
+    setPanNumber(formattedPAN);
+    setIfscCode(formattedIFSC);
+
     // Dynamically derive standard legacy address
     const legacyAddress = getFullAddress({
       addressLine1,
@@ -429,10 +467,10 @@ export const Settings: React.FC = () => {
     });
 
     updateSettings({
-      businessName,
-      ownerName,
-      gstin: gstin.toUpperCase(),
-      panNumber: panNumber.toUpperCase(),
+      businessName: formattedBusinessName,
+      ownerName: formattedOwnerName,
+      gstin: formattedGSTIN,
+      panNumber: formattedPAN,
       businessType,
       phone,
       alternatePhone,
@@ -450,7 +488,7 @@ export const Settings: React.FC = () => {
       bankName,
       accountHolderName,
       accountNumber,
-      ifscCode: ifscCode.toUpperCase(),
+      ifscCode: formattedIFSC,
       branchName,
       upiId,
       invoicePrefix,
@@ -1688,12 +1726,12 @@ export const Settings: React.FC = () => {
                       <table className="table" style={{ margin: 0, width: '100%' }}>
                         <thead>
                           <tr style={{ background: 'var(--bg-app)' }}>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Staff Member</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Mobile (Login ID)</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>System Role</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Account Status</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)' }}>Last Login</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'right' }}>Actions</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Staff Member</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Mobile (Login ID)</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>System Role</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Account Status</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Last Login</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Actions</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1707,25 +1745,37 @@ export const Settings: React.FC = () => {
                             .map((u) => (
                               <tr key={u.id} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                 <td style={{ padding: '16px 20px' }}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'flex-start' }}>
                                     <div style={{
                                       width: '36px', height: '36px', borderRadius: '50%',
                                       backgroundColor: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)',
                                       display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px', flexShrink: 0,
-                                      border: '1px solid rgba(16, 185, 129, 0.2)'
+                                      border: '1px solid rgba(16, 185, 129, 0.2)',
+                                      position: 'relative'
                                     }}>
                                       {u.name.charAt(0).toUpperCase()}
+                                      <span style={{
+                                        position: 'absolute',
+                                        bottom: '-2px',
+                                        right: '-2px',
+                                        width: '10px',
+                                        height: '10px',
+                                        borderRadius: '50%',
+                                        border: '1.5px solid var(--card-bg, #ffffff)',
+                                        backgroundColor: (u as any).presenceStatus === 'busy' ? '#EF4444' : (u as any).presenceStatus === 'away' ? '#F59E0B' : '#10B981',
+                                        display: 'inline-block'
+                                      }} title={(u as any).presenceStatus || 'online'}></span>
                                     </div>
-                                    <div>
+                                    <div style={{ textAlign: 'left' }}>
                                       <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)' }}>{u.name}</div>
                                       {u.email && <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 500 }}>{u.email}</div>}
                                     </div>
                                   </div>
                                 </td>
-                                <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontWeight: 700, fontSize: '13px' }}>
+                                <td style={{ padding: '16px 20px', fontFamily: 'monospace', fontWeight: 700, fontSize: '13px', textAlign: 'center' }}>
                                   +91 {u.mobile}
                                 </td>
-                                <td style={{ padding: '16px 20px' }}>
+                                <td style={{ padding: '16px 20px', textAlign: 'center' }}>
                                   <span style={{
                                     fontSize: '11px', fontWeight: 800, padding: '3px 10px', borderRadius: '12px',
                                     backgroundColor: u.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : u.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
@@ -1735,16 +1785,24 @@ export const Settings: React.FC = () => {
                                     {u.role === 'Owner' ? '👑 Owner' : u.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
                                   </span>
                                 </td>
-                                <td style={{ padding: '16px 20px' }}>
-                                  <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px', padding: '3px 8px' }}>
-                                    {u.status}
-                                  </span>
+                                <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                                  {u.status === 'Inactive' ? (
+                                    <span className="badge badge-danger" style={{ fontSize: '11px', padding: '3px 8px' }}>
+                                      Disabled
+                                    </span>
+                                  ) : (
+                                    <span className={`badge ${
+                                      u.presenceStatus === 'busy' ? 'badge-danger' : u.presenceStatus === 'away' ? 'badge-warning' : 'badge-success'
+                                    }`} style={{ fontSize: '11px', padding: '3px 8px', textTransform: 'capitalize' }}>
+                                      {u.presenceStatus || 'online'}
+                                    </span>
+                                  )}
                                 </td>
-                                <td style={{ padding: '16px 20px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                                <td style={{ padding: '16px 20px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
                                   {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
                                 </td>
-                                <td style={{ padding: '16px 20px', textAlign: 'right' }}>
-                                  <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'flex-end' }}>
+                                <td style={{ padding: '16px 20px', textAlign: 'center' }}>
+                                  <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'center' }}>
                                     <button
                                       type="button"
                                       className="btn btn-secondary btn-sm"
@@ -1808,18 +1866,38 @@ export const Settings: React.FC = () => {
                               <div style={{
                                 width: '38px', height: '38px', borderRadius: '50%',
                                 backgroundColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px',
+                                position: 'relative'
                               }}>
                                 {u.name.charAt(0).toUpperCase()}
+                                <span style={{
+                                  position: 'absolute',
+                                  bottom: '-2px',
+                                  right: '-2px',
+                                  width: '10px',
+                                  height: '10px',
+                                  borderRadius: '50%',
+                                  border: '1.5px solid var(--card-bg, #ffffff)',
+                                  backgroundColor: (u as any).presenceStatus === 'busy' ? '#EF4444' : (u as any).presenceStatus === 'away' ? '#F59E0B' : '#10B981',
+                                  display: 'inline-block'
+                                }} title={(u as any).presenceStatus || 'online'}></span>
                               </div>
                               <div>
                                 <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>{u.name}</div>
                                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 600 }}>+91 {u.mobile}</div>
                               </div>
                             </div>
-                            <span className={`badge ${u.status === 'Active' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px' }}>
-                              {u.status}
-                            </span>
+                            {u.status === 'Inactive' ? (
+                              <span className="badge badge-danger" style={{ fontSize: '11px' }}>
+                                Disabled
+                              </span>
+                            ) : (
+                              <span className={`badge ${
+                                u.presenceStatus === 'busy' ? 'badge-danger' : u.presenceStatus === 'away' ? 'badge-warning' : 'badge-success'
+                              }`} style={{ fontSize: '11px', textTransform: 'capitalize' }}>
+                                {u.presenceStatus || 'online'}
+                              </span>
+                            )}
                           </div>
 
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', marginTop: '4px', borderTop: '1px dashed var(--border-color)' }}>

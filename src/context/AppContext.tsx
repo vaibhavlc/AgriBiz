@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem } from '../types';
 import {
   initialProducts,
@@ -11,6 +11,8 @@ import {
   initialExpenses,
   toTitleCase,
 } from '../utils/dummyData';
+import { db } from '../db/db';
+import { startSyncDaemon } from '../utils/syncEngine';
 
 interface AppContextType {
   recycleBin: RecycleBinItem[];
@@ -50,8 +52,8 @@ interface AppContextType {
   requestNavigation: (callback: () => void) => void;
   showUnsavedModal: boolean;
   setShowUnsavedModal: (show: boolean) => void;
-  pendingNavigation: (() => void) | null;
-  setPendingNavigation: (callback: (() => void) | null) => void;
+  confirmLeave: () => void;
+  confirmStay: () => void;
 
   setCurrentTab: (tab: string) => void;
   setViewInvoice: (id: string | null) => void;
@@ -65,6 +67,7 @@ interface AppContextType {
   setIsEditingProduct: (product: Product | null) => void;
   setIsEditingCustomer: (customer: Customer | null) => void;
   setIsEditingSupplier: (supplier: Supplier | null) => void;
+  navigateTab: (tab: string) => void;
 
   salesActiveTab: 'invoices' | 'quotations';
   setSalesActiveTab: (tab: 'invoices' | 'quotations') => void;
@@ -89,7 +92,6 @@ interface AppContextType {
   editQuotation: (quotation: Quotation) => void;
   deleteQuotation: (id: string) => void;
   convertQuotationToInvoice: (quotationId: string, amountPaid: number, paymentMethod: string) => string;
-
 
   addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => Purchase;
   editPurchase: (purchase: Purchase) => void;
@@ -135,88 +137,54 @@ interface AppContextType {
   openNewPaymentForm: (preset?: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' }) => void;
   openEditPaymentForm: (payment: Payment) => void;
   handleSavePayment: (e: React.FormEvent) => void;
+
+  isOnline: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Helper to generate prefix-date-random IDs
+const generateId = (prefix: string) => {
+  const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
+  const randomStr = Math.random().toString(36).substring(2, 8).toUpperCase();
+  return `${prefix}-${dateStr}-${randomStr}`;
+};
+
+// Queue database operations for sync in Milestone 5
+const queueSync = async (
+  action: 'CREATE' | 'UPDATE' | 'DELETE',
+  module: 'Product' | 'Customer' | 'Supplier' | 'Invoice' | 'Quotation' | 'Purchase' | 'Payment' | 'Expense' | 'Settings',
+  recordId: string,
+  payload: any
+) => {
+  try {
+    await db.syncQueue.add({
+      action,
+      module,
+      recordId,
+      payload: payload ? JSON.parse(JSON.stringify(payload)) : null,
+      timestamp: new Date().toISOString(),
+      retryCount: 0,
+    });
+    console.log(`Queued offline operation: ${action} on ${module} (${recordId})`);
+  } catch (err) {
+    console.error('Failed to queue sync operation:', err);
+  }
+};
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load initial data from localStorage if exists, otherwise use initial mock data
-  const [products, setProducts] = useState<Product[]>(() => {
-    const local = localStorage.getItem('agribiz_products');
-    const raw = local ? JSON.parse(local) : initialProducts;
-    return raw.map((p: any) => ({
-      ...p,
-      name: toTitleCase(p.name),
-      category: toTitleCase(p.category),
-    }));
-  });
+  // In-Memory mirrors of Dexie database
+  const [products, setProducts] = useState<Product[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [quotations, setQuotations] = useState<Quotation[]>([]);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>([]);
 
-  const [customers, setCustomers] = useState<Customer[]>(() => {
-    const local = localStorage.getItem('agribiz_customers');
-    const raw = local ? JSON.parse(local) : initialCustomers;
-    return raw.map((c: any) => ({
-      ...c,
-      name: toTitleCase(c.name),
-    }));
-  });
-
-  const [suppliers, setSuppliers] = useState<Supplier[]>(() => {
-    const local = localStorage.getItem('agribiz_suppliers');
-    const raw = local ? JSON.parse(local) : initialSuppliers;
-    return raw.map((s: any) => ({
-      ...s,
-      name: toTitleCase(s.name),
-    }));
-  });
-
-  const [invoices, setInvoices] = useState<Invoice[]>(() => {
-    const local = localStorage.getItem('agribiz_invoices');
-    const raw = local ? JSON.parse(local) : initialInvoices;
-    return raw.map((inv: any) => ({
-      ...inv,
-      customerName: toTitleCase(inv.customerName),
-      items: (inv.items || []).map((item: any) => ({
-        ...item,
-        productName: toTitleCase(item.productName),
-      })),
-    }));
-  });
-
-  const [quotations, setQuotations] = useState<Quotation[]>(() => {
-    const local = localStorage.getItem('agribiz_quotations');
-    const raw = local ? JSON.parse(local) : [];
-    return raw.map((q: any) => ({
-      ...q,
-      customerName: toTitleCase(q.customerName),
-      items: (q.items || []).map((item: any) => ({
-        ...item,
-        productName: toTitleCase(item.productName),
-      })),
-    }));
-  });
-
-  const [purchases, setPurchases] = useState<Purchase[]>(() => {
-    const local = localStorage.getItem('agribiz_purchases');
-    const raw = local ? JSON.parse(local) : initialPurchases;
-    return raw.map((pur: any) => ({
-      ...pur,
-      supplierName: toTitleCase(pur.supplierName),
-      items: (pur.items || []).map((item: any) => ({
-        ...item,
-        productName: toTitleCase(item.productName),
-      })),
-    }));
-  });
-
-  const [payments, setPayments] = useState<Payment[]>(() => {
-    const local = localStorage.getItem('agribiz_payments');
-    const raw = local ? JSON.parse(local) : initialPayments;
-    return raw.map((pay: any) => ({
-      ...pay,
-      contactName: toTitleCase(pay.contactName),
-    }));
-  });
-
+  // Small settings & theme managed in localStorage
   const [settings, setSettings] = useState<BusinessSettings>(() => {
     const local = localStorage.getItem('agribiz_settings');
     const raw = local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
@@ -242,25 +210,155 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return 'light';
   });
 
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const local = localStorage.getItem('agribiz_expenses');
-    const raw = local ? JSON.parse(local) : initialExpenses;
-    return raw.map((exp: any) => ({
-      ...exp,
-      payee: toTitleCase(exp.payee),
-      category: toTitleCase(exp.category),
-    }));
-  });
+  // Online / Offline Connectivity State
+  const [isOnline, setIsOnline] = useState<boolean>(() => navigator.onLine);
 
-  const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>(() => {
-    const local = localStorage.getItem('agribiz_recycle_bin');
-    return local ? JSON.parse(local) : [];
-  });
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Fetch from Dexie on App Load, or seed if empty
+  useEffect(() => {
+    const initializeDatabase = async () => {
+      try {
+        const productCount = await db.products.count();
+        if (productCount === 0) {
+          console.log('IndexedDB is empty, seeding initial mock data...');
+
+          // Seed products
+          await db.products.bulkAdd(
+            initialProducts.map((p) => ({
+              ...p,
+              name: toTitleCase(p.name),
+              category: toTitleCase(p.category),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed customers
+          await db.customers.bulkAdd(
+            initialCustomers.map((c) => ({
+              ...c,
+              name: toTitleCase(c.name),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed suppliers
+          await db.suppliers.bulkAdd(
+            initialSuppliers.map((s) => ({
+              ...s,
+              name: toTitleCase(s.name),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed invoices
+          await db.invoices.bulkAdd(
+            initialInvoices.map((inv) => ({
+              ...inv,
+              customerName: toTitleCase(inv.customerName),
+              items: inv.items.map((item) => ({
+                ...item,
+                productName: toTitleCase(item.productName),
+              })),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed payments
+          await db.payments.bulkAdd(
+            initialPayments.map((pay) => ({
+              ...pay,
+              contactName: toTitleCase(pay.contactName),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed expenses
+          await db.expenses.bulkAdd(
+            initialExpenses.map((exp) => ({
+              ...exp,
+              payee: toTitleCase(exp.payee),
+              category: toTitleCase(exp.category),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed purchases
+          await db.purchases.bulkAdd(
+            initialPurchases.map((p) => ({
+              ...p,
+              supplierName: toTitleCase(p.supplierName),
+              items: p.items.map((item) => ({
+                ...item,
+                productName: toTitleCase(item.productName),
+              })),
+              isDeleted: false,
+              version: 1,
+            }))
+          );
+
+          // Seed default business settings
+          const settingsCount = await db.settings.count();
+          if (settingsCount === 0) {
+            await db.settings.add({
+              ...settings,
+              id: 'business',
+            });
+          }
+        }
+
+        // Fetch active entries (filtering out soft deleted records)
+        const localProducts = await db.products.toArray();
+        const localCustomers = await db.customers.toArray();
+        const localSuppliers = await db.suppliers.toArray();
+        const localInvoices = await db.invoices.toArray();
+        const localQuotations = await db.quotations.toArray();
+        const localPurchases = await db.purchases.toArray();
+        const localPayments = await db.payments.toArray();
+        const localExpenses = await db.expenses.toArray();
+        const localRecycleBin = await db.recycleBin.toArray();
+
+        setProducts(localProducts.filter((p) => !p.isDeleted));
+        setCustomers(localCustomers.filter((c) => !c.isDeleted));
+        setSuppliers(localSuppliers.filter((s) => !s.isDeleted));
+        setInvoices(localInvoices.filter((i) => !i.isDeleted));
+        setQuotations(localQuotations.filter((q) => !q.isDeleted));
+        setPurchases(localPurchases.filter((p) => !p.isDeleted));
+        setPayments(localPayments.filter((p) => !p.isDeleted));
+        setExpenses(localExpenses.filter((e) => !e.isDeleted));
+        setRecycleBin(localRecycleBin);
+
+        console.log('IndexedDB loaded successfully.');
+        startSyncDaemon();
+      } catch (err) {
+        console.error('IndexedDB loading failed:', err);
+      }
+    };
+
+    initializeDatabase();
+  }, []);
 
   // Unsaved Changes Protection State & Logic
   const [dirtyForms, setDirtyForms] = useState<Record<string, boolean>>({});
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<(() => void) | null>(null);
+  const pendingCallbacksRef = useRef<(() => void)[]>([]);
 
   const isFormDirty = Object.values(dirtyForms).some(Boolean);
 
@@ -275,9 +373,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDirtyForms({});
   };
 
+  const confirmStay = () => {
+    setShowUnsavedModal(false);
+    pendingCallbacksRef.current = [];
+  };
+
+  const confirmLeave = () => {
+    setDirtyForms({});
+    setShowUnsavedModal(false);
+    pendingCallbacksRef.current.forEach((cb) => cb());
+    pendingCallbacksRef.current = [];
+  };
+
   const requestNavigation = (callback: () => void) => {
     if (Object.values(dirtyForms).some(Boolean)) {
-      setPendingNavigation(() => callback);
+      pendingCallbacksRef.current.push(callback);
       setShowUnsavedModal(true);
     } else {
       callback();
@@ -285,7 +395,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // UI State
-  const [currentTab, _setCurrentTab] = useState<string>('dashboard');
+  const [currentTab, _setCurrentTab] = useState<string>(() => window.location.hash.slice(1) || 'dashboard');
   const [currentInvoiceId, _setViewInvoice] = useState<string | null>(null);
   const [currentQuotationId, _setViewQuotation] = useState<string | null>(null);
   const [currentPurchaseId, _setViewPurchase] = useState<string | null>(null);
@@ -298,7 +408,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isEditingCustomer, _setIsEditingCustomer] = useState<Customer | null>(null);
   const [isEditingSupplier, _setIsEditingSupplier] = useState<Supplier | null>(null);
 
-  const setCurrentTab = (tab: string) => requestNavigation(() => _setCurrentTab(tab));
+  const setCurrentTab = (tab: string) => requestNavigation(() => { window.history.pushState({ tab }, '', '#' + tab); _setCurrentTab(tab); });
   const setViewInvoice = (id: string | null) => requestNavigation(() => _setViewInvoice(id));
   const setViewQuotation = (id: string | null) => requestNavigation(() => _setViewQuotation(id));
   const setViewPurchase = (id: string | null) => requestNavigation(() => _setViewPurchase(id));
@@ -311,6 +421,84 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setIsEditingCustomer = (customer: Customer | null) => requestNavigation(() => _setIsEditingCustomer(customer));
   const setIsEditingSupplier = (supplier: Supplier | null) => requestNavigation(() => _setIsEditingSupplier(supplier));
   const [searchQuery, setSearchQuery] = useState('');
+
+  const navigateTab = (tab: string) => {
+    requestNavigation(() => {
+      window.history.pushState({ tab }, '', '#' + tab);
+      _setCurrentTab(tab);
+      _setViewInvoice(null);
+      _setViewQuotation(null);
+      _setViewPurchase(null);
+      _setViewCustomer(null);
+      _setViewSupplier(null);
+      _setIsCreatingInvoice(false);
+      _setIsCreatingQuotation(false);
+      _setIsEnteringPurchase(false);
+      setSearchQuery('');
+    });
+  };
+
+  // Mount sync to ensure URL hash matches initial load tab in history
+  useEffect(() => {
+    const initialTab = window.location.hash.slice(1) || 'dashboard';
+    _setCurrentTab(initialTab);
+    window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
+  }, []);
+
+  // Intercept browser back/forward (popstate)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const targetTab = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
+      if (targetTab === currentTab) return;
+
+      if (Object.values(dirtyForms).some(Boolean)) {
+        pendingCallbacksRef.current = [
+          () => {
+            window.history.replaceState({ tab: targetTab }, '', '#' + targetTab);
+            _setCurrentTab(targetTab);
+            _setViewInvoice(null);
+            _setViewQuotation(null);
+            _setViewPurchase(null);
+            _setViewCustomer(null);
+            _setViewSupplier(null);
+            _setIsCreatingInvoice(false);
+            _setIsCreatingQuotation(false);
+            _setIsEnteringPurchase(false);
+            setSearchQuery('');
+          }
+        ];
+        setShowUnsavedModal(true);
+        window.history.pushState({ tab: currentTab }, '', '#' + currentTab);
+      } else {
+        _setCurrentTab(targetTab);
+        _setViewInvoice(null);
+        _setViewQuotation(null);
+        _setViewPurchase(null);
+        _setViewCustomer(null);
+        _setViewSupplier(null);
+        _setIsCreatingInvoice(false);
+        _setIsCreatingQuotation(false);
+        _setIsEnteringPurchase(false);
+        setSearchQuery('');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentTab, dirtyForms]);
+
+  // Intercept tab closing or browser refresh
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.values(dirtyForms).some(Boolean)) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. If you leave this page now, your changes will be lost.';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirtyForms]);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
 
   const [salesActiveTab, setSalesActiveTab] = useState<'invoices' | 'quotations'>('invoices');
@@ -360,7 +548,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
     setToast({ message, type });
-    // Auto-clear toast after 3 seconds
     setTimeout(() => {
       setToast((curr) => curr && curr.message === message ? null : curr);
     }, 3000);
@@ -459,7 +646,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast(`Payment of ₹${amount.toLocaleString('en-IN')} logged successfully!`);
     }
 
-    // Reset states
     setContactId('');
     setAmount(0);
     setReferenceNumber('');
@@ -467,40 +653,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsPaymentFormOpen(false);
   };
 
-  // Sync to localStorage
-  useEffect(() => {
-    localStorage.setItem('agribiz_products', JSON.stringify(products));
-  }, [products]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_customers', JSON.stringify(customers));
-  }, [customers]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_suppliers', JSON.stringify(suppliers));
-  }, [suppliers]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_invoices', JSON.stringify(invoices));
-  }, [invoices]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_quotations', JSON.stringify(quotations));
-  }, [quotations]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_purchases', JSON.stringify(purchases));
-  }, [purchases]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_payments', JSON.stringify(payments));
-  }, [payments]);
-
-  useEffect(() => {
-    localStorage.setItem('agribiz_settings', JSON.stringify(settings));
-    document.title = settings.businessName || 'AgriBiz';
-  }, [settings]);
-
+  // Theme synchronization logic
   useEffect(() => {
     const updateActiveTheme = () => {
       if (settings.theme === 'system') {
@@ -518,26 +671,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const handleChange = () => {
         updateActiveTheme();
       };
-      if (mediaQuery.addEventListener) {
-        mediaQuery.addEventListener('change', handleChange);
-      } else {
-        mediaQuery.addListener(handleChange);
-      }
-      return () => {
-        if (mediaQuery.removeEventListener) {
-          mediaQuery.removeEventListener('change', handleChange);
-        } else {
-          mediaQuery.removeListener(handleChange);
-        }
-      };
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
     }
   }, [settings.theme]);
 
   useEffect(() => {
-    // Apply body theme class
     document.body.className = activeTheme === 'dark' ? 'dark-theme' : 'light-theme';
-    
-    // Dynamically update status bar / theme-color meta tag
     let metaThemeColor = document.querySelector('meta[name="theme-color"]');
     if (!metaThemeColor) {
       metaThemeColor = document.createElement('meta');
@@ -548,23 +688,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     metaThemeColor.setAttribute('content', color);
   }, [activeTheme]);
 
-  useEffect(() => {
-    localStorage.setItem('agribiz_expenses', JSON.stringify(expenses));
-  }, [expenses]);
+  // --- CRUD ACTIONS backed by Dexie.js ---
 
-  useEffect(() => {
-    localStorage.setItem('agribiz_recycle_bin', JSON.stringify(recycleBin));
-  }, [recycleBin]);
-
-  // Actions
   const addProduct = (p: Omit<Product, 'id'>) => {
+    const id = generateId('PROD');
     const newProduct: Product = {
       ...p,
       name: toTitleCase(p.name),
       category: toTitleCase(p.category),
-      id: `P-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id,
     };
+    
     setProducts((prev) => [...prev, newProduct]);
+    
+    // Save locally
+    const dbRecord = { ...newProduct, isDeleted: false, version: 1 };
+    db.products.add(dbRecord);
+    
+    // Queue offline sync
+    queueSync('CREATE', 'Product', id, newProduct);
+    
     return newProduct;
   };
 
@@ -574,34 +717,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: toTitleCase(p.name),
       category: toTitleCase(p.category),
     };
+    
     setProducts((prev) => prev.map((item) => (item.id === p.id ? formatted : item)));
+    
+    // Save locally
+    const dbRecord = { ...formatted, isDeleted: false, version: 1 };
+    db.products.put(dbRecord);
+    
+    // Queue offline sync
+    queueSync('UPDATE', 'Product', p.id, formatted);
   };
 
   const deleteProduct = (id: string) => {
     const item = products.find((p) => p.id === id);
     if (item) {
       const binItem: RecycleBinItem = {
-        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: generateId('REC'),
         originalId: item.id,
         name: item.name,
         module: 'Product',
         deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Vaibhav Patel',
         originalData: item,
       };
+
+      // Atomic local updates
+      db.products.update(id, { isDeleted: true });
+      db.recycleBin.add(binItem);
+      
+      // Update state
+      setProducts((prev) => prev.filter((p) => p.id !== id));
       setRecycleBin((prev) => [binItem, ...prev]);
+      
+      // Queue offline sync
+      queueSync('DELETE', 'Product', id, null);
     }
-    setProducts((prev) => prev.filter((item) => item.id !== id));
   };
 
   const addCustomer = (c: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => {
+    const id = generateId('CUS');
     const newCustomer: Customer = {
       ...c,
       name: toTitleCase(c.name),
-      id: `C-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id,
       outstanding: c.outstanding || 0,
     };
+    
     setCustomers((prev) => [...prev, newCustomer]);
+    
+    const dbRecord = { ...newCustomer, isDeleted: false, version: 1 };
+    db.customers.add(dbRecord);
+    
+    queueSync('CREATE', 'Customer', id, newCustomer);
+    
     return newCustomer;
   };
 
@@ -610,34 +778,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...c,
       name: toTitleCase(c.name),
     };
+    
     setCustomers((prev) => prev.map((item) => (item.id === c.id ? formatted : item)));
+    
+    const dbRecord = { ...formatted, isDeleted: false, version: 1 };
+    db.customers.put(dbRecord);
+    
+    queueSync('UPDATE', 'Customer', c.id, formatted);
   };
 
   const deleteCustomer = (id: string) => {
     const item = customers.find((c) => c.id === id);
     if (item) {
       const binItem: RecycleBinItem = {
-        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: generateId('REC'),
         originalId: item.id,
         name: item.name,
         module: 'Customer',
         deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Vaibhav Patel',
         originalData: item,
       };
+
+      db.customers.update(id, { isDeleted: true });
+      db.recycleBin.add(binItem);
+
+      setCustomers((prev) => prev.filter((item) => item.id !== id));
       setRecycleBin((prev) => [binItem, ...prev]);
+
+      queueSync('DELETE', 'Customer', id, null);
     }
-    setCustomers((prev) => prev.filter((item) => item.id !== id));
   };
 
   const addSupplier = (s: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => {
+    const id = generateId('SUP');
     const newSupplier: Supplier = {
       ...s,
       name: toTitleCase(s.name),
-      id: `S-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id,
       outstanding: s.outstanding || 0,
     };
+
     setSuppliers((prev) => [...prev, newSupplier]);
+
+    const dbRecord = { ...newSupplier, isDeleted: false, version: 1 };
+    db.suppliers.add(dbRecord);
+
+    queueSync('CREATE', 'Supplier', id, newSupplier);
+
     return newSupplier;
   };
 
@@ -646,32 +834,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ...s,
       name: toTitleCase(s.name),
     };
+
     setSuppliers((prev) => prev.map((item) => (item.id === s.id ? formatted : item)));
+
+    const dbRecord = { ...formatted, isDeleted: false, version: 1 };
+    db.suppliers.put(dbRecord);
+
+    queueSync('UPDATE', 'Supplier', s.id, formatted);
   };
 
   const deleteSupplier = (id: string) => {
     const item = suppliers.find((s) => s.id === id);
     if (item) {
       const binItem: RecycleBinItem = {
-        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: generateId('REC'),
         originalId: item.id,
         name: item.name,
         module: 'Supplier',
         deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Vaibhav Patel',
         originalData: item,
       };
+
+      db.suppliers.update(id, { isDeleted: true });
+      db.recycleBin.add(binItem);
+
+      setSuppliers((prev) => prev.filter((item) => item.id !== id));
       setRecycleBin((prev) => [binItem, ...prev]);
+
+      queueSync('DELETE', 'Supplier', id, null);
     }
-    setSuppliers((prev) => prev.filter((item) => item.id !== id));
   };
 
-  // Invoices (Sales)
   const addInvoice = (inv: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
     const count = invoices.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const invoiceNumber = `${settings.invoicePrefix}${formattedCount}`;
-    const id = `INV-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const id = generateId('INV');
 
     const newInvoice: Invoice = {
       ...inv,
@@ -684,200 +883,103 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       invoiceNumber,
     };
 
-    setInvoices((prev) => [newInvoice, ...prev]);
+    // Calculate stock changes locally
+    const updatedProducts = products.map((p) => {
+      const matchingItem = inv.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        const finalStock = Math.max(0, p.stock - matchingItem.quantity);
+        db.products.update(p.id, { stock: finalStock });
+        return { ...p, stock: finalStock };
+      }
+      return p;
+    });
 
-    // Inventory effect: deduct stock
-    setProducts((prevProducts) =>
-      prevProducts.map((p) => {
-        const matchingItem = inv.items.find((item) => item.productId === p.id);
-        if (matchingItem) {
-          return {
-            ...p,
-            stock: Math.max(0, p.stock - matchingItem.quantity),
-          };
-        }
-        return p;
-      })
-    );
+    // Calculate customer dues locally
+    const updatedCustomers = customers.map((cust) => {
+      if (cust.id === inv.customerId) {
+        const finalDues = cust.outstanding + inv.balanceDue;
+        db.customers.update(cust.id, { outstanding: finalDues });
+        return { ...cust, outstanding: finalDues };
+      }
+      return cust;
+    });
 
-    // Customer effect: update outstanding balance
-    setCustomers((prevCustomers) =>
-      prevCustomers.map((cust) => {
-        if (cust.id === inv.customerId) {
-          return {
-            ...cust,
-            outstanding: cust.outstanding + inv.balanceDue,
-          };
-        }
-        return cust;
-      })
-    );
-
-    // Payments effect: Log payment if customer paid an amount
+    // Handle instant payments locally
+    let generatedPayment: Payment | null = null;
     if (inv.amountPaid > 0) {
-      const newPayment: Payment = {
-        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      const paymentId = generateId('PAY');
+      generatedPayment = {
+        id: paymentId,
         date: inv.date,
         type: 'CustomerReceipt',
         contactId: inv.customerId,
         contactName: inv.customerName,
         amount: inv.amountPaid,
-        paymentMethod: inv.paymentMethod as any || 'UPI',
+        paymentMethod: (inv.paymentMethod as any) || 'UPI',
         notes: `Against invoice ${invoiceNumber}`,
       };
-      setPayments((prev) => [newPayment, ...prev]);
+      db.payments.add({ ...generatedPayment, isDeleted: false, version: 1 });
+      queueSync('CREATE', 'Payment', paymentId, generatedPayment);
     }
+
+    // Save locally
+    db.invoices.add({ ...newInvoice, isDeleted: false, version: 1 });
+    queueSync('CREATE', 'Invoice', id, newInvoice);
+
+    // Apply updates atomically to state
+    setProducts(updatedProducts);
+    setCustomers(updatedCustomers);
+    if (generatedPayment) {
+      setPayments((prev) => [generatedPayment!, ...prev]);
+    }
+    setInvoices((prev) => [newInvoice, ...prev]);
 
     return newInvoice;
   };
 
-  const deleteInvoice = (id: string) => {
-    console.log("deleteInvoice called with id:", id);
-    const inv = invoices.find((i) => i.id === id || i.invoiceNumber === id);
-    if (!inv) {
-      throw new Error(`Invoice not found: ${id}`);
-    }
-
-    const binItem: RecycleBinItem = {
-      id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      originalId: inv.id,
-      name: inv.invoiceNumber,
-      module: 'Invoice',
-      deletedAt: new Date().toISOString(),
-      deletedBy: settings.ownerName || 'Kunal Chaudhari',
-      originalData: inv,
-    };
-    setRecycleBin((prev) => [binItem, ...prev]);
-
-    // 1. Remove invoice from invoices list state
-    setInvoices((prev) => prev.filter((i) => i.id !== inv.id && i.invoiceNumber !== inv.invoiceNumber));
-
-    // 2. Safely revert product stock quantities
-    try {
-      if (inv.items && Array.isArray(inv.items)) {
-        setProducts((prevProducts) =>
-          prevProducts.map((p) => {
-            const matchingItem = inv.items.find((item) => item && item.productId === p.id);
-            if (matchingItem) {
-              const qty = Number(matchingItem.quantity) || 0;
-              return {
-                ...p,
-                stock: (Number(p.stock) || 0) + qty,
-              };
-            }
-            return p;
-          })
-        );
-      }
-    } catch (err) {
-      console.error("Error restoring stock on invoice delete:", err);
-    }
-
-    // 3. Safely revert customer outstanding balance
-    try {
-      if (inv.customerId) {
-        setCustomers((prevCustomers) =>
-          prevCustomers.map((cust) => {
-            if (cust.id === inv.customerId) {
-              const balanceDue = Number(inv.balanceDue) || 0;
-              return {
-                ...cust,
-                outstanding: (Number(cust.outstanding) || 0) - balanceDue,
-              };
-            }
-            return cust;
-          })
-        );
-      }
-    } catch (err) {
-      console.error("Error reverting customer outstanding on invoice delete:", err);
-    }
-  };
-
   const editInvoice = (updatedInvoice: Invoice) => {
-    console.log("editInvoice called with invoice:", updatedInvoice);
-    const oldInvoice = invoices.find((i) => i.id === updatedInvoice.id || i.invoiceNumber === updatedInvoice.invoiceNumber);
+    const oldInvoice = invoices.find((i) => i.id === updatedInvoice.id);
     if (!oldInvoice) {
       throw new Error(`Original invoice not found: ${updatedInvoice.invoiceNumber}`);
     }
 
-    // 1. Revert old stock changes
-    let revertedProducts = products;
-    try {
-      if (oldInvoice.items && Array.isArray(oldInvoice.items)) {
-        revertedProducts = products.map((p) => {
-          const matchingItem = oldInvoice.items.find((item) => item && item.productId === p.id);
-          if (matchingItem) {
-            const qty = Number(matchingItem.quantity) || 0;
-            return {
-              ...p,
-              stock: (Number(p.stock) || 0) + qty,
-            };
-          }
-          return p;
-        });
+    // Revert old stock changes
+    const revertedProducts = products.map((p) => {
+      const matchingItem = oldInvoice.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        return { ...p, stock: p.stock + matchingItem.quantity };
       }
-    } catch (err) {
-      console.error("Error reverting old stock changes on edit:", err);
-    }
+      return p;
+    });
 
-    // 2. Revert old customer outstanding changes
-    let revertedCustomers = customers;
-    try {
-      if (oldInvoice.customerId) {
-        revertedCustomers = customers.map((cust) => {
-          if (cust.id === oldInvoice.customerId) {
-            const balanceDue = Number(oldInvoice.balanceDue) || 0;
-            return {
-              ...cust,
-              outstanding: (Number(cust.outstanding) || 0) - balanceDue,
-            };
-          }
-          return cust;
-        });
+    // Revert old customer dues
+    const revertedCustomers = customers.map((cust) => {
+      if (cust.id === oldInvoice.customerId) {
+        return { ...cust, outstanding: cust.outstanding - oldInvoice.balanceDue };
       }
-    } catch (err) {
-      console.error("Error reverting customer balance on edit:", err);
-    }
+      return cust;
+    });
 
-    // 3. Apply new stock changes
-    let finalProducts = revertedProducts;
-    try {
-      if (updatedInvoice.items && Array.isArray(updatedInvoice.items)) {
-        finalProducts = revertedProducts.map((p) => {
-          const matchingItem = updatedInvoice.items.find((item) => item && item.productId === p.id);
-          if (matchingItem) {
-            const qty = Number(matchingItem.quantity) || 0;
-            return {
-              ...p,
-              stock: Math.max(0, (Number(p.stock) || 0) - qty),
-            };
-          }
-          return p;
-        });
+    // Apply new stock changes
+    const finalProducts = revertedProducts.map((p) => {
+      const matchingItem = updatedInvoice.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        const finalStock = Math.max(0, p.stock - matchingItem.quantity);
+        db.products.update(p.id, { stock: finalStock });
+        return { ...p, stock: finalStock };
       }
-    } catch (err) {
-      console.error("Error applying new stock changes on edit:", err);
-    }
+      return p;
+    });
 
-    // 4. Apply new customer outstanding balance changes
-    let finalCustomers = revertedCustomers;
-    try {
-      if (updatedInvoice.customerId) {
-        finalCustomers = revertedCustomers.map((cust) => {
-          if (cust.id === updatedInvoice.customerId) {
-            const balanceDue = Number(updatedInvoice.balanceDue) || 0;
-            return {
-              ...cust,
-              outstanding: (Number(cust.outstanding) || 0) + balanceDue,
-            };
-          }
-          return cust;
-        });
+    // Apply new customer dues
+    const finalCustomers = revertedCustomers.map((cust) => {
+      if (cust.id === updatedInvoice.customerId) {
+        const finalDues = cust.outstanding + updatedInvoice.balanceDue;
+        db.customers.update(cust.id, { outstanding: finalDues });
+        return { ...cust, outstanding: finalDues };
       }
-    } catch (err) {
-      console.error("Error applying new customer balance on edit:", err);
-    }
+      return cust;
+    });
 
     const formattedInvoice: Invoice = {
       ...updatedInvoice,
@@ -888,20 +990,67 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })),
     };
 
-    // 5. Update state atomically
+    // Save locally
+    db.invoices.put({ ...formattedInvoice, isDeleted: false, version: 1 });
+    queueSync('UPDATE', 'Invoice', formattedInvoice.id, formattedInvoice);
+
     setProducts(finalProducts);
     setCustomers(finalCustomers);
-    setInvoices((prev) =>
-      prev.map((inv) => (inv.id === oldInvoice.id || inv.invoiceNumber === oldInvoice.invoiceNumber ? formattedInvoice : inv))
-    );
+    setInvoices((prev) => prev.map((inv) => (inv.id === oldInvoice.id ? formattedInvoice : inv)));
   };
 
-  // Quotations
-  const addQuotation = (q: Omit<Quotation, 'id' | 'quotationNumber'>): Quotation => {
+  const deleteInvoice = (id: string) => {
+    const inv = invoices.find((i) => i.id === id || i.invoiceNumber === id);
+    if (!inv) return;
+
+    const binItem: RecycleBinItem = {
+      id: generateId('REC'),
+      originalId: inv.id,
+      name: inv.invoiceNumber,
+      module: 'Invoice',
+      deletedAt: new Date().toISOString(),
+      deletedBy: settings.ownerName || 'Vaibhav Patel',
+      originalData: inv,
+    };
+
+    // Restore stocks locally
+    const finalProducts = products.map((p) => {
+      const matchingItem = inv.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        const finalStock = p.stock + matchingItem.quantity;
+        db.products.update(p.id, { stock: finalStock });
+        return { ...p, stock: finalStock };
+      }
+      return p;
+    });
+
+    // Revert customer dues locally
+    const finalCustomers = customers.map((cust) => {
+      if (cust.id === inv.customerId) {
+        const finalDues = Math.max(0, cust.outstanding - inv.balanceDue);
+        db.customers.update(cust.id, { outstanding: finalDues });
+        return { ...cust, outstanding: finalDues };
+      }
+      return cust;
+    });
+
+    // Save locally
+    db.invoices.update(inv.id, { isDeleted: true });
+    db.recycleBin.add(binItem);
+
+    setProducts(finalProducts);
+    setCustomers(finalCustomers);
+    setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
+    setRecycleBin((prev) => [binItem, ...prev]);
+
+    queueSync('DELETE', 'Invoice', inv.id, null);
+  };
+
+  const addQuotation = (q: Omit<Quotation, 'id' | 'quotationNumber'>) => {
     const count = quotations.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const quotationNumber = `QT-${formattedCount}`;
-    const id = `QT-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const id = generateId('QUO');
 
     const newQuotation: Quotation = {
       ...q,
@@ -915,6 +1064,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setQuotations((prev) => [newQuotation, ...prev]);
+
+    db.quotations.add({ ...newQuotation, isDeleted: false, version: 1 });
+    queueSync('CREATE', 'Quotation', id, newQuotation);
+
     return newQuotation;
   };
 
@@ -927,24 +1080,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         productName: toTitleCase(item.productName),
       })),
     };
+
     setQuotations((prev) => prev.map((item) => (item.id === q.id ? formatted : item)));
+
+    db.quotations.put({ ...formatted, isDeleted: false, version: 1 });
+    queueSync('UPDATE', 'Quotation', q.id, formatted);
   };
 
   const deleteQuotation = (id: string) => {
     const item = quotations.find((q) => q.id === id);
     if (item) {
       const binItem: RecycleBinItem = {
-        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+        id: generateId('REC'),
         originalId: item.id,
         name: item.quotationNumber,
         module: 'Quotation',
         deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Kunal Chaudhari',
+        deletedBy: settings.ownerName || 'Vaibhav Patel',
         originalData: item,
       };
+
+      db.quotations.update(id, { isDeleted: true });
+      db.recycleBin.add(binItem);
+
+      setQuotations((prev) => prev.filter((item) => item.id !== id));
       setRecycleBin((prev) => [binItem, ...prev]);
+
+      queueSync('DELETE', 'Quotation', id, null);
     }
-    setQuotations((prev) => prev.filter((item) => item.id !== id));
   };
 
   const convertQuotationToInvoice = (quotationId: string, amountPaid: number, paymentMethod: string): string => {
@@ -983,23 +1146,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: `Converted from Quotation ${quotation.quotationNumber}.` + (quotation.notes ? `\nOriginal Notes: ${quotation.notes}` : ''),
     });
 
+    db.quotations.update(quotationId, { status: 'Converted', convertedInvoiceId: newInvoice.id });
+    queueSync('UPDATE', 'Quotation', quotationId, { ...quotation, status: 'Converted', convertedInvoiceId: newInvoice.id });
+
     setQuotations((prev) =>
       prev.map((q) =>
-        q.id === quotationId
-          ? { ...q, status: 'Converted', convertedInvoiceId: newInvoice.id }
-          : q
+        q.id === quotationId ? { ...q, status: 'Converted', convertedInvoiceId: newInvoice.id } : q
       )
     );
 
     return newInvoice.id;
   };
 
-  // Purchases (Supplier Inward)
-  const addPurchase = (pur: Omit<Purchase, 'id' | 'purchaseNumber'>): Purchase => {
+  const addPurchase = (pur: Omit<Purchase, 'id' | 'purchaseNumber'>) => {
     const count = purchases.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const purchaseNumber = `PUR-${settings.invoicePrefix.replace('AB-', '')}${formattedCount}`;
-    const id = `PUR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+    const id = generateId('PUR');
 
     const newPurchase: Purchase = {
       ...pur,
@@ -1012,180 +1175,101 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       purchaseNumber,
     };
 
-    setPurchases((prev) => [newPurchase, ...prev]);
+    // Add stock locally
+    const finalProducts = products.map((p) => {
+      const matchingItem = pur.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        const finalStock = p.stock + matchingItem.quantity;
+        db.products.update(p.id, { stock: finalStock });
+        return { ...p, stock: finalStock };
+      }
+      return p;
+    });
 
-    // Inventory effect: Add stock
-    setProducts((prevProducts) =>
-      prevProducts.map((p) => {
-        const matchingItem = pur.items.find((item) => item.productId === p.id);
-        if (matchingItem) {
-          return {
-            ...p,
-            stock: p.stock + matchingItem.quantity,
-          };
-        }
-        return p;
-      })
-    );
+    // Revert supplier balance locally
+    const finalSuppliers = suppliers.map((supp) => {
+      if (supp.id === pur.supplierId) {
+        const finalDues = supp.outstanding + pur.balanceDue;
+        db.suppliers.update(supp.id, { outstanding: finalDues });
+        return { ...supp, outstanding: finalDues };
+      }
+      return supp;
+    });
 
-    // Supplier effect: update outstanding balance
-    setSuppliers((prevSuppliers) =>
-      prevSuppliers.map((supp) => {
-        if (supp.id === pur.supplierId) {
-          return {
-            ...supp,
-            outstanding: supp.outstanding + pur.balanceDue,
-          };
-        }
-        return supp;
-      })
-    );
-
-    // Payments effect: Log payment if supplier was paid
+    // Payments logging
+    let generatedPayment: Payment | null = null;
     if (pur.amountPaid > 0) {
-      const newPayment: Payment = {
-        id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      const paymentId = generateId('PAY');
+      generatedPayment = {
+        id: paymentId,
         date: pur.date,
         type: 'SupplierPayment',
         contactId: pur.supplierId,
         contactName: pur.supplierName,
         amount: pur.amountPaid,
-        paymentMethod: pur.paymentMethod as any || 'Bank Transfer',
+        paymentMethod: (pur.paymentMethod as any) || 'Bank Transfer',
         notes: `Against bill ${purchaseNumber}`,
       };
-      setPayments((prev) => [newPayment, ...prev]);
+      db.payments.add({ ...generatedPayment, isDeleted: false, version: 1 });
+      queueSync('CREATE', 'Payment', paymentId, generatedPayment);
     }
+
+    db.purchases.add({ ...newPurchase, isDeleted: false, version: 1 });
+    queueSync('CREATE', 'Purchase', id, newPurchase);
+
+    setProducts(finalProducts);
+    setSuppliers(finalSuppliers);
+    if (generatedPayment) {
+      setPayments((prev) => [generatedPayment!, ...prev]);
+    }
+    setPurchases((prev) => [newPurchase, ...prev]);
+
     return newPurchase;
   };
 
-  const deletePurchase = (id: string) => {
-    const pur = purchases.find((p) => p.id === id);
-    if (!pur) return;
-
-    const binItem: RecycleBinItem = {
-      id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      originalId: pur.id,
-      name: pur.purchaseNumber,
-      module: 'Purchase',
-      deletedAt: new Date().toISOString(),
-      deletedBy: settings.ownerName || 'Kunal Chaudhari',
-      originalData: pur,
-    };
-    setRecycleBin((prev) => [binItem, ...prev]);
-
-    setPurchases((prev) => prev.filter((p) => p.id !== id));
-
-    // Inventory effect: Revert stock increase
-    setProducts((prevProducts) =>
-      prevProducts.map((p) => {
-        const matchingItem = pur.items.find((item) => item.productId === p.id);
-        if (matchingItem) {
-          return {
-            ...p,
-            stock: Math.max(0, p.stock - matchingItem.quantity),
-          };
-        }
-        return p;
-      })
-    );
-
-    // Supplier effect: Revert outstanding balance
-    setSuppliers((prevSuppliers) =>
-      prevSuppliers.map((supp) => {
-        if (supp.id === pur.supplierId) {
-          return {
-            ...supp,
-            outstanding: supp.outstanding - pur.balanceDue,
-          };
-        }
-        return supp;
-      })
-    );
-  };
-
   const editPurchase = (updatedPurchase: Purchase) => {
-    const oldPurchase = purchases.find((p) => p.id === updatedPurchase.id || p.purchaseNumber === updatedPurchase.purchaseNumber);
+    const oldPurchase = purchases.find((p) => p.id === updatedPurchase.id);
     if (!oldPurchase) {
       throw new Error(`Original purchase not found: ${updatedPurchase.purchaseNumber}`);
     }
 
-    // 1. Revert old stock changes (deduct the stock added by the old purchase)
-    let revertedProducts = products;
-    try {
-      if (oldPurchase.items && Array.isArray(oldPurchase.items)) {
-        revertedProducts = products.map((p) => {
-          const matchingItem = oldPurchase.items.find((item) => item && item.productId === p.id);
-          if (matchingItem) {
-            const qty = Number(matchingItem.quantity) || 0;
-            return {
-              ...p,
-              stock: Math.max(0, (Number(p.stock) || 0) - qty),
-            };
-          }
-          return p;
-        });
+    // Revert old stock changes
+    const revertedProducts = products.map((p) => {
+      const matchingItem = oldPurchase.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        return { ...p, stock: Math.max(0, p.stock - matchingItem.quantity) };
       }
-    } catch (err) {
-      console.error("Error reverting stock on purchase edit:", err);
-    }
+      return p;
+    });
 
-    // 2. Revert old supplier outstanding changes (deduct the outstanding from the old purchase)
-    let revertedSuppliers = suppliers;
-    try {
-      if (oldPurchase.supplierId) {
-        revertedSuppliers = suppliers.map((supp) => {
-          if (supp.id === oldPurchase.supplierId) {
-            const balanceDue = Number(oldPurchase.balanceDue) || 0;
-            return {
-              ...supp,
-              outstanding: (Number(supp.outstanding) || 0) - balanceDue,
-            };
-          }
-          return supp;
-        });
+    // Revert old supplier dues
+    const revertedSuppliers = suppliers.map((supp) => {
+      if (supp.id === oldPurchase.supplierId) {
+        return { ...supp, outstanding: supp.outstanding - oldPurchase.balanceDue };
       }
-    } catch (err) {
-      console.error("Error reverting supplier balance on purchase edit:", err);
-    }
+      return supp;
+    });
 
-    // 3. Apply new stock changes (add stock from the updated purchase)
-    let finalProducts = revertedProducts;
-    try {
-      if (updatedPurchase.items && Array.isArray(updatedPurchase.items)) {
-        finalProducts = revertedProducts.map((p) => {
-          const matchingItem = updatedPurchase.items.find((item) => item && item.productId === p.id);
-          if (matchingItem) {
-            const qty = Number(matchingItem.quantity) || 0;
-            return {
-              ...p,
-              stock: (Number(p.stock) || 0) + qty,
-            };
-          }
-          return p;
-        });
+    // Apply new stock changes
+    const finalProducts = revertedProducts.map((p) => {
+      const matchingItem = updatedPurchase.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        const finalStock = p.stock + matchingItem.quantity;
+        db.products.update(p.id, { stock: finalStock });
+        return { ...p, stock: finalStock };
       }
-    } catch (err) {
-      console.error("Error applying new stock changes on purchase edit:", err);
-    }
+      return p;
+    });
 
-    // 4. Apply new supplier outstanding changes (add outstanding from the updated purchase)
-    let finalSuppliers = revertedSuppliers;
-    try {
-      if (updatedPurchase.supplierId) {
-        finalSuppliers = revertedSuppliers.map((supp) => {
-          if (supp.id === updatedPurchase.supplierId) {
-            const balanceDue = Number(updatedPurchase.balanceDue) || 0;
-            return {
-              ...supp,
-              outstanding: (Number(supp.outstanding) || 0) + balanceDue,
-            };
-          }
-          return supp;
-        });
+    // Apply new supplier dues
+    const finalSuppliers = revertedSuppliers.map((supp) => {
+      if (supp.id === updatedPurchase.supplierId) {
+        const finalDues = supp.outstanding + updatedPurchase.balanceDue;
+        db.suppliers.update(supp.id, { outstanding: finalDues });
+        return { ...supp, outstanding: finalDues };
       }
-    } catch (err) {
-      console.error("Error applying supplier balance on purchase edit:", err);
-    }
+      return supp;
+    });
 
     const formattedPurchase: Purchase = {
       ...updatedPurchase,
@@ -1196,50 +1280,93 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })),
     };
 
-    // 5. Update state atomically
+    db.purchases.put({ ...formattedPurchase, isDeleted: false, version: 1 });
+    queueSync('UPDATE', 'Purchase', formattedPurchase.id, formattedPurchase);
+
     setProducts(finalProducts);
     setSuppliers(finalSuppliers);
-    setPurchases((prev) =>
-      prev.map((pur) => (pur.id === oldPurchase.id || pur.purchaseNumber === oldPurchase.purchaseNumber ? formattedPurchase : pur))
-    );
+    setPurchases((prev) => prev.map((p) => (p.id === oldPurchase.id ? formattedPurchase : p)));
   };
 
-  // Payments Ledger
+  const deletePurchase = (id: string) => {
+    const pur = purchases.find((p) => p.id === id);
+    if (!pur) return;
+
+    const binItem: RecycleBinItem = {
+      id: generateId('REC'),
+      originalId: pur.id,
+      name: pur.purchaseNumber,
+      module: 'Purchase',
+      deletedAt: new Date().toISOString(),
+      deletedBy: settings.ownerName || 'Vaibhav Patel',
+      originalData: pur,
+    };
+
+    // Revert stock added locally
+    const finalProducts = products.map((p) => {
+      const matchingItem = pur.items.find((item) => item.productId === p.id);
+      if (matchingItem) {
+        const finalStock = Math.max(0, p.stock - matchingItem.quantity);
+        db.products.update(p.id, { stock: finalStock });
+        return { ...p, stock: finalStock };
+      }
+      return p;
+    });
+
+    // Revert supplier outstanding balance locally
+    const finalSuppliers = suppliers.map((supp) => {
+      if (supp.id === pur.supplierId) {
+        const finalDues = Math.max(0, supp.outstanding - pur.balanceDue);
+        db.suppliers.update(supp.id, { outstanding: finalDues });
+        return { ...supp, outstanding: finalDues };
+      }
+      return supp;
+    });
+
+    db.purchases.update(pur.id, { isDeleted: true });
+    db.recycleBin.add(binItem);
+
+    setProducts(finalProducts);
+    setSuppliers(finalSuppliers);
+    setPurchases((prev) => prev.filter((p) => p.id !== id));
+    setRecycleBin((prev) => [binItem, ...prev]);
+
+    queueSync('DELETE', 'Purchase', pur.id, null);
+  };
+
   const addPayment = (pay: Omit<Payment, 'id'>) => {
+    const id = generateId('PAY');
     const newPayment: Payment = {
       ...pay,
       contactName: toTitleCase(pay.contactName),
-      id: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id,
     };
 
-    setPayments((prev) => [newPayment, ...prev]);
+    // Apply ledger changes locally
+    const finalCustomers = customers.map((cust) => {
+      if (pay.type === 'CustomerReceipt' && cust.id === pay.contactId) {
+        const outstanding = cust.outstanding - pay.amount;
+        db.customers.update(cust.id, { outstanding });
+        return { ...cust, outstanding };
+      }
+      return cust;
+    });
 
-    // Outstanding updates
-    if (pay.type === 'CustomerReceipt') {
-      setCustomers((prevCustomers) =>
-        prevCustomers.map((cust) => {
-          if (cust.id === pay.contactId) {
-            return {
-              ...cust,
-              outstanding: cust.outstanding - pay.amount,
-            };
-          }
-          return cust;
-        })
-      );
-    } else {
-      setSuppliers((prevSuppliers) =>
-        prevSuppliers.map((supp) => {
-          if (supp.id === pay.contactId) {
-            return {
-              ...supp,
-              outstanding: supp.outstanding - pay.amount,
-            };
-          }
-          return supp;
-        })
-      );
-    }
+    const finalSuppliers = suppliers.map((supp) => {
+      if (pay.type === 'SupplierPayment' && supp.id === pay.contactId) {
+        const outstanding = supp.outstanding - pay.amount;
+        db.suppliers.update(supp.id, { outstanding });
+        return { ...supp, outstanding };
+      }
+      return supp;
+    });
+
+    db.payments.add({ ...newPayment, isDeleted: false, version: 1 });
+    queueSync('CREATE', 'Payment', id, newPayment);
+
+    setCustomers(finalCustomers);
+    setSuppliers(finalSuppliers);
+    setPayments((prev) => [newPayment, ...prev]);
   };
 
   const editPayment = (updatedPayment: Payment) => {
@@ -1247,64 +1374,55 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!oldPayment) return;
 
     // Revert old outstanding
-    let revertedCustomers = customers;
-    let revertedSuppliers = suppliers;
+    let tempCustomers = customers;
+    let tempSuppliers = suppliers;
 
     if (oldPayment.type === 'CustomerReceipt') {
-      revertedCustomers = customers.map((cust) => {
+      tempCustomers = customers.map((cust) => {
         if (cust.id === oldPayment.contactId) {
-          return {
-            ...cust,
-            outstanding: cust.outstanding + oldPayment.amount,
-          };
+          return { ...cust, outstanding: cust.outstanding + oldPayment.amount };
         }
         return cust;
       });
     } else {
-      revertedSuppliers = suppliers.map((supp) => {
+      tempSuppliers = suppliers.map((supp) => {
         if (supp.id === oldPayment.contactId) {
-          return {
-            ...supp,
-            outstanding: supp.outstanding + oldPayment.amount,
-          };
+          return { ...supp, outstanding: supp.outstanding + oldPayment.amount };
         }
         return supp;
       });
     }
 
     // Apply new outstanding
-    if (updatedPayment.type === 'CustomerReceipt') {
-      revertedCustomers = revertedCustomers.map((cust) => {
-        if (cust.id === updatedPayment.contactId) {
-          return {
-            ...cust,
-            outstanding: cust.outstanding - updatedPayment.amount,
-          };
-        }
-        return cust;
-      });
-    } else {
-      revertedSuppliers = revertedSuppliers.map((supp) => {
-        if (supp.id === updatedPayment.contactId) {
-          return {
-            ...supp,
-            outstanding: supp.outstanding - updatedPayment.amount,
-          };
-        }
-        return supp;
-      });
-    }
+    const finalCustomers = tempCustomers.map((cust) => {
+      if (updatedPayment.type === 'CustomerReceipt' && cust.id === updatedPayment.contactId) {
+        const outstanding = cust.outstanding - updatedPayment.amount;
+        db.customers.update(cust.id, { outstanding });
+        return { ...cust, outstanding };
+      }
+      return cust;
+    });
+
+    const finalSuppliers = tempSuppliers.map((supp) => {
+      if (updatedPayment.type === 'SupplierPayment' && supp.id === updatedPayment.contactId) {
+        const outstanding = supp.outstanding - updatedPayment.amount;
+        db.suppliers.update(supp.id, { outstanding });
+        return { ...supp, outstanding };
+      }
+      return supp;
+    });
 
     const formattedPayment: Payment = {
       ...updatedPayment,
       contactName: toTitleCase(updatedPayment.contactName),
     };
 
-    setCustomers(revertedCustomers);
-    setSuppliers(revertedSuppliers);
-    setPayments((prev) =>
-      prev.map((p) => (p.id === updatedPayment.id ? formattedPayment : p))
-    );
+    db.payments.put({ ...formattedPayment, isDeleted: false, version: 1 });
+    queueSync('UPDATE', 'Payment', formattedPayment.id, formattedPayment);
+
+    setCustomers(finalCustomers);
+    setSuppliers(finalSuppliers);
+    setPayments((prev) => prev.map((p) => (p.id === updatedPayment.id ? formattedPayment : p)));
   };
 
   const deletePayment = (id: string) => {
@@ -1312,63 +1430,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!pay) return;
 
     const binItem: RecycleBinItem = {
-      id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id: generateId('REC'),
       originalId: pay.id,
-      name: `Payment - ₹${pay.amount} (${pay.paymentMethod})`,
+      name: `Payment: ₹${pay.amount} to ${pay.contactName}`,
       module: 'Payment',
       deletedAt: new Date().toISOString(),
-      deletedBy: settings.ownerName || 'Kunal Chaudhari',
+      deletedBy: settings.ownerName || 'Vaibhav Patel',
       originalData: pay,
     };
+
+    // Revert outstanding balance locally
+    const finalCustomers = customers.map((cust) => {
+      if (pay.type === 'CustomerReceipt' && cust.id === pay.contactId) {
+        const outstanding = cust.outstanding + pay.amount;
+        db.customers.update(cust.id, { outstanding });
+        return { ...cust, outstanding };
+      }
+      return cust;
+    });
+
+    const finalSuppliers = suppliers.map((supp) => {
+      if (pay.type === 'SupplierPayment' && supp.id === pay.contactId) {
+        const outstanding = supp.outstanding + pay.amount;
+        db.suppliers.update(supp.id, { outstanding });
+        return { ...supp, outstanding };
+      }
+      return supp;
+    });
+
+    db.payments.update(pay.id, { isDeleted: true });
+    db.recycleBin.add(binItem);
+
+    setCustomers(finalCustomers);
+    setSuppliers(finalSuppliers);
+    setPayments((prev) => prev.filter((p) => p.id !== id));
     setRecycleBin((prev) => [binItem, ...prev]);
 
-    setPayments((prev) => prev.filter((p) => p.id !== id));
-
-    // Revert outstanding
-    if (pay.type === 'CustomerReceipt') {
-      setCustomers((prevCustomers) =>
-        prevCustomers.map((cust) => {
-          if (cust.id === pay.contactId) {
-            return {
-              ...cust,
-              outstanding: cust.outstanding + pay.amount,
-            };
-          }
-          return cust;
-        })
-      );
-    } else {
-      setSuppliers((prevSuppliers) =>
-        prevSuppliers.map((supp) => {
-          if (supp.id === pay.contactId) {
-            return {
-              ...supp,
-              outstanding: supp.outstanding + pay.amount,
-            };
-          }
-          return supp;
-        })
-      );
-    }
-  };
-
-  const updateSettings = (s: BusinessSettings) => {
-    const formatted: BusinessSettings = {
-      ...s,
-      businessName: toTitleCase(s.businessName),
-      ownerName: toTitleCase(s.ownerName),
-    };
-    setSettings(formatted);
+    queueSync('DELETE', 'Payment', pay.id, null);
   };
 
   const addExpense = (exp: Omit<Expense, 'id'>) => {
+    const id = generateId('EXP');
     const newExpense: Expense = {
       ...exp,
       payee: toTitleCase(exp.payee),
       category: toTitleCase(exp.category),
-      id: `EXP-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      id,
     };
-    setExpenses((prev) => [newExpense, ...prev]);
+
+    setExpenses((prev) => [...prev, newExpense]);
+
+    db.expenses.add({ ...newExpense, isDeleted: false, version: 1 });
+    queueSync('CREATE', 'Expense', id, newExpense);
+
     return newExpense;
   };
 
@@ -1378,95 +1492,110 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       payee: toTitleCase(exp.payee),
       category: toTitleCase(exp.category),
     };
+
     setExpenses((prev) => prev.map((item) => (item.id === exp.id ? formatted : item)));
+
+    db.expenses.put({ ...formatted, isDeleted: false, version: 1 });
+    queueSync('UPDATE', 'Expense', exp.id, formatted);
   };
 
   const deleteExpense = (id: string) => {
-    const exp = expenses.find((e) => e.id === id);
-    if (exp) {
+    const item = expenses.find((exp) => exp.id === id);
+    if (item) {
       const binItem: RecycleBinItem = {
-        id: `del-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        originalId: exp.id,
-        name: `${exp.category} - ${exp.payee}`,
+        id: generateId('REC'),
+        originalId: item.id,
+        name: `${item.category}: ₹${item.amount}`,
         module: 'Expense',
         deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Kunal Chaudhari',
-        originalData: exp,
+        deletedBy: settings.ownerName || 'Vaibhav Patel',
+        originalData: item,
       };
+
+      db.expenses.update(id, { isDeleted: true });
+      db.recycleBin.add(binItem);
+
+      setExpenses((prev) => prev.filter((item) => item.id !== id));
       setRecycleBin((prev) => [binItem, ...prev]);
+
+      queueSync('DELETE', 'Expense', id, null);
     }
-    setExpenses((prev) => prev.filter((item) => item.id !== id));
   };
+
+  // --- Recycle Bin Restoration / Permanent Deletion Actions ---
 
   const restoreRecord = (id: string) => {
     const item = recycleBin.find((r) => r.id === id);
     if (!item) return;
 
+    // Restore in database
     if (item.module === 'Product') {
+      db.products.update(item.originalId, { isDeleted: false });
       setProducts((prev) => [...prev, item.originalData]);
+      queueSync('UPDATE', 'Product', item.originalId, item.originalData);
     } else if (item.module === 'Customer') {
+      db.customers.update(item.originalId, { isDeleted: false });
       setCustomers((prev) => [...prev, item.originalData]);
+      queueSync('UPDATE', 'Customer', item.originalId, item.originalData);
     } else if (item.module === 'Supplier') {
+      db.suppliers.update(item.originalId, { isDeleted: false });
       setSuppliers((prev) => [...prev, item.originalData]);
+      queueSync('UPDATE', 'Supplier', item.originalId, item.originalData);
     } else if (item.module === 'Invoice') {
+      db.invoices.update(item.originalId, { isDeleted: false });
       setInvoices((prev) => [item.originalData, ...prev]);
+      queueSync('UPDATE', 'Invoice', item.originalId, item.originalData);
     } else if (item.module === 'Quotation') {
+      db.quotations.update(item.originalId, { isDeleted: false });
       setQuotations((prev) => [item.originalData, ...prev]);
+      queueSync('UPDATE', 'Quotation', item.originalId, item.originalData);
     } else if (item.module === 'Purchase') {
+      db.purchases.update(item.originalId, { isDeleted: false });
       setPurchases((prev) => [item.originalData, ...prev]);
+      queueSync('UPDATE', 'Purchase', item.originalId, item.originalData);
     } else if (item.module === 'Payment') {
+      db.payments.update(item.originalId, { isDeleted: false });
       setPayments((prev) => [item.originalData, ...prev]);
+      queueSync('UPDATE', 'Payment', item.originalId, item.originalData);
     } else if (item.module === 'Expense') {
+      db.expenses.update(item.originalId, { isDeleted: false });
       setExpenses((prev) => [item.originalData, ...prev]);
+      queueSync('UPDATE', 'Expense', item.originalId, item.originalData);
     }
 
+    db.recycleBin.delete(id);
     setRecycleBin((prev) => prev.filter((r) => r.id !== id));
   };
 
   const deletePermanently = (id: string) => {
+    db.recycleBin.delete(id);
     setRecycleBin((prev) => prev.filter((r) => r.id !== id));
   };
 
   const restoreRecords = (ids: string[]) => {
-    const itemsToRestore = recycleBin.filter((r) => ids.includes(r.id));
-    
-    const productsToRestore: Product[] = [];
-    const customersToRestore: Customer[] = [];
-    const suppliersToRestore: Supplier[] = [];
-    const invoicesToRestore: Invoice[] = [];
-    const quotationsToRestore: Quotation[] = [];
-    const purchasesToRestore: Purchase[] = [];
-    const paymentsToRestore: Payment[] = [];
-    const expensesToRestore: Expense[] = [];
-
-    itemsToRestore.forEach((item) => {
-      if (item.module === 'Product') productsToRestore.push(item.originalData);
-      else if (item.module === 'Customer') customersToRestore.push(item.originalData);
-      else if (item.module === 'Supplier') suppliersToRestore.push(item.originalData);
-      else if (item.module === 'Invoice') invoicesToRestore.push(item.originalData);
-      else if (item.module === 'Quotation') quotationsToRestore.push(item.originalData);
-      else if (item.module === 'Purchase') purchasesToRestore.push(item.originalData);
-      else if (item.module === 'Payment') paymentsToRestore.push(item.originalData);
-      else if (item.module === 'Expense') expensesToRestore.push(item.originalData);
-    });
-
-    if (productsToRestore.length > 0) setProducts((prev) => [...prev, ...productsToRestore]);
-    if (customersToRestore.length > 0) setCustomers((prev) => [...prev, ...customersToRestore]);
-    if (suppliersToRestore.length > 0) setSuppliers((prev) => [...prev, ...suppliersToRestore]);
-    if (invoicesToRestore.length > 0) setInvoices((prev) => [...invoicesToRestore, ...prev]);
-    if (quotationsToRestore.length > 0) setQuotations((prev) => [...quotationsToRestore, ...prev]);
-    if (purchasesToRestore.length > 0) setPurchases((prev) => [...purchasesToRestore, ...prev]);
-    if (paymentsToRestore.length > 0) setPayments((prev) => [...paymentsToRestore, ...prev]);
-    if (expensesToRestore.length > 0) setExpenses((prev) => [...expensesToRestore, ...prev]);
-
-    setRecycleBin((prev) => prev.filter((r) => !ids.includes(r.id)));
+    ids.forEach((id) => restoreRecord(id));
   };
 
   const deleteRecordsPermanently = (ids: string[]) => {
-    setRecycleBin((prev) => prev.filter((r) => !ids.includes(r.id)));
+    ids.forEach((id) => deletePermanently(id));
   };
 
-  const resetToDefault = () => {
+  const updateSettings = (updatedSettings: BusinessSettings) => {
+    const formatted = {
+      ...updatedSettings,
+      businessName: toTitleCase(updatedSettings.businessName),
+      ownerName: toTitleCase(updatedSettings.ownerName),
+    };
+    
+    setSettings(formatted);
+    localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
+    document.title = formatted.businessName || 'AgriBiz';
+
+    db.settings.put({ ...formatted, id: 'business' });
+    queueSync('UPDATE', 'Settings', 'business', formatted);
+  };
+
+  const resetToDefault = async () => {
     localStorage.removeItem('agribiz_products');
     localStorage.removeItem('agribiz_customers');
     localStorage.removeItem('agribiz_suppliers');
@@ -1476,30 +1605,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.removeItem('agribiz_payments');
     localStorage.removeItem('agribiz_settings');
     localStorage.removeItem('agribiz_expenses');
+    localStorage.removeItem('agribiz_recycle_bin');
 
-    setProducts(initialProducts);
-    setCustomers(initialCustomers);
-    setSuppliers(initialSuppliers);
-    setInvoices(initialInvoices);
-    setQuotations([]);
-    setPurchases(initialPurchases);
-    setPayments(initialPayments);
-    setSettings(initialSettings);
-    setExpenses(initialExpenses);
+    await db.products.clear();
+    await db.customers.clear();
+    await db.suppliers.clear();
+    await db.invoices.clear();
+    await db.quotations.clear();
+    await db.purchases.clear();
+    await db.payments.clear();
+    await db.expenses.clear();
+    await db.recycleBin.clear();
+    await db.settings.clear();
+    await db.syncQueue.clear();
 
-    setCurrentTab('dashboard');
-    setViewInvoice(null);
-    setViewQuotation(null);
-    setViewPurchase(null);
-    setViewCustomer(null);
-    setViewSupplier(null);
-    setIsCreatingInvoice(false);
-    setIsCreatingQuotation(false);
-    setIsEnteringPurchase(false);
-    setIsEditingProduct(null);
-    setIsEditingCustomer(null);
-    setIsEditingSupplier(null);
-    setSalesActiveTab('invoices');
+    window.location.reload();
   };
 
   return (
@@ -1519,14 +1639,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         payments,
         settings,
         activeTheme,
-        isFormDirty,
-        setFormDirty,
-        clearAllDirtyForms,
-        requestNavigation,
-        showUnsavedModal,
-        setShowUnsavedModal,
-        pendingNavigation,
-        setPendingNavigation,
         currentTab,
         currentInvoiceId,
         currentQuotationId,
@@ -1543,7 +1655,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSearchQuery,
         toast,
         showToast,
-
+        isFormDirty,
+        setFormDirty,
+        clearAllDirtyForms,
+        requestNavigation,
+        showUnsavedModal,
+        setShowUnsavedModal,
+        confirmLeave,
+        confirmStay,
         setCurrentTab,
         setViewInvoice,
         setViewQuotation,
@@ -1556,54 +1675,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setIsEditingProduct,
         setIsEditingCustomer,
         setIsEditingSupplier,
-
+        navigateTab,
         salesActiveTab,
         setSalesActiveTab,
-
         addProduct,
         editProduct,
         deleteProduct,
-
         addCustomer,
         editCustomer,
         deleteCustomer,
-
         addSupplier,
         editSupplier,
         deleteSupplier,
-
         addInvoice,
         editInvoice,
         deleteInvoice,
-
         addQuotation,
         editQuotation,
         deleteQuotation,
         convertQuotationToInvoice,
-
         addPurchase,
         editPurchase,
         deletePurchase,
-
         addPayment,
         editPayment,
         deletePayment,
-
         updateSettings,
         resetToDefault,
-
         expenses,
         addExpense,
         editExpense,
         deleteExpense,
-
         paymentFormPreset,
         setPaymentFormPreset,
         salesFormPresetCustomerId,
         setSalesFormPresetCustomerId,
         purchaseFormPresetSupplierId,
         setPurchaseFormPresetSupplierId,
-
         isPaymentFormOpen,
         setIsPaymentFormOpen,
         paymentType,
@@ -1625,6 +1733,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openNewPaymentForm,
         openEditPaymentForm,
         handleSavePayment,
+        isOnline,
       }}
     >
       {children}
@@ -1640,7 +1749,6 @@ export const useApp = () => {
   return context;
 };
 
-// Reusable deep comparison helper
 function isDeepEqual(a: any, b: any): boolean {
   if (a === b) return true;
   if (a && b && typeof a === 'object' && typeof b === 'object') {

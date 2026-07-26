@@ -8,17 +8,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
   const [currentCompany, setCurrentCompany] = useState<Company | null>(() => authService.getCurrentCompany());
 
-  const refreshUser = () => {
-    setCurrentUser(authService.getCurrentUser());
-    setCurrentCompany(authService.getCurrentCompany());
+  const refreshUser = async () => {
+    const res = await authService.refreshSession();
+    if (res.success && res.user && res.company) {
+      setCurrentUser(res.user);
+      setCurrentCompany(res.company);
+    } else {
+      setCurrentUser(authService.getCurrentUser());
+      setCurrentCompany(authService.getCurrentCompany());
+    }
   };
 
   useEffect(() => {
     refreshUser();
   }, []);
 
-  const login = (mobile: string, password: string, rememberMe: boolean = true) => {
-    const res = authService.login(mobile, password, rememberMe);
+  const login = async (mobile: string, password: string, role?: UserRole, rememberMe: boolean = true) => {
+    const res = await authService.login(mobile, password, role, rememberMe);
     if (res.success && res.user && res.company) {
       setCurrentUser(res.user);
       setCurrentCompany(res.company);
@@ -26,8 +32,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: res.success, message: res.message };
   };
 
-  const registerCompany = (companyData: any, ownerPassword: string) => {
-    const res = authService.registerCompany(companyData, ownerPassword);
+  const registerCompany = async (companyData: any, ownerPassword: string) => {
+    const res = await authService.registerCompany(companyData, ownerPassword);
     if (res.success && res.user && res.company) {
       setCurrentUser(res.user);
       setCurrentCompany(res.company);
@@ -35,8 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: res.success, message: res.message };
   };
 
-  const logout = () => {
-    authService.logout();
+  const logout = async () => {
+    await authService.logout();
     setCurrentUser(null);
     setCurrentCompany(null);
   };

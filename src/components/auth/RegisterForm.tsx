@@ -51,7 +51,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
     }
   };
 
-  const handleFinalRegister = (e: React.FormEvent) => {
+  const handleFinalRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
@@ -70,25 +70,23 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
 
     setLoading(true);
 
-    setTimeout(() => {
-      const res = registerCompany(
-        {
-          businessName,
-          ownerName,
-          mobile,
-          email,
-          gstin,
-          city,
-          state,
-        },
-        password
-      );
+    const res = await registerCompany(
+      {
+        businessName,
+        ownerName,
+        mobile,
+        email,
+        gstin,
+        city,
+        state,
+      },
+      password
+    );
 
-      setLoading(false);
-      if (!res.success) {
-        setErrorMsg(res.message);
-      }
-    }, 500);
+    setLoading(false);
+    if (!res.success) {
+      setErrorMsg(res.message);
+    }
   };
 
   return (

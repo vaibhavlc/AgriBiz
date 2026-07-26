@@ -173,8 +173,190 @@ export const Sales: React.FC = () => {
     }
   }, [salesFormPresetCustomerId, setSalesFormPresetCustomerId, setIsCreatingInvoice]);
 
-  const handlePrint = () => {
-    window.print();
+  const handlePrint = async () => {
+    const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
+    if (!originalEl) {
+      showToast('Could not find layout element.', 'error');
+      return;
+    }
+
+    showToast('Preparing document for printing...', 'info');
+
+    // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
+    const tempEl = originalEl.cloneNode(true) as HTMLElement;
+    tempEl.style.setProperty('position', 'absolute', 'important');
+    tempEl.style.setProperty('top', '9999px', 'important');
+    tempEl.style.setProperty('left', '0', 'important');
+    tempEl.style.setProperty('z-index', '999998', 'important');
+    tempEl.style.setProperty('zoom', 'normal', 'important');
+    tempEl.style.setProperty('transform', 'none', 'important');
+    tempEl.style.setProperty('box-shadow', 'none', 'important');
+    tempEl.style.setProperty('border-radius', '0', 'important');
+    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
+    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+    tempEl.style.setProperty('margin', '0', 'important');
+    tempEl.style.setProperty('display', 'block', 'important');
+
+    document.body.appendChild(tempEl);
+
+    try {
+      // Small timeout for layout calculation
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      // Restructure A5 layout to bypass html2canvas vertical flex rendering bug
+      if (printTemplate === 'A5') {
+        const topKids: HTMLElement[] = [];
+        const bottomKids: HTMLElement[] = [];
+        
+        const kids = Array.from(tempEl.children) as HTMLElement[];
+        kids.forEach((kid) => {
+          const position = kid.style.position || window.getComputedStyle(kid).position;
+          if (position === 'absolute') {
+            return;
+          }
+          
+          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
+          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
+          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
+          
+          if (isSvgIllustration || isSignatureRow || isFooterMessage) {
+            bottomKids.push(kid);
+          } else {
+            topKids.push(kid);
+          }
+        });
+
+        if (topKids.length > 0 && bottomKids.length > 0) {
+          // Read measured gaps from original screen element
+          const headerEl = originalEl.querySelector('.invoice-header-bar') as HTMLElement;
+          const billingEl = originalEl.querySelector('.invoice-billing-details') as HTMLElement;
+          const tableEl = originalEl.querySelector('.invoice-table') as HTMLElement;
+          const summaryEl = originalEl.querySelector('.invoice-table + div, table + div') as HTMLElement;
+
+          let gap1 = 6; // default fallback gaps in px
+          let gap2 = 6;
+          let gap3 = 6;
+
+          if (headerEl && billingEl && tableEl) {
+            const hRect = headerEl.getBoundingClientRect();
+            const bRect = billingEl.getBoundingClientRect();
+            const tRect = tableEl.getBoundingClientRect();
+            
+            const zoom = parseFloat(window.getComputedStyle(originalEl).zoom) || 1;
+            
+            gap1 = Math.max(6, (bRect.top - hRect.bottom) / zoom);
+            gap2 = Math.max(6, (tRect.top - bRect.bottom) / zoom);
+
+            if (summaryEl) {
+              const sRect = summaryEl.getBoundingClientRect();
+              gap3 = Math.max(6, (sRect.top - tRect.bottom) / zoom);
+            }
+          }
+
+          const topWrapper = document.createElement('div');
+          topWrapper.style.setProperty('display', 'flex', 'important');
+          topWrapper.style.setProperty('flex-direction', 'column', 'important');
+          topWrapper.style.setProperty('width', '100%', 'important');
+          
+          const bottomWrapper = document.createElement('div');
+          bottomWrapper.style.setProperty('position', 'absolute', 'important');
+          bottomWrapper.style.setProperty('bottom', '38px', 'important'); // Pinned exactly 38px from bottom of the 210mm card
+          bottomWrapper.style.setProperty('left', '24px', 'important');
+          bottomWrapper.style.setProperty('right', '24px', 'important');
+          bottomWrapper.style.setProperty('display', 'flex', 'important');
+          bottomWrapper.style.setProperty('flex-direction', 'column', 'important');
+          bottomWrapper.style.setProperty('gap', '6px', 'important');
+          bottomWrapper.style.setProperty('width', 'calc(100% - 48px)', 'important');
+          
+          // Move elements
+          topKids.forEach(kid => {
+            if (kid.parentNode) kid.parentNode.removeChild(kid);
+            topWrapper.appendChild(kid);
+          });
+          bottomKids.forEach(kid => {
+            if (kid.parentNode) kid.parentNode.removeChild(kid);
+            bottomWrapper.appendChild(kid);
+          });
+
+          // Apply margins to cloned kids inside topWrapper
+          const clonedHeader = topWrapper.querySelector('.invoice-header-bar') as HTMLElement;
+          const clonedBilling = topWrapper.querySelector('.invoice-billing-details') as HTMLElement;
+          const clonedTable = topWrapper.querySelector('.invoice-table') as HTMLElement;
+
+          if (clonedHeader) clonedHeader.style.setProperty('margin-bottom', `${gap1}px`, 'important');
+          if (clonedBilling) clonedBilling.style.setProperty('margin-bottom', `${gap2}px`, 'important');
+          if (clonedTable) clonedTable.style.setProperty('margin-bottom', `${gap3}px`, 'important');
+          
+          tempEl.appendChild(topWrapper);
+          tempEl.appendChild(bottomWrapper);
+        }
+      }
+
+      const canvas = await html2canvas(tempEl, {
+        scale: 2.5,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+
+      // Create a hidden iframe for print preview
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document || iframe.contentDocument;
+      if (doc) {
+        doc.open();
+        doc.write(`
+          <html>
+            <head>
+              <style>
+                @page {
+                  margin: 0;
+                  size: ${printTemplate === 'A5' ? 'A5 portrait' : 'auto'};
+                }
+                body {
+                  margin: 0;
+                  padding: 0;
+                  display: flex;
+                  justify-content: center;
+                  align-items: flex-start;
+                  background-color: #ffffff;
+                }
+                img {
+                  width: 100%;
+                  max-width: 100%;
+                  height: auto;
+                  display: block;
+                }
+              </style>
+            </head>
+            <body>
+              <img src="${imgData}" onload="window.print();" />
+            </body>
+          </html>
+        `);
+        doc.close();
+
+        // Allow some time for browser to launch print dialog, then remove iframe
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1500);
+      }
+    } catch (err) {
+      console.error(err);
+      showToast('Error preparing document for printing.', 'error');
+    } finally {
+      if (tempEl.parentNode) {
+        document.body.removeChild(tempEl);
+      }
+    }
   };
 
   const handleDownload = async () => {

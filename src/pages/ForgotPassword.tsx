@@ -38,7 +38,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin 
     }, 400);
   };
 
-  const handleResetPassword = (e: React.FormEvent) => {
+  const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword || newPassword.length < 6) {
       setErrorMsg('New password must be at least 6 characters.');
@@ -50,15 +50,13 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin 
     }
 
     setLoading(true);
-    setTimeout(() => {
-      const res = authService.resetPasswordByMobile(mobile, newPassword);
-      setLoading(false);
-      if (res.success) {
-        setStep('success');
-      } else {
-        setErrorMsg(res.message);
-      }
-    }, 500);
+    const res = await authService.resetPasswordByMobile(mobile, newPassword);
+    setLoading(false);
+    if (res.success) {
+      setStep('success');
+    } else {
+      setErrorMsg(res.message);
+    }
   };
 
   return (

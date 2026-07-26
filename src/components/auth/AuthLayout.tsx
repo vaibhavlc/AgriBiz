@@ -51,7 +51,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           border: 1px solid var(--border-color, #e2e8f0);
           border-radius: 20px;
           box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.04);
-          padding: 36px 32px;
+          padding: 24px 32px;
           box-sizing: border-box;
           position: relative;
           z-index: 10;
@@ -74,18 +74,21 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 16px;
+          gap: 12px;
           color: var(--text-muted, #94a3b8);
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
           letter-spacing: 0.3px;
           text-transform: uppercase;
+          white-space: nowrap;
+          flex-wrap: nowrap;
         }
 
         .auth-trust-item {
           display: inline-flex;
           align-items: center;
           gap: 5px;
+          white-space: nowrap;
         }
 
         @media (max-width: 480px) {
@@ -115,7 +118,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           </span>
           <span>•</span>
           <span className="auth-trust-item">
-            <Award size={13} style={{ color: 'var(--primary, #10b981)' }} /> Reliable & Audit-Ready
+            <Award size={13} style={{ color: 'var(--primary, #10b981)' }} /> Reliable
           </span>
         </div>
       </div>

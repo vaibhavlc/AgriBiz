@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
+import api from '../utils/api';
 import { Modal } from './Modal';
 import { formatINR } from '../utils/dummyData';
 import {
@@ -41,33 +42,24 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const {
     currentTab,
-    setCurrentTab,
     settings,
     activeTheme,
     updateSettings,
     searchQuery,
     setSearchQuery,
     currentInvoiceId,
-    setViewInvoice,
     currentPurchaseId,
-    setViewPurchase,
     currentCustomerId,
-    setViewCustomer,
     currentSupplierId,
-    setViewSupplier,
     isCreatingInvoice,
-    setIsCreatingInvoice,
     isEnteringPurchase,
-    setIsEnteringPurchase,
     toast,
     showToast,
-    isFormDirty,
-    clearAllDirtyForms,
     showUnsavedModal,
-    setShowUnsavedModal,
-    pendingNavigation,
-    setPendingNavigation,
+    confirmLeave,
+    confirmStay,
     requestNavigation,
+    navigateTab,
     isPaymentFormOpen,
     setIsPaymentFormOpen,
     paymentType,
@@ -88,6 +80,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     handleSavePayment,
     customers,
     suppliers,
+    isOnline,
   } = useApp();
 
   const { currentUser, currentCompany, hasPermission, logout } = useAuth();
@@ -117,6 +110,26 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>('online');
 
+  useEffect(() => {
+    if (currentUser?.presenceStatus) {
+      setUserStatus(currentUser.presenceStatus as any);
+    }
+  }, [currentUser]);
+
+  const handleUpdatePresence = async (newStatus: 'online' | 'busy' | 'away') => {
+    setUserStatus(newStatus);
+    try {
+      await api.put('/users/presence', { presenceStatus: newStatus });
+      if (currentUser) {
+        currentUser.presenceStatus = newStatus;
+        sessionStorage.setItem('agribiz_current_user', JSON.stringify(currentUser));
+      }
+      showToast(`Status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`, 'success');
+    } catch (err) {
+      console.error('Failed to update presence status:', err);
+    }
+  };
+
   const mainWrapperRef = useRef<HTMLDivElement>(null);
   const bottomNavRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
@@ -139,20 +152,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, []);
 
-  // Browser native beforeunload warning for page refresh/closing
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (isFormDirty) {
-        e.preventDefault();
-        e.returnValue = '';
-        return '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [isFormDirty]);
+
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -360,32 +360,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     isEnteringPurchase
   ]);
 
-  const confirmStay = () => {
-    setShowUnsavedModal(false);
-    setPendingNavigation(null);
-  };
 
-  const confirmLeave = () => {
-    clearAllDirtyForms();
-    setShowUnsavedModal(false);
-    if (pendingNavigation) {
-      pendingNavigation();
-      setPendingNavigation(null);
-    }
-  };
 
   const handleTabChange = (tab: string) => {
-    setCurrentTab(tab);
-    setSearchQuery(''); // Clear search on page navigation
+    navigateTab(tab);
     setIsMobileSidebarOpen(false);
-
-    // Reset drill-down views
-    setViewInvoice(null);
-    setViewPurchase(null);
-    setViewCustomer(null);
-    setViewSupplier(null);
-    setIsCreatingInvoice(false);
-    setIsEnteringPurchase(false);
   };
 
   const toggleTheme = () => {
@@ -461,10 +440,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const permittedBottomNavItems = bottomNavItems.filter((item) => hasPermission(item.id));
-
-  const handleBottomNavClick = (tabId: string) => {
-    handleTabChange(tabId);
-  };
 
   const renderNavGroup = (title: string, items: typeof operationsItems) => {
     const permittedItems = items.filter((item) => hasPermission(item.id));
@@ -615,12 +590,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button
               key={item.id}
               type="button"
-              onClick={() => handleBottomNavClick(item.id)}
+              onClick={() => handleTabChange(item.id)}
               data-active={isSelected ? "true" : "false"}
               style={{
                 background: 'none', border: 'none', padding: '6px 0',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: '4px', flex: '0 0 20%', width: '20%', cursor: 'pointer',
+                gap: '4px', flex: '0 0 20%', width: '20%', minWidth: '20%', cursor: 'pointer',
                 color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
                 transition: 'all 0.2s ease', position: 'relative'
               }}
@@ -784,6 +759,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               )}
               <span className="brand-name">{settings.businessName || 'AgriBiz'}</span>
+              {!isOnline && (
+                <div className="conn-indicator-badge offline" title="Working offline">
+                  <span className="conn-dot"></span>
+                  <span>Offline</span>
+                </div>
+              )}
               <span className="brand-badge desktop-only">{getPageTitle()}</span>
             </div>
           </div>
@@ -940,7 +921,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
                 <div className="profile-details">
                   <span className="profile-username">
-                    👤 {currentUser ? currentUser.name : 'Vaibhav Patel'}
+                    {currentUser ? currentUser.name : 'Vaibhav Patel'}
                   </span>
                   <span className="profile-status">
                     <span style={{
@@ -961,7 +942,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {isProfileDropdownOpen && (
                 <div className="profile-dropdown">
                   <div className="profile-dropdown-user">
-                    <div className="profile-dropdown-name">👤 {currentUser ? currentUser.name : 'Vaibhav Patel'}</div>
+                    <div className="profile-dropdown-name">{currentUser ? currentUser.name : 'Vaibhav Patel'}</div>
                     <div className="profile-dropdown-role">
                       <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{currentUser ? currentUser.role : 'Owner'}</span> • {currentCompany ? currentCompany.businessName : settings.businessName}
                     </div>
@@ -989,10 +970,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="status-selector">
                     <button
                       className={`status-dot-btn ${userStatus === 'online' ? 'active' : ''}`}
-                      onClick={() => {
-                        setUserStatus('online');
-                        showToast('Status updated to Online', 'success');
-                      }}
+                      onClick={() => handleUpdatePresence('online')}
                       title="Set status to Online"
                     >
                       <span className="status-dot online"></span>
@@ -1000,10 +978,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </button>
                     <button
                       className={`status-dot-btn ${userStatus === 'busy' ? 'active' : ''}`}
-                      onClick={() => {
-                        setUserStatus('busy');
-                        showToast('Status updated to Busy', 'success');
-                      }}
+                      onClick={() => handleUpdatePresence('busy')}
                       title="Set status to Busy"
                     >
                       <span className="status-dot busy"></span>
@@ -1011,10 +986,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     </button>
                     <button
                       className={`status-dot-btn ${userStatus === 'away' ? 'active' : ''}`}
-                      onClick={() => {
-                        setUserStatus('away');
-                        showToast('Status updated to Away', 'success');
-                      }}
+                      onClick={() => handleUpdatePresence('away')}
                       title="Set status to Away"
                     >
                       <span className="status-dot away"></span>
@@ -1044,7 +1016,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <main className="content-body">
           <div 
-            key={`${currentTab}-${currentInvoiceId || ''}-${currentPurchaseId || ''}-${currentCustomerId || ''}-${currentSupplierId || ''}-${isCreatingInvoice}-${isEnteringPurchase}`} 
+            key={currentTab} 
             className="page-transition-wrapper"
           >
             {children}

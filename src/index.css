@@ -2264,12 +2264,34 @@ body.dark-theme select.form-control {
   gap: 24px;
 }
 
+@media (max-width: 900px) {
+  .invoice-creator-container {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
 .invoice-item-grid-row {
   display: grid;
   grid-template-columns: 3fr 1fr 1.2fr 1fr 1fr 1.2fr auto;
   gap: 12px;
   align-items: center;
   margin-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .invoice-item-grid-row {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    background-color: var(--bg-card) !important;
+    padding: 12px !important;
+    border-radius: 12px !important;
+    border: 1px solid var(--border-color) !important;
+    margin-bottom: 12px !important;
+  }
+  .invoice-item-grid-row > div:first-child {
+    grid-column: span 2 !important;
+  }
 }
 
 .invoice-totals-table {
@@ -2709,12 +2731,16 @@ body.dark-theme .lang-selector-btn:hover {
 
 /* Printing Media Rules */
 @media print {
-  html, body, .app-container, .main-wrapper, .content-body, .invoice-mockup-wrapper {
+  html, body, .app-container, .main-wrapper, .content-body, .invoice-mockup-wrapper, .page-transition-wrapper {
     background-color: #ffffff !important;
     color: #000000 !important;
     overflow: visible !important;
     height: auto !important;
     max-height: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
   }
   
   .sidebar,
@@ -2735,17 +2761,11 @@ body.dark-theme .lang-selector-btn:hover {
     display: block !important;
   }
 
-  .app-container {
+  .app-container,
+  .main-wrapper,
+  .content-body,
+  .page-transition-wrapper {
     display: block !important;
-  }
-
-  .main-wrapper {
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .content-body {
-    padding: 0 !important;
   }
 
   .printable-invoice-card {
@@ -2947,20 +2967,21 @@ body.dark-theme .lang-selector-btn:hover {
 
   .header-right {
     flex: 0 0 auto;
-    gap: 8px;
+    gap: 4px !important;
     align-items: center !important;
     display: flex !important;
   }
 
   .menu-toggle svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 20px !important;
+    height: 20px !important;
   }
 
   .theme-toggle-btn,
-  .notification-btn {
-    width: 40px !important;
-    height: 40px !important;
+  .notification-btn,
+  .lang-selector-btn {
+    width: 34px !important;
+    height: 34px !important;
   }
 
   .theme-toggle-btn svg,
@@ -3550,30 +3571,44 @@ body.dark-theme .lang-selector-btn:hover {
     bottom: 0;
     left: 0;
     right: 0;
-    height: 64px;
+    height: 60px;
     background-color: var(--bg-card);
     border-top: 1px solid var(--border-color);
-    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.12);
     z-index: 1000;
     justify-content: flex-start !important;
     align-items: center;
-    padding: 0;
+    padding: 0 8px;
     padding-bottom: env(safe-area-inset-bottom);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     overflow-x: auto !important;
     white-space: nowrap;
     -webkit-overflow-scrolling: touch;
-    scrollbar-width: none !important; /* Firefox */
-    -ms-overflow-style: none !important;  /* IE/Edge */
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
   }
 
   .mobile-bottom-nav::-webkit-scrollbar {
-    display: none !important; /* Safari and Chrome */
+    display: none !important;
   }
 
   .sidebar {
-    display: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 270px !important;
+    z-index: 2000 !important;
+    transform: translateX(-100%) !important;
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .sidebar.open {
+    transform: translateX(0) !important;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.4) !important;
   }
 
   .menu-toggle {
@@ -3581,8 +3616,8 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   .main-wrapper {
-    padding-top: 74px !important;
-    padding-bottom: 80px !important;
+    padding-top: 72px !important;
+    padding-bottom: 76px !important;
   }
 }
 
@@ -4234,9 +4269,9 @@ body.dark-theme .lang-selector-btn:hover {
 }
 
 .invoice-print-container {
-  background-color: #FCFAF6 !important;
-  color: #2F3E33 !important;
-  border: 1.5px solid #EAE3D2 !important;
+  background-color: #FFFFFF !important;
+  color: #000000 !important;
+  border: 2px solid #000000 !important;
   border-radius: 12px !important;
   font-family: 'Outfit', 'Inter', sans-serif !important;
   padding: 24px 24px 38px 24px !important; /* Extra bottom padding for absolute footer */
@@ -4347,25 +4382,26 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-company-name {
   font-family: var(--font-display);
-  font-weight: 850;
+  font-weight: 900;
   font-size: 20px; /* Reduced for A5 */
-  color: #4E6C50;
+  color: #000000;
   margin: 0;
   letter-spacing: -0.2px;
 }
 
 .invoice-company-sub {
   font-size: 9.5px; /* Reduced for A5 to prevent crowding */
-  color: #6D8271;
+  color: #222222;
   margin: 2px 0 0 0;
   font-family: 'Inter', sans-serif;
+  font-weight: 600;
   line-height: 1.35;
 }
 
 .invoice-company-gst {
   font-size: 9.5px; /* Reduced for A5 to align with subtext */
-  font-weight: 700;
-  color: #2F3E33;
+  font-weight: 850;
+  color: #000000;
   margin: 3px 0 0 0;
   font-family: 'Outfit', sans-serif;
 }
@@ -4374,7 +4410,7 @@ body.dark-theme .lang-selector-btn:hover {
   font-family: var(--font-display);
   font-weight: 900;
   font-size: 15px; /* Reduced slightly for A5 */
-  color: #4E6C50;
+  color: #000000;
   margin: 0;
   letter-spacing: 1px;
   line-height: 1.15; /* Increased to prevent clipping */
@@ -4384,15 +4420,16 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-number-text {
   font-size: 11.5px; /* Reduced for A5 */
-  font-weight: 800;
-  color: #2F3E33;
+  font-weight: 900;
+  color: #000000;
   margin: 3px 0 0 0;
   font-family: 'Outfit', sans-serif;
 }
 
 .invoice-date-text {
   font-size: 9.5px; /* Reduced for A5 */
-  color: #6D8271;
+  font-weight: 600;
+  color: #333333;
   margin: 2px 0 0 0;
 }
 
@@ -4412,8 +4449,8 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-detail-header {
   font-size: 10px; /* Reduced for A5 */
-  font-weight: 700;
-  color: #6D8271;
+  font-weight: 850;
+  color: #1a1a1a;
   text-transform: uppercase;
   margin: 0 0 4px 0;
   letter-spacing: 0.8px;
@@ -4421,21 +4458,22 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-customer-name {
   font-size: 14px; /* Reduced for A5 */
-  font-weight: 850;
-  color: #4E6C50;
+  font-weight: 900;
+  color: #000000;
   margin: 0 0 3px 0;
 }
 
 .invoice-customer-sub {
   font-size: 11px; /* Reduced for A5 */
-  color: #2F3E33;
+  font-weight: 700;
+  color: #000000;
   margin: 2px 0 0 0;
 }
 
 .invoice-customer-gst {
   font-size: 11px; /* Reduced for A5 */
-  font-weight: 600;
-  color: #4E6C50;
+  font-weight: 850;
+  color: #000000;
   margin: 4px 0 0 0;
 }
 
@@ -4474,9 +4512,9 @@ body.dark-theme .lang-selector-btn:hover {
 }
 
 .invoice-table th {
-  background-color: rgba(78, 108, 80, 0.12) !important;
-  color: #2F3E33 !important;
-  font-weight: 700;
+  background-color: rgba(0, 0, 0, 0.08) !important;
+  color: #000000 !important;
+  font-weight: 850;
   text-transform: uppercase;
   font-size: 11px; /* Reduced for A5 */
   padding: 8px 12px; /* Reduced for A5 */
@@ -4496,8 +4534,9 @@ body.dark-theme .lang-selector-btn:hover {
 .invoice-table td {
   padding: 8px 12px; /* Reduced for A5 */
   font-size: 11px; /* Reduced for A5 */
-  color: #2F3E33;
-  border-bottom: 1.2px dashed rgba(234, 227, 210, 0.9);
+  color: #000000;
+  font-weight: 700;
+  border-bottom: 1.2px dashed rgba(0, 0, 0, 0.25);
   vertical-align: middle;
 }
 
@@ -4507,15 +4546,16 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-terms-title {
   font-size: 10px; /* Reduced for A5 */
-  font-weight: 700;
-  color: #4E6C50;
+  font-weight: 850;
+  color: #000000;
   margin: 0 0 4px 0;
   letter-spacing: 0.6px;
 }
 
 .invoice-terms-text {
   font-size: 10px; /* Reduced for A5 */
-  color: #6D8271;
+  font-weight: 650;
+  color: #222222;
   line-height: 1.45;
   margin: 0;
 }
@@ -4530,14 +4570,15 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-summary-table td {
   padding: 5px 0; /* Reduced for A5 */
-  color: #6D8271;
-  border-bottom: 1px dashed rgba(109, 130, 113, 0.12);
+  color: #222222;
+  font-weight: 650;
+  border-bottom: 1px dashed rgba(0, 0, 0, 0.15);
 }
 
 .invoice-summary-table td:last-child {
   text-align: right;
-  font-weight: 700;
-  color: #2F3E33;
+  font-weight: 850;
+  color: #000000;
 }
 
 .invoice-summary-table .discount-row td {
@@ -4555,8 +4596,8 @@ body.dark-theme .lang-selector-btn:hover {
 
 .invoice-summary-table .grand-total-row td {
   font-size: 13px; /* Reduced for A5 */
-  font-weight: 850;
-  color: #2F3E33;
+  font-weight: 900;
+  color: #000000;
   border-bottom: none;
 }
 
@@ -4618,8 +4659,8 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   @page {
-    size: A4 portrait;
-    margin: 10mm;
+    size: auto;
+    margin: 0;
   }
 
   @page invoice-page {
@@ -6360,4 +6401,61 @@ body.dark-theme .lang-selector-btn:hover {
   max-height: 100%;
   object-fit: contain;
   filter: grayscale(100%) contrast(120%);
+}
+
+/* Visual connectivity badge */
+.conn-indicator-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  margin-left: 8px;
+}
+
+.conn-indicator-badge.online {
+  background-color: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.2);
+  color: var(--primary, #10b981);
+}
+
+.conn-indicator-badge.offline {
+  background-color: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: #ef4444;
+  animation: pulse-border 2s infinite;
+}
+
+.conn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.online .conn-dot {
+  background-color: var(--primary, #10b981);
+  box-shadow: 0 0 6px var(--primary, #10b981);
+}
+
+.offline .conn-dot {
+  background-color: #ef4444;
+  box-shadow: 0 0 6px #ef4444;
+  animation: blink 1.5s infinite;
+}
+
+@keyframes blink {
+  0% { opacity: 0.4; }
+  50% { opacity: 1; }
+  100% { opacity: 0.4; }
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(239, 68, 68, 0.2); }
+  50% { border-color: rgba(239, 68, 68, 0.5); }
+  100% { border-color: rgba(239, 68, 68, 0.2); }
 }

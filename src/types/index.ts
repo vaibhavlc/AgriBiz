@@ -258,6 +258,7 @@ export interface User {
   role: UserRole;
   customPermissions?: string[];
   status: 'Active' | 'Inactive';
+  presenceStatus?: 'online' | 'busy' | 'away';
   avatar?: string;
   lastLogin?: string;
   createdAt: string;

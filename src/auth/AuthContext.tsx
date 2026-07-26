@@ -6,11 +6,11 @@ export interface AuthContextType {
   currentCompany: Company | null;
   isAuthenticated: boolean;
   role: UserRole | null;
-  login: (mobile: string, password: string, rememberMe?: boolean) => { success: boolean; message: string };
-  registerCompany: (companyData: any, ownerPassword: string) => { success: boolean; message: string };
-  logout: () => void;
+  login: (mobile: string, password: string, role?: UserRole, rememberMe?: boolean) => Promise<{ success: boolean; message: string }>;
+  registerCompany: (companyData: any, ownerPassword: string) => Promise<{ success: boolean; message: string }>;
+  logout: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
-  refreshUser: () => void;
+  refreshUser: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);
