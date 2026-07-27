@@ -97,6 +97,49 @@ class AuthController {
     }
   }
 
+  async staffLogin(req, res, next) {
+    try {
+      const { companyId, userId, pin } = req.body;
+      logger.info('Staff Login request received for userId: %s in company: %s', userId, companyId);
+      const { user, company, accessToken, refreshToken } = await authService.staffLogin(companyId, userId, pin);
+
+      setRefreshTokenCookie(res, refreshToken);
+
+      res.status(200).json({
+         success: true,
+         message: `Welcome back, ${user.name}!`,
+         accessToken,
+         refreshToken,
+         user: {
+           id: user.userId,
+           companyId: user.companyId,
+           name: user.name,
+           mobile: user.mobile,
+           email: user.email,
+           role: user.role,
+           status: user.status,
+           presenceStatus: user.presenceStatus || 'online',
+           avatar: user.avatar,
+           lastLogin: user.lastLogin,
+         },
+         company: {
+           id: company.companyId,
+           businessName: company.businessName,
+           ownerName: company.ownerName,
+           mobile: company.mobile,
+           email: company.email,
+           gstin: company.gstin,
+           city: company.city,
+           state: company.state,
+           plan: company.plan,
+           subscriptionStatus: company.subscriptionStatus,
+         }
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async refresh(req, res, next) {
     try {
       const token = req.body.refreshToken || req.headers['x-refresh-token'] || req.cookies[COOKIE_NAME];

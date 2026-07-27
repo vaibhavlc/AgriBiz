@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { PasswordStrength } from './PasswordStrength';
-import { Building2, User, Lock, Smartphone, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Mail } from 'lucide-react';
+import { Building2, User, Lock, Smartphone, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Mail, KeyRound } from 'lucide-react';
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
@@ -24,28 +24,23 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
   const [ownerName, setOwnerName] = useState('');
   const [mobile, setMobile] = useState('');
 
-  // Step 3: Security & Password
+  // Step 3: Password + PIN
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [ownerPin, setOwnerPin] = useState('');
+  const [confirmPin, setConfirmPin] = useState('');
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
 
     if (step === 1) {
-      if (!businessName.trim()) {
-        setErrorMsg('Please enter your Business Name.');
-        return;
-      }
+      if (!businessName.trim()) { setErrorMsg('Please enter your Business Name.'); return; }
       setStep(2);
     } else if (step === 2) {
-      if (!ownerName.trim()) {
-        setErrorMsg('Please enter the Owner Name.');
-        return;
-      }
+      if (!ownerName.trim()) { setErrorMsg('Please enter the Owner Name.'); return; }
       if (!mobile.trim() || mobile.replace(/\D/g, '').length < 10) {
-        setErrorMsg('Please enter a valid 10-digit Mobile Number.');
-        return;
+        setErrorMsg('Please enter a valid 10-digit Mobile Number.'); return;
       }
       setStep(3);
     }
@@ -55,80 +50,102 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
     e.preventDefault();
     setErrorMsg('');
 
-    if (!password) {
-      setErrorMsg('Please enter a password.');
-      return;
-    }
-    if (password.length < 6) {
-      setErrorMsg('Password must be at least 6 characters long.');
-      return;
-    }
-    if (password !== confirmPassword) {
-      setErrorMsg('Passwords do not match. Please re-enter confirm password.');
-      return;
-    }
+    if (!password) { setErrorMsg('Please enter a password.'); return; }
+    if (password.length < 6) { setErrorMsg('Password must be at least 6 characters long.'); return; }
+    if (password !== confirmPassword) { setErrorMsg('Passwords do not match.'); return; }
+    if (!ownerPin || !/^\d{4}$/.test(ownerPin)) { setErrorMsg('Owner PIN must be exactly 4 digits.'); return; }
+    if (ownerPin !== confirmPin) { setErrorMsg('PINs do not match. Please re-enter your PIN.'); return; }
 
     setLoading(true);
-
     const res = await registerCompany(
-      {
-        businessName,
-        ownerName,
-        mobile,
-        email,
-        gstin,
-        city,
-        state,
-      },
-      password
+      { businessName, ownerName, mobile, email, gstin, city, state },
+      password,
+      ownerPin
     );
-
     setLoading(false);
-    if (!res.success) {
-      setErrorMsg(res.message);
-    }
+    if (!res.success) setErrorMsg(res.message);
+    // On success: AuthProvider auto-logs in → ProtectedRoute → Dashboard
   };
+
+  // ── PIN Dot Input ──────────────────────────────────────────────────────────
+  const PinInput = ({
+    value, onChange, placeholder, label
+  }: { value: string; onChange: (v: string) => void; placeholder: string; label: string }) => (
+    <div className="form-group" style={{ marginBottom: '16px' }}>
+      <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+        {label}
+      </label>
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
+          <KeyRound size={16} />
+        </span>
+        <input
+          type="password"
+          inputMode="numeric"
+          className="form-control"
+          placeholder={placeholder}
+          value={value}
+          maxLength={4}
+          onChange={e => {
+            const v = e.target.value.replace(/\D/g, '');
+            onChange(v);
+          }}
+          style={{
+            paddingLeft: '40px', height: '44px', borderRadius: '10px',
+            fontSize: '20px', letterSpacing: '8px', fontWeight: 800,
+            borderColor: value && value.length < 4 ? 'var(--color-warning,#f59e0b)' : undefined,
+          }}
+        />
+        {value.length === 4 && (
+          <span style={{ position: 'absolute', right: '14px', color: '#10b981' }}>
+            <CheckCircle2 size={18} />
+          </span>
+        )}
+      </div>
+      {value.length > 0 && value.length < 4 && (
+        <span style={{ fontSize: '11px', color: 'var(--color-warning,#f59e0b)', fontWeight: 600, marginTop: '4px', display: 'block' }}>
+          Enter all 4 digits
+        </span>
+      )}
+    </div>
+  );
 
   return (
     <div>
       {/* Header */}
-      <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0 }}>
+      <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+        <div style={{
+          width: '44px', height: '44px', borderRadius: '12px',
+          background: 'linear-gradient(135deg,#10b981 0%,#059669 100%)',
+          color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 10px', boxShadow: '0 8px 20px rgba(16,185,129,0.28)', fontSize: '20px',
+        }}>🌱</div>
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0 }}>
           Register Your Business
         </h2>
-        <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', margin: '4px 0 0 0' }}>
+        <p style={{ fontSize: '12px', color: 'var(--text-muted,#64748b)', margin: '4px 0 0' }}>
           Setup your company account with full enterprise access
         </p>
       </div>
 
-      {/* Wizard Progress Indicator */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', position: 'relative' }}>
-        <div style={{ position: 'absolute', top: '14px', left: '15%', right: '15%', height: '2px', backgroundColor: 'var(--border-color, #e2e8f0)', zIndex: 1 }} />
-
+      {/* Wizard Progress */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: '14px', left: '15%', right: '15%', height: '2px', backgroundColor: 'var(--border-color,#e2e8f0)', zIndex: 1 }} />
         {[1, 2, 3].map((s) => {
-          const isCompleted = step > s;
-          const isActive = step === s;
+          const done = step > s, active = step === s;
           return (
             <div key={s} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', position: 'relative', zIndex: 2 }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '50%',
-                  backgroundColor: isCompleted || isActive ? 'var(--primary, #10b981)' : 'var(--card-bg, #ffffff)',
-                  color: isCompleted || isActive ? '#ffffff' : 'var(--text-muted, #94a3b8)',
-                  border: isCompleted || isActive ? 'none' : '2px solid var(--border-color, #cbd5e1)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '12px',
-                  fontWeight: 800,
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {isCompleted ? <CheckCircle2 size={16} /> : s}
+              <div style={{
+                width: '28px', height: '28px', borderRadius: '50%',
+                backgroundColor: done || active ? 'var(--primary,#10b981)' : 'var(--card-bg,#ffffff)',
+                color: done || active ? '#ffffff' : 'var(--text-muted,#94a3b8)',
+                border: done || active ? 'none' : '2px solid var(--border-color,#cbd5e1)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '12px', fontWeight: 800, transition: 'all 0.2s ease',
+              }}>
+                {done ? <CheckCircle2 size={16} /> : s}
               </div>
-              <span style={{ fontSize: '10px', fontWeight: isActive ? 700 : 500, color: isActive ? 'var(--text-primary, #0f172a)' : 'var(--text-muted, #94a3b8)', marginTop: '4px' }}>
+              <span style={{ fontSize: '10px', fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary,#0f172a)' : 'var(--text-muted,#94a3b8)', marginTop: '4px' }}>
                 {s === 1 ? 'Business' : s === 2 ? 'Owner' : 'Security'}
               </span>
             </div>
@@ -137,284 +154,190 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
       </div>
 
       {errorMsg && (
-        <div
-          style={{
-            padding: '10px 14px',
-            borderRadius: '10px',
-            backgroundColor: 'rgba(239, 68, 68, 0.08)',
-            border: '1px solid rgba(239, 68, 68, 0.2)',
-            color: '#EF4444',
-            fontSize: '13px',
-            fontWeight: 600,
-            marginBottom: '20px',
-            animation: 'fadeIn 0.2s ease-out',
-          }}
-        >
+        <div style={{
+          padding: '10px 14px', borderRadius: '10px',
+          backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+          color: '#EF4444', fontSize: '13px', fontWeight: 600, marginBottom: '16px',
+        }}>
           {errorMsg}
         </div>
       )}
 
-      {/* STEP 1: Business Details */}
+      {/* ── STEP 1: Business Details ─────────────────────────────────────── */}
       {step === 1 && (
         <form onSubmit={handleNextStep} style={{ animation: 'fadeIn 0.2s ease-out' }}>
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Business Name *
-            </label>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Business Name *</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
-                <Building2 size={16} />
-              </span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Patel Seeds & Agriculture Store"
-                value={businessName}
-                onChange={(e) => setBusinessName(e.target.value)}
-                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }}
-                autoFocus
-                required
-              />
+              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><Building2 size={16} /></span>
+              <input type="text" className="form-control" placeholder="e.g. Patel Seeds & Agriculture Store"
+                value={businessName} onChange={e => setBusinessName(e.target.value)}
+                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} autoFocus required />
             </div>
           </div>
-
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              GSTIN <span style={{ fontWeight: 400, color: 'var(--text-muted, #94a3b8)' }}>(Optional)</span>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+              GSTIN <span style={{ fontWeight: 400, color: 'var(--text-muted,#94a3b8)' }}>(Optional)</span>
             </label>
-            <input
-              type="text"
-              className="form-control"
-              placeholder="e.g. 23AAACA9876C1Z9"
-              value={gstin}
-              onChange={(e) => setGstin(e.target.value.toUpperCase())}
-              style={{ height: '44px', borderRadius: '10px', fontSize: '14px', textTransform: 'uppercase' }}
-              maxLength={15}
-            />
+            <input type="text" className="form-control" placeholder="e.g. 23AAACA9876C1Z9"
+              value={gstin} onChange={e => setGstin(e.target.value.toUpperCase())}
+              style={{ height: '44px', borderRadius: '10px', fontSize: '14px', textTransform: 'uppercase' }} maxLength={15} />
           </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px' }}>
             <div>
-              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                City / Town
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Pipariya"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                style={{ height: '44px', borderRadius: '10px', fontSize: '14px' }}
-              />
+              <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>City / Town</label>
+              <input type="text" className="form-control" placeholder="e.g. Pipariya"
+                value={city} onChange={e => setCity(e.target.value)}
+                style={{ height: '44px', borderRadius: '10px', fontSize: '14px' }} />
             </div>
             <div>
-              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                State
-              </label>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Madhya Pradesh"
-                value={state}
-                onChange={(e) => setState(e.target.value)}
-                style={{ height: '44px', borderRadius: '10px', fontSize: '14px' }}
-              />
+              <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>State</label>
+              <input type="text" className="form-control" placeholder="e.g. Madhya Pradesh"
+                value={state} onChange={e => setState(e.target.value)}
+                style={{ height: '44px', borderRadius: '10px', fontSize: '14px' }} />
             </div>
           </div>
-
-          <button
-            type="submit"
-            className="btn btn-primary"
-            style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
-          >
+          <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}>
             Continue to Owner Details <ArrowRight size={16} />
           </button>
         </form>
       )}
 
-      {/* STEP 2: Owner Details */}
+      {/* ── STEP 2: Owner Details ─────────────────────────────────────────── */}
       {step === 2 && (
         <form onSubmit={handleNextStep} style={{ animation: 'fadeIn 0.2s ease-out' }}>
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Owner Name *
-            </label>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Owner Name *</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
-                <User size={16} />
-              </span>
-              <input
-                type="text"
-                className="form-control"
-                placeholder="e.g. Vaibhav Patel"
-                value={ownerName}
-                onChange={(e) => setOwnerName(e.target.value)}
-                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }}
-                autoFocus
-                required
-              />
+              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><User size={16} /></span>
+              <input type="text" className="form-control" placeholder="e.g. Vaibhav Patel"
+                value={ownerName} onChange={e => setOwnerName(e.target.value)}
+                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} autoFocus required />
             </div>
           </div>
-
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Mobile Number (Login ID) *
-            </label>
+          <div className="form-group" style={{ marginBottom: '14px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Mobile Number (Login ID) *</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span
-                style={{
-                  position: 'absolute',
-                  left: '12px',
-                  color: 'var(--text-muted, #94a3b8)',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '4px',
-                  borderRight: '1px solid var(--border-color, #e2e8f0)',
-                  paddingRight: '8px',
-                  pointerEvents: 'none',
-                }}
-              >
+              <span style={{
+                position: 'absolute', left: '12px', color: 'var(--text-muted,#94a3b8)',
+                fontSize: '13px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px',
+                borderRight: '1px solid var(--border-color,#e2e8f0)', paddingRight: '8px', pointerEvents: 'none',
+              }}>
                 <Smartphone size={14} /> +91
               </span>
-              <input
-                type="tel"
-                className="form-control"
-                placeholder="10-digit mobile number"
-                value={mobile}
-                onChange={(e) => setMobile(e.target.value)}
+              <input type="tel" className="form-control" placeholder="10-digit mobile number"
+                value={mobile} onChange={e => setMobile(e.target.value)}
                 style={{ paddingLeft: '78px', height: '44px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
-                maxLength={10}
-                required
-              />
+                maxLength={10} required />
             </div>
           </div>
-
-          <div className="form-group" style={{ marginBottom: '20px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Email Address <span style={{ fontWeight: 400, color: 'var(--text-muted, #94a3b8)' }}>(Optional)</span>
+          <div className="form-group" style={{ marginBottom: '18px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+              Email Address <span style={{ fontWeight: 400, color: 'var(--text-muted,#94a3b8)' }}>(Optional)</span>
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
-                <Mail size={16} />
-              </span>
-              <input
-                type="email"
-                className="form-control"
-                placeholder="e.g. vaibhav@agribizstore.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }}
-              />
+              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><Mail size={16} /></span>
+              <input type="email" className="form-control" placeholder="e.g. vaibhav@agribizstore.com"
+                value={email} onChange={e => setEmail(e.target.value)}
+                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} />
             </div>
           </div>
-
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
+            <button type="button" className="btn btn-secondary"
               style={{ flex: '0 0 90px', height: '44px', borderRadius: '10px', justifyContent: 'center' }}
-              onClick={() => setStep(1)}
-            >
+              onClick={() => setStep(1)}>
               <ArrowLeft size={16} /> Back
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
-            >
+            <button type="submit" className="btn btn-primary"
+              style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}>
               Continue to Security <ArrowRight size={16} />
             </button>
           </div>
         </form>
       )}
 
-      {/* STEP 3: Security & Password */}
+      {/* ── STEP 3: Password + Owner PIN ──────────────────────────────────── */}
       {step === 3 && (
         <form onSubmit={handleFinalRegister} style={{ animation: 'fadeIn 0.2s ease-out' }}>
-          <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Create Password *
-            </label>
+          {/* Password */}
+          <div className="form-group" style={{ marginBottom: '12px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Create Password *</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
-                <Lock size={16} />
-              </span>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="At least 6 characters"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }}
-                autoFocus
-                required
-              />
+              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><Lock size={16} /></span>
+              <input type="password" className="form-control" placeholder="At least 6 characters"
+                value={password} onChange={e => setPassword(e.target.value)}
+                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} autoFocus required />
             </div>
             <PasswordStrength password={password} />
           </div>
-
-          <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Confirm Password *
-            </label>
+          <div className="form-group" style={{ marginBottom: '18px' }}>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Confirm Password *</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
-                <ShieldCheck size={16} />
-              </span>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Re-enter your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+              <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><ShieldCheck size={16} /></span>
+              <input type="password" className="form-control" placeholder="Re-enter your password"
+                value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                 style={{
-                  paddingLeft: '40px',
-                  height: '44px',
-                  borderRadius: '10px',
-                  fontSize: '14px',
+                  paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px',
                   borderColor: confirmPassword && confirmPassword !== password ? '#EF4444' : undefined,
-                }}
-                required
-              />
+                }} required />
             </div>
             {confirmPassword && confirmPassword !== password && (
-              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'block' }}>
-                Passwords do not match
+              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'block' }}>Passwords do not match</span>
+            )}
+          </div>
+
+          {/* PIN Section */}
+          <div style={{
+            padding: '14px', borderRadius: '12px',
+            background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.2)',
+            marginBottom: '18px',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <KeyRound size={15} style={{ color: '#10b981' }} />
+              <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>
+                Owner Login PIN
               </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted,#64748b)', marginLeft: 'auto' }}>
+                Used every time you log in
+              </span>
+            </div>
+
+            <PinInput value={ownerPin} onChange={setOwnerPin} label="4-Digit Owner PIN *" placeholder="····" />
+            <PinInput value={confirmPin} onChange={setConfirmPin} label="Confirm PIN *" placeholder="····" />
+
+            {confirmPin.length === 4 && ownerPin.length === 4 && ownerPin !== confirmPin && (
+              <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#EF4444', fontSize: '12px', fontWeight: 600 }}>
+                PINs do not match
+              </div>
+            )}
+            {confirmPin.length === 4 && ownerPin.length === 4 && ownerPin === confirmPin && (
+              <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(16,185,129,0.08)', color: '#10b981', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle2 size={14} /> PIN confirmed ✓
+              </div>
             )}
           </div>
 
           <div style={{ display: 'flex', gap: '10px' }}>
-            <button
-              type="button"
-              className="btn btn-secondary"
+            <button type="button" className="btn btn-secondary"
               style={{ flex: '0 0 90px', height: '44px', borderRadius: '10px', justifyContent: 'center' }}
-              onClick={() => setStep(2)}
-            >
+              onClick={() => setStep(2)}>
               <ArrowLeft size={16} /> Back
             </button>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-              style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
-            >
-              {loading ? 'Registering Business...' : 'Complete & Launch Suite'}
+            <button type="submit" className="btn btn-primary" disabled={loading}
+              style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center',
+                boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
+              {loading ? 'Registering...' : '🚀 Complete & Launch Suite'}
             </button>
           </div>
         </form>
       )}
 
-      {/* Bottom Link to Login */}
-      <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
-        <button
-          type="button"
-          style={{ background: 'none', border: 'none', color: 'var(--text-secondary, #475569)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
-          onClick={onSwitchToLogin}
-        >
-          Already have an account? <strong style={{ color: 'var(--primary, #10b981)' }}>Sign In</strong>
+      {/* Bottom Link */}
+      <div style={{ textAlign: 'center', marginTop: '18px', paddingTop: '14px', borderTop: '1px solid var(--border-color,#e2e8f0)' }}>
+        <button type="button"
+          style={{ background: 'none', border: 'none', color: 'var(--text-secondary,#475569)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
+          onClick={onSwitchToLogin}>
+          Already have an account? <strong style={{ color: 'var(--primary,#10b981)' }}>Sign In</strong>
         </button>
       </div>
     </div>

@@ -84,7 +84,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     suppliers,
   } = useApp();
 
-  const { currentUser, currentCompany, hasPermission, logout } = useAuth();
+  const { currentUser, currentCompany, hasPermission, logout, logoutStaff } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showSyncPanel, setShowSyncPanel] = useState(false);
@@ -1004,6 +1004,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </button>
 
                   <div className="profile-dropdown-divider"></div>
+
+                  <button
+                    className="profile-dropdown-item"
+                    onClick={() => {
+                      setIsProfileDropdownOpen(false);
+                      logoutStaff();
+                      showToast('Switched — please select your profile', 'info');
+                    }}
+                  >
+                    <User size={14} />
+                    <span>Switch Staff</span>
+                  </button>
 
                   <button
                     className="profile-dropdown-item logout"

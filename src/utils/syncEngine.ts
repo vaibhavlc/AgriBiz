@@ -113,7 +113,8 @@ export const pullRemoteUpdates = async () => {
         Quotation: db.quotations,
         Payment: db.payments,
         Expense: db.expenses,
-        Settings: db.settings
+        Settings: db.settings,
+        User: db.users
       };
 
       let anyUpdates = false;
@@ -121,7 +122,7 @@ export const pullRemoteUpdates = async () => {
       await db.transaction('rw', [
         db.products, db.customers, db.suppliers, db.invoices,
         db.purchases, db.quotations, db.payments, db.expenses,
-        db.settings, db.syncQueue
+        db.settings, db.users, db.syncQueue
       ], async () => {
         for (const moduleName of Object.keys(updates)) {
           const table = MODULE_TO_TABLE[moduleName];

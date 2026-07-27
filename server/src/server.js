@@ -97,6 +97,27 @@ app.use('/api/v1/recycle-bin', recycleBinRoutes);
 app.use('/api/v1/sync', syncRoutes);
 app.use('/api/v1/users', userRoutes);
 
+// ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
+// Usage: DELETE /api/admin/company/:mobile  with header  x-admin-key: <ADMIN_SECRET>
+import { cascadeDeleteByMobile } from './utils/cascadeDelete.js';
+app.delete('/api/admin/company/:mobile', async (req, res) => {
+  const secret = process.env.ADMIN_SECRET || 'agribiz-admin-2024';
+  if (req.headers['x-admin-key'] !== secret) {
+    return res.status(403).json({ success: false, message: 'Forbidden: invalid admin key.' });
+  }
+  try {
+    const result = await cascadeDeleteByMobile(req.params.mobile);
+    if (!result.found) {
+      return res.json({ success: false, message: `No company found with mobile ${req.params.mobile}` });
+    }
+    logger.info('Admin cascade-deleted company %s (%s)', result.businessName, result.companyId);
+    res.json({ success: true, message: `Deleted "${result.businessName}" and ALL related data.`, details: result.results });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+// ── End Admin Route ───────────────────────────────────────────────────────────
+
 // Catch-all route (404)
 app.use((req, res, next) => {
   const err = new Error(`Route not found: ${req.originalUrl}`);

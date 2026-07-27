@@ -1,13 +1,16 @@
 import type { User, Company, AuthSession, UserRole } from '../types';
 import api from '../utils/api';
+import bcrypt from 'bcryptjs';
+import { db } from '../db/db';
 
 const STORAGE_KEYS = {
   SESSION: 'agribiz_auth_session',
   USERS: 'agribiz_users',
   COMPANIES: 'agribiz_companies',
   ACCESS_TOKEN: 'agribiz_access_token',
-  CURRENT_USER: 'agribiz_current_user',
-  CURRENT_COMPANY: 'agribiz_current_company',
+  CURRENT_USER: 'agribiz_current_user',           // sessionStorage — cleared on tab close
+  CURRENT_COMPANY: 'agribiz_current_company',      // localStorage  — persists across restarts
+  REFRESH_TOKEN: 'agribiz_refresh_token',          // localStorage  — persists for auto-refresh
 };
 
 // Initial Mock Seed Data for Instant 1-Click Demo Testing (used for local fallback)
@@ -103,9 +106,10 @@ class AuthService {
     }
   }
 
+  // Company session lives in localStorage — survives browser restarts
   public getCurrentCompany(): Company | null {
     if (typeof window === 'undefined') return null;
-    const raw = sessionStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY);
+    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY);
     if (!raw) return null;
     try {
       return JSON.parse(raw);
@@ -120,7 +124,7 @@ class AuthService {
     mobile: string,
     password: string,
     role?: UserRole,
-    rememberMe: boolean = true
+    _rememberMe: boolean = true
   ): Promise<{ success: boolean; message: string; user?: User; company?: Company }> {
     try {
       const response = await api.post('/auth/login', { mobile, password, role });
@@ -129,19 +133,11 @@ class AuthService {
       if (success) {
         this.setAccessToken(accessToken);
         if (refreshToken) {
-          sessionStorage.setItem('agribiz_refresh_token', refreshToken);
+          // Refresh token in localStorage so auto-refresh works after restart
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
-
-        // Create standard mock session for other parts of the app
-        const session: AuthSession = {
-          currentUserId: user.id,
-          companyId: user.companyId,
-          token: accessToken,
-          rememberMe,
-        };
-        sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+        // Company session → localStorage so it survives browser close/restart
+        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
         return { success: true, message, user, company };
       }
@@ -151,6 +147,107 @@ class AuthService {
       const message = error.response?.data?.message || 'Invalid credentials or connection error.';
       return { success: false, message };
     }
+  }
+
+  public async staffLogin(
+    companyId: string,
+    userId: string,
+    pin: string
+  ): Promise<{ success: boolean; message: string; user?: User; company?: Company }> {
+    if (!navigator.onLine) {
+      try {
+        const localUser = await db.users.get(userId);
+        if (!localUser) {
+          return { success: false, message: 'Staff member not found locally.' };
+        }
+        if (localUser.status === 'Inactive') {
+          return { success: false, message: 'This staff account has been disabled.' };
+        }
+        if (!localUser.pin) {
+          return { success: false, message: 'Security PIN has not been set for this staff member.' };
+        }
+        const isMatch = bcrypt.compareSync(pin.toString(), localUser.pin);
+        if (!isMatch) {
+          return { success: false, message: 'Invalid PIN. Please check and try again.' };
+        }
+
+        const localCompany = this.getCurrentCompany();
+        if (!localCompany) {
+          return { success: false, message: 'Company session not found locally.' };
+        }
+
+        // Staff session only in sessionStorage — PIN required after every browser restart
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(localUser));
+
+        const session: AuthSession = {
+          currentUserId: localUser.id,
+          companyId: localUser.companyId,
+          token: this.getAccessToken() || 'offline_token',
+          rememberMe: true,
+        };
+        sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+
+        return { success: true, message: `Welcome back, ${localUser.name}!`, user: localUser, company: localCompany };
+      } catch (error: any) {
+        return { success: false, message: `Local validation error: ${error.message}` };
+      }
+    }
+
+    try {
+      const response = await api.post('/auth/staff-login', { companyId, userId, pin });
+      const { success, message, accessToken, refreshToken, user, company } = response.data;
+
+      if (success) {
+        this.setAccessToken(accessToken);
+        if (refreshToken) {
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        }
+        // Staff session → sessionStorage only (forces PIN on each browser open)
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        // Refresh company info in localStorage
+        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+
+        const session: AuthSession = {
+          currentUserId: user.id,
+          companyId: user.companyId,
+          token: accessToken,
+          rememberMe: true,
+        };
+        sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+
+        return { success: true, message, user, company };
+      }
+
+      return { success: false, message: message || 'Staff login failed.' };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Invalid PIN or connection error.';
+      return { success: false, message };
+    }
+  }
+
+  public async getActiveStaff(): Promise<User[]> {
+    try {
+      const company = this.getCurrentCompany();
+      if (navigator.onLine) {
+        try {
+          const res = await api.get('/users');
+          if (res.data && res.data.success && Array.isArray(res.data.users)) {
+            const serverUsers = res.data.users;
+            await db.users.bulkPut(serverUsers);
+            return serverUsers.filter((u: User) => u.status === 'Active');
+          }
+        } catch (err) {
+          console.warn('Failed to fetch staff list from server, falling back to IndexedDB:', err);
+        }
+      }
+      const localUsers = await db.users.toArray();
+      if (localUsers.length > 0) {
+        return localUsers.filter(u => u.status === 'Active' && (!company || u.companyId === company.id));
+      }
+    } catch (e) {
+      console.error('Failed to load active staff from Dexie:', e);
+    }
+    return this.getUsers().filter(u => u.status === 'Active');
   }
 
   public async registerCompany(
@@ -163,22 +260,33 @@ class AuthService {
       city?: string;
       state?: string;
     },
-    ownerPassword: string
+    ownerPassword: string,
+    ownerPin: string
   ): Promise<{ success: boolean; message: string; user?: User; company?: Company }> {
     try {
       const response = await api.post('/auth/register', {
         ...companyInput,
         password: ownerPassword,
+        pin: ownerPin,
       });
       const { success, message, accessToken, refreshToken, user, company } = response.data;
 
       if (success) {
+        // Clear old cached IndexedDB data from previous companies before setting up new business
+        try {
+          await db.clearAllLocalData();
+        } catch (e) {
+          console.warn('Failed to clear local Dexie data during registration:', e);
+        }
+
         this.setAccessToken(accessToken);
         if (refreshToken) {
-          sessionStorage.setItem('agribiz_refresh_token', refreshToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
+        // Staff/owner session in sessionStorage (forces PIN on restart)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+        // Company session in localStorage (persists across browser restarts)
+        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
         const session: AuthSession = {
           currentUserId: user.id,
@@ -199,32 +307,45 @@ class AuthService {
   }
 
   public async logout(): Promise<void> {
+    // Full logout: clear everything including the persistent company session and Dexie cache
     try {
       await api.post('/auth/logout');
     } catch (e) {
       // Ignore network errors on logout
     } finally {
       this.setAccessToken(null);
-      sessionStorage.removeItem('agribiz_refresh_token');
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+      try {
+        await db.clearAllLocalData();
+      } catch (e) {
+        console.warn('Failed to clear Dexie database during logout:', e);
+      }
     }
+  }
+
+  // Only clears the staff session — keeps company session alive so next open goes to Staff Selection
+  public logoutStaff(): void {
+    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+    this.setAccessToken(null);
   }
 
   public async refreshSession(): Promise<{ success: boolean; user?: User; company?: Company }> {
     try {
-      const storedRefreshToken = sessionStorage.getItem('agribiz_refresh_token');
+      const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
       const { success, accessToken, refreshToken: newRefreshToken, user, company } = response.data;
 
       if (success && accessToken) {
         this.setAccessToken(accessToken);
         if (newRefreshToken) {
-          sessionStorage.setItem('agribiz_refresh_token', newRefreshToken);
+          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
         }
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
         const session = this.getSession();
         if (session) {
@@ -237,9 +358,8 @@ class AuthService {
       return { success: false };
     } catch (error) {
       this.setAccessToken(null);
-      sessionStorage.removeItem('agribiz_refresh_token');
+      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
       return { success: false };
     }
@@ -303,7 +423,7 @@ class AuthService {
     const users = this.getUsers();
     const cleanMobile = input.mobile.replace(/\D/g, '');
 
-    if (users.some((u) => u.mobile.replace(/\D/g, '') === cleanMobile)) {
+    if (users.some((u) => (u.mobile || '').replace(/\D/g, '') === cleanMobile)) {
       return { success: false, message: 'User with this mobile number already exists.' };
     }
 

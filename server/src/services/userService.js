@@ -7,20 +7,25 @@ class UserService {
   }
 
   async createUser(userData, companyId) {
-    const cleanMobile = userData.mobile.replace(/\D/g, '');
-    const existingUser = await userRepository.findByMobile(cleanMobile);
-    if (existingUser) {
-      throw new Error('A user account with this mobile number already exists.');
-    }
+    const timestampSuffix = Date.now().toString().slice(-4);
+    const randomStr = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const userId = `USR-${userData.role.toUpperCase().slice(0, 4)}-${timestampSuffix}-${randomStr}`;
 
-    const hashedPassword = await bcrypt.hash(userData.password, 10);
     const payload = {
-      ...userData,
-      mobile: cleanMobile,
-      password: hashedPassword,
+      userId,
+      name: userData.name,
+      role: userData.role,
+      status: userData.status || 'Active',
       companyId,
-      status: 'Active'
     };
+
+    if (userData.mobile && userData.mobile.trim()) payload.mobile = userData.mobile.trim();
+    if (userData.email && userData.email.trim()) payload.email = userData.email.trim();
+    if (userData.password && userData.password.trim()) payload.password = await bcrypt.hash(userData.password.trim(), 10);
+
+    if (userData.pin && userData.pin.toString().trim()) {
+      payload.pin = await bcrypt.hash(userData.pin.toString().trim(), 10);
+    }
 
     return userRepository.create(payload);
   }
@@ -31,11 +36,14 @@ class UserService {
       throw new Error('User not found');
     }
 
-    const payload = { ...updateData };
-    if (updateData.password && updateData.password.trim()) {
-      payload.password = await bcrypt.hash(updateData.password.trim(), 10);
-    } else {
-      delete payload.password;
+    const payload = {
+      name: updateData.name,
+      role: updateData.role,
+      status: updateData.status
+    };
+
+    if (updateData.pin && updateData.pin.toString().trim()) {
+      payload.pin = await bcrypt.hash(updateData.pin.toString().trim(), 10);
     }
 
     return userRepository.update(userId, payload);

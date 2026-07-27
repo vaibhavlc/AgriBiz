@@ -252,9 +252,10 @@ export interface User {
   id: string;
   companyId: string;
   name: string;
-  mobile: string;
+  mobile?: string;
   email?: string;
   password?: string;
+  pin?: string;
   role: UserRole;
   customPermissions?: string[];
   status: 'Active' | 'Inactive';

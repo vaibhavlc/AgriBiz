@@ -14,6 +14,8 @@ class UserRepository {
   }
 
   async create(userData) {
+    // Remove mobile if null/empty so sparse unique index isn't violated
+    if (!userData.mobile) delete userData.mobile;
     return User.create(userData);
   }
 
@@ -30,7 +32,13 @@ class UserRepository {
   }
 
   async insertMany(users) {
-    return User.insertMany(users);
+    // Strip null/empty mobile so sparse unique index allows multiple staff without mobile
+    const cleaned = users.map(u => {
+      const doc = { ...u };
+      if (!doc.mobile) delete doc.mobile;
+      return doc;
+    });
+    return User.insertMany(cleaned);
   }
 }
 

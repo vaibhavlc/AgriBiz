@@ -20,8 +20,8 @@ const userSchema = new mongoose.Schema(
     },
     mobile: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       trim: true,
       index: true,
     },
@@ -32,7 +32,9 @@ const userSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
+    },
+    pin: {
+      type: String,
     },
     role: {
       type: String,
@@ -67,6 +69,23 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.index({ companyId: 1, updatedAt: -1 });
+
+// Ensure null/empty mobile is never stored — sparse unique index treats null as a value
+userSchema.pre('save', function (next) {
+  if (this.mobile === null || this.mobile === '' || this.mobile === undefined) {
+    this.mobile = undefined;
+    this.markModified('mobile');
+  }
+  next();
+});
+
+// Also handle insertMany / bulkWrite paths via pre('insertMany')
+userSchema.pre('insertMany', function (next, docs) {
+  docs.forEach(doc => {
+    if (!doc.mobile) delete doc.mobile;
+  });
+  next();
+});
 
 const User = mongoose.model('User', userSchema);
 export default User;

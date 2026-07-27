@@ -9,6 +9,7 @@ export const registerSchema = z.object({
   city: z.string().optional(),
   state: z.string().optional(),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  pin: z.string().regex(/^\d{4}$/, 'Owner PIN must be exactly 4 digits').optional(),
 });
 
 export const loginSchema = z.object({

@@ -116,6 +116,7 @@ export const Settings: React.FC = () => {
   const [staffName, setStaffName] = useState('');
   const [staffMobile, setStaffMobile] = useState('');
   const [staffPassword, setStaffPassword] = useState('');
+  const [staffPin, setStaffPin] = useState('');
   const [staffRole, setStaffRole] = useState<UserRole>('Accounts');
   const [staffEmail, setStaffEmail] = useState('');
   const [staffCustomPermissions, setStaffCustomPermissions] = useState<string[]>([]);
@@ -191,22 +192,33 @@ export const Settings: React.FC = () => {
         if (staffPassword.trim()) {
           payload.password = staffPassword.trim();
         }
+        if (staffPin.trim()) {
+          if (!/^\d{4}$/.test(staffPin.trim())) {
+            showToast('PIN must be exactly 4 digits.', 'error');
+            return;
+          }
+          payload.pin = staffPin.trim();
+        }
         const res = await api.put(`/users/${editingStaffUser.id}`, payload);
         if (res.data.success) {
           showToast(`Staff member ${payload.name} details & permissions updated!`, 'success');
         }
       } else {
-        if (!staffName || !staffMobile || !staffPassword) {
-          showToast('Please fill all required fields.', 'error');
+        if (!staffName || !staffPin) {
+          showToast('Please enter Staff Name and 4-digit PIN.', 'error');
           return;
         }
-        const payload = {
+        if (!/^\d{4}$/.test(staffPin.trim())) {
+          showToast('Security PIN must be exactly 4 numeric digits.', 'error');
+          return;
+        }
+        const payload: any = {
           id: `USR-${staffRole.toUpperCase().slice(0, 4)}-${Date.now().toString().slice(-4)}`,
           name: staffName.trim(),
-          mobile: staffMobile.replace(/\D/g, ''),
-          password: staffPassword.trim(),
+          mobile: staffMobile.replace(/\D/g, '') || undefined,
+          pin: staffPin.trim(),
           role: staffRole,
-          email: staffEmail.trim(),
+          email: staffEmail.trim() || undefined,
           customPermissions: finalPermissions,
         };
         const res = await api.post('/users', payload);
@@ -220,6 +232,7 @@ export const Settings: React.FC = () => {
       setStaffName('');
       setStaffMobile('');
       setStaffPassword('');
+      setStaffPin('');
       setStaffRole('Accounts');
       setStaffEmail('');
       setStaffCustomPermissions([]);
@@ -1692,6 +1705,7 @@ export const Settings: React.FC = () => {
                           setStaffName('');
                           setStaffMobile('');
                           setStaffPassword('');
+                          setStaffPin('');
                           setStaffRole('Accounts');
                           setStaffEmail('');
                           setStaffCustomPermissions([...(ROLE_PERMISSIONS['Accounts'] || [])]);
@@ -1761,7 +1775,7 @@ export const Settings: React.FC = () => {
                         <tbody>
                           {usersList
                             .filter((u) => {
-                              const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.mobile.includes(userSearch);
+                              const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || (u.mobile || '').includes(userSearch);
                               const matchRole = userRoleFilter === 'All' || u.role === userRoleFilter;
                               const matchStatus = userStatusFilter === 'All' || u.status === userStatusFilter;
                               return matchSearch && matchRole && matchStatus;
@@ -1834,10 +1848,11 @@ export const Settings: React.FC = () => {
                                       onClick={() => {
                                         setEditingStaffUser(u);
                                         setStaffName(u.name);
-                                        setStaffMobile(u.mobile);
+                                        setStaffMobile(u.mobile || '');
                                         setStaffRole(u.role);
                                         setStaffEmail(u.email || '');
                                         setStaffPassword('');
+                                        setStaffPin('');
                                         setStaffCustomPermissions(u.customPermissions ? [...u.customPermissions] : [...(ROLE_PERMISSIONS[u.role] || [])]);
                                         setIsAddUserModalOpen(true);
                                       }}
@@ -1878,7 +1893,7 @@ export const Settings: React.FC = () => {
                   <div className="mobile-card-list">
                     {usersList
                       .filter((u) => {
-                        const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || u.mobile.includes(userSearch);
+                        const matchSearch = u.name.toLowerCase().includes(userSearch.toLowerCase()) || (u.mobile || '').includes(userSearch);
                         const matchRole = userRoleFilter === 'All' || u.role === userRoleFilter;
                         const matchStatus = userStatusFilter === 'All' || u.status === userStatusFilter;
                         return matchSearch && matchRole && matchStatus;
@@ -1944,7 +1959,7 @@ export const Settings: React.FC = () => {
                                 onClick={() => {
                                   setEditingStaffUser(u);
                                   setStaffName(u.name);
-                                  setStaffMobile(u.mobile);
+                                  setStaffMobile(u.mobile || '');
                                   setStaffRole(u.role);
                                   setStaffEmail(u.email || '');
                                   setStaffPassword('');
@@ -2045,7 +2060,7 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                Mobile Number (Login ID) *
+                Mobile Number <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Optional)</span>
               </label>
               <input
                 type="tel"
@@ -2055,7 +2070,6 @@ export const Settings: React.FC = () => {
                 onChange={(e) => setStaffMobile(e.target.value)}
                 disabled={!!editingStaffUser}
                 maxLength={10}
-                required
               />
             </div>
 
@@ -2090,16 +2104,22 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                {editingStaffUser ? 'New Password (leave blank to keep current)' : 'Password *'}
+                {editingStaffUser ? 'Security PIN (leave blank to keep current)' : 'Security PIN (4 Digits) *'}
               </label>
               <input
                 type="password"
+                inputMode="numeric"
                 className="form-control"
-                placeholder={editingStaffUser ? 'Enter new password if changing' : 'Enter password (min 6 chars)'}
-                value={staffPassword}
-                onChange={(e) => setStaffPassword(e.target.value)}
+                placeholder={editingStaffUser ? 'Enter new 4-digit PIN if changing' : 'Enter 4-digit numeric PIN (e.g. 1234)'}
+                value={staffPin}
+                onChange={(e) => setStaffPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                maxLength={4}
                 required={!editingStaffUser}
+                style={{ letterSpacing: '4px', fontWeight: 800, fontSize: '15px' }}
               />
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                Used for 4-digit PIN staff login and instant staff switching
+              </span>
             </div>
 
             {/* Custom Page Access Checkboxes */}

@@ -1,6 +1,8 @@
 import userService from '../services/userService.js';
 import logger from '../config/logger.js';
 import { socketEmitter } from '../realtime/socketEmitter.js';
+import bcrypt from 'bcryptjs';
+import userRepository from '../repositories/userRepository.js';
 
 const mapUserToClient = (user) => {
   if (!user) return null;
@@ -125,6 +127,74 @@ class UserController {
       });
 
       res.status(200).json({ success: true, message: 'Staff user deleted successfully' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Update own PIN (any authenticated user)
+  async updateMyPin(req, res, next) {
+    try {
+      const userId = req.user.userId;
+      const { currentPin, newPin } = req.body;
+
+      if (!newPin || !/^\d{4}$/.test(newPin)) {
+        return res.status(400).json({ success: false, message: 'New PIN must be exactly 4 digits.' });
+      }
+
+      const user = await userRepository.findById(userId);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+      // If user already has a PIN, verify the current PIN first
+      if (user.pin && currentPin) {
+        const isMatch = await bcrypt.compare(currentPin.toString(), user.pin);
+        if (!isMatch) {
+          return res.status(401).json({ success: false, message: 'Current PIN is incorrect.' });
+        }
+      }
+
+      user.pin = await bcrypt.hash(newPin.toString(), 10);
+      user.updatedAt = new Date();
+      await user.save();
+
+      logger.info('PIN updated for user %s', userId);
+      res.status(200).json({ success: true, message: 'PIN updated successfully.' });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  // Owner resets any staff member's PIN
+  async resetStaffPin(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { newPin } = req.body;
+      const targetUserId = req.params.id;
+
+      if (!newPin || !/^\d{4}$/.test(newPin)) {
+        return res.status(400).json({ success: false, message: 'New PIN must be exactly 4 digits.' });
+      }
+
+      const user = await userRepository.findById(targetUserId);
+      if (!user || user.companyId !== companyId) {
+        return res.status(404).json({ success: false, message: 'Staff member not found.' });
+      }
+
+      user.pin = await bcrypt.hash(newPin.toString(), 10);
+      user.updatedAt = new Date();
+      await user.save();
+
+      socketEmitter.publishStaffEvent({
+        companyId,
+        action: 'UPDATE',
+        userId: targetUserId,
+        senderUserId: req.user.userId,
+        senderSocketId: req.headers['x-socket-id'] || null,
+        updatedAt: user.updatedAt
+      });
+
+      logger.info('PIN reset for staff %s by owner %s', targetUserId, req.user.userId);
+      res.status(200).json({ success: true, message: 'Staff PIN reset successfully.' });
     } catch (error) {
       next(error);
     }

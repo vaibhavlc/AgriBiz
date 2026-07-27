@@ -15,6 +15,21 @@ export const connectDB = async () => {
     logger.info('Connecting to MongoDB...');
     const conn = await mongoose.connect(connStr);
     logger.info(`MongoDB Connected: ${conn.connection.host}`);
+
+    // Drop old non-sparse mobile index from MongoDB Atlas if it exists
+    try {
+      const db = conn.connection.db;
+      const indexes = await db.collection('users').indexes();
+      const mobileIdx = indexes.find(idx => idx.name === 'mobile_1');
+      if (mobileIdx && !mobileIdx.sparse) {
+        await db.collection('users').dropIndex('mobile_1');
+        logger.info('Dropped old non-sparse mobile_1 index from users collection');
+      }
+      await db.collection('users').createIndex({ mobile: 1 }, { unique: true, sparse: true });
+    } catch (idxErr) {
+      logger.warn('Index sync notice: %s', idxErr.message);
+    }
+
     return conn;
   } catch (error) {
     logger.error('MongoDB connection error: %s', error.message);

@@ -6,7 +6,7 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '.
 import logger from '../config/logger.js';
 
 class AuthService {
-  async register({ businessName, ownerName, mobile, email, gstin, city, state, password }) {
+  async register({ businessName, ownerName, mobile, email, gstin, city, state, password, pin }) {
     const cleanMobile = mobile.replace(/\D/g, '');
     
     // Check if user already exists
@@ -46,6 +46,7 @@ class AuthService {
       mobile: cleanMobile,
       email: email?.trim(),
       password: hashedPassword,
+      pin: pin ? await bcrypt.hash(pin.toString(), 10) : null,
       role: 'Owner',
       status: 'Active',
     });
@@ -98,6 +99,62 @@ class AuthService {
 
     // Find Company
     const company = await companyRepository.findById(user.companyId);
+    if (!company || !company.isActive) {
+      const err = new Error('Your business account is suspended or inactive.');
+      err.statusCode = 403;
+      throw err;
+    }
+
+    // Update lastLogin timestamp
+    user.lastLogin = new Date();
+    await user.save();
+
+    // Generate tokens
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+
+    // Store refresh token
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    await refreshTokenRepository.create({
+      token: refreshToken,
+      userId: user.userId,
+      expiresAt,
+    });
+
+    return { user, company, accessToken, refreshToken };
+  }
+
+  async staffLogin(companyId, userId, pin) {
+    // Find User
+    const user = await userRepository.findById(userId);
+    if (!user || user.companyId !== companyId) {
+      const err = new Error('No staff account found for this member.');
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (user.status === 'Inactive') {
+      const err = new Error('This staff account has been disabled by the business Owner.');
+      err.statusCode = 403;
+      throw err;
+    }
+
+    // Verify PIN
+    if (!user.pin) {
+      const err = new Error('Security PIN has not been set for this staff member.');
+      err.statusCode = 401;
+      throw err;
+    }
+
+    const isMatch = await bcrypt.compare(pin.toString(), user.pin);
+    if (!isMatch) {
+      const err = new Error('Invalid PIN. Please check and try again.');
+      err.statusCode = 401;
+      throw err;
+    }
+
+    // Find Company
+    const company = await companyRepository.findById(companyId);
     if (!company || !company.isActive) {
       const err = new Error('Your business account is suspended or inactive.');
       err.statusCode = 403;
@@ -193,73 +250,8 @@ class AuthService {
   }
 
   async seedDemoData() {
-    if (process.env.NODE_ENV !== 'development') {
-      logger.info('Not in development environment, skipping auth seeding.');
-      return;
-    }
-
-    const count = await userRepository.countDocuments();
-    if (count > 0) {
-      logger.info('Database already has users. Skipping seeding.');
-      return;
-    }
-
-    logger.info('Seeding default demo users in development environment...');
-
-    const companyId = 'COMP-101';
-    
-    // Seed Company
-    await companyRepository.create({
-      companyId,
-      businessName: 'AgriBiz Seeds & Implements Store',
-      ownerName: 'Vaibhav Patel',
-      mobile: '9425098765',
-      email: 'contact@agribizstore.com',
-      gstin: '23AAACA9876C1Z9',
-      address: 'Shop No. 12-14, Krishi Mandi Complex, Mandi Area',
-      city: 'Pipariya',
-      state: 'Madhya Pradesh',
-      isActive: true,
-      plan: 'Enterprise Business Suite',
-      subscriptionStatus: 'Active',
-    });
-
-    // Seed Users
-    const demoUsers = [
-      {
-        userId: 'USR-OWNER-01',
-        companyId,
-        name: 'Vaibhav Patel',
-        mobile: '9425098765',
-        email: 'vaibhav@agribizstore.com',
-        password: await bcrypt.hash('owner123', 10),
-        role: 'Owner',
-        status: 'Active',
-      },
-      {
-        userId: 'USR-ACCT-02',
-        companyId,
-        name: 'Ramesh Sharma',
-        mobile: '9876543210',
-        email: 'ramesh.accounts@agribizstore.com',
-        password: await bcrypt.hash('accounts123', 10),
-        role: 'Accounts',
-        status: 'Active',
-      },
-      {
-        userId: 'USR-CASH-03',
-        companyId,
-        name: 'Suresh Verma',
-        mobile: '9123456789',
-        email: 'suresh.cashier@agribizstore.com',
-        password: await bcrypt.hash('cashier123', 10),
-        role: 'Cashier',
-        status: 'Active',
-      },
-    ];
-
-    await userRepository.insertMany(demoUsers);
-    logger.info('Demo seeding completed successfully! Users seeded: Owner, Accounts, Cashier.');
+    // Disabled auto seeding so user can register fresh companies from scratch
+    return;
   }
 }
 

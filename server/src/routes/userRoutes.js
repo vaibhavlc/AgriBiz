@@ -8,6 +8,8 @@ router.use(authenticate);
 
 router.get('/', authorizeRoles('Owner', 'Accounts'), userController.getCompanyUsers);
 router.put('/presence', userController.updatePresence);
+router.put('/pin', userController.updateMyPin);                             // own PIN (any role)
+router.put('/:id/pin', authorizeRoles('Owner'), userController.resetStaffPin);  // staff PIN (Owner only)
 router.post('/', authorizeRoles('Owner'), userController.createUser);
 router.put('/:id', authorizeRoles('Owner'), userController.updateUser);
 router.delete('/:id', authorizeRoles('Owner'), userController.deleteUser);

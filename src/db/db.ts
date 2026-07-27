@@ -10,6 +10,7 @@ import type {
   Expense,
   RecycleBinItem,
   BusinessSettings,
+  User,
 } from '../types';
 
 export interface SyncQueueItem {
@@ -34,6 +35,7 @@ export class AgriBizDatabase extends Dexie {
   recycleBin!: Table<RecycleBinItem, string>;
   settings!: Table<BusinessSettings & { id: string }, string>;
   syncQueue!: Table<SyncQueueItem, number>;
+  users!: Table<User & { id: string }, string>;
 
   constructor() {
     super('AgriBizDatabase');
@@ -50,6 +52,26 @@ export class AgriBizDatabase extends Dexie {
       settings: 'id',
       syncQueue: '++id, module, recordId, action, timestamp',
     });
+    this.version(2).stores({
+      users: 'id, name, role, status, pin'
+    });
+  }
+
+  async clearAllLocalData() {
+    await Promise.all([
+      this.products.clear(),
+      this.customers.clear(),
+      this.suppliers.clear(),
+      this.invoices.clear(),
+      this.quotations.clear(),
+      this.purchases.clear(),
+      this.payments.clear(),
+      this.expenses.clear(),
+      this.recycleBin.clear(),
+      this.settings.clear(),
+      this.syncQueue.clear(),
+      this.users.clear(),
+    ]);
   }
 }
 
