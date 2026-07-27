@@ -25,5 +25,8 @@ const expenseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+expenseSchema.index({ companyId: 1, isDeleted: 1 });
+expenseSchema.index({ companyId: 1, updatedAt: -1 });
+
 const Expense = mongoose.model('Expense', expenseSchema);
 export default Expense;

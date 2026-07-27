@@ -25,6 +25,7 @@ import {
 import type { Expense } from '../types';
 
 export const Expenses: React.FC = () => {
+  console.log('[Component Re-rendered] Expenses');
   const {
     expenses,
     addExpense,

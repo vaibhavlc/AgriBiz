@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import api from '../utils/api';
 import { Modal } from './Modal';
+import { SyncStatusPanel } from './sync/SyncStatusPanel';
 import { formatINR } from '../utils/dummyData';
 import {
   LayoutDashboard,
@@ -33,6 +34,7 @@ import {
   TrendingDown,
   Trash2,
   Globe,
+  RefreshCw,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -80,12 +82,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     handleSavePayment,
     customers,
     suppliers,
-    isOnline,
   } = useApp();
 
   const { currentUser, currentCompany, hasPermission, logout } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [showSyncPanel, setShowSyncPanel] = useState(false);
   const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -759,12 +761,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               )}
               <span className="brand-name">{settings.businessName || 'AgriBiz'}</span>
-              {!isOnline && (
-                <div className="conn-indicator-badge offline" title="Working offline">
-                  <span className="conn-dot"></span>
-                  <span>Offline</span>
-                </div>
-              )}
               <span className="brand-badge desktop-only">{getPageTitle()}</span>
             </div>
           </div>
@@ -993,6 +989,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <span>Away</span>
                     </button>
                   </div>
+
+                  <div className="profile-dropdown-divider"></div>
+
+                  <button
+                    className="profile-dropdown-item"
+                    onClick={() => {
+                      setIsProfileDropdownOpen(false);
+                      setShowSyncPanel(true);
+                    }}
+                  >
+                    <RefreshCw size={14} />
+                    <span>Sync Diagnostics</span>
+                  </button>
 
                   <div className="profile-dropdown-divider"></div>
 
@@ -1273,6 +1282,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </form>
       </Modal>
+
+      <SyncStatusPanel isOpen={showSyncPanel} onClose={() => setShowSyncPanel(false)} />
     </div>
   );
 };

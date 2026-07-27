@@ -37,6 +37,7 @@ interface InvoiceItemLocal {
 }
 
 export const Sales: React.FC = () => {
+  console.log('[Component Re-rendered] Sales');
   const {
     invoices,
     quotations,

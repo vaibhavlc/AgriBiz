@@ -82,6 +82,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
+  console.log('[Component Re-rendered] Settings');
   const { settings, updateSettings, resetToDefault, showToast } = useApp();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users'>('profile');
@@ -139,6 +140,29 @@ export const Settings: React.FC = () => {
     if (activeTab === 'users' && currentCompany) {
       refreshUsersList();
     }
+  }, [activeTab, currentCompany]);
+
+  useEffect(() => {
+    const handleStaffListChanged = () => {
+      if (activeTab === 'users') {
+        refreshUsersList();
+      }
+    };
+
+    const handlePresenceChanged = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && detail.userId) {
+        setUsersList(prev => prev.map(u => u.id === detail.userId ? { ...u, presenceStatus: detail.presenceStatus } : u));
+      }
+    };
+
+    window.addEventListener('staff-list-changed', handleStaffListChanged);
+    window.addEventListener('staff-presence-changed', handlePresenceChanged);
+
+    return () => {
+      window.removeEventListener('staff-list-changed', handleStaffListChanged);
+      window.removeEventListener('staff-presence-changed', handlePresenceChanged);
+    };
   }, [activeTab, currentCompany]);
 
   const handleStaffRoleChange = (newRole: UserRole) => {

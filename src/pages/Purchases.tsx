@@ -43,6 +43,7 @@ interface LocalPurchaseItem {
 }
 
 export const Purchases: React.FC = () => {
+  console.log('[Component Re-rendered] Purchases');
   const {
     settings,
     purchases,

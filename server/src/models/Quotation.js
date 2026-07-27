@@ -41,5 +41,8 @@ const quotationSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+quotationSchema.index({ companyId: 1, isDeleted: 1 });
+quotationSchema.index({ companyId: 1, updatedAt: -1 });
+
 const Quotation = mongoose.model('Quotation', quotationSchema);
 export default Quotation;

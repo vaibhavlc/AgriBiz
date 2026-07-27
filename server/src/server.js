@@ -61,14 +61,14 @@ app.use(
     origin: ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Socket-Id'],
   })
 );
 
 // Rate Limiting (prevent brute force / DDoS)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
+  max: 2000, // Limit each IP to 2000 requests per window for active collaborative syncing
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -79,8 +79,8 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Request parsing
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // Register routes
 app.use('/api/v1/auth', authRoutes);
@@ -107,7 +107,16 @@ app.use((req, res, next) => {
 // Centralized error handler
 app.use(errorHandler);
 
+// Wrap express app in HTTP server
+import http from 'http';
+import { initSocketServer } from './realtime/socketServer.js';
+
+const server = http.createServer(app);
+
+// Initialize modular realtime gateway
+initSocketServer(server);
+
 // Start server
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   logger.info(`AgriBiz Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
 });

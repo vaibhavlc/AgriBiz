@@ -28,6 +28,7 @@ import {
 import type { Supplier } from '../types';
 
 export const Suppliers: React.FC = () => {
+  console.log('[Component Re-rendered] Suppliers');
   const {
     suppliers,
     purchases,

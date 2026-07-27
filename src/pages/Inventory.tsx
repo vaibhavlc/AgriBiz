@@ -25,6 +25,7 @@ import {
 import type { Product } from '../types';
 
 export const Inventory: React.FC = () => {
+  console.log('[Component Re-rendered] Inventory');
   const {
     products,
     deleteProduct,

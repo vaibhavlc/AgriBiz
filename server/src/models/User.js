@@ -66,5 +66,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
+userSchema.index({ companyId: 1, updatedAt: -1 });
+
 const User = mongoose.model('User', userSchema);
 export default User;

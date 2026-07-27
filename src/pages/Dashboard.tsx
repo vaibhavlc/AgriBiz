@@ -191,6 +191,7 @@ const ProgressBar = ({
   );
 };
 export const Dashboard: React.FC = () => {
+  console.log('[Component Re-rendered] Dashboard');
   const {
     products,
     customers,

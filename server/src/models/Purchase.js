@@ -41,5 +41,8 @@ const purchaseSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+purchaseSchema.index({ companyId: 1, isDeleted: 1 });
+purchaseSchema.index({ companyId: 1, updatedAt: -1 });
+
 const Purchase = mongoose.model('Purchase', purchaseSchema);
 export default Purchase;

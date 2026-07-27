@@ -74,5 +74,7 @@ const settingsSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+settingsSchema.index({ companyId: 1, updatedAt: -1 });
+
 const Settings = mongoose.model('Settings', settingsSchema);
 export default Settings;

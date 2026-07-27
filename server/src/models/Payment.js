@@ -24,5 +24,8 @@ const paymentSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+paymentSchema.index({ companyId: 1, isDeleted: 1 });
+paymentSchema.index({ companyId: 1, updatedAt: -1 });
+
 const Payment = mongoose.model('Payment', paymentSchema);
 export default Payment;

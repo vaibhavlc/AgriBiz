@@ -12,7 +12,7 @@ import {
   toTitleCase,
 } from '../utils/dummyData';
 import { db } from '../db/db';
-import { startSyncDaemon } from '../utils/syncEngine';
+import { startSyncDaemon, getDeviceId, synchronizeLocalDatabase } from '../utils/syncEngine';
 
 interface AppContextType {
   recycleBin: RecycleBinItem[];
@@ -139,6 +139,8 @@ interface AppContextType {
   handleSavePayment: (e: React.FormEvent) => void;
 
   isOnline: boolean;
+  reloadData: () => Promise<void>;
+  synchronize: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -158,11 +160,19 @@ const queueSync = async (
   payload: any
 ) => {
   try {
+    let enrichedPayload = payload ? JSON.parse(JSON.stringify(payload)) : null;
+    if (enrichedPayload) {
+      enrichedPayload.deviceId = getDeviceId();
+      enrichedPayload.syncStatus = 'Pending';
+      if (!enrichedPayload.version) {
+        enrichedPayload.version = 1;
+      }
+    }
     await db.syncQueue.add({
       action,
       module,
       recordId,
-      payload: payload ? JSON.parse(JSON.stringify(payload)) : null,
+      payload: enrichedPayload,
       timestamp: new Date().toISOString(),
       retryCount: 0,
     });
@@ -225,6 +235,44 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  const reloadData = async () => {
+    console.log('[App Context] reloadData() started.');
+    try {
+      const localProducts = await db.products.toArray();
+      const localCustomers = await db.customers.toArray();
+      const localSuppliers = await db.suppliers.toArray();
+      const localInvoices = await db.invoices.toArray();
+      const localQuotations = await db.quotations.toArray();
+      const localPurchases = await db.purchases.toArray();
+      const localPayments = await db.payments.toArray();
+      const localExpenses = await db.expenses.toArray();
+      const localRecycleBin = await db.recycleBin.toArray();
+
+      setProducts(localProducts.filter((p) => !p.isDeleted));
+      setCustomers(localCustomers.filter((c) => !c.isDeleted));
+      setSuppliers(localSuppliers.filter((s) => !s.isDeleted));
+      setInvoices(localInvoices.filter((i) => !i.isDeleted));
+      setQuotations(localQuotations.filter((q) => !q.isDeleted));
+      setPurchases(localPurchases.filter((p) => !p.isDeleted));
+      setPayments(localPayments.filter((p) => !p.isDeleted));
+      setExpenses(localExpenses.filter((e) => !e.isDeleted));
+      setRecycleBin(localRecycleBin);
+
+      const localSettings = await db.settings.get('business');
+      if (localSettings) {
+        setSettings(localSettings);
+      }
+      console.log('[App Context] reloadData() finished.');
+      console.log('[App Context] React Context updated.');
+    } catch (err) {
+      console.error('Failed to reload local database:', err);
+    }
+  };
+
+  const synchronize = async () => {
+    await synchronizeLocalDatabase();
+  };
 
   // Fetch from Dexie on App Load, or seed if empty
   useEffect(() => {
@@ -324,27 +372,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
-        // Fetch active entries (filtering out soft deleted records)
-        const localProducts = await db.products.toArray();
-        const localCustomers = await db.customers.toArray();
-        const localSuppliers = await db.suppliers.toArray();
-        const localInvoices = await db.invoices.toArray();
-        const localQuotations = await db.quotations.toArray();
-        const localPurchases = await db.purchases.toArray();
-        const localPayments = await db.payments.toArray();
-        const localExpenses = await db.expenses.toArray();
-        const localRecycleBin = await db.recycleBin.toArray();
-
-        setProducts(localProducts.filter((p) => !p.isDeleted));
-        setCustomers(localCustomers.filter((c) => !c.isDeleted));
-        setSuppliers(localSuppliers.filter((s) => !s.isDeleted));
-        setInvoices(localInvoices.filter((i) => !i.isDeleted));
-        setQuotations(localQuotations.filter((q) => !q.isDeleted));
-        setPurchases(localPurchases.filter((p) => !p.isDeleted));
-        setPayments(localPayments.filter((p) => !p.isDeleted));
-        setExpenses(localExpenses.filter((e) => !e.isDeleted));
-        setRecycleBin(localRecycleBin);
-
+        await reloadData();
         console.log('IndexedDB loaded successfully.');
         startSyncDaemon();
       } catch (err) {
@@ -353,6 +381,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     initializeDatabase();
+  }, []);
+
+  // Listen for sync complete events
+  useEffect(() => {
+    const handleSyncComplete = async () => {
+      console.log('[App Context] Sync complete event received. Reloading Dexie data...');
+      await reloadData();
+      console.log('[App Context] React Context refreshed with reloaded Dexie data.');
+    };
+
+    window.addEventListener('sync-completed', handleSyncComplete);
+    return () => {
+      window.removeEventListener('sync-completed', handleSyncComplete);
+    };
   }, []);
 
   // Unsaved Changes Protection State & Logic
@@ -1734,6 +1776,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openEditPaymentForm,
         handleSavePayment,
         isOnline,
+        reloadData,
+        synchronize,
       }}
     >
       {children}

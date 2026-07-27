@@ -16,8 +16,11 @@ import Quotation from '../models/Quotation.js';
 import Purchase from '../models/Purchase.js';
 import Payment from '../models/Payment.js';
 import Expense from '../models/Expense.js';
+import Settings from '../models/Settings.js';
+import User from '../models/User.js';
 
 import logger from '../config/logger.js';
+import { socketEmitter } from '../realtime/socketEmitter.js';
 
 class SyncController {
   async processSyncBatch(req, res, next) {
@@ -328,7 +331,83 @@ class SyncController {
       }
 
       logger.info(`Batch sync completed for company ${companyId}. Successful: ${results.filter(r => r.success).length}/${results.length}`);
+
+      // Broadcast changes to other sockets in the same company
+      for (const res of results) {
+        if (res.success) {
+          const op = operations.find(o => o.recordId === res.recordId && o.module === res.module);
+          const senderDeviceId = op?.payload?.deviceId || op?.deviceId || null;
+          
+          socketEmitter.publishSyncEvent({
+            companyId,
+            module: res.module,
+            action: res.action,
+            recordId: res.recordId,
+            updatedAt: res.data?.updatedAt || new Date().toISOString(),
+            senderUserId: req.user.userId,
+            senderDeviceId,
+            senderSocketId: req.headers['x-socket-id'] || null
+          });
+        }
+      }
+
       res.status(200).json({ success: true, results });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async pullUpdates(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { lastSyncTimestamp, deviceId } = req.query;
+
+      const since = lastSyncTimestamp ? new Date(lastSyncTimestamp) : new Date(0);
+      logger.info(`Pulling updates since ${since.toISOString()} for company ${companyId} from device ${deviceId || 'unknown'}`);
+
+      // Query all collections for updates after lastSyncTimestamp
+      const [
+        products,
+        customers,
+        suppliers,
+        invoices,
+        purchases,
+        quotations,
+        payments,
+        expenses,
+        settings,
+        users
+      ] = await Promise.all([
+        Product.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Customer.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Supplier.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Invoice.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Purchase.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Quotation.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Payment.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Expense.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        Settings.find({ companyId, updatedAt: { $gt: since } }).lean(),
+        User.find({ companyId, updatedAt: { $gt: since } }).select('-password').lean()
+      ]);
+
+      const serverTimestamp = new Date().toISOString();
+
+      res.status(200).json({
+        success: true,
+        serverTimestamp,
+        updates: {
+          Product: products.map(p => ({ ...p, id: p.productId })),
+          Customer: customers.map(c => ({ ...c, id: c.customerId })),
+          Supplier: suppliers.map(s => ({ ...s, id: s.supplierId })),
+          Invoice: invoices.map(i => ({ ...i, id: i.invoiceId })),
+          Purchase: purchases.map(p => ({ ...p, id: p.purchaseId })),
+          Quotation: quotations.map(q => ({ ...q, id: q.quotationId })),
+          Payment: payments.map(p => ({ ...p, id: p.paymentId })),
+          Expense: expenses.map(e => ({ ...e, id: e.expenseId })),
+          Settings: settings.map(s => ({ ...s, id: s.id || 'business' })),
+          User: users.map(u => ({ ...u, id: u.userId }))
+        }
+      });
     } catch (error) {
       next(error);
     }

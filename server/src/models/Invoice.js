@@ -45,5 +45,8 @@ const invoiceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+invoiceSchema.index({ companyId: 1, isDeleted: 1 });
+invoiceSchema.index({ companyId: 1, updatedAt: -1 });
+
 const Invoice = mongoose.model('Invoice', invoiceSchema);
 export default Invoice;

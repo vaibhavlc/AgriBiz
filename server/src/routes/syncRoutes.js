@@ -7,5 +7,6 @@ const router = express.Router();
 router.use(authenticate);
 
 router.post('/', syncController.processSyncBatch);
+router.get('/pull', syncController.pullUpdates);
 
 export default router;

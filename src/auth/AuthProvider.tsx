@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import { authService } from './authService';
 import { hasPermission as checkRolePermission } from './permissions';
+import { initializeSocket, disconnectSocket } from '../utils/socketService';
 import type { User, Company, UserRole } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -22,6 +23,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     refreshUser();
   }, []);
+
+  useEffect(() => {
+    if (currentUser) {
+      initializeSocket();
+    } else {
+      disconnectSocket();
+    }
+  }, [currentUser]);
 
   const login = async (mobile: string, password: string, role?: UserRole, rememberMe: boolean = true) => {
     const res = await authService.login(mobile, password, role, rememberMe);
