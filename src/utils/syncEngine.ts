@@ -84,10 +84,18 @@ export const pullRemoteUpdates = async () => {
   }
 
   try {
-    const lastSyncTimestamp = sessionStorage.getItem('agribiz_last_sync_timestamp') || '1970-01-01T00:00:00.000Z';
+    const rawTimestamp = sessionStorage.getItem('agribiz_last_sync_timestamp');
+    let lastSyncTimestamp = '1970-01-01T00:00:00.000Z';
+    if (rawTimestamp && rawTimestamp !== 'Never') {
+      const date = new Date(rawTimestamp);
+      // Subtract a 5-second buffer to handle database commit latency and clock drift
+      date.setSeconds(date.getSeconds() - 5);
+      lastSyncTimestamp = date.toISOString();
+    }
+    
     const deviceId = getDeviceId();
 
-    console.log(`[Sync Engine] Pulling updates since ${lastSyncTimestamp} from server...`);
+    console.log(`[Sync Engine] Pulling updates since ${lastSyncTimestamp} (buffered from ${rawTimestamp || 'Never'}) from server...`);
 
     const response = await api.get('/sync/pull', {
       params: { lastSyncTimestamp, deviceId }

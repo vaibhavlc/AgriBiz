@@ -118,6 +118,7 @@ export const initializeSocket = (): Socket | null => {
 
     console.log(`[Socket Client] Triggering pullRemoteUpdates for remote edit: ${data.action} on ${data.module}`);
     await pullRemoteUpdates();
+    window.dispatchEvent(new CustomEvent('sync-completed'));
   });
 
   socketInstance.on('sync:staff-changed', (data: {
