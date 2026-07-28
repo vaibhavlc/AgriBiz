@@ -3,6 +3,111 @@ import { useAuth } from '../../auth/AuthContext';
 import { PasswordStrength } from './PasswordStrength';
 import { Building2, User, Lock, Smartphone, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Mail, KeyRound } from 'lucide-react';
 
+// ── 4-Box PIN Input Matching Login Behavior (Defined outside to preserve DOM focus) ──
+const PinInput = ({
+  value,
+  onChange,
+  label,
+  inputId,
+  nextInputId,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  label: string;
+  inputId: string;
+  nextInputId?: string;
+}) => {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  return (
+    <div className="form-group" style={{ marginBottom: '16px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+        <label htmlFor={inputId} style={{ fontWeight: 700, fontSize: '13px', margin: 0, color: 'var(--text-primary,#0f172a)' }}>
+          {label}
+        </label>
+        {value.length === 4 && (
+          <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+            <CheckCircle2 size={14} /> Ready
+          </span>
+        )}
+      </div>
+
+      <div
+        style={{ position: 'relative', display: 'flex', justifyContent: 'center', gap: '12px', cursor: 'pointer' }}
+        onClick={() => inputRef.current?.focus()}
+      >
+        {/* Overlay Input */}
+        <input
+          id={inputId}
+          ref={inputRef}
+          type="password"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={4}
+          value={value}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+            onChange(val);
+            if (val.length === 4 && nextInputId) {
+              setTimeout(() => {
+                const nextEl = document.getElementById(nextInputId);
+                if (nextEl) nextEl.focus();
+              }, 80);
+            }
+          }}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            opacity: 0,
+            cursor: 'pointer',
+            zIndex: 2,
+          }}
+        />
+
+        {/* 4 Visual Digit Boxes */}
+        {[0, 1, 2, 3].map((i) => {
+          const isFilled = value.length > i;
+          const isCurrent = value.length === i;
+          return (
+            <div
+              key={i}
+              style={{
+                width: '50px',
+                height: '56px',
+                borderRadius: '14px',
+                border: isCurrent
+                  ? '2.5px solid var(--primary,#10b981)'
+                  : isFilled
+                  ? '2px solid rgba(16,185,129,0.5)'
+                  : '2px solid var(--border-color,#cbd5e1)',
+                background: isFilled
+                  ? 'rgba(16,185,129,0.06)'
+                  : isCurrent
+                  ? 'rgba(16,185,129,0.04)'
+                  : 'var(--card-bg,#ffffff)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '26px',
+                fontWeight: 800,
+                color: 'var(--primary,#10b981)',
+                boxShadow: isCurrent ? '0 0 14px rgba(16,185,129,0.25)' : 'none',
+                transition: 'all 0.15s ease',
+                transform: isCurrent ? 'scale(1.04)' : 'scale(1)',
+              }}
+            >
+              {isFilled ? '•' : ''}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
 }
@@ -65,111 +170,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
     setLoading(false);
     if (!res.success) setErrorMsg(res.message);
     // On success: AuthProvider auto-logs in → ProtectedRoute → Dashboard
-  };
-
-  // ── 4-Box PIN Input Matching Login Behavior ──────────────────────────────────
-  const PinInput = ({
-    value,
-    onChange,
-    label,
-    inputId,
-    nextInputId,
-  }: {
-    value: string;
-    onChange: (v: string) => void;
-    label: string;
-    inputId: string;
-    nextInputId?: string;
-  }) => {
-    const inputRef = useRef<HTMLInputElement | null>(null);
-
-    return (
-      <div className="form-group" style={{ marginBottom: '16px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-          <label htmlFor={inputId} style={{ fontWeight: 700, fontSize: '13px', margin: 0, color: 'var(--text-primary,#0f172a)' }}>
-            {label}
-          </label>
-          {value.length === 4 && (
-            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <CheckCircle2 size={14} /> Ready
-            </span>
-          )}
-        </div>
-
-        <div
-          style={{ position: 'relative', display: 'flex', justifyContent: 'center', gap: '12px', cursor: 'pointer' }}
-          onClick={() => inputRef.current?.focus()}
-        >
-          {/* Overlay Input */}
-          <input
-            id={inputId}
-            ref={inputRef}
-            type="password"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={4}
-            value={value}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-              onChange(val);
-              if (val.length === 4 && nextInputId) {
-                setTimeout(() => {
-                  const nextEl = document.getElementById(nextInputId);
-                  if (nextEl) nextEl.focus();
-                }, 80);
-              }
-            }}
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              opacity: 0,
-              cursor: 'pointer',
-              zIndex: 2,
-            }}
-          />
-
-          {/* 4 Visual Digit Boxes */}
-          {[0, 1, 2, 3].map((i) => {
-            const isFilled = value.length > i;
-            const isCurrent = value.length === i;
-            return (
-              <div
-                key={i}
-                style={{
-                  width: '50px',
-                  height: '56px',
-                  borderRadius: '14px',
-                  border: isCurrent
-                    ? '2.5px solid var(--primary,#10b981)'
-                    : isFilled
-                    ? '2px solid rgba(16,185,129,0.5)'
-                    : '2px solid var(--border-color,#cbd5e1)',
-                  background: isFilled
-                    ? 'rgba(16,185,129,0.06)'
-                    : isCurrent
-                    ? 'rgba(16,185,129,0.04)'
-                    : 'var(--card-bg,#ffffff)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '26px',
-                  fontWeight: 800,
-                  color: 'var(--primary,#10b981)',
-                  boxShadow: isCurrent ? '0 0 14px rgba(16,185,129,0.25)' : 'none',
-                  transition: 'all 0.15s ease',
-                  transform: isCurrent ? 'scale(1.04)' : 'scale(1)',
-                }}
-              >
-                {isFilled ? '•' : ''}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    );
   };
 
   return (
