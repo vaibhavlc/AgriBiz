@@ -36,11 +36,15 @@ class UserService {
       throw new Error('User not found');
     }
 
-    const payload = {
-      name: updateData.name,
-      role: updateData.role,
-      status: updateData.status
-    };
+    const payload = {};
+    if (updateData.name) payload.name = updateData.name;
+    if (updateData.role) payload.role = updateData.role;
+    if (updateData.status) payload.status = updateData.status;
+    if (updateData.customPermissions) payload.customPermissions = updateData.customPermissions;
+
+    if (updateData.password && updateData.password.trim()) {
+      payload.password = await bcrypt.hash(updateData.password.trim(), 10);
+    }
 
     if (updateData.pin && updateData.pin.toString().trim()) {
       payload.pin = await bcrypt.hash(updateData.pin.toString().trim(), 10);

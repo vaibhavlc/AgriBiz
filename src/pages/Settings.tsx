@@ -126,6 +126,7 @@ export const Settings: React.FC = () => {
   // Password reset modal state
   const [resetStaffUser, setResetStaffUser] = useState<User | null>(null);
   const [newResetPass, setNewResetPass] = useState('');
+  const [newResetPin, setNewResetPin] = useState('');
 
   // Delete Business Account Modal state
   const [isDeleteCompanyModalOpen, setIsDeleteCompanyModalOpen] = useState(false);
@@ -282,6 +283,10 @@ export const Settings: React.FC = () => {
   };
 
   const handleToggleUserStatus = async (u: User) => {
+    if (u.role === 'Owner') {
+      showToast('The Owner account is the primary administrator and cannot be disabled.', 'warning');
+      return;
+    }
     const newStatus = u.status === 'Active' ? 'Inactive' : 'Active';
     try {
       const res = await api.put(`/users/${u.id}`, { status: newStatus });
@@ -296,20 +301,53 @@ export const Settings: React.FC = () => {
 
   const handleResetUserPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!resetStaffUser || !newResetPass || newResetPass.length < 6) {
-      showToast('Password must be at least 6 characters.', 'error');
-      return;
-    }
-    try {
-      const res = await api.put(`/users/${resetStaffUser.id}`, { password: newResetPass });
-      if (res.data.success) {
-        showToast(`Password for ${resetStaffUser.name} reset successfully!`, 'success');
-        setResetStaffUser(null);
-        setNewResetPass('');
-        refreshUsersList();
+    if (!resetStaffUser) return;
+
+    if (resetStaffUser.role === 'Owner') {
+      if (!newResetPass.trim() && !newResetPin.trim()) {
+        showToast('Please enter a new password or a new 4-digit PIN to reset.', 'error');
+        return;
       }
-    } catch (err: any) {
-      showToast(err.response?.data?.message || 'Failed to reset password.', 'error');
+      if (newResetPass.trim() && newResetPass.trim().length < 6) {
+        showToast('Password must be at least 6 characters long.', 'error');
+        return;
+      }
+      if (newResetPin.trim() && !/^\d{4}$/.test(newResetPin.trim())) {
+        showToast('PIN must be exactly 4 numeric digits.', 'error');
+        return;
+      }
+      try {
+        const payload: any = {};
+        if (newResetPass.trim()) payload.password = newResetPass.trim();
+        if (newResetPin.trim()) payload.pin = newResetPin.trim();
+
+        const res = await api.put(`/users/${resetStaffUser.id}`, payload);
+        if (res.data.success) {
+          showToast(`Owner credentials updated successfully for ${resetStaffUser.name}!`, 'success');
+          setResetStaffUser(null);
+          setNewResetPass('');
+          setNewResetPin('');
+          refreshUsersList();
+        }
+      } catch (err: any) {
+        showToast(err.response?.data?.message || 'Failed to update credentials.', 'error');
+      }
+    } else {
+      if (!newResetPin.trim() || !/^\d{4}$/.test(newResetPin.trim())) {
+        showToast('Security PIN must be exactly 4 numeric digits.', 'error');
+        return;
+      }
+      try {
+        const res = await api.put(`/users/${resetStaffUser.id}`, { pin: newResetPin.trim() });
+        if (res.data.success) {
+          showToast(`Security PIN for ${resetStaffUser.name} reset successfully!`, 'success');
+          setResetStaffUser(null);
+          setNewResetPin('');
+          refreshUsersList();
+        }
+      } catch (err: any) {
+        showToast(err.response?.data?.message || 'Failed to reset PIN.', 'error');
+      }
     }
   };
 
@@ -1952,9 +1990,10 @@ export const Settings: React.FC = () => {
                                     <button
                                       type="button"
                                       className={`btn btn-sm ${u.status === 'Active' ? 'btn-secondary danger' : 'btn-secondary'}`}
-                                      title={u.status === 'Active' ? 'Disable Account' : 'Enable Account'}
-                                      disabled={u.id === currentUser.id}
+                                      title={u.role === 'Owner' ? 'Owner account cannot be disabled' : u.status === 'Active' ? 'Disable Account' : 'Enable Account'}
+                                      disabled={u.role === 'Owner'}
                                       onClick={() => handleToggleUserStatus(u)}
+                                      style={{ opacity: u.role === 'Owner' ? 0.5 : 1, cursor: u.role === 'Owner' ? 'not-allowed' : 'pointer' }}
                                     >
                                       {u.status === 'Active' ? <UserX size={13} /> : <UserCheck size={13} />}
                                       {u.status === 'Active' ? 'Disable' : 'Enable'}
@@ -1962,10 +2001,11 @@ export const Settings: React.FC = () => {
                                     <button
                                       type="button"
                                       className="btn btn-secondary btn-sm"
-                                      title="Reset Password"
+                                      title={u.role === 'Owner' ? 'Reset Owner Password & PIN' : 'Reset Staff Security PIN'}
                                       onClick={() => {
                                         setResetStaffUser(u);
                                         setNewResetPass('');
+                                        setNewResetPin('');
                                       }}
                                     >
                                       <KeyRound size={13} /> Reset
@@ -2296,39 +2336,104 @@ export const Settings: React.FC = () => {
         </Modal>
       )}
 
-      {/* Reset Employee Password Modal */}
+      {/* Reset Credentials Modal */}
       {resetStaffUser && (
         <Modal
           isOpen={!!resetStaffUser}
-          onClose={() => setResetStaffUser(null)}
-          title={`Reset Password for ${resetStaffUser.name}`}
+          onClose={() => {
+            setResetStaffUser(null);
+            setNewResetPass('');
+            setNewResetPin('');
+          }}
+          title={resetStaffUser.role === 'Owner' ? `👑 Reset Owner Credentials — ${resetStaffUser.name}` : `🔑 Reset Security PIN — ${resetStaffUser.name}`}
         >
           <form onSubmit={handleResetUserPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
-              Set a new login password for <strong>+91 {resetStaffUser.mobile}</strong>.
-            </p>
+            {resetStaffUser.role === 'Owner' ? (
+              <>
+                <div style={{
+                  padding: '12px 14px', borderRadius: '10px',
+                  background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)',
+                  color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.4',
+                }}>
+                  As the <strong>Business Owner</strong>, you can update your login password and/or your 4-digit PIN below.
+                </div>
 
-            <div className="form-group">
-              <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                New Password *
-              </label>
-              <input
-                type="password"
-                className="form-control"
-                placeholder="Enter at least 6 characters"
-                value={newResetPass}
-                onChange={(e) => setNewResetPass(e.target.value)}
-                required
-                autoFocus
-              />
-            </div>
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                    New Login Password <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional, Min 6 chars)</span>
+                  </label>
+                  <input
+                    type="password"
+                    className="form-control"
+                    placeholder="Enter new login password"
+                    value={newResetPass}
+                    onChange={(e) => setNewResetPass(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                    New 4-Digit Owner PIN <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional)</span>
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    className="form-control"
+                    placeholder="Enter 4-digit numeric PIN"
+                    value={newResetPin}
+                    onChange={(e) => setNewResetPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    style={{ fontSize: '18px', letterSpacing: '4px', fontWeight: 800 }}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div style={{
+                  padding: '12px 14px', borderRadius: '10px',
+                  background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)',
+                  color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.4',
+                }}>
+                  Set a new 4-digit security PIN for staff member <strong>{resetStaffUser.name}</strong> (+91 {resetStaffUser.mobile || 'Staff'}).
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
+                    New 4-Digit Security PIN *
+                  </label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    maxLength={4}
+                    className="form-control"
+                    placeholder="Enter 4-digit PIN (e.g. 1234)"
+                    value={newResetPin}
+                    onChange={(e) => setNewResetPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
+                    style={{ fontSize: '20px', letterSpacing: '6px', fontWeight: 800 }}
+                    required
+                    autoFocus
+                  />
+                </div>
+              </>
+            )}
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '12px' }}>
-              <button type="button" className="btn btn-secondary" onClick={() => setResetStaffUser(null)}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => {
+                  setResetStaffUser(null);
+                  setNewResetPass('');
+                  setNewResetPin('');
+                }}
+              >
                 Cancel
               </button>
-              <button type="submit" className="btn btn-primary">
-                Reset Password
+              <button type="submit" className="btn btn-primary" style={{ fontWeight: 800 }}>
+                {resetStaffUser.role === 'Owner' ? 'Save Owner Credentials' : 'Reset Security PIN'}
               </button>
             </div>
           </form>
