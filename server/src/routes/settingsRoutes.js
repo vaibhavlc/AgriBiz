@@ -11,4 +11,7 @@ router.use(authenticate);
 router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), settingsController.getSettings);
 router.put('/', authorizeRoles('Owner'), validate(settingsSchema), settingsController.updateSettings);
 
+// DELETE Business Account (Owner only)
+router.delete('/company', authorizeRoles('Owner'), settingsController.deleteCompanyAccount);
+
 export default router;

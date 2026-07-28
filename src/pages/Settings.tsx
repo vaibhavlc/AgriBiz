@@ -5,6 +5,7 @@ import api from '../utils/api';
 import { ALL_PAGE_PERMISSIONS, ROLE_PERMISSIONS } from '../auth/permissions';
 import type { UserRole, User } from '../types';
 import { Modal } from '../components/Modal';
+import { authService } from '../auth/authService';
 import {
   Store,
   FileText,
@@ -28,6 +29,7 @@ import {
   Edit2,
   UserCheck,
   UserX,
+  AlertTriangle,
 } from 'lucide-react';
 import { getFullAddress, initialSettings, toTitleCase } from '../utils/dummyData';
 
@@ -124,6 +126,43 @@ export const Settings: React.FC = () => {
   // Password reset modal state
   const [resetStaffUser, setResetStaffUser] = useState<User | null>(null);
   const [newResetPass, setNewResetPass] = useState('');
+
+  // Delete Business Account Modal state
+  const [isDeleteCompanyModalOpen, setIsDeleteCompanyModalOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deletePasswordOrPin, setDeletePasswordOrPin] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteErrorMsg, setDeleteErrorMsg] = useState('');
+
+  const handleDeleteBusinessAccount = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (deleteConfirmText !== 'DELETE') {
+      setDeleteErrorMsg('You must type DELETE exactly to confirm.');
+      return;
+    }
+    if (!deletePasswordOrPin.trim()) {
+      setDeleteErrorMsg('Please enter your Owner Password or 4-digit PIN.');
+      return;
+    }
+
+    setDeleteErrorMsg('');
+    setDeleteLoading(true);
+
+    try {
+      const res = await authService.deleteBusinessAccount(deleteConfirmText, deletePasswordOrPin.trim());
+      setDeleteLoading(false);
+      if (res.success) {
+        setIsDeleteCompanyModalOpen(false);
+        showToast('Business account permanently deleted.', 'info');
+        window.location.href = '/';
+      } else {
+        setDeleteErrorMsg(res.message);
+      }
+    } catch (err: any) {
+      setDeleteLoading(false);
+      setDeleteErrorMsg(err.message || 'Deletion failed. Please try again.');
+    }
+  };
 
   const refreshUsersList = async () => {
     if (!currentCompany) return;
@@ -1081,6 +1120,57 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Danger Zone: Delete Business Account (Owner only) */}
+              {currentUser?.role === 'Owner' && (
+                <div style={{
+                  marginTop: '28px',
+                  padding: '20px 24px',
+                  borderRadius: '16px',
+                  background: 'rgba(239, 68, 68, 0.05)',
+                  border: '1.5px solid rgba(239, 68, 68, 0.25)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '16px',
+                  flexWrap: 'wrap',
+                }}>
+                  <div style={{ flex: 1, minWidth: '260px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                      <AlertTriangle size={18} style={{ color: '#EF4444' }} />
+                      <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#EF4444' }}>
+                        Danger Zone — Delete Business Account
+                      </h4>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary,#475569)', lineHeight: '1.5' }}>
+                      Permanently delete this business account, all staff members, inventory, invoices, reports, customers, and all MongoDB records. <strong>This action cannot be undone.</strong>
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="btn btn-secondary danger"
+                    onClick={() => {
+                      setDeleteConfirmText('');
+                      setDeletePasswordOrPin('');
+                      setDeleteErrorMsg('');
+                      setIsDeleteCompanyModalOpen(true);
+                    }}
+                    style={{
+                      borderRadius: '12px',
+                      padding: '10px 20px',
+                      fontWeight: 800,
+                      fontSize: '13px',
+                      backgroundColor: '#EF4444',
+                      color: '#FFFFFF',
+                      border: 'none',
+                      boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <Trash2 size={16} /> Delete Business Account
+                  </button>
+                </div>
+              )}
             </>
           )}
 
@@ -2239,6 +2329,105 @@ export const Settings: React.FC = () => {
               </button>
               <button type="submit" className="btn btn-primary">
                 Reset Password
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Delete Business Account Confirmation Modal */}
+      {isDeleteCompanyModalOpen && (
+        <Modal
+          isOpen={isDeleteCompanyModalOpen}
+          onClose={() => {
+            if (!deleteLoading) {
+              setIsDeleteCompanyModalOpen(false);
+            }
+          }}
+          title="🔥 Delete Business Account Permanently"
+        >
+          <form onSubmit={handleDeleteBusinessAccount} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              background: 'rgba(239, 68, 68, 0.08)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
+              color: '#B91C1C',
+              fontSize: '13px',
+              lineHeight: '1.5',
+            }}>
+              <strong>⚠️ CRITICAL WARNING:</strong> This will permanently erase <strong>{currentCompany?.businessName}</strong> and ALL associated data from MongoDB (staff, sales, purchases, inventory, payments, reports, tokens) and clear all local offline caches.
+            </div>
+
+            {deleteErrorMsg && (
+              <div style={{
+                padding: '10px 14px', borderRadius: '10px',
+                backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                color: '#EF4444', fontSize: '13px', fontWeight: 600,
+              }}>
+                {deleteErrorMsg}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
+                Type <span style={{ color: '#EF4444', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>DELETE</span> to confirm *
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="Type DELETE"
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                required
+                autoFocus
+                disabled={deleteLoading}
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
+                Owner Password or 4-Digit PIN *
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="Enter your Owner Password or 4-digit PIN"
+                value={deletePasswordOrPin}
+                onChange={(e) => setDeletePasswordOrPin(e.target.value)}
+                required
+                disabled={deleteLoading}
+              />
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={deleteLoading}
+                onClick={() => setIsDeleteCompanyModalOpen(false)}
+                style={{ flex: 1, borderRadius: '10px', height: '44px', fontWeight: 700, justifyContent: 'center' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn"
+                disabled={deleteLoading || deleteConfirmText !== 'DELETE' || !deletePasswordOrPin.trim()}
+                style={{
+                  flex: 1,
+                  borderRadius: '10px',
+                  height: '44px',
+                  fontWeight: 800,
+                  justifyContent: 'center',
+                  backgroundColor: deleteConfirmText === 'DELETE' && deletePasswordOrPin.trim() ? '#EF4444' : 'var(--border-color,#cbd5e1)',
+                  color: '#FFFFFF',
+                  border: 'none',
+                  boxShadow: deleteConfirmText === 'DELETE' && deletePasswordOrPin.trim() ? '0 4px 14px rgba(239,68,68,0.3)' : 'none',
+                  cursor: deleteConfirmText === 'DELETE' && deletePasswordOrPin.trim() ? 'pointer' : 'not-allowed',
+                }}
+              >
+                {deleteLoading ? 'Deleting Account...' : '🔥 Permanently Delete'}
               </button>
             </div>
           </form>

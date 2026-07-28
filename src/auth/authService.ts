@@ -326,6 +326,55 @@ class AuthService {
     }
   }
 
+  public async deleteBusinessAccount(confirmText: string, passwordOrPin: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.delete('/settings/company', {
+        data: { confirmText, passwordOrPin },
+      });
+
+      if (response.data.success) {
+        await this.purgeAllLocalClientState();
+        return { success: true, message: response.data.message };
+      }
+      return { success: false, message: response.data.message || 'Account deletion failed.' };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to delete business account. Verification failed.';
+      return { success: false, message };
+    }
+  }
+
+  public async purgeAllLocalClientState(): Promise<void> {
+    try {
+      this.setAccessToken(null);
+      localStorage.clear();
+      sessionStorage.clear();
+
+      try {
+        await db.clearAllLocalData();
+      } catch (e) {
+        console.warn('Error clearing Dexie tables:', e);
+      }
+
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map(k => caches.delete(k)));
+        } catch (e) {
+          console.warn('Error clearing PWA caches:', e);
+        }
+      }
+
+      try {
+        const { disconnectSocket } = await import('../utils/socketService');
+        disconnectSocket();
+      } catch (e) {
+        console.warn('Error disconnecting socket:', e);
+      }
+    } catch (e) {
+      console.error('Error during client state purge:', e);
+    }
+  }
+
   // Only clears the staff session — keeps company session alive so next open goes to Staff Selection
   public logoutStaff(): void {
     sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
