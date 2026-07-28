@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 
 export const generateAccessToken = (user) => {
   return jwt.sign(
@@ -10,7 +11,7 @@ export const generateAccessToken = (user) => {
 
 export const generateRefreshToken = (user) => {
   return jwt.sign(
-    { userId: user.userId },
+    { userId: user.userId, jti: crypto.randomUUID() },
     process.env.JWT_REFRESH_SECRET || 'agribiz_refresh_token_secret_key_67890',
     { expiresIn: '7d' }
   );

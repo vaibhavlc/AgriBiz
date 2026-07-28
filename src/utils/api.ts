@@ -38,12 +38,11 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Check if error is 401 and not already retrying, and not login/refresh route
+    // Do NOT attempt token refresh for unauthenticated errors on auth routes
     if (
       error.response?.status === 401 &&
       !originalRequest._retry &&
-      originalRequest.url !== '/auth/refresh' &&
-      originalRequest.url !== '/auth/login'
+      !originalRequest.url?.includes('/auth/')
     ) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
@@ -64,7 +63,11 @@ api.interceptors.response.use(
 
       try {
         const storedRefreshToken = sessionStorage.getItem('agribiz_refresh_token');
-        // Direct call to refresh session via separate Axios instance to bypass request interceptors
+        if (!storedRefreshToken) {
+          processQueue(new Error('No refresh token available.'));
+          return Promise.reject(error);
+        }
+
         const refreshResponse = await axios.post(
           '/api/v1/auth/refresh',
           { refreshToken: storedRefreshToken },
@@ -86,7 +89,6 @@ api.interceptors.response.use(
           processQueue(null, accessToken);
           return api(originalRequest);
         } else {
-          // Token refresh failed or returned invalid response
           sessionStorage.removeItem('agribiz_access_token');
           sessionStorage.removeItem('agribiz_refresh_token');
           sessionStorage.removeItem('agribiz_current_user');
@@ -94,11 +96,12 @@ api.interceptors.response.use(
           sessionStorage.removeItem('agribiz_auth_session');
           
           processQueue(new Error('Session refresh failed.'));
-          window.location.reload();
+          if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
+            window.location.href = '/';
+          }
           return Promise.reject(error);
         }
       } catch (refreshErr) {
-        // Network error or endpoint returned 401/500
         sessionStorage.removeItem('agribiz_access_token');
         sessionStorage.removeItem('agribiz_refresh_token');
         sessionStorage.removeItem('agribiz_current_user');
@@ -106,7 +109,9 @@ api.interceptors.response.use(
         sessionStorage.removeItem('agribiz_auth_session');
         
         processQueue(refreshErr);
-        window.location.reload();
+        if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
+          window.location.href = '/';
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;
