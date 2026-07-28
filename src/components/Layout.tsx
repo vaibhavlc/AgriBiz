@@ -33,8 +33,8 @@ import {
   LogOut,
   TrendingDown,
   Trash2,
-  Globe,
   RefreshCw,
+  Smartphone,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -936,96 +936,142 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </button>
 
               {isProfileDropdownOpen && (
-                <div className="profile-dropdown">
-                  <div className="profile-dropdown-user">
-                    <div className="profile-dropdown-name">{currentUser ? currentUser.name : 'Vaibhav Patel'}</div>
-                    <div className="profile-dropdown-role">
-                      <span style={{ fontWeight: 700, color: 'var(--primary)' }}>{currentUser ? currentUser.role : 'Owner'}</span> • {currentCompany ? currentCompany.businessName : settings.businessName}
+                <div className="profile-dropdown animate-fade-in-scale">
+                  {/* Header Identity Card */}
+                  <div className="profile-dropdown-header-card">
+                    <div className="profile-dropdown-avatar">
+                      {currentUser?.name ? currentUser.name.slice(0, 2).toUpperCase() : 'GP'}
+                      <span className={`profile-status-ring ${userStatus}`} />
                     </div>
-                    {currentUser?.mobile && (
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        📱 +91 {currentUser.mobile}
+                    <div className="profile-dropdown-info">
+                      <div className="profile-dropdown-name-row">
+                        <span className="profile-dropdown-name">{currentUser ? currentUser.name : 'Gokul Patil'}</span>
+                        <span className={`profile-role-badge role-${currentUser?.role?.toLowerCase() || 'owner'}`}>
+                          {currentUser?.role === 'Owner' ? '👑 Owner' : currentUser?.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
+                        </span>
                       </div>
-                    )}
+                      <div className="profile-dropdown-company">
+                        <Store size={12} style={{ flexShrink: 0, opacity: 0.7 }} />
+                        <span className="truncate-text">{currentCompany ? currentCompany.businessName : (settings.businessName || 'Daivyog Engineering Works')}</span>
+                      </div>
+                      {currentUser?.mobile && (
+                        <div className="profile-dropdown-mobile">
+                          <Smartphone size={12} style={{ flexShrink: 0, opacity: 0.7 }} />
+                          <span>+91 {currentUser.mobile}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  {hasPermission('settings') && (
+
+                  {/* Presence Selector Segmented Control */}
+                  <div className="profile-dropdown-section">
+                    <div className="profile-section-title">Set Status</div>
+                    <div className="status-selector-pills">
+                      <button
+                        type="button"
+                        className={`status-pill ${userStatus === 'online' ? 'active online' : ''}`}
+                        onClick={() => handleUpdatePresence('online')}
+                        title="Set status to Online"
+                      >
+                        <span className="status-dot online" />
+                        <span>Online</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`status-pill ${userStatus === 'busy' ? 'active busy' : ''}`}
+                        onClick={() => handleUpdatePresence('busy')}
+                        title="Set status to Busy"
+                      >
+                        <span className="status-dot busy" />
+                        <span>Busy</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`status-pill ${userStatus === 'away' ? 'active away' : ''}`}
+                        onClick={() => handleUpdatePresence('away')}
+                        title="Set status to Away"
+                      >
+                        <span className="status-dot away" />
+                        <span>Away</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="profile-dropdown-divider" />
+
+                  {/* Menu List */}
+                  <div className="profile-dropdown-menu-list">
+                    {hasPermission('settings') && (
+                      <button
+                        type="button"
+                        className="profile-menu-btn"
+                        onClick={() => {
+                          handleTabChange('settings');
+                          setIsProfileDropdownOpen(false);
+                        }}
+                      >
+                        <div className="profile-menu-icon icon-settings">
+                          <User size={15} />
+                        </div>
+                        <div className="profile-menu-text">
+                          <span className="title">Profile & Settings</span>
+                          <span className="desc">Manage business profile & team</span>
+                        </div>
+                        <ChevronRight size={14} className="chevron" />
+                      </button>
+                    )}
+
                     <button
-                      className="profile-dropdown-item"
+                      type="button"
+                      className="profile-menu-btn"
                       onClick={() => {
-                        handleTabChange('settings');
                         setIsProfileDropdownOpen(false);
+                        setShowSyncPanel(true);
                       }}
                     >
-                      <User size={14} />
-                      <span>Profile & Settings</span>
+                      <div className="profile-menu-icon icon-sync">
+                        <RefreshCw size={15} />
+                      </div>
+                      <div className="profile-menu-text">
+                        <span className="title">Sync Diagnostics</span>
+                        <span className="desc">Check cloud database status</span>
+                      </div>
+                      <ChevronRight size={14} className="chevron" />
                     </button>
-                  )}
 
-                  <div className="status-selector-header">Set Status</div>
-                  <div className="status-selector">
                     <button
-                      className={`status-dot-btn ${userStatus === 'online' ? 'active' : ''}`}
-                      onClick={() => handleUpdatePresence('online')}
-                      title="Set status to Online"
+                      type="button"
+                      className="profile-menu-btn"
+                      onClick={() => {
+                        setIsProfileDropdownOpen(false);
+                        logoutStaff();
+                        showToast('Switched — please select your profile', 'info');
+                      }}
                     >
-                      <span className="status-dot online"></span>
-                      <span>Online</span>
-                    </button>
-                    <button
-                      className={`status-dot-btn ${userStatus === 'busy' ? 'active' : ''}`}
-                      onClick={() => handleUpdatePresence('busy')}
-                      title="Set status to Busy"
-                    >
-                      <span className="status-dot busy"></span>
-                      <span>Busy</span>
-                    </button>
-                    <button
-                      className={`status-dot-btn ${userStatus === 'away' ? 'active' : ''}`}
-                      onClick={() => handleUpdatePresence('away')}
-                      title="Set status to Away"
-                    >
-                      <span className="status-dot away"></span>
-                      <span>Away</span>
+                      <div className="profile-menu-icon icon-switch">
+                        <Users size={15} />
+                      </div>
+                      <div className="profile-menu-text">
+                        <span className="title">Switch Staff</span>
+                        <span className="desc">Switch active user session</span>
+                      </div>
+                      <ChevronRight size={14} className="chevron" />
                     </button>
                   </div>
 
-                  <div className="profile-dropdown-divider"></div>
+                  <div className="profile-dropdown-divider" />
 
+                  {/* Logout Button */}
                   <button
-                    className="profile-dropdown-item"
-                    onClick={() => {
-                      setIsProfileDropdownOpen(false);
-                      setShowSyncPanel(true);
-                    }}
-                  >
-                    <RefreshCw size={14} />
-                    <span>Sync Diagnostics</span>
-                  </button>
-
-                  <div className="profile-dropdown-divider"></div>
-
-                  <button
-                    className="profile-dropdown-item"
-                    onClick={() => {
-                      setIsProfileDropdownOpen(false);
-                      logoutStaff();
-                      showToast('Switched — please select your profile', 'info');
-                    }}
-                  >
-                    <User size={14} />
-                    <span>Switch Staff</span>
-                  </button>
-
-                  <button
-                    className="profile-dropdown-item logout"
+                    type="button"
+                    className="profile-logout-btn"
                     onClick={() => {
                       setIsProfileDropdownOpen(false);
                       logout();
                       showToast('Logged out successfully', 'info');
                     }}
                   >
-                    <LogOut size={14} />
+                    <LogOut size={15} />
                     <span>Sign Out / Logout</span>
                   </button>
                 </div>
