@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
-import api from '../utils/api';
 import { Modal } from './Modal';
 import { SyncStatusPanel } from './sync/SyncStatusPanel';
 import { formatINR } from '../utils/dummyData';
