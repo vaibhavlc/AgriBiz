@@ -284,7 +284,7 @@ export const Settings: React.FC = () => {
 
   const handleToggleUserStatus = async (u: User) => {
     if (u.role === 'Owner') {
-      showToast('The Owner account is the primary administrator and cannot be disabled.', 'warning');
+      showToast('The Owner account is the primary administrator and cannot be disabled.', 'info');
       return;
     }
     const newStatus = u.status === 'Active' ? 'Inactive' : 'Active';
