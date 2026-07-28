@@ -32,7 +32,7 @@ import {
   User,
   LogOut,
   TrendingDown,
-  Trash2,
+  Globe,
   RefreshCw,
   Smartphone,
 } from 'lucide-react';
