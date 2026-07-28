@@ -11,12 +11,13 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <style>{`
         .auth-outer-container {
           min-height: 100vh;
-          width: 100%;
+          height: 100vh;
+          width: 100vw;
           display: flex;
           align-items: center;
           justify-content: center;
           background: var(--bg-app, #0b0f19);
-          padding: 24px 16px;
+          padding: 16px;
           box-sizing: border-box;
           position: relative;
           overflow: hidden;
@@ -44,24 +45,44 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           pointer-events: none;
         }
 
+        .auth-wrapper {
+          width: 100%;
+          max-width: 460px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          max-height: 98vh;
+          box-sizing: border-box;
+        }
+
         .auth-card-main {
           width: 100%;
-          max-width: 480px;
           background: var(--card-bg, #ffffff);
           border: 1px solid var(--border-color, #e2e8f0);
           border-radius: 20px;
           box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.04);
-          padding: 24px 32px;
+          padding: 22px 28px;
           box-sizing: border-box;
           position: relative;
           z-index: 10;
+          max-height: calc(98vh - 36px);
+          overflow-y: auto;
+          overflow-x: hidden;
           animation: authCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        .auth-card-main::-webkit-scrollbar {
+          width: 4px;
+        }
+        .auth-card-main::-webkit-scrollbar-thumb {
+          background: rgba(16, 185, 129, 0.3);
+          border-radius: 4px;
         }
 
         @keyframes authCardIn {
           from {
             opacity: 0;
-            transform: translateY(16px) scale(0.98);
+            transform: translateY(12px) scale(0.98);
           }
           to {
             opacity: 1;
@@ -70,30 +91,30 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         }
 
         .auth-trust-footer {
-          margin-top: 24px;
+          margin-top: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 12px;
+          gap: 10px;
           color: var(--text-muted, #94a3b8);
           font-size: 10px;
           font-weight: 600;
           letter-spacing: 0.3px;
           text-transform: uppercase;
           white-space: nowrap;
-          flex-wrap: nowrap;
+          flex-shrink: 0;
         }
 
         .auth-trust-item {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
+          gap: 4px;
           white-space: nowrap;
         }
 
         @media (max-width: 480px) {
           .auth-card-main {
-            padding: 28px 20px;
+            padding: 22px 18px;
             border-radius: 16px;
           }
         }
@@ -102,7 +123,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <div className="auth-bg-glow-1" />
       <div className="auth-bg-glow-2" />
 
-      <div style={{ width: '100%', maxWidth: '480px' }}>
+      <div className="auth-wrapper">
         <div className="auth-card-main">
           {children}
         </div>
