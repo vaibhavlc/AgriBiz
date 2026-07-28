@@ -30,6 +30,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
   const [ownerPin, setOwnerPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
 
+  const ownerPinRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const confirmPinRefs = useRef<(HTMLInputElement | null)[]>([]);
+
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -67,48 +70,110 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
     // On success: AuthProvider auto-logs in → ProtectedRoute → Dashboard
   };
 
-  // ── PIN Dot Input ──────────────────────────────────────────────────────────
-  const PinInput = ({
-    value, onChange, placeholder, label
-  }: { value: string; onChange: (v: string) => void; placeholder: string; label: string }) => (
-    <div className="form-group" style={{ marginBottom: '16px' }}>
-      <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-        {label}
-      </label>
-      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-        <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
-          <KeyRound size={16} />
-        </span>
-        <input
-          type="password"
-          inputMode="numeric"
-          className="form-control"
-          placeholder={placeholder}
-          value={value}
-          maxLength={4}
-          onChange={e => {
-            const v = e.target.value.replace(/\D/g, '');
-            onChange(v);
-          }}
-          style={{
-            paddingLeft: '40px', height: '44px', borderRadius: '10px',
-            fontSize: '20px', letterSpacing: '8px', fontWeight: 800,
-            borderColor: value && value.length < 4 ? 'var(--color-warning,#f59e0b)' : undefined,
-          }}
-        />
-        {value.length === 4 && (
-          <span style={{ position: 'absolute', right: '14px', color: '#10b981' }}>
-            <CheckCircle2 size={18} />
-          </span>
-        )}
+  // ── 4-Box Auto-Advancing Digit PIN Input ──────────────────────────────────
+  const DigitPinInput = ({
+    value,
+    onChange,
+    label,
+    inputRefs,
+    onCompleteNext,
+  }: {
+    value: string;
+    onChange: (v: string) => void;
+    label: string;
+    inputRefs: React.MutableRefObject<(HTMLInputElement | null)[]>;
+    onCompleteNext?: () => void;
+  }) => {
+    const handleDigitChange = (index: number, rawVal: string) => {
+      const cleanDigit = rawVal.replace(/\D/g, '').slice(-1);
+      const chars = value.split('');
+      chars[index] = cleanDigit;
+      const nextVal = chars.join('').slice(0, 4);
+      onChange(nextVal);
+
+      if (cleanDigit && index < 3) {
+        inputRefs.current[index + 1]?.focus();
+      } else if (cleanDigit && index === 3 && onCompleteNext) {
+        onCompleteNext();
+      }
+    };
+
+    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace') {
+        if (!value[index] && index > 0) {
+          e.preventDefault();
+          inputRefs.current[index - 1]?.focus();
+          const chars = value.split('');
+          chars[index - 1] = '';
+          onChange(chars.join(''));
+        }
+      }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+      e.preventDefault();
+      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 4);
+      if (pasted) {
+        onChange(pasted);
+        const nextIdx = Math.min(pasted.length, 3);
+        inputRefs.current[nextIdx]?.focus();
+        if (pasted.length === 4 && onCompleteNext) {
+          onCompleteNext();
+        }
+      }
+    };
+
+    return (
+      <div className="form-group" style={{ marginBottom: '16px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <label style={{ fontWeight: 700, fontSize: '13px', margin: 0, color: 'var(--text-primary,#0f172a)' }}>
+            {label}
+          </label>
+          {value.length === 4 && (
+            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <CheckCircle2 size={14} /> Ready
+            </span>
+          )}
+        </div>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          {[0, 1, 2, 3].map((i) => {
+            const isFilled = !!value[i];
+            return (
+              <input
+                key={i}
+                ref={(el) => (inputRefs.current[i] = el)}
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={1}
+                value={value[i] || ''}
+                onChange={(e) => handleDigitChange(i, e.target.value)}
+                onKeyDown={(e) => handleKeyDown(i, e)}
+                onPaste={handlePaste}
+                style={{
+                  width: '46px',
+                  height: '50px',
+                  borderRadius: '12px',
+                  textAlign: 'center',
+                  fontSize: '22px',
+                  fontWeight: 800,
+                  border: isFilled
+                    ? '2px solid var(--primary,#10b981)'
+                    : '2px solid var(--border-color,#cbd5e1)',
+                  backgroundColor: isFilled
+                    ? 'rgba(16,185,129,0.06)'
+                    : 'var(--card-bg,#ffffff)',
+                  color: 'var(--text-primary,#0f172a)',
+                  outline: 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              />
+            );
+          })}
+        </div>
       </div>
-      {value.length > 0 && value.length < 4 && (
-        <span style={{ fontSize: '11px', color: 'var(--color-warning,#f59e0b)', fontWeight: 600, marginTop: '4px', display: 'block' }}>
-          Enter all 4 digits
-        </span>
-      )}
-    </div>
-  );
+    );
+  };
 
   return (
     <div>
@@ -302,8 +367,21 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
               </span>
             </div>
 
-            <PinInput value={ownerPin} onChange={setOwnerPin} label="4-Digit Owner PIN *" placeholder="····" />
-            <PinInput value={confirmPin} onChange={setConfirmPin} label="Confirm PIN *" placeholder="····" />
+            <DigitPinInput
+              value={ownerPin}
+              onChange={setOwnerPin}
+              label="4-Digit Owner PIN *"
+              inputRefs={ownerPinRefs}
+              onCompleteNext={() => {
+                confirmPinRefs.current[0]?.focus();
+              }}
+            />
+            <DigitPinInput
+              value={confirmPin}
+              onChange={setConfirmPin}
+              label="Confirm PIN *"
+              inputRefs={confirmPinRefs}
+            />
 
             {confirmPin.length === 4 && ownerPin.length === 4 && ownerPin !== confirmPin && (
               <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#EF4444', fontSize: '12px', fontWeight: 600 }}>
