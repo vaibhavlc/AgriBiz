@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { PasswordStrength } from './PasswordStrength';
 import { Building2, User, Lock, Smartphone, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Mail, KeyRound } from 'lucide-react';
@@ -141,7 +141,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
             return (
               <input
                 key={i}
-                ref={(el) => (inputRefs.current[i] = el)}
+                ref={(el) => { inputRefs.current[i] = el; }}
                 type="password"
                 inputMode="numeric"
                 pattern="[0-9]*"
