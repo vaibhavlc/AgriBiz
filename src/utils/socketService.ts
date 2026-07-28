@@ -146,14 +146,7 @@ export const initializeSocket = (): Socket | null => {
     senderSocketId: string | null;
     updatedAt: string;
   }) => {
-    console.log('[Socket Client] Received sync:presence-changed notification:', data);
-
-    if (data.senderSocketId && data.senderSocketId === socketInstance?.id) {
-      console.log('[Socket Client] Skipping presence change event initiated by self.');
-      return;
-    }
-
-    console.log(`[Socket Client] Presence state shift: User ${data.userId} -> ${data.presenceStatus}`);
+    console.log(`[Socket Client] Presence state shift notification received: User ${data.userId} -> ${data.presenceStatus}`);
     window.dispatchEvent(new CustomEvent('staff-presence-changed', { detail: data }));
   });
 

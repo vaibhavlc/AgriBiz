@@ -85,7 +85,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     suppliers,
   } = useApp();
 
-  const { currentUser, currentCompany, hasPermission, logout, logoutStaff } = useAuth();
+  const { currentUser, currentCompany, hasPermission, logout, logoutStaff, updateUserPresence } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [showSyncPanel, setShowSyncPanel] = useState(false);
@@ -111,22 +111,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>('online');
+  const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>(currentUser?.presenceStatus || 'online');
 
   useEffect(() => {
     if (currentUser?.presenceStatus) {
       setUserStatus(currentUser.presenceStatus as any);
     }
-  }, [currentUser]);
+  }, [currentUser?.presenceStatus]);
 
   const handleUpdatePresence = async (newStatus: 'online' | 'busy' | 'away') => {
     setUserStatus(newStatus);
     try {
-      await api.put('/users/presence', { presenceStatus: newStatus });
-      if (currentUser) {
-        currentUser.presenceStatus = newStatus;
-        sessionStorage.setItem('agribiz_current_user', JSON.stringify(currentUser));
-      }
+      await updateUserPresence(newStatus);
       showToast(`Status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`, 'success');
     } catch (err) {
       console.error('Failed to update presence status:', err);

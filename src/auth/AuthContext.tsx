@@ -13,6 +13,8 @@ export interface AuthContextType {
   logoutStaff: () => void;
   hasPermission: (permission: string) => boolean;
   refreshUser: () => Promise<void>;
+  updateUserPresence: (presenceStatus: 'online' | 'busy' | 'away') => Promise<void>;
+  updateCurrentUser: (fields: Partial<User>) => void;
 }
 
 export const AuthContext = createContext<AuthContextType | null>(null);

@@ -3,6 +3,7 @@ import { AuthContext } from './AuthContext';
 import { authService } from './authService';
 import { hasPermission as checkRolePermission } from './permissions';
 import { initializeSocket, disconnectSocket } from '../utils/socketService';
+import api from '../utils/api';
 import type { User, Company, UserRole } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -34,6 +35,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       disconnectSocket();
     }
   }, [currentUser]);
+
+  // Global socket listener for staff presence changes
+  useEffect(() => {
+    const handlePresenceChanged = (e: CustomEvent) => {
+      const detail = e.detail;
+      if (detail && currentUser && detail.userId === currentUser.id) {
+        setCurrentUser(prev => {
+          if (!prev) return null;
+          const updated = { ...prev, presenceStatus: detail.presenceStatus as any };
+          sessionStorage.setItem('agribiz_current_user', JSON.stringify(updated));
+          return updated;
+        });
+      }
+    };
+    window.addEventListener('staff-presence-changed' as any, handlePresenceChanged as any);
+    return () => {
+      window.removeEventListener('staff-presence-changed' as any, handlePresenceChanged as any);
+    };
+  }, [currentUser?.id]);
+
+  const updateUserPresence = async (presenceStatus: 'online' | 'busy' | 'away') => {
+    if (!currentUser) return;
+    const updated = { ...currentUser, presenceStatus };
+    setCurrentUser(updated);
+    sessionStorage.setItem('agribiz_current_user', JSON.stringify(updated));
+    try {
+      await api.put('/users/presence', { presenceStatus });
+    } catch (err) {
+      console.error('Failed to sync presence status with server:', err);
+    }
+  };
+
+  const updateCurrentUser = (fields: Partial<User>) => {
+    setCurrentUser(prev => {
+      if (!prev) return null;
+      const updated = { ...prev, ...fields };
+      sessionStorage.setItem('agribiz_current_user', JSON.stringify(updated));
+      return updated;
+    });
+  };
 
   const login = async (mobile: string, password: string, role?: UserRole, rememberMe: boolean = true) => {
     const res = await authService.login(mobile, password, role, rememberMe);
@@ -111,6 +152,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         logoutStaff,
         hasPermission,
         refreshUser,
+        updateUserPresence,
+        updateCurrentUser,
       }}
     >
       {children}
