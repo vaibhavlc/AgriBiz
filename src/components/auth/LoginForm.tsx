@@ -118,6 +118,48 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     }
   };
 
+  // ── Physical Keyboard Handler for PIN Entry ─────────────────────────────
+  useEffect(() => {
+    if (stage !== 'pin-entry' || !selectedStaff || loading) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Allow normal typing if active element is an explicit form input outside pin entry
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'INPUT' && (document.activeElement as HTMLElement)?.id !== 'hidden-pin-input') {
+        return;
+      }
+
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        setPin(p => p.slice(0, -1));
+        setErrorMsg('');
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        setPin(currentPin => {
+          if (currentPin.length === 4) {
+            handlePinSubmit(currentPin);
+          }
+          return currentPin;
+        });
+      } else if (/^[0-9]$/.test(e.key)) {
+        e.preventDefault();
+        setPin(p => {
+          if (p.length < 4) {
+            const nextPin = p + e.key;
+            if (nextPin.length === 4) {
+              setTimeout(() => handlePinSubmit(nextPin), 120);
+            }
+            return nextPin;
+          }
+          return p;
+        });
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [stage, selectedStaff, loading]);
+
   // ── Stage 4: Create PIN (migration) ────────────────────────────────────
   const handleCreatePin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -350,20 +392,72 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           <div style={{ fontSize: '12px', fontWeight: 600, color: cfg.color, marginTop: '3px' }}>{selectedStaff.role}</div>
         </div>
         <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary,#475569)', textAlign: 'center', marginBottom: '16px' }}>
-          Enter 4-Digit PIN
+          Enter 4-Digit PIN (Type via Keyboard or Keypad)
         </div>
         <ErrorBanner />
-        {/* PIN Dots */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '14px', marginBottom: '24px' }}>
-          {[0,1,2,3].map(i => (
-            <div key={i} style={{
-              width: '16px', height: '16px', borderRadius: '50%',
-              background: pin.length > i ? cfg.color : 'var(--border-color,#e2e8f0)',
-              border: `2px solid ${pin.length > i ? cfg.color : 'var(--border-color,#e2e8f0)'}`,
-              transition: 'all 0.15s ease',
-              boxShadow: pin.length > i ? `0 0 10px ${cfg.color}55` : 'none',
-            }} />
-          ))}
+
+        {/* Hidden Input for Mobile Virtual Keyboards */}
+        <input
+          id="hidden-pin-input"
+          type="password"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={4}
+          value={pin}
+          onChange={(e) => {
+            const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+            setPin(val);
+            if (val.length === 4) {
+              setTimeout(() => handlePinSubmit(val), 120);
+            }
+          }}
+          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1 }}
+          autoFocus
+        />
+
+        {/* 4 Distinct PIN Input Digit Boxes */}
+        <div
+          style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '24px', cursor: 'pointer' }}
+          onClick={() => {
+            const el = document.getElementById('hidden-pin-input');
+            if (el) el.focus();
+          }}
+        >
+          {[0, 1, 2, 3].map(i => {
+            const isFilled = pin.length > i;
+            const isCurrent = pin.length === i;
+            return (
+              <div
+                key={i}
+                style={{
+                  width: '50px',
+                  height: '58px',
+                  borderRadius: '14px',
+                  border: isCurrent
+                    ? `2.5px solid ${cfg.color}`
+                    : isFilled
+                    ? `2px solid ${cfg.color}88`
+                    : '2px solid var(--border-color,#e2e8f0)',
+                  background: isFilled
+                    ? cfg.bg
+                    : isCurrent
+                    ? `${cfg.color}0a`
+                    : 'var(--surface,#fff)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '26px',
+                  fontWeight: 800,
+                  color: cfg.color,
+                  boxShadow: isCurrent ? `0 0 14px ${cfg.color}44` : 'none',
+                  transition: 'all 0.15s ease',
+                  transform: isCurrent ? 'scale(1.04)' : 'scale(1)',
+                }}
+              >
+                {isFilled ? '•' : ''}
+              </div>
+            );
+          })}
         </div>
         {/* Numeric Keypad */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '18px' }}>
