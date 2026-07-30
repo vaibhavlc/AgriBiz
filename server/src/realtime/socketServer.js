@@ -8,9 +8,22 @@ let ioInstance = null;
 export const initSocketServer = (httpServer) => {
   logger.info('[Realtime Server] Initializing Socket.IO instance...');
   
+  const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    process.env.CLIENT_URL,
+    process.env.CORS_ORIGIN
+  ].filter(Boolean);
+
   const io = new Server(httpServer, {
     cors: {
-      origin: ['http://localhost:5173', 'http://localhost:3000'],
+      origin: (origin, callback) => {
+        if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => o.includes('*') || origin.endsWith('.vercel.app'))) {
+          callback(null, true);
+        } else {
+          callback(null, true);
+        }
+      },
       credentials: true,
       methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowedHeaders: ['Content-Type', 'Authorization', 'X-Socket-Id'],

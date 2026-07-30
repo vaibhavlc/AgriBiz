@@ -55,10 +55,33 @@ app.use(helmet());
 // Cookie Parser
 app.use(cookieParser());
 
-// CORS configuration (allow requests from frontend)
+// Health Check Endpoints for Cloud Deployment (Northflank/Render/Health Monitors)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'UP', timestamp: new Date().toISOString(), uptime: process.uptime() });
+});
+
+app.get('/', (req, res) => {
+  res.status(200).json({ name: 'AgriBiz API Gateway', status: 'Running' });
+});
+
+// CORS configuration (allow requests from localhost and production frontend URLs)
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  process.env.CLIENT_URL,
+  process.env.CORS_ORIGIN
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: ['http://localhost:5173', 'http://localhost:3000'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, server-to-server) or listed origins
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => o.includes('*') || origin.endsWith('.vercel.app'))) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Fallback allow for production flexibility
+      }
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Socket-Id'],

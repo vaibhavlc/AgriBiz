@@ -9,7 +9,14 @@ const MAX_RECONNECT_ATTEMPTS = 15;
 const BASE_RECONNECT_DELAY = 1000;
 let heartbeatInterval: any = null;
 
-const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
+const getSocketURL = () => {
+  if (import.meta.env.VITE_SOCKET_URL) {
+    return import.meta.env.VITE_SOCKET_URL;
+  }
+  return window.location.hostname === 'localhost' ? 'http://localhost:5000' : window.location.origin;
+};
+
+const SOCKET_URL = getSocketURL();
 
 export const getSocketStatus = (): boolean => {
   return socketInstance?.connected || false;
