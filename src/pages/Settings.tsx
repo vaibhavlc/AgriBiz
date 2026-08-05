@@ -1804,7 +1804,7 @@ export const Settings: React.FC = () => {
               ) : (
                 <>
                   {/* Top Summary & Action Header */}
-                  <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+                  <div className="card staff-header-card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
                     <div>
                       <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                         Staff & Roles Management
@@ -1814,7 +1814,7 @@ export const Settings: React.FC = () => {
                       </p>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <div className="staff-header-actions" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                       {/* Metric Badges */}
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
@@ -2029,14 +2029,15 @@ export const Settings: React.FC = () => {
                         return matchSearch && matchRole && matchStatus;
                       })
                       .map((u) => (
-                        <div key={u.id} className="mobile-list-card" style={{ borderRadius: '14px', padding: '16px' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div key={u.id} className="staff-mobile-card">
+                          {/* Header Row: Avatar, Name, Mobile, Status Badge */}
+                          <div className="staff-mobile-header">
+                            <div className="staff-mobile-info-group">
                               <div style={{
-                                width: '38px', height: '38px', borderRadius: '50%',
+                                width: '40px', height: '40px', borderRadius: '50%',
                                 backgroundColor: 'rgba(16, 185, 129, 0.15)', color: 'var(--primary)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '13px',
-                                position: 'relative'
+                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px',
+                                flexShrink: 0, position: 'relative'
                               }}>
                                 {u.name.charAt(0).toUpperCase()}
                                 <span style={{
@@ -2051,25 +2052,26 @@ export const Settings: React.FC = () => {
                                   display: 'inline-block'
                                 }} title={(u as any).presenceStatus || 'online'}></span>
                               </div>
-                              <div>
-                                <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary)' }}>{u.name}</div>
+                              <div style={{ minWidth: 0, flex: 1 }}>
+                                <div className="staff-mobile-name-text">{u.name}</div>
                                 <div style={{ fontSize: '12px', color: 'var(--text-muted)', fontFamily: 'monospace', fontWeight: 600 }}>+91 {u.mobile}</div>
                               </div>
                             </div>
                             {u.status === 'Inactive' ? (
-                              <span className="badge badge-danger" style={{ fontSize: '11px' }}>
+                              <span className="badge badge-danger" style={{ fontSize: '11px', flexShrink: 0 }}>
                                 Disabled
                               </span>
                             ) : (
                               <span className={`badge ${
                                 u.presenceStatus === 'busy' ? 'badge-danger' : u.presenceStatus === 'away' ? 'badge-warning' : 'badge-success'
-                              }`} style={{ fontSize: '11px', textTransform: 'capitalize' }}>
+                              }`} style={{ fontSize: '11px', textTransform: 'capitalize', flexShrink: 0 }}>
                                 {u.presenceStatus || 'online'}
                               </span>
                             )}
                           </div>
 
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '10px', marginTop: '4px', borderTop: '1px dashed var(--border-color)' }}>
+                          {/* Meta Row: Role & Last Login */}
+                          <div className="staff-mobile-meta-row">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Role:</span>
                               <span style={{
@@ -2080,46 +2082,55 @@ export const Settings: React.FC = () => {
                                 {u.role === 'Owner' ? '👑 Owner' : u.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
                               </span>
                             </div>
+                            {u.lastLogin && (
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                                Last login: {new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                              </span>
+                            )}
+                          </div>
 
-                            <div style={{ display: 'flex', gap: '6px' }}>
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                style={{ padding: '5px 10px', fontSize: '12px' }}
-                                onClick={() => {
-                                  setEditingStaffUser(u);
-                                  setStaffName(u.name);
-                                  setStaffMobile(u.mobile || '');
-                                  setStaffRole(u.role);
-                                  setStaffEmail(u.email || '');
-                                  setStaffPassword('');
-                                  setStaffCustomPermissions(u.customPermissions ? [...u.customPermissions] : [...(ROLE_PERMISSIONS[u.role] || [])]);
-                                  setIsAddUserModalOpen(true);
-                                }}
-                              >
-                                <Edit2 size={12} /> Edit
-                              </button>
-                              <button
-                                type="button"
-                                className={`btn btn-sm ${u.status === 'Active' ? 'btn-secondary danger' : 'btn-secondary'}`}
-                                style={{ padding: '5px 10px', fontSize: '12px' }}
-                                disabled={u.id === currentUser.id}
-                                onClick={() => handleToggleUserStatus(u)}
-                              >
-                                {u.status === 'Active' ? 'Disable' : 'Enable'}
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                style={{ padding: '5px 10px', fontSize: '12px' }}
-                                onClick={() => {
-                                  setResetStaffUser(u);
-                                  setNewResetPass('');
-                                }}
-                              >
-                                <KeyRound size={12} /> Reset
-                              </button>
-                            </div>
+                          {/* Action Button Row */}
+                          <div className="staff-mobile-actions-bar">
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setEditingStaffUser(u);
+                                setStaffName(u.name);
+                                setStaffMobile(u.mobile || '');
+                                setStaffRole(u.role);
+                                setStaffEmail(u.email || '');
+                                setStaffPassword('');
+                                setStaffPin('');
+                                setStaffCustomPermissions(u.customPermissions ? [...u.customPermissions] : [...(ROLE_PERMISSIONS[u.role] || [])]);
+                                setIsAddUserModalOpen(true);
+                              }}
+                            >
+                              <Edit2 size={12} /> Edit
+                            </button>
+
+                            <button
+                              type="button"
+                              className={`btn btn-sm ${u.status === 'Active' ? 'btn-secondary danger' : 'btn-secondary'}`}
+                              disabled={u.role === 'Owner'}
+                              onClick={() => handleToggleUserStatus(u)}
+                              style={{ opacity: u.role === 'Owner' ? 0.5 : 1, cursor: u.role === 'Owner' ? 'not-allowed' : 'pointer' }}
+                            >
+                              {u.status === 'Active' ? <UserX size={12} /> : <UserCheck size={12} />}
+                              {u.status === 'Active' ? 'Disable' : 'Enable'}
+                            </button>
+
+                            <button
+                              type="button"
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setResetStaffUser(u);
+                                setNewResetPass('');
+                                setNewResetPin('');
+                              }}
+                            >
+                              <KeyRound size={12} /> Reset
+                            </button>
                           </div>
                         </div>
                       ))}
@@ -2278,7 +2289,7 @@ export const Settings: React.FC = () => {
                   👑 Owner role possesses full access to all system pages & administrative modules.
                 </div>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '10px', border: '1px solid var(--border-color)', borderRadius: '10px', backgroundColor: 'var(--bg-app)' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '10px', border: '1px solid var(--border-color)', borderRadius: '10px', backgroundColor: 'var(--bg-app)' }}>
                   {ALL_PAGE_PERMISSIONS.map((perm) => {
                     const isChecked = staffCustomPermissions.includes('*') || staffCustomPermissions.includes(perm.id);
                     return (

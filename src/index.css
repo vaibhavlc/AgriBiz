@@ -6195,6 +6195,143 @@ body.dark-theme .lang-selector-btn:hover {
   }
 }
 
+/* ── Staff & Roles Management Mobile Responsiveness ── */
+.staff-header-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.staff-filters-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.staff-search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 240px;
+}
+
+.staff-filters-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .staff-header-card {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 14px !important;
+  }
+
+  .staff-header-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    width: 100% !important;
+  }
+
+  .staff-header-actions .btn {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  .staff-filters-row {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+  }
+
+  .staff-search-input-wrapper {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .staff-filters-wrapper {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+  }
+
+  .staff-filters-wrapper select {
+    width: 100% !important;
+  }
+
+  .staff-mobile-card {
+    border-radius: 14px !important;
+    padding: 14px 16px !important;
+    background-color: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 12px !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04) !important;
+  }
+
+  .staff-mobile-header {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .staff-mobile-info-group {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+  }
+
+  .staff-mobile-name-text {
+    font-weight: 800 !important;
+    font-size: 14px !important;
+    color: var(--text-primary) !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .staff-mobile-meta-row {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    padding-top: 8px !important;
+    margin-top: 2px !important;
+    border-top: 1px dashed var(--border-color) !important;
+  }
+
+  .staff-mobile-actions-bar {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 6px !important;
+    padding-top: 10px !important;
+    border-top: 1px solid var(--border-color) !important;
+  }
+
+  .staff-mobile-actions-bar .btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 6px 8px !important;
+    font-size: 11.5px !important;
+    height: 34px !important;
+    border-radius: 8px !important;
+  }
+}
+
 /* CA-Style GSTR-3B Working Report CSS styling */
 .gstr3b-working-report-wrapper {
   background-color: #ffffff;
