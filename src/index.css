@@ -6332,6 +6332,22 @@ body.dark-theme .lang-selector-btn:hover {
   }
 }
 
+@media (max-width: 380px) {
+  .staff-mobile-actions-bar {
+    grid-template-columns: repeat(3, 1fr) !important;
+    gap: 4px !important;
+  }
+  .staff-mobile-actions-bar .btn {
+    font-size: 10.5px !important;
+    padding: 4px 2px !important;
+    gap: 3px !important;
+  }
+  .staff-mobile-actions-bar .btn svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+}
+
 /* CA-Style GSTR-3B Working Report CSS styling */
 .gstr3b-working-report-wrapper {
   background-color: #ffffff;
