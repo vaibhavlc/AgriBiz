@@ -8,11 +8,14 @@ let ioInstance = null;
 export const initSocketServer = (httpServer) => {
   logger.info('[Realtime Server] Initializing Socket.IO instance...');
   
+  const envOrigins = [process.env.CLIENT_URL, process.env.CORS_ORIGIN]
+    .filter(Boolean)
+    .flatMap(url => url.split(',').map(u => u.trim()));
+
   const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
-    process.env.CLIENT_URL,
-    process.env.CORS_ORIGIN
+    ...envOrigins
   ].filter(Boolean);
 
   const io = new Server(httpServer, {

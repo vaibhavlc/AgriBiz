@@ -65,11 +65,14 @@ app.get('/', (req, res) => {
 });
 
 // CORS configuration (allow requests from localhost and production frontend URLs)
+const envOrigins = [process.env.CLIENT_URL, process.env.CORS_ORIGIN]
+  .filter(Boolean)
+  .flatMap(url => url.split(',').map(u => u.trim()));
+
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:3000',
-  process.env.CLIENT_URL,
-  process.env.CORS_ORIGIN
+  ...envOrigins
 ].filter(Boolean);
 
 app.use(
