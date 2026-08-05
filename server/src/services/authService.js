@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import companyRepository from '../repositories/companyRepository.js';
 import userRepository from '../repositories/userRepository.js';
 import refreshTokenRepository from '../repositories/refreshTokenRepository.js';
+import settingsRepository from '../repositories/settingsRepository.js';
 import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
 import logger from '../config/logger.js';
 
@@ -37,6 +38,23 @@ class AuthService {
       city: city?.trim() || 'Pipariya',
       state: state?.trim() || 'Madhya Pradesh',
     });
+
+    // Create initial Settings record for business
+    try {
+      await settingsRepository.create({
+        companyId,
+        businessName: businessName.trim(),
+        ownerName: ownerName.trim(),
+        phone: cleanMobile,
+        email: email?.trim() || '',
+        gstin: gstin?.trim() || '',
+        city: city?.trim() || 'Pipariya',
+        state: state?.trim() || 'Madhya Pradesh',
+        address: `${city?.trim() || ''}, ${state?.trim() || ''}`.trim(),
+      });
+    } catch (sErr) {
+      logger.warn('Failed to create initial settings during registration: %s', sErr.message);
+    }
 
     // Create User (Owner)
     const user = await userRepository.create({

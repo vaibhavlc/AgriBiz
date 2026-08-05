@@ -4,6 +4,8 @@ import { authService } from './authService';
 import { hasPermission as checkRolePermission } from './permissions';
 import { initializeSocket, disconnectSocket } from '../utils/socketService';
 import api from '../utils/api';
+import { db } from '../db/db';
+import { initialSettings } from '../utils/dummyData';
 import type { User, Company, UserRole } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -81,12 +83,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (res.success && res.company) {
       setCurrentCompany(res.company);
       try {
+        const companySettings = {
+          ...initialSettings,
+          id: 'business',
+          businessName: res.company.businessName,
+          ownerName: res.company.ownerName,
+          phone: res.company.mobile,
+          email: res.company.email || '',
+          gstin: res.company.gstin || '',
+          city: res.company.city || '',
+          state: res.company.state || '',
+          address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
+        };
+        const existingSettings = await db.settings.get('business');
+        if (!existingSettings || !existingSettings.businessName) {
+          await db.settings.put(companySettings);
+          localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+        }
+      } catch (e) {
+        console.warn('Failed to populate local settings during login:', e);
+      }
+      try {
         // Pre-fetch the latest staff list from the server into local database
         const { pullRemoteUpdates } = await import('../utils/syncEngine');
         await pullRemoteUpdates();
       } catch (err) {
         console.error('Failed to pull staff list during business login:', err);
       }
+      window.dispatchEvent(new CustomEvent('sync-completed'));
     }
     return { success: res.success, message: res.message, company: res.company };
   };
@@ -109,11 +133,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentUser(res.user);
       }
       try {
+        const companySettings = {
+          ...initialSettings,
+          id: 'business',
+          businessName: res.company.businessName,
+          ownerName: res.company.ownerName,
+          phone: res.company.mobile,
+          email: res.company.email || '',
+          gstin: res.company.gstin || '',
+          city: res.company.city || '',
+          state: res.company.state || '',
+          address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
+        };
+        await db.settings.put(companySettings);
+        localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+      } catch (e) {
+        console.warn('Failed to save settings locally during registration:', e);
+      }
+      try {
         const { pullRemoteUpdates } = await import('../utils/syncEngine');
         await pullRemoteUpdates();
       } catch (err) {
         console.error('Failed to pull staff list during registration:', err);
       }
+      window.dispatchEvent(new CustomEvent('sync-completed'));
     }
     return { success: res.success, message: res.message };
   };
