@@ -46,6 +46,37 @@ class SyncController {
         try {
           if (payload) {
             payload.companyId = companyId;
+
+            if (module === 'Product') {
+              payload.productId = payload.productId || payload.id || recordId;
+            } else if (module === 'Customer') {
+              payload.customerId = payload.customerId || payload.id || recordId;
+              payload.phone = payload.phone || payload.mobile || 'N/A';
+            } else if (module === 'Supplier') {
+              payload.supplierId = payload.supplierId || payload.id || recordId;
+              payload.phone = payload.phone || payload.mobile || 'N/A';
+            } else if (module === 'Invoice') {
+              payload.invoiceId = payload.invoiceId || payload.id || recordId;
+              payload.invoiceNumber = payload.invoiceNumber || recordId;
+              payload.paymentStatus = payload.paymentStatus || (payload.balanceDue === 0 ? 'Paid' : payload.amountPaid > 0 ? 'Partial' : 'Unpaid');
+              payload.items = payload.items || [];
+            } else if (module === 'Quotation') {
+              payload.quotationId = payload.quotationId || payload.id || recordId;
+              payload.quotationNumber = payload.quotationNumber || recordId;
+              payload.items = payload.items || [];
+            } else if (module === 'Purchase') {
+              payload.purchaseId = payload.purchaseId || payload.id || recordId;
+              payload.purchaseNumber = payload.purchaseNumber || recordId;
+              payload.items = payload.items || [];
+            } else if (module === 'Payment') {
+              payload.paymentId = payload.paymentId || payload.id || recordId;
+            } else if (module === 'Expense') {
+              payload.expenseId = payload.expenseId || payload.id || recordId;
+              payload.status = payload.status || 'Paid';
+              payload.payee = payload.payee || payload.title || 'General';
+            } else if (module === 'Settings') {
+              payload.id = 'business';
+            }
           }
 
           if (module === 'Product') {

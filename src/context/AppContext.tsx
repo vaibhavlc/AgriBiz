@@ -167,6 +167,34 @@ const queueSync = async (
       if (!enrichedPayload.version) {
         enrichedPayload.version = 1;
       }
+      // NORMALIZE SCHEMA FOR BACKEND MONGOOSE CONTRACT
+      if (module === 'Product') {
+        enrichedPayload.productId = enrichedPayload.productId || enrichedPayload.id || recordId;
+      } else if (module === 'Customer') {
+        enrichedPayload.customerId = enrichedPayload.customerId || enrichedPayload.id || recordId;
+        enrichedPayload.phone = enrichedPayload.phone || enrichedPayload.mobile || 'N/A';
+      } else if (module === 'Supplier') {
+        enrichedPayload.supplierId = enrichedPayload.supplierId || enrichedPayload.id || recordId;
+        enrichedPayload.phone = enrichedPayload.phone || enrichedPayload.mobile || 'N/A';
+      } else if (module === 'Invoice') {
+        enrichedPayload.invoiceId = enrichedPayload.invoiceId || enrichedPayload.id || recordId;
+        enrichedPayload.invoiceNumber = enrichedPayload.invoiceNumber || recordId;
+        enrichedPayload.paymentStatus = enrichedPayload.paymentStatus || (enrichedPayload.balanceDue === 0 ? 'Paid' : enrichedPayload.amountPaid > 0 ? 'Partial' : 'Unpaid');
+      } else if (module === 'Quotation') {
+        enrichedPayload.quotationId = enrichedPayload.quotationId || enrichedPayload.id || recordId;
+        enrichedPayload.quotationNumber = enrichedPayload.quotationNumber || recordId;
+      } else if (module === 'Purchase') {
+        enrichedPayload.purchaseId = enrichedPayload.purchaseId || enrichedPayload.id || recordId;
+        enrichedPayload.purchaseNumber = enrichedPayload.purchaseNumber || recordId;
+      } else if (module === 'Payment') {
+        enrichedPayload.paymentId = enrichedPayload.paymentId || enrichedPayload.id || recordId;
+      } else if (module === 'Expense') {
+        enrichedPayload.expenseId = enrichedPayload.expenseId || enrichedPayload.id || recordId;
+        enrichedPayload.status = enrichedPayload.status || 'Paid';
+        enrichedPayload.payee = enrichedPayload.payee || enrichedPayload.title || 'General';
+      } else if (module === 'Settings') {
+        enrichedPayload.id = 'business';
+      }
     }
     await db.syncQueue.add({
       action,
