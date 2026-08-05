@@ -360,12 +360,59 @@ class SyncController {
   async pullUpdates(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const { lastSyncTimestamp, deviceId } = req.query;
+      const { lastSyncTimestamp, deviceId, module, recordId } = req.query;
 
       const since = lastSyncTimestamp ? new Date(lastSyncTimestamp) : new Date(0);
+      const serverTimestamp = new Date().toISOString();
+
+      // Case A: Targeted single-record delta fetch
+      if (module && recordId) {
+        logger.info(`Single record delta pull requested: ${module} (${recordId}) for company ${companyId}`);
+        const updates = {};
+        
+        let record = null;
+        if (module === 'Product') {
+          record = await Product.findOne({ companyId, productId: recordId }).lean();
+          if (record) updates.Product = [{ ...record, id: record.productId }];
+        } else if (module === 'Customer') {
+          record = await Customer.findOne({ companyId, customerId: recordId }).lean();
+          if (record) updates.Customer = [{ ...record, id: record.customerId }];
+        } else if (module === 'Supplier') {
+          record = await Supplier.findOne({ companyId, supplierId: recordId }).lean();
+          if (record) updates.Supplier = [{ ...record, id: record.supplierId }];
+        } else if (module === 'Invoice') {
+          record = await Invoice.findOne({ companyId, invoiceId: recordId }).lean();
+          if (record) updates.Invoice = [{ ...record, id: record.invoiceId }];
+        } else if (module === 'Purchase') {
+          record = await Purchase.findOne({ companyId, purchaseId: recordId }).lean();
+          if (record) updates.Purchase = [{ ...record, id: record.purchaseId }];
+        } else if (module === 'Quotation') {
+          record = await Quotation.findOne({ companyId, quotationId: recordId }).lean();
+          if (record) updates.Quotation = [{ ...record, id: record.quotationId }];
+        } else if (module === 'Payment') {
+          record = await Payment.findOne({ companyId, paymentId: recordId }).lean();
+          if (record) updates.Payment = [{ ...record, id: record.paymentId }];
+        } else if (module === 'Expense') {
+          record = await Expense.findOne({ companyId, expenseId: recordId }).lean();
+          if (record) updates.Expense = [{ ...record, id: record.expenseId }];
+        } else if (module === 'Settings') {
+          record = await Settings.findOne({ companyId }).lean();
+          if (record) updates.Settings = [{ ...record, id: record.id || 'business' }];
+        } else if (module === 'User') {
+          record = await User.findOne({ companyId, userId: recordId }).select('-password').lean();
+          if (record) updates.User = [{ ...record, id: record.userId }];
+        }
+
+        return res.status(200).json({
+          success: true,
+          serverTimestamp,
+          updates
+        });
+      }
+
+      // Case B: General timestamp-based delta pull
       logger.info(`Pulling updates since ${since.toISOString()} for company ${companyId} from device ${deviceId || 'unknown'}`);
 
-      // Query all collections for updates after lastSyncTimestamp
       const [
         products,
         customers,
@@ -389,8 +436,6 @@ class SyncController {
         Settings.find({ companyId, updatedAt: { $gt: since } }).lean(),
         User.find({ companyId, updatedAt: { $gt: since } }).select('-password').lean()
       ]);
-
-      const serverTimestamp = new Date().toISOString();
 
       res.status(200).json({
         success: true,

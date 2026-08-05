@@ -127,8 +127,8 @@ const registerSocketHandlers = (localDeviceId: string) => {
       return;
     }
 
-    console.log(`[Realtime Socket] Processing remote mutation (${data.action} on ${data.module}). Triggering immediate pullRemoteUpdates...`);
-    await pullRemoteUpdates();
+    console.log(`[Realtime Socket] Processing remote mutation (${data.action} on ${data.module}). Triggering targeted single-record pull...`);
+    await pullRemoteUpdates({ module: data.module, recordId: data.recordId });
   });
 
   socketInstance.on('sync:staff-changed', (data: {

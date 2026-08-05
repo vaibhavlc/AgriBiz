@@ -21,6 +21,8 @@ export interface SyncQueueItem {
   payload: any;
   timestamp: string;
   retryCount: number;
+  nextRetryAt?: number;
+  lastError?: string;
 }
 
 export class AgriBizDatabase extends Dexie {
