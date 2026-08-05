@@ -116,18 +116,19 @@ const registerSocketHandlers = (localDeviceId: string) => {
     senderDeviceId: string | null;
     senderSocketId: string | null;
   }) => {
-    console.log('[Realtime Socket] Event received: sync:data-changed', data);
+    const ts = new Date().toISOString();
+    console.log(`[${ts}] [CLIENT_SOCKET_RECEPTION] Event: sync:data-changed | Module: ${data.module} | RecordId: ${data.recordId} | Action: ${data.action} | My Socket ID: ${socketInstance?.id} | Sender Socket ID: ${data.senderSocketId || 'N/A'}`);
 
     // Self-filtering: Ignore ONLY if the event originated from THIS exact socket connection
     const isSelfSocket = data.senderSocketId && socketInstance?.id && data.senderSocketId === socketInstance.id;
     const isSelfDeviceAndSocket = data.senderDeviceId && data.senderDeviceId === localDeviceId && isSelfSocket;
 
     if (isSelfSocket || isSelfDeviceAndSocket) {
-      console.log('[Realtime Socket] Filtering out self-initiated socket event.');
+      console.log(`[${ts}] [CLIENT_SELF_FILTERING] Event originating from self socket (${socketInstance?.id}). Filtered out.`);
       return;
     }
 
-    console.log(`[Realtime Socket] Processing remote mutation (${data.action} on ${data.module}). Triggering targeted single-record pull...`);
+    console.log(`[${ts}] [CLIENT_PULL_TRIGGERED] Executing pullRemoteUpdates for ${data.module} (${data.recordId})...`);
     await pullRemoteUpdates({ module: data.module, recordId: data.recordId });
   });
 

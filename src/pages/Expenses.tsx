@@ -25,7 +25,7 @@ import {
 import type { Expense } from '../types';
 
 export const Expenses: React.FC = () => {
-  console.log('[Component Re-rendered] Expenses');
+  const ts = new Date().toISOString();
   const {
     expenses,
     addExpense,
@@ -36,6 +36,8 @@ export const Expenses: React.FC = () => {
     showToast,
     settings,
   } = useApp();
+
+  console.log(`[${ts}] [CLIENT_UI_RENDER] Expenses Component rendered. Total Expenses Count: ${expenses.length} | Expense IDs: [${expenses.map(e => e.id).join(', ')}]`);
 
   // Search/Filters
   const [categoryFilter, setCategoryFilter] = useState('All');

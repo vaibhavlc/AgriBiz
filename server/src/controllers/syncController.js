@@ -37,6 +37,10 @@ class SyncController {
 
       const results = [];
 
+      const userId = req.user.userId || req.user.id || 'unknown';
+      const timestamp = new Date().toISOString();
+      console.log(`[${timestamp}] [SERVER_CRUD_REQUEST] POST /api/sync | Company: ${companyId} | User: ${userName} (${userId}) | Operations Count: ${operations?.length || 0} | Socket ID: ${req.headers['x-socket-id'] || 'N/A'}`);
+
       for (const op of operations) {
         const { action, module, recordId, payload } = op;
         let success = false;

@@ -117,75 +117,79 @@ export const pullRemoteUpdates = async (targetRecord?: { module: string; recordI
     const response = await api.get('/sync/pull', { params: queryParams });
     const { success, serverTimestamp, updates } = response.data;
 
-    if (success && updates) {
-      const MODULE_TO_TABLE: Record<string, any> = {
-        Product: db.products,
-        Customer: db.customers,
-        Supplier: db.suppliers,
-        Invoice: db.invoices,
-        Purchase: db.purchases,
-        Quotation: db.quotations,
-        Payment: db.payments,
-        Expense: db.expenses,
-        Settings: db.settings,
-        User: db.users
-      };
+      const ts = new Date().toISOString();
+      console.log(`[${ts}] [CLIENT_PULL_HTTP_RESPONSE] HTTP Status 200 | Updates Keys: [${Object.keys(updates).join(', ')}]`);
 
-      let anyUpdatesApplied = false;
+      if (success && updates) {
+        const MODULE_TO_TABLE: Record<string, any> = {
+          Product: db.products,
+          Customer: db.customers,
+          Supplier: db.suppliers,
+          Invoice: db.invoices,
+          Purchase: db.purchases,
+          Quotation: db.quotations,
+          Payment: db.payments,
+          Expense: db.expenses,
+          Settings: db.settings,
+          User: db.users
+        };
 
-      // Wrap IndexedDB operations inside an atomic Dexie transaction
-      await db.transaction('rw', [
-        db.products, db.customers, db.suppliers, db.invoices,
-        db.purchases, db.quotations, db.payments, db.expenses,
-        db.settings, db.users, db.syncQueue
-      ], async () => {
-        for (const moduleName of Object.keys(updates)) {
-          const table = MODULE_TO_TABLE[moduleName];
-          if (!table) continue;
+        let anyUpdatesApplied = false;
 
-          const records = updates[moduleName];
-          if (!Array.isArray(records) || records.length === 0) continue;
+        // Wrap IndexedDB operations inside an atomic Dexie transaction
+        await db.transaction('rw', [
+          db.products, db.customers, db.suppliers, db.invoices,
+          db.purchases, db.quotations, db.payments, db.expenses,
+          db.settings, db.users, db.syncQueue
+        ], async () => {
+          for (const moduleName of Object.keys(updates)) {
+            const table = MODULE_TO_TABLE[moduleName];
+            if (!table) continue;
 
-          anyUpdatesApplied = true;
+            const records = updates[moduleName];
+            if (!Array.isArray(records) || records.length === 0) continue;
 
-          for (const remote of records) {
-            const isQueuedLocally = await db.syncQueue
-              .where('recordId')
-              .equals(remote.id)
-              .first();
+            anyUpdatesApplied = true;
 
-            if (!isQueuedLocally) {
-              await table.put({
-                ...remote,
-                syncStatus: 'Synced'
-              });
-            } else {
-              const local = await table.get(remote.id);
-              if (local) {
-                const merged = resolveAndMergeConflict(local, remote);
-                await table.put(merged);
-              } else {
+            for (const remote of records) {
+              console.log(`[${ts}] [CLIENT_DEXIE_INSERT] Writing record ${remote.id} into Dexie table ${moduleName}...`);
+              const isQueuedLocally = await db.syncQueue
+                .where('recordId')
+                .equals(remote.id)
+                .first();
+
+              if (!isQueuedLocally) {
                 await table.put({
                   ...remote,
                   syncStatus: 'Synced'
                 });
+              } else {
+                const local = await table.get(remote.id);
+                if (local) {
+                  const merged = resolveAndMergeConflict(local, remote);
+                  await table.put(merged);
+                } else {
+                  await table.put({
+                    ...remote,
+                    syncStatus: 'Synced'
+                  });
+                }
               }
             }
           }
+        });
+
+        if (serverTimestamp) {
+          sessionStorage.setItem('agribiz_last_sync_timestamp', serverTimestamp);
         }
-      });
 
-      if (serverTimestamp) {
-        sessionStorage.setItem('agribiz_last_sync_timestamp', serverTimestamp);
+        console.log(`[${ts}] [CLIENT_PULL_COMPLETED] Updates applied to Dexie: ${anyUpdatesApplied}`);
+
+        if (anyUpdatesApplied) {
+          console.log(`[${ts}] [CLIENT_EVENT_DISPATCH] Dispatching CustomEvent("sync-completed") to trigger React reloadData...`);
+          window.dispatchEvent(new CustomEvent('sync-completed'));
+        }
       }
-
-      console.log(`[Sync Engine] Pull completed successfully. Updates applied: ${anyUpdatesApplied}`);
-
-      if (anyUpdatesApplied) {
-        // Dispatch single atomic DOM event to update React UI once
-        window.dispatchEvent(new CustomEvent('sync-completed'));
-      }
-    }
   } catch (error: any) {
     console.error('[Sync Engine] Error in pullRemoteUpdates:', error.message || error);
   }

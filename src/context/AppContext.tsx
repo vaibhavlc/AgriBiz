@@ -268,7 +268,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, []);
 
   const reloadData = async () => {
-    console.log('[App Context] reloadData() started.');
+    const ts = new Date().toISOString();
+    console.log(`[${ts}] [CLIENT_RELOAD_DATA_EXECUTION] AppContext reloadData() invoked.`);
     try {
       const localProducts = await db.products.toArray();
       const localCustomers = await db.customers.toArray();
@@ -287,15 +288,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setQuotations(localQuotations.filter((q) => !q.isDeleted));
       setPurchases(localPurchases.filter((p) => !p.isDeleted));
       setPayments(localPayments.filter((p) => !p.isDeleted));
-      setExpenses(localExpenses.filter((e) => !e.isDeleted));
+
+      const activeExpenses = localExpenses.filter((e) => !e.isDeleted);
+      setExpenses(activeExpenses);
       setRecycleBin(localRecycleBin);
 
       const localSettings = await db.settings.get('business');
       if (localSettings) {
         setSettings(localSettings);
       }
-      console.log('[App Context] reloadData() finished.');
-      console.log('[App Context] React Context updated.');
+      console.log(`[${ts}] [CLIENT_REACT_STATE_CHANGE] AppContext state reloaded. Expenses Count: ${activeExpenses.length} | Expense IDs: [${activeExpenses.map(e => e.id).join(', ')}]`);
     } catch (err) {
       console.error('Failed to reload local database:', err);
     }
