@@ -121,7 +121,9 @@ app.use('/api/v1/expenses', expenseRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/recycle-bin', recycleBinRoutes);
 app.use('/api/v1/sync', syncRoutes);
+app.use('/api/sync', syncRoutes);
 app.use('/api/v1/users', userRoutes);
+app.use('/api/users', userRoutes);
 
 // ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
 // Usage: DELETE /api/admin/company/:mobile  with header  x-admin-key: <ADMIN_SECRET>

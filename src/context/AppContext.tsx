@@ -176,7 +176,10 @@ const queueSync = async (
       timestamp: new Date().toISOString(),
       retryCount: 0,
     });
-    console.log(`Queued offline operation: ${action} on ${module} (${recordId})`);
+    console.log(`Queued offline operation: ${action} on ${module} (${recordId}). Triggering instant upload...`);
+    
+    // Immediate zero-delay upload to MongoDB Atlas & Socket Broadcast
+    synchronizeLocalDatabase();
   } catch (err) {
     console.error('Failed to queue sync operation:', err);
   }

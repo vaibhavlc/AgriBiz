@@ -4,10 +4,7 @@ import { getDeviceId, pullRemoteUpdates, synchronizeLocalDatabase } from './sync
 
 let socketInstance: Socket | null = null;
 let connectionState: 'disconnected' | 'connecting' | 'connected' = 'disconnected';
-let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 15;
-const BASE_RECONNECT_DELAY = 1000;
-let heartbeatInterval: any = null;
+let isListenersRegistered = false;
 
 const getSocketURL = () => {
   if (import.meta.env.VITE_SOCKET_URL) {
@@ -26,7 +23,7 @@ export const getConnectionState = () => connectionState;
 
 const dispatchStatusUpdate = (state: typeof connectionState) => {
   connectionState = state;
-  console.log(`[Socket Client] Connection state transitioned to: ${state}`);
+  console.log(`[Realtime Socket] Connection state transitioned to: ${state}`);
   window.dispatchEvent(new CustomEvent('socket-status-changed', { 
     detail: { 
       connected: state === 'connected',
@@ -36,20 +33,24 @@ const dispatchStatusUpdate = (state: typeof connectionState) => {
 };
 
 export const initializeSocket = (): Socket | null => {
+  const token = sessionStorage.getItem('agribiz_access_token');
+  if (!token) {
+    console.log('[Realtime Socket] No authentication token found. Initialization postponed.');
+    return null;
+  }
+
   if (socketInstance) {
-    if (socketInstance.connected) return socketInstance;
+    if (socketInstance.connected) {
+      return socketInstance;
+    }
+    console.log('[Realtime Socket] Reconnecting existing socket instance...');
+    socketInstance.auth = { token, deviceId: getDeviceId() };
     socketInstance.connect();
     return socketInstance;
   }
 
-  const token = sessionStorage.getItem('agribiz_access_token');
-  if (!token) {
-    console.log('[Socket Client] No authentication token found. Postponing initialization.');
-    return null;
-  }
-
   dispatchStatusUpdate('connecting');
-  console.log(`[Socket Client] Initializing fresh connection to ${SOCKET_URL}...`);
+  console.log(`[Realtime Socket] Establishing new WebSocket connection to ${SOCKET_URL}...`);
 
   const localDeviceId = getDeviceId();
 
@@ -60,30 +61,38 @@ export const initializeSocket = (): Socket | null => {
     },
     transports: ['websocket', 'polling'],
     reconnection: true,
-    reconnectionDelay: BASE_RECONNECT_DELAY,
-    reconnectionDelayMax: 10000,
-    randomizationFactor: 0.5,
-    timeout: 15000
+    reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
+    randomizationFactor: 0.2,
+    timeout: 10000
   });
 
+  registerSocketHandlers(localDeviceId);
+  setupMobileWakeupHandlers();
+
+  return socketInstance;
+};
+
+const registerSocketHandlers = (localDeviceId: string) => {
+  if (!socketInstance || isListenersRegistered) return;
+
   socketInstance.on('connect', () => {
-    reconnectAttempts = 0;
     dispatchStatusUpdate('connected');
-    console.log('[Socket Client] Connected. Socket ID:', socketInstance?.id);
+    console.log('[Realtime Socket] Connected successfully. Socket ID:', socketInstance?.id);
 
     if (socketInstance?.id) {
       api.defaults.headers.common['X-Socket-Id'] = socketInstance.id;
+      api.defaults.headers.common['X-Device-Id'] = localDeviceId;
     }
 
-    startHeartbeatMonitor();
+    // Immediately upload offline queue and pull latest changes upon connect
     synchronizeLocalDatabase();
   });
 
   socketInstance.on('disconnect', (reason) => {
-    console.log('[Socket Client] Disconnected from server. Reason:', reason);
+    console.log('[Realtime Socket] Disconnected from server. Reason:', reason);
     dispatchStatusUpdate('disconnected');
     delete api.defaults.headers.common['X-Socket-Id'];
-    stopHeartbeatMonitor();
 
     if (reason === 'io server disconnect') {
       socketInstance?.connect();
@@ -91,18 +100,12 @@ export const initializeSocket = (): Socket | null => {
   });
 
   socketInstance.on('connect_error', (error) => {
-    console.error('[Socket Client] Connection error:', error.message);
+    console.error('[Realtime Socket] Handshake/Connection error:', error.message);
     dispatchStatusUpdate('disconnected');
     delete api.defaults.headers.common['X-Socket-Id'];
-    
-    reconnectAttempts++;
-    if (reconnectAttempts >= MAX_RECONNECT_ATTEMPTS) {
-      console.warn('[Socket Client] Exceeded maximum reconnect attempts. Halting auto-connect.');
-      socketInstance?.disconnect();
-    }
   });
 
-  // REALTIME SYNCHRONIZATION BINDINGS
+  // REALTIME SYNCHRONIZATION EVENT BINDINGS
   socketInstance.on('sync:data-changed', async (data: {
     module: string;
     action: string;
@@ -113,19 +116,19 @@ export const initializeSocket = (): Socket | null => {
     senderDeviceId: string | null;
     senderSocketId: string | null;
   }) => {
-    console.log('[Socket Client] Received sync:data-changed notification:', data);
+    console.log('[Realtime Socket] Event received: sync:data-changed', data);
 
-    const isSelf = (data.senderSocketId && data.senderSocketId === socketInstance?.id) ||
-                   (data.senderDeviceId && data.senderDeviceId === localDeviceId);
+    // Self-filtering: Ignore ONLY if the event originated from THIS exact socket connection
+    const isSelfSocket = data.senderSocketId && socketInstance?.id && data.senderSocketId === socketInstance.id;
+    const isSelfDeviceAndSocket = data.senderDeviceId && data.senderDeviceId === localDeviceId && isSelfSocket;
 
-    if (isSelf) {
-      console.log('[Socket Client] Skipping sync event initiated by self connection/device.');
+    if (isSelfSocket || isSelfDeviceAndSocket) {
+      console.log('[Realtime Socket] Filtering out self-initiated socket event.');
       return;
     }
 
-    console.log(`[Socket Client] Triggering pullRemoteUpdates for remote edit: ${data.action} on ${data.module}`);
+    console.log(`[Realtime Socket] Processing remote mutation (${data.action} on ${data.module}). Triggering immediate pullRemoteUpdates...`);
     await pullRemoteUpdates();
-    window.dispatchEvent(new CustomEvent('sync-completed'));
   });
 
   socketInstance.on('sync:staff-changed', (data: {
@@ -135,14 +138,15 @@ export const initializeSocket = (): Socket | null => {
     senderSocketId: string | null;
     updatedAt: string;
   }) => {
-    console.log('[Socket Client] Received sync:staff-changed notification:', data);
+    console.log('[Realtime Socket] Event received: sync:staff-changed', data);
 
-    if (data.senderSocketId && data.senderSocketId === socketInstance?.id) {
-      console.log('[Socket Client] Skipping staff change event initiated by self.');
+    const isSelfSocket = data.senderSocketId && socketInstance?.id && data.senderSocketId === socketInstance.id;
+    if (isSelfSocket) {
+      console.log('[Realtime Socket] Filtering out self-initiated staff change event.');
       return;
     }
 
-    console.log(`[Socket Client] Staff data modified on server. Dispatching staff-list-changed event.`);
+    console.log('[Realtime Socket] Dispatching staff-list-changed DOM event.');
     window.dispatchEvent(new CustomEvent('staff-list-changed'));
   });
 
@@ -153,36 +157,49 @@ export const initializeSocket = (): Socket | null => {
     senderSocketId: string | null;
     updatedAt: string;
   }) => {
-    console.log(`[Socket Client] Presence state shift notification received: User ${data.userId} -> ${data.presenceStatus}`);
+    console.log(`[Realtime Socket] Event received: sync:presence-changed -> User ${data.userId} status: ${data.presenceStatus}`);
     window.dispatchEvent(new CustomEvent('staff-presence-changed', { detail: data }));
   });
 
-  return socketInstance;
+  isListenersRegistered = true;
 };
 
-const startHeartbeatMonitor = () => {
-  stopHeartbeatMonitor();
-  heartbeatInterval = setInterval(() => {
-    if (socketInstance && socketInstance.connected) {
-      socketInstance.emit('heartbeat', { timestamp: Date.now() });
+// Handle mobile browser wake-up, tab visibility change, network reconnect
+let isMobileWakeupBound = false;
+
+const setupMobileWakeupHandlers = () => {
+  if (isMobileWakeupBound) return;
+
+  const handleWakeup = () => {
+    console.log('[Realtime Socket] Mobile/Tab wake-up detected. Checking connection & triggering pull updates...');
+    if (socketInstance && !socketInstance.connected) {
+      socketInstance.connect();
+    } else {
+      pullRemoteUpdates();
     }
-  }, 30000);
-};
+  };
 
-const stopHeartbeatMonitor = () => {
-  if (heartbeatInterval) {
-    clearInterval(heartbeatInterval);
-    heartbeatInterval = null;
-  }
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') {
+      handleWakeup();
+    }
+  });
+
+  window.addEventListener('pageshow', handleWakeup);
+  window.addEventListener('focus', handleWakeup);
+  window.addEventListener('online', handleWakeup);
+
+  isMobileWakeupBound = true;
 };
 
 export const disconnectSocket = () => {
   if (socketInstance) {
-    console.log('[Socket Client] Manual socket disconnection requested.');
-    stopHeartbeatMonitor();
+    console.log('[Realtime Socket] Terminating socket connection...');
     socketInstance.disconnect();
     socketInstance = null;
+    isListenersRegistered = false;
     dispatchStatusUpdate('disconnected');
     delete api.defaults.headers.common['X-Socket-Id'];
+    delete api.defaults.headers.common['X-Device-Id'];
   }
 };

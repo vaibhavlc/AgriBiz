@@ -1,5 +1,6 @@
 import customerService from '../services/customerService.js';
 import logger from '../config/logger.js';
+import { socketEmitter } from '../realtime/socketEmitter.js';
 
 class CustomerController {
   async getCustomer(req, res, next) {
@@ -31,6 +32,18 @@ class CustomerController {
       const creatorName = req.user.name;
       logger.info('Creating customer for company %s by %s', companyId, creatorName);
       const customer = await customerService.createCustomer(req.body, companyId, creatorName);
+
+      socketEmitter.publishSyncEvent({
+        companyId,
+        module: 'Customer',
+        action: 'CREATE',
+        recordId: customer.customerId || customer._id || customer.id,
+        updatedAt: customer.updatedAt || new Date().toISOString(),
+        senderUserId: req.user.userId,
+        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
+        senderSocketId: req.headers['x-socket-id'] || null
+      });
+
       res.status(201).json({ success: true, customer });
     } catch (error) {
       next(error);
@@ -46,6 +59,18 @@ class CustomerController {
       if (!customer) {
         return res.status(404).json({ success: false, message: 'Customer not found' });
       }
+
+      socketEmitter.publishSyncEvent({
+        companyId,
+        module: 'Customer',
+        action: 'UPDATE',
+        recordId: customer.customerId || req.params.id,
+        updatedAt: customer.updatedAt || new Date().toISOString(),
+        senderUserId: req.user.userId,
+        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
+        senderSocketId: req.headers['x-socket-id'] || null
+      });
+
       res.status(200).json({ success: true, customer });
     } catch (error) {
       next(error);
@@ -58,6 +83,18 @@ class CustomerController {
       const deleterName = req.user.name;
       logger.info('Deleting customer %s for company %s by %s', req.params.id, companyId, deleterName);
       await customerService.deleteCustomer(req.params.id, companyId, deleterName);
+
+      socketEmitter.publishSyncEvent({
+        companyId,
+        module: 'Customer',
+        action: 'DELETE',
+        recordId: req.params.id,
+        updatedAt: new Date().toISOString(),
+        senderUserId: req.user.userId,
+        senderDeviceId: req.headers['x-device-id'] || null,
+        senderSocketId: req.headers['x-socket-id'] || null
+      });
+
       res.status(200).json({ success: true, message: 'Customer soft-deleted successfully' });
     } catch (error) {
       next(error);

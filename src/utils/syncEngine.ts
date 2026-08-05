@@ -6,7 +6,7 @@ let isSyncing = false;
 export const getDeviceId = (): string => {
   let id = sessionStorage.getItem('agribiz_device_id');
   if (!id) {
-    id = 'dev-' + Math.random().toString(36).substring(2, 15) + '-' + Date.now().toString(36);
+    id = 'dev-' + Math.random().toString(36).substring(2, 12) + '-' + Date.now().toString(36);
     sessionStorage.setItem('agribiz_device_id', id);
   }
   return id;
@@ -14,7 +14,6 @@ export const getDeviceId = (): string => {
 
 /**
  * Merges a remote record and local record at the field level.
- * If there is a collision, it sets syncStatus to 'Conflict' and maps the remote copy under conflictData.
  */
 function resolveAndMergeConflict(local: any, remote: any): any {
   const merged = { ...local };
@@ -59,7 +58,7 @@ function resolveAndMergeConflict(local: any, remote: any): any {
       timestamp: new Date().toISOString()
     };
   } else {
-    merged.syncStatus = 'Pending';
+    merged.syncStatus = 'Synced';
   }
 
   merged.version = Math.max(local.version || 1, remote.version || 1);
@@ -71,7 +70,6 @@ function resolveAndMergeConflict(local: any, remote: any): any {
  * Pulls remote updates from MongoDB Atlas and merges them into Dexie.
  */
 export const pullRemoteUpdates = async () => {
-  console.log('[Sync Engine] pullRemoteUpdates started...');
   if (!navigator.onLine) {
     console.log('[Sync Engine] Device is offline. Pull skipped.');
     return;
@@ -88,14 +86,13 @@ export const pullRemoteUpdates = async () => {
     let lastSyncTimestamp = '1970-01-01T00:00:00.000Z';
     if (rawTimestamp && rawTimestamp !== 'Never') {
       const date = new Date(rawTimestamp);
-      // Subtract a 5-second buffer to handle database commit latency and clock drift
-      date.setSeconds(date.getSeconds() - 5);
+      date.setSeconds(date.getSeconds() - 2);
       lastSyncTimestamp = date.toISOString();
     }
     
     const deviceId = getDeviceId();
 
-    console.log(`[Sync Engine] Pulling updates since ${lastSyncTimestamp} (buffered from ${rawTimestamp || 'Never'}) from server...`);
+    console.log(`[Sync Engine] Pulling remote updates since ${lastSyncTimestamp}...`);
 
     const response = await api.get('/sync/pull', {
       params: { lastSyncTimestamp, deviceId }
@@ -134,7 +131,6 @@ export const pullRemoteUpdates = async () => {
           anyUpdates = true;
 
           for (const remote of records) {
-            // Check if there is an unsynced local modification in queue for this record
             const isQueued = await db.syncQueue
               .where('recordId')
               .equals(remote.id)
@@ -161,35 +157,35 @@ export const pullRemoteUpdates = async () => {
           }
         }
       });
-      console.log('[Sync Engine] Dexie database updated successfully.');
 
-      sessionStorage.setItem('agribiz_last_sync_timestamp', serverTimestamp);
-      console.log(`[Sync Engine] Pull completed. Server timestamp: ${serverTimestamp}`);
+      if (serverTimestamp) {
+        sessionStorage.setItem('agribiz_last_sync_timestamp', serverTimestamp);
+      }
+      console.log(`[Sync Engine] Pull completed. Server timestamp: ${serverTimestamp}. Updates applied: ${anyUpdates}`);
 
       if (anyUpdates) {
         window.dispatchEvent(new CustomEvent('sync-completed'));
       }
     }
-    console.log('[Sync Engine] pullRemoteUpdates finished.');
   } catch (error: any) {
-    console.error('[Sync Engine] Error running pull updates:', error.message || error);
+    console.error('[Sync Engine] Error during pullRemoteUpdates:', error.message || error);
   }
 };
 
 /**
- * Reads offline operations from Dexie and posts them to the backend sync batch endpoint.
+ * Uploads queued offline operations immediately to MongoDB Atlas via /api/sync endpoint.
  */
 export const synchronizeLocalDatabase = async () => {
   if (isSyncing) return;
 
   if (!navigator.onLine) {
-    console.log('[Sync Engine] Device is offline. Sync skipped.');
+    console.log('[Sync Engine] Device is offline. Local database upload skipped.');
     return;
   }
 
   const token = sessionStorage.getItem('agribiz_access_token');
   if (!token) {
-    console.log('[Sync Engine] User is not authenticated. Sync postponed.');
+    console.log('[Sync Engine] User is not authenticated. Local database upload postponed.');
     return;
   }
 
@@ -198,7 +194,7 @@ export const synchronizeLocalDatabase = async () => {
     
     if (queuedOps.length > 0) {
       isSyncing = true;
-      console.log(`[Sync Engine] Found ${queuedOps.length} offline operations. Initiating batch upload...`);
+      console.log(`[Sync Engine] Found ${queuedOps.length} queued operations. Uploading immediately to server...`);
 
       const operationsPayload = queuedOps.map(op => ({
         action: op.action,
@@ -216,50 +212,39 @@ export const synchronizeLocalDatabase = async () => {
           const result = results[i];
           const originalOp = queuedOps[i];
 
-          if (result.success) {
-            if (originalOp.id !== undefined) {
-              await db.syncQueue.delete(originalOp.id);
-            }
-            console.log(`[Sync Engine] Successfully synced ${originalOp.action} on ${originalOp.module} (${originalOp.recordId})`);
-          } else {
-            console.error(`[Sync Engine] Failed to sync ${originalOp.action} on ${originalOp.module} (${originalOp.recordId}): ${result.message}`);
-            if (originalOp.id !== undefined) {
-              await db.syncQueue.delete(originalOp.id);
-            }
+          if (result.success && originalOp.id !== undefined) {
+            await db.syncQueue.delete(originalOp.id);
+            console.log(`[Sync Engine] Uploaded ${originalOp.action} on ${originalOp.module} (${originalOp.recordId}) successfully.`);
+          } else if (originalOp.id !== undefined) {
+            console.error(`[Sync Engine] Upload failed for ${originalOp.action} on ${originalOp.module} (${originalOp.recordId}): ${result.message}`);
+            await db.syncQueue.delete(originalOp.id);
           }
         }
       }
     }
   } catch (error: any) {
-    console.error('[Sync Engine] Error running database sync batch upload:', error.message || error);
+    console.error('[Sync Engine] Error running batch upload:', error.message || error);
   } finally {
     isSyncing = false;
   }
 
-  // Pull remote updates immediately following upload check
+  // Pull remote updates immediately following batch upload
   await pullRemoteUpdates();
 };
 
 /**
- * Subscribes to network events and runs periodic check intervals.
+ * Subscribes to network events and login triggers.
  */
 export const startSyncDaemon = () => {
-  // Listen for reconnects
   window.addEventListener('online', () => {
-    console.log('[Sync Engine] Network restored. Firing sync daemon...');
+    console.log('[Sync Engine] Network status: ONLINE. Uploading queued records...');
     synchronizeLocalDatabase();
   });
 
-  // Listen for login completion
   window.addEventListener('login-successful', () => {
-    console.log('[Sync Engine] Login detected. Firing sync daemon...');
+    console.log('[Sync Engine] Login event detected. Synchronizing local database...');
     synchronizeLocalDatabase();
   });
-
-  // Run periodic synchronization check every 30 seconds
-  setInterval(() => {
-    synchronizeLocalDatabase();
-  }, 30000);
 
   // Trigger sync on boot
   synchronizeLocalDatabase();

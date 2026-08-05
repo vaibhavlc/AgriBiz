@@ -3,10 +3,15 @@ import { getCompanyRoom } from './socketRooms.js';
 import logger from '../config/logger.js';
 
 class SocketEmitter {
-  publishSyncEvent({ companyId, module, action, recordId, updatedAt, senderUserId, senderDeviceId, senderSocketId }) {
+  publishSyncEvent({ companyId, module, action, recordId, updatedAt, senderUserId, senderDeviceId, senderSocketId, version }) {
     const io = getIO();
     if (!io) {
       logger.error('[Realtime Emitter] Failed to publishSyncEvent: Socket.IO not initialized.');
+      return false;
+    }
+
+    if (!companyId) {
+      logger.error('[Realtime Emitter] Failed to publishSyncEvent: Missing companyId.');
       return false;
     }
 
@@ -16,10 +21,11 @@ class SocketEmitter {
       action,
       recordId,
       companyId,
+      version: version || 1,
       updatedAt: updatedAt || new Date().toISOString(),
-      senderUserId,
-      senderDeviceId,
-      senderSocketId
+      senderUserId: senderUserId || null,
+      senderDeviceId: senderDeviceId || null,
+      senderSocketId: senderSocketId || null
     };
 
     logger.info(`[Realtime Emitter] Publishing sync:data-changed event to room ${room}: %o`, broadcastPayload);
@@ -34,13 +40,18 @@ class SocketEmitter {
       return false;
     }
 
+    if (!companyId) {
+      logger.error('[Realtime Emitter] Failed to publishStaffEvent: Missing companyId.');
+      return false;
+    }
+
     const room = getCompanyRoom(companyId);
     const broadcastPayload = {
       action,
       userId,
       companyId,
-      senderUserId,
-      senderSocketId,
+      senderUserId: senderUserId || null,
+      senderSocketId: senderSocketId || null,
       updatedAt: updatedAt || new Date().toISOString()
     };
 
@@ -56,13 +67,18 @@ class SocketEmitter {
       return false;
     }
 
+    if (!companyId) {
+      logger.error('[Realtime Emitter] Failed to publishPresenceEvent: Missing companyId.');
+      return false;
+    }
+
     const room = getCompanyRoom(companyId);
     const broadcastPayload = {
       userId,
       presenceStatus,
       companyId,
-      senderUserId,
-      senderSocketId,
+      senderUserId: senderUserId || null,
+      senderSocketId: senderSocketId || null,
       updatedAt: updatedAt || new Date().toISOString()
     };
 

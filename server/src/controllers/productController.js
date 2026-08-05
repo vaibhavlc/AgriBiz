@@ -1,5 +1,6 @@
 import productService from '../services/productService.js';
 import logger from '../config/logger.js';
+import { socketEmitter } from '../realtime/socketEmitter.js';
 
 class ProductController {
   async getProduct(req, res, next) {
@@ -31,6 +32,18 @@ class ProductController {
       const creatorName = req.user.name;
       logger.info('Creating product for company %s by %s', companyId, creatorName);
       const product = await productService.createProduct(req.body, companyId, creatorName);
+
+      socketEmitter.publishSyncEvent({
+        companyId,
+        module: 'Product',
+        action: 'CREATE',
+        recordId: product.productId || product._id || product.id,
+        updatedAt: product.updatedAt || new Date().toISOString(),
+        senderUserId: req.user.userId,
+        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
+        senderSocketId: req.headers['x-socket-id'] || null
+      });
+
       res.status(201).json({ success: true, product });
     } catch (error) {
       next(error);
@@ -46,6 +59,18 @@ class ProductController {
       if (!product) {
         return res.status(404).json({ success: false, message: 'Product not found' });
       }
+
+      socketEmitter.publishSyncEvent({
+        companyId,
+        module: 'Product',
+        action: 'UPDATE',
+        recordId: product.productId || req.params.id,
+        updatedAt: product.updatedAt || new Date().toISOString(),
+        senderUserId: req.user.userId,
+        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
+        senderSocketId: req.headers['x-socket-id'] || null
+      });
+
       res.status(200).json({ success: true, product });
     } catch (error) {
       next(error);
@@ -58,6 +83,18 @@ class ProductController {
       const deleterName = req.user.name;
       logger.info('Deleting product %s for company %s by %s', req.params.id, companyId, deleterName);
       await productService.deleteProduct(req.params.id, companyId, deleterName);
+
+      socketEmitter.publishSyncEvent({
+        companyId,
+        module: 'Product',
+        action: 'DELETE',
+        recordId: req.params.id,
+        updatedAt: new Date().toISOString(),
+        senderUserId: req.user.userId,
+        senderDeviceId: req.headers['x-device-id'] || null,
+        senderSocketId: req.headers['x-socket-id'] || null
+      });
+
       res.status(200).json({ success: true, message: 'Product soft-deleted successfully' });
     } catch (error) {
       next(error);
