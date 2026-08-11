@@ -39,14 +39,17 @@ export const toTitleCase = (str: string | undefined | null): string => {
     .join(' ');
 };
 
-// Helper to extract first name first letter and last name first letter for profile avatars
+// Helper to extract first letter of first name and last letter of last name for profile avatars
 export const getUserInitials = (name?: string | null): string => {
   if (!name || !name.trim()) return 'AB';
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
+    const word = parts[0];
+    return (word[0] + word[word.length - 1]).toUpperCase();
   }
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  const firstName = parts[0];
+  const lastName = parts[parts.length - 1];
+  return (firstName[0] + lastName[lastName.length - 1]).toUpperCase();
 };
 
 // Helper to format dates consistently based on settings
