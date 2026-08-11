@@ -393,7 +393,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.log('[SOCKET] Connecting to Socket.IO server at:', socketUrl);
 
       const socket = io(socketUrl, {
-        auth: { token },
+        auth: (cb: (data: object) => void) => {
+          cb({ token: sessionStorage.getItem('agribiz_access_token') });
+        },
         transports: ['websocket', 'polling'],
         reconnection: true,
         reconnectionAttempts: Infinity,
@@ -415,6 +417,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
       socket.on('connect_error', (err) => {
         console.warn('[SOCKET] Connection error:', err.message);
+        if (err.message?.includes('Authentication') || err.message?.includes('token')) {
+          api.get('/settings').catch(() => {});
+        }
       });
 
       socket.on('data_change', (event: any) => {
