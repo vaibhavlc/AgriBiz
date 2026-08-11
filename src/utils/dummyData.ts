@@ -39,6 +39,16 @@ export const toTitleCase = (str: string | undefined | null): string => {
     .join(' ');
 };
 
+// Helper to extract first name first letter and last name first letter for profile avatars
+export const getUserInitials = (name?: string | null): string => {
+  if (!name || !name.trim()) return 'AB';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 // Helper to format dates consistently based on settings
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '';
@@ -648,8 +658,8 @@ export const initialSettings: BusinessSettings = {
   pincode: '461775',
 
   // Branding
-  logo: '',
-  watermarkLogo: '',
+  logo: '/logo-512.png',
+  watermarkLogo: '/logo-512.png',
 
   // Banking Details
   bankName: 'State Bank of India',

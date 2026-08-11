@@ -1,6 +1,6 @@
 import invoiceService from '../services/invoiceService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class InvoiceController {
   async getInvoice(req, res, next) {
@@ -32,18 +32,7 @@ class InvoiceController {
       const creatorName = req.user.name;
       logger.info('Creating invoice for company %s by %s', companyId, creatorName);
       const invoice = await invoiceService.createInvoice(req.body, companyId, creatorName);
-      
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Invoice',
-        action: 'CREATE',
-        recordId: invoice.invoiceId || invoice._id || invoice.id,
-        updatedAt: invoice.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'CREATE', invoice._id || invoice.invoiceId, invoice);
       res.status(201).json({ success: true, invoice });
     } catch (error) {
       next(error);
@@ -59,18 +48,7 @@ class InvoiceController {
       if (!invoice) {
         return res.status(404).json({ success: false, message: 'Invoice not found' });
       }
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Invoice',
-        action: 'UPDATE',
-        recordId: invoice.invoiceId || req.params.id,
-        updatedAt: invoice.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'UPDATE', req.params.id, invoice);
       res.status(200).json({ success: true, invoice });
     } catch (error) {
       next(error);
@@ -83,18 +61,7 @@ class InvoiceController {
       const deleterName = req.user.name;
       logger.info('Deleting invoice %s for company %s by %s', req.params.id, companyId, deleterName);
       await invoiceService.deleteInvoice(req.params.id, companyId, deleterName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Invoice',
-        action: 'DELETE',
-        recordId: req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Invoice soft-deleted successfully' });
     } catch (error) {
       next(error);

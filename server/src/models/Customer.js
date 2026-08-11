@@ -25,6 +25,7 @@ const customerSchema = new mongoose.Schema(
 );
 
 customerSchema.index({ companyId: 1, isDeleted: 1 });
+customerSchema.index({ companyId: 1, customerId: 1, isDeleted: 1 });
 customerSchema.index({ companyId: 1, updatedAt: -1 });
 
 const Customer = mongoose.model('Customer', customerSchema);

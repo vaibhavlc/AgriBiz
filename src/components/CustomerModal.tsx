@@ -32,7 +32,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   onSaveCallback,
   editCustomerData = null,
 }) => {
-  const { addCustomer, editCustomer, requestNavigation } = useApp();
+  const { addCustomer, editCustomer, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -92,26 +92,13 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     }
   }, [editCustomerData, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
     if (editCustomerData) {
-      const updated: Customer = {
+      editCustomer({
         ...editCustomerData,
-        name,
-        phone,
-        email,
-        address,
-        state,
-        gstin: gstin.toUpperCase(),
-        outstanding,
-        allowedStaffActions,
-      };
-      editCustomer(updated);
-      if (onSaveCallback) onSaveCallback(updated);
-    } else {
-      const saved = addCustomer({
         name,
         phone,
         email,
@@ -121,8 +108,20 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
         outstanding,
         allowedStaffActions,
       });
-      if (onSaveCallback) onSaveCallback(saved);
+    } else {
+      const saved = await addCustomer({
+        name,
+        phone,
+        email,
+        address,
+        state,
+        gstin: gstin.toUpperCase() || undefined,
+        outstanding,
+        allowedStaffActions,
+      });
+      if (saved && onSaveCallback) onSaveCallback(saved);
     }
+    clearAllDirtyForms();
     onClose();
   };
 

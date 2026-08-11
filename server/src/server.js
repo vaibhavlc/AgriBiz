@@ -11,7 +11,9 @@ import { fileURLToPath } from 'url';
 // Load config
 dotenv.config();
 
+import http from 'http';
 import logger from './config/logger.js';
+import { initSocket } from './config/socket.js';
 import { connectDB } from './database/connection.js';
 import authService from './services/authService.js';
 import authRoutes from './routes/authRoutes.js';
@@ -25,7 +27,6 @@ import paymentRoutes from './routes/paymentRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
 import recycleBinRoutes from './routes/recycleBinRoutes.js';
-import syncRoutes from './routes/syncRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
 
@@ -87,14 +88,14 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Socket-Id'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 
 // Rate Limiting (prevent brute force / DDoS)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // Limit each IP to 2000 requests per window for active collaborative syncing
+  max: 2000,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -108,6 +109,15 @@ app.use('/api/', limiter);
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
+// No-Cache Headers for all API responses to ensure real-time multi-device sync
+app.use('/api/', (req, res, next) => {
+  res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+  res.set('Surrogate-Control', 'no-store');
+  next();
+});
+
 // Register routes
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
@@ -120,13 +130,10 @@ app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/expenses', expenseRoutes);
 app.use('/api/v1/settings', settingsRoutes);
 app.use('/api/v1/recycle-bin', recycleBinRoutes);
-app.use('/api/v1/sync', syncRoutes);
-app.use('/api/sync', syncRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/users', userRoutes);
 
 // ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
-// Usage: DELETE /api/admin/company/:mobile  with header  x-admin-key: <ADMIN_SECRET>
 import { cascadeDeleteByMobile } from './utils/cascadeDelete.js';
 app.delete('/api/admin/company/:mobile', async (req, res) => {
   const secret = process.env.ADMIN_SECRET || 'agribiz-admin-2024';
@@ -144,7 +151,6 @@ app.delete('/api/admin/company/:mobile', async (req, res) => {
     res.status(500).json({ success: false, message: err.message });
   }
 });
-// ── End Admin Route ───────────────────────────────────────────────────────────
 
 // Catch-all route (404)
 app.use((req, res, next) => {
@@ -156,16 +162,10 @@ app.use((req, res, next) => {
 // Centralized error handler
 app.use(errorHandler);
 
-// Wrap express app in HTTP server
-import http from 'http';
-import { initSocketServer } from './realtime/socketServer.js';
-
+// Start server with Socket.IO support
 const server = http.createServer(app);
+initSocket(server);
 
-// Initialize modular realtime gateway
-initSocketServer(server);
-
-// Start server
 server.listen(PORT, () => {
-  logger.info(`AgriBiz Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+  logger.info(`AgriBiz Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
 });

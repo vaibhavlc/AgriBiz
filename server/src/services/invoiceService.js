@@ -23,26 +23,26 @@ class InvoiceService {
         updatedBy: createdBy,
       };
 
+      const updateTasks = [];
+
       // Deduct product stock levels
-      for (const item of invoicePayload.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (!product) {
-          throw new Error(`Product ${item.productName} (ID: ${item.productId}) not found`);
+      if (invoicePayload.items && Array.isArray(invoicePayload.items)) {
+        for (const item of invoicePayload.items) {
+          updateTasks.push(
+            productRepository.incrementStock(item.productId, companyId, -item.quantity, session)
+          );
         }
-        const newStock = Math.max(0, product.stock - item.quantity);
-        await productRepository.update(item.productId, companyId, { stock: newStock }, session);
       }
 
       // Add balance due to customer outstanding balance
-      const customer = await customerRepository.findById(invoicePayload.customerId, companyId);
-      if (!customer) {
-        throw new Error(`Customer with ID ${invoicePayload.customerId} not found`);
+      if (invoicePayload.customerId && invoicePayload.balanceDue) {
+        updateTasks.push(
+          customerRepository.adjustOutstanding(invoicePayload.customerId, companyId, invoicePayload.balanceDue, session)
+        );
       }
-      const newOutstanding = customer.outstanding + invoicePayload.balanceDue;
-      await customerRepository.update(invoicePayload.customerId, companyId, { outstanding: newOutstanding }, session);
 
       // Create Payment log if invoice was paid instantly
-      if (invoicePayload.amountPaid > 0) {
+      if (invoicePayload.amountPaid > 0 && invoicePayload.customerId) {
         const paymentPayload = {
           paymentId: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           companyId,
@@ -57,11 +57,15 @@ class InvoiceService {
           createdBy,
           updatedBy: createdBy,
         };
-        await paymentRepository.create(paymentPayload, session);
+        updateTasks.push(paymentRepository.create(paymentPayload, session));
       }
 
-      // Create and save Invoice
-      return invoiceRepository.create(invoicePayload, session);
+      const [invoice] = await Promise.all([
+        invoiceRepository.create(invoicePayload, session),
+        ...updateTasks,
+      ]);
+
+      return invoice;
     });
   }
 

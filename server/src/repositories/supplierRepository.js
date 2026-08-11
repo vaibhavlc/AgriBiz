@@ -1,8 +1,9 @@
 import Supplier from '../models/Supplier.js';
 
 class SupplierRepository {
-  async findById(supplierId, companyId) {
-    return Supplier.findOne({ supplierId, companyId, isDeleted: false });
+  async findById(supplierId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Supplier.findOne({ supplierId, companyId, isDeleted: false }, null, opts);
   }
 
   async findAll(companyId) {
@@ -22,6 +23,15 @@ class SupplierRepository {
   async update(supplierId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Supplier.findOneAndUpdate({ supplierId, companyId, isDeleted: false }, updateData, opts);
+  }
+
+  async adjustOutstanding(supplierId, companyId, deltaAmount, session) {
+    const opts = session ? { session, new: true } : { new: true };
+    return Supplier.findOneAndUpdate(
+      { supplierId, companyId, isDeleted: false },
+      { $inc: { outstanding: deltaAmount } },
+      opts
+    );
   }
 
   async softDelete(supplierId, companyId, updatedBy, session) {

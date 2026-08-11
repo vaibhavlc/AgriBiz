@@ -1,18 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem } from '../types';
 import {
-  initialProducts,
-  initialCustomers,
-  initialSuppliers,
-  initialInvoices,
-  initialPurchases,
-  initialPayments,
   initialSettings,
-  initialExpenses,
   toTitleCase,
 } from '../utils/dummyData';
-import { db } from '../db/db';
-import { startSyncDaemon, getDeviceId, synchronizeLocalDatabase } from '../utils/syncEngine';
+import api, { setApiSocketId } from '../utils/api';
+import { io, Socket } from 'socket.io-client';
 
 interface AppContextType {
   recycleBin: RecycleBinItem[];
@@ -55,45 +48,45 @@ interface AppContextType {
   confirmLeave: () => void;
   confirmStay: () => void;
 
-  setCurrentTab: (tab: string) => void;
-  setViewInvoice: (id: string | null) => void;
-  setViewQuotation: (id: string | null) => void;
-  setViewPurchase: (id: string | null) => void;
-  setViewCustomer: (id: string | null) => void;
-  setViewSupplier: (id: string | null) => void;
-  setIsCreatingInvoice: (val: boolean) => void;
-  setIsCreatingQuotation: (val: boolean) => void;
-  setIsEnteringPurchase: (val: boolean) => void;
-  setIsEditingProduct: (product: Product | null) => void;
-  setIsEditingCustomer: (customer: Customer | null) => void;
-  setIsEditingSupplier: (supplier: Supplier | null) => void;
+  setCurrentTab: (tab: string, force?: boolean) => void;
+  setViewInvoice: (id: string | null, force?: boolean) => void;
+  setViewQuotation: (id: string | null, force?: boolean) => void;
+  setViewPurchase: (id: string | null, force?: boolean) => void;
+  setViewCustomer: (id: string | null, force?: boolean) => void;
+  setViewSupplier: (id: string | null, force?: boolean) => void;
+  setIsCreatingInvoice: (val: boolean, force?: boolean) => void;
+  setIsCreatingQuotation: (val: boolean, force?: boolean) => void;
+  setIsEnteringPurchase: (val: boolean, force?: boolean) => void;
+  setIsEditingProduct: (product: Product | null, force?: boolean) => void;
+  setIsEditingCustomer: (customer: Customer | null, force?: boolean) => void;
+  setIsEditingSupplier: (supplier: Supplier | null, force?: boolean) => void;
   navigateTab: (tab: string) => void;
 
   salesActiveTab: 'invoices' | 'quotations';
   setSalesActiveTab: (tab: 'invoices' | 'quotations') => void;
 
-  addProduct: (product: Omit<Product, 'id'>) => Product;
+  addProduct: (product: Omit<Product, 'id'>) => Promise<Product | null>;
   editProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
 
-  addCustomer: (customer: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => Customer;
+  addCustomer: (customer: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => Promise<Customer | null>;
   editCustomer: (customer: Customer) => void;
   deleteCustomer: (id: string) => void;
 
-  addSupplier: (supplier: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => Supplier;
+  addSupplier: (supplier: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => Promise<Supplier | null>;
   editSupplier: (supplier: Supplier) => void;
   deleteSupplier: (id: string) => void;
 
-  addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => Invoice;
+  addInvoice: (invoice: Omit<Invoice, 'id' | 'invoiceNumber'>) => Promise<Invoice | null>;
   editInvoice: (invoice: Invoice) => void;
   deleteInvoice: (id: string) => void;
 
-  addQuotation: (quotation: Omit<Quotation, 'id' | 'quotationNumber'>) => Quotation;
+  addQuotation: (quotation: Omit<Quotation, 'id' | 'quotationNumber'>) => Promise<Quotation | null>;
   editQuotation: (quotation: Quotation) => void;
   deleteQuotation: (id: string) => void;
-  convertQuotationToInvoice: (quotationId: string, amountPaid: number, paymentMethod: string) => string;
+  convertQuotationToInvoice: (quotationId: string, amountPaid: number, paymentMethod: string) => Promise<string | null>;
 
-  addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => Purchase;
+  addPurchase: (purchase: Omit<Purchase, 'id' | 'purchaseNumber'>) => Promise<Purchase | null>;
   editPurchase: (purchase: Purchase) => void;
   deletePurchase: (id: string) => void;
 
@@ -105,7 +98,7 @@ interface AppContextType {
   resetToDefault: () => void;
 
   expenses: Expense[];
-  addExpense: (expense: Omit<Expense, 'id'>) => Expense;
+  addExpense: (expense: Omit<Expense, 'id'>) => Promise<Expense | null>;
   editExpense: (expense: Expense) => void;
   deleteExpense: (id: string) => void;
 
@@ -152,69 +145,58 @@ const generateId = (prefix: string) => {
   return `${prefix}-${dateStr}-${randomStr}`;
 };
 
-// Queue database operations for sync in Milestone 5
-const queueSync = async (
-  action: 'CREATE' | 'UPDATE' | 'DELETE',
-  module: 'Product' | 'Customer' | 'Supplier' | 'Invoice' | 'Quotation' | 'Purchase' | 'Payment' | 'Expense' | 'Settings',
-  recordId: string,
-  payload: any
-) => {
+export interface BusinessBrandingCache {
+  businessId?: string;
+  logoUrl: string;
+  watermarkLogoUrl: string;
+  logoVersion: number;
+  businessName: string;
+}
+
+const BRANDING_CACHE_KEY = 'agribiz_business_branding';
+
+const getCachedBranding = (): Partial<BusinessBrandingCache> | null => {
+  if (typeof window === 'undefined') return null;
   try {
-    let enrichedPayload = payload ? JSON.parse(JSON.stringify(payload)) : null;
-    if (enrichedPayload) {
-      enrichedPayload.deviceId = getDeviceId();
-      enrichedPayload.syncStatus = 'Pending';
-      if (!enrichedPayload.version) {
-        enrichedPayload.version = 1;
-      }
-      // NORMALIZE SCHEMA FOR BACKEND MONGOOSE CONTRACT
-      if (module === 'Product') {
-        enrichedPayload.productId = enrichedPayload.productId || enrichedPayload.id || recordId;
-      } else if (module === 'Customer') {
-        enrichedPayload.customerId = enrichedPayload.customerId || enrichedPayload.id || recordId;
-        enrichedPayload.phone = enrichedPayload.phone || enrichedPayload.mobile || 'N/A';
-      } else if (module === 'Supplier') {
-        enrichedPayload.supplierId = enrichedPayload.supplierId || enrichedPayload.id || recordId;
-        enrichedPayload.phone = enrichedPayload.phone || enrichedPayload.mobile || 'N/A';
-      } else if (module === 'Invoice') {
-        enrichedPayload.invoiceId = enrichedPayload.invoiceId || enrichedPayload.id || recordId;
-        enrichedPayload.invoiceNumber = enrichedPayload.invoiceNumber || recordId;
-        enrichedPayload.paymentStatus = enrichedPayload.paymentStatus || (enrichedPayload.balanceDue === 0 ? 'Paid' : enrichedPayload.amountPaid > 0 ? 'Partial' : 'Unpaid');
-      } else if (module === 'Quotation') {
-        enrichedPayload.quotationId = enrichedPayload.quotationId || enrichedPayload.id || recordId;
-        enrichedPayload.quotationNumber = enrichedPayload.quotationNumber || recordId;
-      } else if (module === 'Purchase') {
-        enrichedPayload.purchaseId = enrichedPayload.purchaseId || enrichedPayload.id || recordId;
-        enrichedPayload.purchaseNumber = enrichedPayload.purchaseNumber || recordId;
-      } else if (module === 'Payment') {
-        enrichedPayload.paymentId = enrichedPayload.paymentId || enrichedPayload.id || recordId;
-      } else if (module === 'Expense') {
-        enrichedPayload.expenseId = enrichedPayload.expenseId || enrichedPayload.id || recordId;
-        enrichedPayload.status = enrichedPayload.status || 'Paid';
-        enrichedPayload.payee = enrichedPayload.payee || enrichedPayload.title || 'General';
-      } else if (module === 'Settings') {
-        enrichedPayload.id = 'business';
-      }
+    const cached = localStorage.getItem(BRANDING_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
     }
-    await db.syncQueue.add({
-      action,
-      module,
-      recordId,
-      payload: enrichedPayload,
-      timestamp: new Date().toISOString(),
-      retryCount: 0,
-    });
-    console.log(`Queued offline operation: ${action} on ${module} (${recordId}). Triggering instant upload...`);
-    
-    // Immediate zero-delay upload to MongoDB Atlas & Socket Broadcast
-    synchronizeLocalDatabase();
-  } catch (err) {
-    console.error('Failed to queue sync operation:', err);
+  } catch (e) {
+    console.error('Failed to parse branding cache:', e);
+  }
+  return null;
+};
+
+const setCachedBranding = (branding: { logoUrl: string; watermarkLogoUrl: string; businessName: string; businessId?: string }) => {
+  if (typeof window === 'undefined') return;
+  try {
+    const cacheObj: BusinessBrandingCache = {
+      businessId: branding.businessId || 'company_1',
+      logoUrl: branding.logoUrl || '/logo-512.png',
+      watermarkLogoUrl: branding.watermarkLogoUrl || '/logo-512.png',
+      logoVersion: Date.now(),
+      businessName: branding.businessName || 'AgriBiz',
+    };
+    localStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify(cacheObj));
+  } catch (e) {
+    console.error('Failed to save branding cache:', e);
+  }
+};
+
+const REALTIME_CHANNEL_NAME = 'agribiz_realtime_updates';
+const broadcastChannel = typeof window !== 'undefined' && 'BroadcastChannel' in window ? new BroadcastChannel(REALTIME_CHANNEL_NAME) : null;
+
+export const notifyMutation = () => {
+  if (broadcastChannel) {
+    try {
+      broadcastChannel.postMessage({ type: 'MUTATION_OCCURRED', timestamp: Date.now() });
+    } catch (e) {}
   }
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // In-Memory mirrors of Dexie database
+  // In-Memory state updated directly from REST APIs
   const [products, setProducts] = useState<Product[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -225,13 +207,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>([]);
 
-  // Small settings & theme managed in localStorage
+  // Small settings & theme managed in localStorage + Stale-While-Revalidate Branding Cache
   const [settings, setSettings] = useState<BusinessSettings>(() => {
     const local = localStorage.getItem('agribiz_settings');
     const raw = local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
+    const cachedBranding = getCachedBranding();
+    
+    const logo = cachedBranding?.logoUrl || raw.logo || '/logo-512.png';
+    const watermarkLogo = cachedBranding?.watermarkLogoUrl || raw.watermarkLogo || '/logo-512.png';
+    const businessName = toTitleCase(cachedBranding?.businessName || raw.businessName);
+
     return {
       ...raw,
-      businessName: toTitleCase(raw.businessName),
+      logo,
+      watermarkLogo,
+      businessName,
       ownerName: toTitleCase(raw.ownerName),
     };
   });
@@ -251,6 +241,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return 'light';
   });
 
+  useEffect(() => {
+    if (settings.theme === 'dark') {
+      setActiveTheme('dark');
+    } else if (settings.theme === 'light') {
+      setActiveTheme('light');
+    } else {
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      setActiveTheme(isDark ? 'dark' : 'light');
+    }
+  }, [settings.theme]);
+
   // Online / Offline Connectivity State
   const [isOnline, setIsOnline] = useState<boolean>(() => navigator.onLine);
 
@@ -267,167 +268,289 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  const reloadData = async () => {
-    const ts = new Date().toISOString();
-    console.log(`[${ts}] [CLIENT_RELOAD_DATA_EXECUTION] AppContext reloadData() invoked.`);
-    try {
-      const localProducts = await db.products.toArray();
-      const localCustomers = await db.customers.toArray();
-      const localSuppliers = await db.suppliers.toArray();
-      const localInvoices = await db.invoices.toArray();
-      const localQuotations = await db.quotations.toArray();
-      const localPurchases = await db.purchases.toArray();
-      const localPayments = await db.payments.toArray();
-      const localExpenses = await db.expenses.toArray();
-      const localRecycleBin = await db.recycleBin.toArray();
+  const updateTargetModuleState = (module: string, action: string, recordId: string | null, rawRecord: any) => {
+    const recId = recordId || rawRecord?.id || rawRecord?.productId || rawRecord?.customerId || rawRecord?.supplierId || rawRecord?.invoiceId || rawRecord?.purchaseId || rawRecord?.expenseId || rawRecord?.paymentId || rawRecord?.quotationId;
 
-      setProducts(localProducts.filter((p) => !p.isDeleted));
-      setCustomers(localCustomers.filter((c) => !c.isDeleted));
-      setSuppliers(localSuppliers.filter((s) => !s.isDeleted));
-      setInvoices(localInvoices.filter((i) => !i.isDeleted));
-      setQuotations(localQuotations.filter((q) => !q.isDeleted));
-      setPurchases(localPurchases.filter((p) => !p.isDeleted));
-      setPayments(localPayments.filter((p) => !p.isDeleted));
-
-      const activeExpenses = localExpenses.filter((e) => !e.isDeleted);
-      setExpenses(activeExpenses);
-      setRecycleBin(localRecycleBin);
-
-      const localSettings = await db.settings.get('business');
-      if (localSettings) {
-        setSettings(localSettings);
+    switch (module) {
+      case 'Invoices': {
+        if (action === 'DELETE' && recId) {
+          setInvoices(prev => prev.filter(i => i.id !== recId && (i as any).invoiceId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.invoiceId || rawRecord.id };
+          setInvoices(prev => [item, ...prev.filter(i => i.id !== item.id && (i as any).invoiceId !== item.id)]);
+        }
+        break;
       }
-      console.log(`[${ts}] [CLIENT_REACT_STATE_CHANGE] AppContext state reloaded. Expenses Count: ${activeExpenses.length} | Expense IDs: [${activeExpenses.map(e => e.id).join(', ')}]`);
-    } catch (err) {
-      console.error('Failed to reload local database:', err);
+      case 'Expenses': {
+        if (action === 'DELETE' && recId) {
+          setExpenses(prev => prev.filter(e => e.id !== recId && (e as any).expenseId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.expenseId || rawRecord.id };
+          setExpenses(prev => [item, ...prev.filter(e => e.id !== item.id && (e as any).expenseId !== item.id)]);
+        }
+        break;
+      }
+      case 'Purchases': {
+        if (action === 'DELETE' && recId) {
+          setPurchases(prev => prev.filter(p => p.id !== recId && (p as any).purchaseId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.purchaseId || rawRecord.id };
+          setPurchases(prev => [item, ...prev.filter(p => p.id !== item.id && (p as any).purchaseId !== item.id)]);
+        }
+        break;
+      }
+      case 'Products': {
+        if (action === 'DELETE' && recId) {
+          setProducts(prev => prev.filter(p => p.id !== recId && (p as any).productId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.productId || rawRecord.id };
+          setProducts(prev => [item, ...prev.filter(p => p.id !== item.id && (p as any).productId !== item.id)]);
+        }
+        break;
+      }
+      case 'Customers': {
+        if (action === 'DELETE' && recId) {
+          setCustomers(prev => prev.filter(c => c.id !== recId && (c as any).customerId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.customerId || rawRecord.id };
+          setCustomers(prev => [item, ...prev.filter(c => c.id !== item.id && (c as any).customerId !== item.id)]);
+        }
+        break;
+      }
+      case 'Suppliers': {
+        if (action === 'DELETE' && recId) {
+          setSuppliers(prev => prev.filter(s => s.id !== recId && (s as any).supplierId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.supplierId || rawRecord.id };
+          setSuppliers(prev => [item, ...prev.filter(s => s.id !== item.id && (s as any).supplierId !== item.id)]);
+        }
+        break;
+      }
+      case 'Payments': {
+        if (action === 'DELETE' && recId) {
+          setPayments(prev => prev.filter(p => p.id !== recId && (p as any).paymentId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.paymentId || rawRecord.id };
+          setPayments(prev => [item, ...prev.filter(p => p.id !== item.id && (p as any).paymentId !== item.id)]);
+        }
+        break;
+      }
+      case 'Quotations': {
+        if (action === 'DELETE' && recId) {
+          setQuotations(prev => prev.filter(q => q.id !== recId && (q as any).quotationId !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.quotationId || rawRecord.id };
+          setQuotations(prev => [item, ...prev.filter(q => q.id !== item.id && (q as any).quotationId !== item.id)]);
+        }
+        break;
+      }
+      case 'Settings': {
+        if (rawRecord) {
+          setSettings(prev => ({ ...prev, ...rawRecord }));
+        }
+        break;
+      }
+      case 'RecycleBin': {
+        if (action === 'DELETE' && recId) {
+          setRecycleBin(prev => prev.filter(r => r.id !== recId));
+        } else if (rawRecord) {
+          const item = { ...rawRecord, id: rawRecord.id || rawRecord._id };
+          setRecycleBin(prev => [item, ...prev.filter(r => r.id !== item.id)]);
+        }
+        break;
+      }
+      default: {
+        reloadData();
+        break;
+      }
     }
   };
 
-  const synchronize = async () => {
-    await synchronizeLocalDatabase();
-  };
+  const socketRef = useRef<Socket | null>(null);
 
-  // Fetch from Dexie on App Load, or seed if empty
   useEffect(() => {
-    const initializeDatabase = async () => {
-      try {
-        const productCount = await db.products.count();
-        if (productCount === 0) {
-          console.log('IndexedDB is empty, seeding initial mock data...');
+    const setupSocket = () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setApiSocketId(null);
+      }
 
-          // Seed products
-          await db.products.bulkAdd(
-            initialProducts.map((p) => ({
-              ...p,
-              name: toTitleCase(p.name),
-              category: toTitleCase(p.category),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      const token = sessionStorage.getItem('agribiz_access_token');
+      if (!token) return;
 
-          // Seed customers
-          await db.customers.bulkAdd(
-            initialCustomers.map((c) => ({
-              ...c,
-              name: toTitleCase(c.name),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      const envApi = import.meta.env.VITE_API_URL || '';
+      const socketUrl = envApi ? (envApi.endsWith('/') ? envApi.slice(0, -1) : envApi) : window.location.origin;
 
-          // Seed suppliers
-          await db.suppliers.bulkAdd(
-            initialSuppliers.map((s) => ({
-              ...s,
-              name: toTitleCase(s.name),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      console.log('[SOCKET] Connecting to Socket.IO server at:', socketUrl);
 
-          // Seed invoices
-          await db.invoices.bulkAdd(
-            initialInvoices.map((inv) => ({
-              ...inv,
-              customerName: toTitleCase(inv.customerName),
-              items: inv.items.map((item) => ({
-                ...item,
-                productName: toTitleCase(item.productName),
-              })),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      const socket = io(socketUrl, {
+        auth: { token },
+        transports: ['websocket', 'polling'],
+        reconnection: true,
+        reconnectionAttempts: Infinity,
+        timeout: 10000,
+      });
 
-          // Seed payments
-          await db.payments.bulkAdd(
-            initialPayments.map((pay) => ({
-              ...pay,
-              contactName: toTitleCase(pay.contactName),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      socketRef.current = socket;
 
-          // Seed expenses
-          await db.expenses.bulkAdd(
-            initialExpenses.map((exp) => ({
-              ...exp,
-              payee: toTitleCase(exp.payee),
-              category: toTitleCase(exp.category),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      socket.on('connect', () => {
+        console.log(`[SOCKET] Connected: ${socket.id}`);
+        setApiSocketId(socket.id || null);
+        reloadData();
+      });
 
-          // Seed purchases
-          await db.purchases.bulkAdd(
-            initialPurchases.map((p) => ({
-              ...p,
-              supplierName: toTitleCase(p.supplierName),
-              items: p.items.map((item) => ({
-                ...item,
-                productName: toTitleCase(item.productName),
-              })),
-              isDeleted: false,
-              version: 1,
-            }))
-          );
+      socket.on('disconnect', (reason) => {
+        console.log(`[SOCKET] Disconnected: ${socket.id} | Reason: ${reason}`);
+        setApiSocketId(null);
+      });
 
-          // Seed default business settings
-          const settingsCount = await db.settings.count();
-          if (settingsCount === 0) {
-            await db.settings.add({
-              ...settings,
-              id: 'business',
-            });
-          }
+      socket.on('connect_error', (err) => {
+        console.warn('[SOCKET] Connection error:', err.message);
+      });
+
+      socket.on('data_change', (event: any) => {
+        const T3 = performance.now();
+        console.log('[REMOTE SOCKET] data_change received:', event);
+
+        if (event.senderSocketId && event.senderSocketId === socket.id) {
+          console.log(`[SOCKET] Ignoring self-initiated mutation event (socketId: ${socket.id})`);
+          return;
         }
 
-        await reloadData();
-        console.log('IndexedDB loaded successfully.');
-        startSyncDaemon();
-      } catch (err) {
-        console.error('IndexedDB loading failed:', err);
+        const { module, action, recordId, record } = event;
+
+        if (record || (action === 'DELETE' && recordId)) {
+          updateTargetModuleState(module, action, recordId, record);
+          const T4 = performance.now();
+          console.log(`[PERF] T3 -> T4 (Socket event -> React state update): ${(T4 - T3).toFixed(2)} ms`);
+
+          queueMicrotask(() => {
+            const T5 = performance.now();
+            console.log(`[PERF] T4 -> T5 (React state update -> Visible UI render): ${(T5 - T4).toFixed(2)} ms`);
+            console.log(`[PERF] TOTAL Application Processing Latency (T3 -> T5): ${(T5 - T3).toFixed(2)} ms`);
+          });
+        } else {
+          reloadData();
+        }
+      });
+    };
+
+    setupSocket();
+
+    window.addEventListener('agribiz_auth_change', setupSocket);
+
+    const handleFocus = () => {
+      if (document.visibilityState === 'visible' && navigator.onLine) {
+        reloadData();
       }
     };
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
 
-    initializeDatabase();
+    return () => {
+      if (socketRef.current) {
+        socketRef.current.disconnect();
+        socketRef.current = null;
+        setApiSocketId(null);
+      }
+      window.removeEventListener('agribiz_auth_change', setupSocket);
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, []);
 
-  // Listen for sync complete events
-  useEffect(() => {
-    const handleSyncComplete = async () => {
-      console.log('[App Context] Sync complete event received. Reloading Dexie data...');
-      await reloadData();
-      console.log('[App Context] React Context refreshed with reloaded Dexie data.');
-    };
+  const reloadData = async () => {
+    if (!navigator.onLine) {
+      console.warn('System is offline. Skipping REST API reloadData.');
+      return;
+    }
+    const t = Date.now();
+    try {
+      const [
+        productsRes,
+        customersRes,
+        suppliersRes,
+        invoicesRes,
+        quotationsRes,
+        purchasesRes,
+        paymentsRes,
+        expensesRes,
+        recycleBinRes,
+        settingsRes
+      ] = await Promise.allSettled([
+        api.get(`/products?_t=${t}`),
+        api.get(`/customers?_t=${t}`),
+        api.get(`/suppliers?_t=${t}`),
+        api.get(`/invoices?_t=${t}`),
+        api.get(`/quotations?_t=${t}`),
+        api.get(`/purchases?_t=${t}`),
+        api.get(`/payments?_t=${t}`),
+        api.get(`/expenses?_t=${t}`),
+        api.get(`/recycle-bin?_t=${t}`),
+        api.get(`/settings?_t=${t}`),
+      ]);
 
-    window.addEventListener('sync-completed', handleSyncComplete);
-    return () => {
-      window.removeEventListener('sync-completed', handleSyncComplete);
-    };
+      if (productsRes.status === 'fulfilled' && productsRes.value.data?.products) {
+        setProducts(productsRes.value.data.products.map((p: any) => ({ ...p, id: p.productId || p.id })));
+      }
+      if (customersRes.status === 'fulfilled' && customersRes.value.data?.customers) {
+        setCustomers(customersRes.value.data.customers.map((c: any) => ({ ...c, id: c.customerId || c.id })));
+      }
+      if (suppliersRes.status === 'fulfilled' && suppliersRes.value.data?.suppliers) {
+        setSuppliers(suppliersRes.value.data.suppliers.map((s: any) => ({ ...s, id: s.supplierId || s.id })));
+      }
+      if (invoicesRes.status === 'fulfilled' && invoicesRes.value.data?.invoices) {
+        setInvoices(invoicesRes.value.data.invoices.map((i: any) => ({ ...i, id: i.invoiceId || i.id })));
+      }
+      if (quotationsRes.status === 'fulfilled' && quotationsRes.value.data?.quotations) {
+        setQuotations(quotationsRes.value.data.quotations.map((q: any) => ({ ...q, id: q.quotationId || q.id })));
+      }
+      if (purchasesRes.status === 'fulfilled' && purchasesRes.value.data?.purchases) {
+        setPurchases(purchasesRes.value.data.purchases.map((p: any) => ({ ...p, id: p.purchaseId || p.id })));
+      }
+      if (paymentsRes.status === 'fulfilled' && paymentsRes.value.data?.payments) {
+        setPayments(paymentsRes.value.data.payments.map((p: any) => ({ ...p, id: p.paymentId || p.id })));
+      }
+      if (expensesRes.status === 'fulfilled' && expensesRes.value.data?.expenses) {
+        setExpenses(expensesRes.value.data.expenses.map((e: any) => ({ ...e, id: e.expenseId || e.id })));
+      }
+      if (recycleBinRes.status === 'fulfilled' && recycleBinRes.value.data?.items) {
+        setRecycleBin(recycleBinRes.value.data.items);
+      }
+      if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.settings) {
+        const remoteSettings: BusinessSettings = settingsRes.value.data.settings;
+        setSettings((prev) => {
+          const updatedLogo = remoteSettings.logo || prev.logo || '/logo-512.png';
+          const updatedWatermark = remoteSettings.watermarkLogo || prev.watermarkLogo || '/logo-512.png';
+          const updatedName = toTitleCase(remoteSettings.businessName || prev.businessName);
+
+          const updatedSettings = {
+            ...remoteSettings,
+            logo: updatedLogo,
+            watermarkLogo: updatedWatermark,
+            businessName: updatedName,
+          };
+
+          // Save to localStorage for instant stale-while-revalidate on next boot
+          localStorage.setItem('agribiz_settings', JSON.stringify(updatedSettings));
+          setCachedBranding({
+            logoUrl: updatedLogo,
+            watermarkLogoUrl: updatedWatermark,
+            businessName: updatedName,
+            businessId: (remoteSettings as any).companyId,
+          });
+
+          return updatedSettings;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load data from REST API:', err);
+    }
+  };
+
+  useEffect(() => {
+    reloadData();
   }, []);
 
   // Unsaved Changes Protection State & Logic
@@ -483,101 +606,70 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isEditingCustomer, _setIsEditingCustomer] = useState<Customer | null>(null);
   const [isEditingSupplier, _setIsEditingSupplier] = useState<Supplier | null>(null);
 
-  const setCurrentTab = (tab: string) => requestNavigation(() => { window.history.pushState({ tab }, '', '#' + tab); _setCurrentTab(tab); });
-  const setViewInvoice = (id: string | null) => requestNavigation(() => _setViewInvoice(id));
-  const setViewQuotation = (id: string | null) => requestNavigation(() => _setViewQuotation(id));
-  const setViewPurchase = (id: string | null) => requestNavigation(() => _setViewPurchase(id));
-  const setViewCustomer = (id: string | null) => requestNavigation(() => _setViewCustomer(id));
-  const setViewSupplier = (id: string | null) => requestNavigation(() => _setViewSupplier(id));
-  const setIsCreatingInvoice = (val: boolean) => requestNavigation(() => _setIsCreatingInvoice(val));
-  const setIsCreatingQuotation = (val: boolean) => requestNavigation(() => _setIsCreatingQuotation(val));
-  const setIsEnteringPurchase = (val: boolean) => requestNavigation(() => _setIsEnteringPurchase(val));
-  const setIsEditingProduct = (product: Product | null) => requestNavigation(() => _setIsEditingProduct(product));
-  const setIsEditingCustomer = (customer: Customer | null) => requestNavigation(() => _setIsEditingCustomer(customer));
-  const setIsEditingSupplier = (supplier: Supplier | null) => requestNavigation(() => _setIsEditingSupplier(supplier));
-  const [searchQuery, setSearchQuery] = useState('');
-
-  const navigateTab = (tab: string) => {
-    requestNavigation(() => {
-      window.history.pushState({ tab }, '', '#' + tab);
-      _setCurrentTab(tab);
-      _setViewInvoice(null);
-      _setViewQuotation(null);
-      _setViewPurchase(null);
-      _setViewCustomer(null);
-      _setViewSupplier(null);
-      _setIsCreatingInvoice(false);
-      _setIsCreatingQuotation(false);
-      _setIsEnteringPurchase(false);
-      setSearchQuery('');
-    });
-  };
-
-  // Mount sync to ensure URL hash matches initial load tab in history
-  useEffect(() => {
-    const initialTab = window.location.hash.slice(1) || 'dashboard';
-    _setCurrentTab(initialTab);
-    window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
-  }, []);
-
-  // Intercept browser back/forward (popstate)
-  useEffect(() => {
-    const handlePopState = (event: PopStateEvent) => {
-      const targetTab = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
-      if (targetTab === currentTab) return;
-
-      if (Object.values(dirtyForms).some(Boolean)) {
-        pendingCallbacksRef.current = [
-          () => {
-            window.history.replaceState({ tab: targetTab }, '', '#' + targetTab);
-            _setCurrentTab(targetTab);
-            _setViewInvoice(null);
-            _setViewQuotation(null);
-            _setViewPurchase(null);
-            _setViewCustomer(null);
-            _setViewSupplier(null);
-            _setIsCreatingInvoice(false);
-            _setIsCreatingQuotation(false);
-            _setIsEnteringPurchase(false);
-            setSearchQuery('');
-          }
-        ];
-        setShowUnsavedModal(true);
-        window.history.pushState({ tab: currentTab }, '', '#' + currentTab);
-      } else {
-        _setCurrentTab(targetTab);
-        _setViewInvoice(null);
-        _setViewQuotation(null);
-        _setViewPurchase(null);
-        _setViewCustomer(null);
-        _setViewSupplier(null);
+  const setCurrentTab = (tab: string, force = false) => force ? (_setCurrentTab(tab), window.history.pushState({ tab }, '', '#' + tab)) : requestNavigation(() => { window.history.pushState({ tab }, '', '#' + tab); _setCurrentTab(tab); });
+  const setViewInvoice = (id: string | null, force = false) => {
+    if (force) {
+      clearAllDirtyForms();
+      if (id !== null) {
         _setIsCreatingInvoice(false);
         _setIsCreatingQuotation(false);
+      }
+      _setViewInvoice(id);
+    } else {
+      requestNavigation(() => {
+        if (id !== null) {
+          _setIsCreatingInvoice(false);
+          _setIsCreatingQuotation(false);
+        }
+        _setViewInvoice(id);
+      });
+    }
+  };
+
+  const setViewQuotation = (id: string | null, force = false) => {
+    if (force) {
+      clearAllDirtyForms();
+      if (id !== null) {
+        _setIsCreatingQuotation(false);
+        _setIsCreatingInvoice(false);
+      }
+      _setViewQuotation(id);
+    } else {
+      requestNavigation(() => {
+        if (id !== null) {
+          _setIsCreatingQuotation(false);
+          _setIsCreatingInvoice(false);
+        }
+        _setViewQuotation(id);
+      });
+    }
+  };
+
+  const setViewPurchase = (id: string | null, force = false) => {
+    if (force) {
+      clearAllDirtyForms();
+      if (id !== null) {
         _setIsEnteringPurchase(false);
-        setSearchQuery('');
       }
-    };
-
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentTab, dirtyForms]);
-
-  // Intercept tab closing or browser refresh
-  useEffect(() => {
-    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (Object.values(dirtyForms).some(Boolean)) {
-        e.preventDefault();
-        e.returnValue = 'You have unsaved changes. If you leave this page now, your changes will be lost.';
-        return e.returnValue;
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [dirtyForms]);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-
+      _setViewPurchase(id);
+    } else {
+      requestNavigation(() => {
+        if (id !== null) {
+          _setIsEnteringPurchase(false);
+        }
+        _setViewPurchase(id);
+      });
+    }
+  };
+  const setViewCustomer = (id: string | null, force = false) => force ? (clearAllDirtyForms(), _setViewCustomer(id)) : requestNavigation(() => _setViewCustomer(id));
+  const setViewSupplier = (id: string | null, force = false) => force ? (clearAllDirtyForms(), _setViewSupplier(id)) : requestNavigation(() => _setViewSupplier(id));
+  const setIsCreatingInvoice = (val: boolean, force = false) => force ? (clearAllDirtyForms(), _setIsCreatingInvoice(val)) : requestNavigation(() => _setIsCreatingInvoice(val));
+  const setIsCreatingQuotation = (val: boolean, force = false) => force ? (clearAllDirtyForms(), _setIsCreatingQuotation(val)) : requestNavigation(() => _setIsCreatingQuotation(val));
+  const setIsEnteringPurchase = (val: boolean, force = false) => force ? (clearAllDirtyForms(), _setIsEnteringPurchase(val)) : requestNavigation(() => _setIsEnteringPurchase(val));
+  const setIsEditingProduct = (product: Product | null, force = false) => force ? (clearAllDirtyForms(), _setIsEditingProduct(product)) : requestNavigation(() => _setIsEditingProduct(product));
+  const setIsEditingCustomer = (customer: Customer | null, force = false) => force ? (clearAllDirtyForms(), _setIsEditingCustomer(customer)) : requestNavigation(() => _setIsEditingCustomer(customer));
+  const setIsEditingSupplier = (supplier: Supplier | null, force = false) => force ? (clearAllDirtyForms(), _setIsEditingSupplier(supplier)) : requestNavigation(() => _setIsEditingSupplier(supplier));
   const [salesActiveTab, setSalesActiveTab] = useState<'invoices' | 'quotations'>('invoices');
-
   const [paymentFormPreset, setPaymentFormPreset] = useState<{ contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null>(null);
   const [salesFormPresetCustomerId, setSalesFormPresetCustomerId] = useState<string | null>(null);
   const [purchaseFormPresetSupplierId, setPurchaseFormPresetSupplierId] = useState<string | null>(null);
@@ -705,7 +797,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         referenceNumber: referenceNumber.trim() || undefined,
         notes: notes.trim() || undefined,
       });
-      showToast(`Payment of ₹${amount.toLocaleString('en-IN')} updated successfully!`);
       setEditingPaymentId(null);
     } else {
       addPayment({
@@ -718,9 +809,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         referenceNumber: referenceNumber.trim() || undefined,
         notes: notes.trim() || undefined,
       });
-      showToast(`Payment of ₹${amount.toLocaleString('en-IN')} logged successfully!`);
     }
 
+    clearAllDirtyForms();
     setContactId('');
     setAmount(0);
     setReferenceNumber('');
@@ -728,44 +819,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsPaymentFormOpen(false);
   };
 
-  // Theme synchronization logic
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const navigateTab = (tab: string) => {
+    requestNavigation(() => {
+      window.history.pushState({ tab }, '', '#' + tab);
+      _setCurrentTab(tab);
+      _setViewInvoice(null);
+      _setViewQuotation(null);
+      _setViewPurchase(null);
+      _setViewCustomer(null);
+      _setViewSupplier(null);
+      _setIsCreatingInvoice(false);
+      _setIsCreatingQuotation(false);
+      _setIsEnteringPurchase(false);
+      setSearchQuery('');
+    });
+  };
+
+  // Mount sync to ensure URL hash matches initial load tab in history
   useEffect(() => {
-    const updateActiveTheme = () => {
-      if (settings.theme === 'system') {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        setActiveTheme(isDark ? 'dark' : 'light');
+    const initialTab = window.location.hash.slice(1) || 'dashboard';
+    _setCurrentTab(initialTab);
+    window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
+  }, []);
+
+  // Intercept browser back/forward (popstate)
+  useEffect(() => {
+    const handlePopState = (event: PopStateEvent) => {
+      const targetTab = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
+      if (targetTab === currentTab) return;
+
+      if (Object.values(dirtyForms).some(Boolean)) {
+        pendingCallbacksRef.current = [
+          () => {
+            window.history.replaceState({ tab: targetTab }, '', '#' + targetTab);
+            _setCurrentTab(targetTab);
+            _setViewInvoice(null);
+            _setViewQuotation(null);
+            _setViewPurchase(null);
+            _setViewCustomer(null);
+            _setViewSupplier(null);
+            _setIsCreatingInvoice(false);
+            _setIsCreatingQuotation(false);
+            _setIsEnteringPurchase(false);
+            setSearchQuery('');
+          }
+        ];
+        setShowUnsavedModal(true);
+        window.history.pushState({ tab: currentTab }, '', '#' + currentTab);
       } else {
-        setActiveTheme(settings.theme || 'light');
+        _setCurrentTab(targetTab);
+        _setViewInvoice(null);
+        _setViewQuotation(null);
+        _setViewPurchase(null);
+        _setViewCustomer(null);
+        _setViewSupplier(null);
+        _setIsCreatingInvoice(false);
+        _setIsCreatingQuotation(false);
+        _setIsEnteringPurchase(false);
+        setSearchQuery('');
       }
     };
 
-    updateActiveTheme();
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [currentTab, dirtyForms]);
 
-    if (settings.theme === 'system') {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handleChange = () => {
-        updateActiveTheme();
-      };
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
-    }
-  }, [settings.theme]);
-
+  // Intercept tab closing or browser refresh
   useEffect(() => {
-    document.body.className = activeTheme === 'dark' ? 'dark-theme' : 'light-theme';
-    let metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (!metaThemeColor) {
-      metaThemeColor = document.createElement('meta');
-      metaThemeColor.setAttribute('name', 'theme-color');
-      document.head.appendChild(metaThemeColor);
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.values(dirtyForms).some(Boolean)) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. If you leave this page now, your changes will be lost.';
+        return e.returnValue;
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirtyForms]);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const synchronize = async () => {
+    await reloadData();
+  };
+
+  // --- REST API CRUD ACTIONS ---
+
+  const addProduct = async (p: Omit<Product, 'id'>) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot add product while offline.', 'error');
+      return null;
     }
-    const color = activeTheme === 'dark' ? '#0b0f19' : '#f8fafc';
-    metaThemeColor.setAttribute('content', color);
-  }, [activeTheme]);
-
-  // --- CRUD ACTIONS backed by Dexie.js ---
-
-  const addProduct = (p: Omit<Product, 'id'>) => {
     const id = generateId('PROD');
     const newProduct: Product = {
       ...p,
@@ -773,63 +918,61 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       category: toTitleCase(p.category),
       id,
     };
-    
-    setProducts((prev) => [...prev, newProduct]);
-    
-    // Save locally
-    const dbRecord = { ...newProduct, isDeleted: false, version: 1 };
-    db.products.add(dbRecord);
-    
-    // Queue offline sync
-    queueSync('CREATE', 'Product', id, newProduct);
-    
-    return newProduct;
+
+    try {
+      await api.post('/products', { ...newProduct, productId: id });
+      setProducts((prev) => [...prev, newProduct]);
+      notifyMutation();
+      showToast('Product added successfully!');
+      return newProduct;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to add product', 'error');
+      return null;
+    }
   };
 
-  const editProduct = (p: Product) => {
+  const editProduct = async (p: Product) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update product while offline.', 'error');
+      return;
+    }
     const formatted: Product = {
       ...p,
       name: toTitleCase(p.name),
       category: toTitleCase(p.category),
     };
-    
-    setProducts((prev) => prev.map((item) => (item.id === p.id ? formatted : item)));
-    
-    // Save locally
-    const dbRecord = { ...formatted, isDeleted: false, version: 1 };
-    db.products.put(dbRecord);
-    
-    // Queue offline sync
-    queueSync('UPDATE', 'Product', p.id, formatted);
-  };
 
-  const deleteProduct = (id: string) => {
-    const item = products.find((p) => p.id === id);
-    if (item) {
-      const binItem: RecycleBinItem = {
-        id: generateId('REC'),
-        originalId: item.id,
-        name: item.name,
-        module: 'Product',
-        deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Vaibhav Patel',
-        originalData: item,
-      };
-
-      // Atomic local updates
-      db.products.update(id, { isDeleted: true });
-      db.recycleBin.add(binItem);
-      
-      // Update state
-      setProducts((prev) => prev.filter((p) => p.id !== id));
-      setRecycleBin((prev) => [binItem, ...prev]);
-      
-      // Queue offline sync
-      queueSync('DELETE', 'Product', id, null);
+    try {
+      await api.put(`/products/${p.id}`, formatted);
+      setProducts((prev) => prev.map((item) => (item.id === p.id ? formatted : item)));
+      notifyMutation();
+      showToast('Product updated successfully!');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update product', 'error');
     }
   };
 
-  const addCustomer = (c: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => {
+  const deleteProduct = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete product while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/products/${id}`);
+      setProducts((prev) => prev.filter((p) => p.id !== id));
+      notifyMutation();
+      showToast('Product soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete product', 'error');
+    }
+  };
+
+  const addCustomer = async (c: Omit<Customer, 'id' | 'outstanding'> & { outstanding?: number }) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot add customer while offline.', 'error');
+      return null;
+    }
     const id = generateId('CUS');
     const newCustomer: Customer = {
       ...c,
@@ -837,55 +980,60 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id,
       outstanding: c.outstanding || 0,
     };
-    
-    setCustomers((prev) => [...prev, newCustomer]);
-    
-    const dbRecord = { ...newCustomer, isDeleted: false, version: 1 };
-    db.customers.add(dbRecord);
-    
-    queueSync('CREATE', 'Customer', id, newCustomer);
-    
-    return newCustomer;
+
+    try {
+      await api.post('/customers', { ...newCustomer, customerId: id, phone: newCustomer.phone || 'N/A' });
+      setCustomers((prev) => [...prev, newCustomer]);
+      notifyMutation();
+      showToast('Customer added successfully!');
+      return newCustomer;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to add customer', 'error');
+      return null;
+    }
   };
 
-  const editCustomer = (c: Customer) => {
+  const editCustomer = async (c: Customer) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update customer while offline.', 'error');
+      return;
+    }
     const formatted: Customer = {
       ...c,
       name: toTitleCase(c.name),
     };
-    
-    setCustomers((prev) => prev.map((item) => (item.id === c.id ? formatted : item)));
-    
-    const dbRecord = { ...formatted, isDeleted: false, version: 1 };
-    db.customers.put(dbRecord);
-    
-    queueSync('UPDATE', 'Customer', c.id, formatted);
-  };
 
-  const deleteCustomer = (id: string) => {
-    const item = customers.find((c) => c.id === id);
-    if (item) {
-      const binItem: RecycleBinItem = {
-        id: generateId('REC'),
-        originalId: item.id,
-        name: item.name,
-        module: 'Customer',
-        deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Vaibhav Patel',
-        originalData: item,
-      };
-
-      db.customers.update(id, { isDeleted: true });
-      db.recycleBin.add(binItem);
-
-      setCustomers((prev) => prev.filter((item) => item.id !== id));
-      setRecycleBin((prev) => [binItem, ...prev]);
-
-      queueSync('DELETE', 'Customer', id, null);
+    try {
+      await api.put(`/customers/${c.id}`, { ...formatted, phone: formatted.phone || 'N/A' });
+      setCustomers((prev) => prev.map((item) => (item.id === c.id ? formatted : item)));
+      notifyMutation();
+      showToast('Customer updated successfully!');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update customer', 'error');
     }
   };
 
-  const addSupplier = (s: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => {
+  const deleteCustomer = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete customer while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/customers/${id}`);
+      setCustomers((prev) => prev.filter((item) => item.id !== id));
+      notifyMutation();
+      showToast('Customer soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete customer', 'error');
+    }
+  };
+
+  const addSupplier = async (s: Omit<Supplier, 'id' | 'outstanding'> & { outstanding?: number }) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot add supplier while offline.', 'error');
+      return null;
+    }
     const id = generateId('SUP');
     const newSupplier: Supplier = {
       ...s,
@@ -894,54 +1042,59 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       outstanding: s.outstanding || 0,
     };
 
-    setSuppliers((prev) => [...prev, newSupplier]);
-
-    const dbRecord = { ...newSupplier, isDeleted: false, version: 1 };
-    db.suppliers.add(dbRecord);
-
-    queueSync('CREATE', 'Supplier', id, newSupplier);
-
-    return newSupplier;
+    try {
+      await api.post('/suppliers', { ...newSupplier, supplierId: id, phone: newSupplier.phone || 'N/A' });
+      setSuppliers((prev) => [...prev, newSupplier]);
+      notifyMutation();
+      showToast('Supplier added successfully!');
+      return newSupplier;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to add supplier', 'error');
+      return null;
+    }
   };
 
-  const editSupplier = (s: Supplier) => {
+  const editSupplier = async (s: Supplier) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update supplier while offline.', 'error');
+      return;
+    }
     const formatted: Supplier = {
       ...s,
       name: toTitleCase(s.name),
     };
 
-    setSuppliers((prev) => prev.map((item) => (item.id === s.id ? formatted : item)));
-
-    const dbRecord = { ...formatted, isDeleted: false, version: 1 };
-    db.suppliers.put(dbRecord);
-
-    queueSync('UPDATE', 'Supplier', s.id, formatted);
-  };
-
-  const deleteSupplier = (id: string) => {
-    const item = suppliers.find((s) => s.id === id);
-    if (item) {
-      const binItem: RecycleBinItem = {
-        id: generateId('REC'),
-        originalId: item.id,
-        name: item.name,
-        module: 'Supplier',
-        deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Vaibhav Patel',
-        originalData: item,
-      };
-
-      db.suppliers.update(id, { isDeleted: true });
-      db.recycleBin.add(binItem);
-
-      setSuppliers((prev) => prev.filter((item) => item.id !== id));
-      setRecycleBin((prev) => [binItem, ...prev]);
-
-      queueSync('DELETE', 'Supplier', id, null);
+    try {
+      await api.put(`/suppliers/${s.id}`, { ...formatted, phone: formatted.phone || 'N/A' });
+      setSuppliers((prev) => prev.map((item) => (item.id === s.id ? formatted : item)));
+      notifyMutation();
+      showToast('Supplier updated successfully!');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update supplier', 'error');
     }
   };
 
-  const addInvoice = (inv: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
+  const deleteSupplier = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete supplier while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/suppliers/${id}`);
+      setSuppliers((prev) => prev.filter((item) => item.id !== id));
+      notifyMutation();
+      showToast('Supplier soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete supplier', 'error');
+    }
+  };
+
+  const addInvoice = async (inv: Omit<Invoice, 'id' | 'invoiceNumber'>) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot create invoice while offline.', 'error');
+      return null;
+    }
     const count = invoices.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const invoiceNumber = `${settings.invoicePrefix}${formattedCount}`;
@@ -958,104 +1111,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       invoiceNumber,
     };
 
-    // Calculate stock changes locally
-    const updatedProducts = products.map((p) => {
-      const matchingItem = inv.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        const finalStock = Math.max(0, p.stock - matchingItem.quantity);
-        db.products.update(p.id, { stock: finalStock });
-        return { ...p, stock: finalStock };
-      }
-      return p;
-    });
-
-    // Calculate customer dues locally
-    const updatedCustomers = customers.map((cust) => {
-      if (cust.id === inv.customerId) {
-        const finalDues = cust.outstanding + inv.balanceDue;
-        db.customers.update(cust.id, { outstanding: finalDues });
-        return { ...cust, outstanding: finalDues };
-      }
-      return cust;
-    });
-
-    // Handle instant payments locally
-    let generatedPayment: Payment | null = null;
-    if (inv.amountPaid > 0) {
-      const paymentId = generateId('PAY');
-      generatedPayment = {
-        id: paymentId,
-        date: inv.date,
-        type: 'CustomerReceipt',
-        contactId: inv.customerId,
-        contactName: inv.customerName,
-        amount: inv.amountPaid,
-        paymentMethod: (inv.paymentMethod as any) || 'UPI',
-        notes: `Against invoice ${invoiceNumber}`,
-      };
-      db.payments.add({ ...generatedPayment, isDeleted: false, version: 1 });
-      queueSync('CREATE', 'Payment', paymentId, generatedPayment);
+    try {
+      await api.post('/invoices', { ...newInvoice, invoiceId: id, invoiceNumber });
+      setInvoices((prev) => [newInvoice, ...prev]);
+      notifyMutation();
+      showToast('Invoice created successfully!');
+      reloadData();
+      return newInvoice;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to create invoice', 'error');
+      return null;
     }
-
-    // Save locally
-    db.invoices.add({ ...newInvoice, isDeleted: false, version: 1 });
-    queueSync('CREATE', 'Invoice', id, newInvoice);
-
-    // Apply updates atomically to state
-    setProducts(updatedProducts);
-    setCustomers(updatedCustomers);
-    if (generatedPayment) {
-      setPayments((prev) => [generatedPayment!, ...prev]);
-    }
-    setInvoices((prev) => [newInvoice, ...prev]);
-
-    return newInvoice;
   };
 
-  const editInvoice = (updatedInvoice: Invoice) => {
-    const oldInvoice = invoices.find((i) => i.id === updatedInvoice.id);
-    if (!oldInvoice) {
-      throw new Error(`Original invoice not found: ${updatedInvoice.invoiceNumber}`);
+  const editInvoice = async (updatedInvoice: Invoice) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update invoice while offline.', 'error');
+      return;
     }
-
-    // Revert old stock changes
-    const revertedProducts = products.map((p) => {
-      const matchingItem = oldInvoice.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        return { ...p, stock: p.stock + matchingItem.quantity };
-      }
-      return p;
-    });
-
-    // Revert old customer dues
-    const revertedCustomers = customers.map((cust) => {
-      if (cust.id === oldInvoice.customerId) {
-        return { ...cust, outstanding: cust.outstanding - oldInvoice.balanceDue };
-      }
-      return cust;
-    });
-
-    // Apply new stock changes
-    const finalProducts = revertedProducts.map((p) => {
-      const matchingItem = updatedInvoice.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        const finalStock = Math.max(0, p.stock - matchingItem.quantity);
-        db.products.update(p.id, { stock: finalStock });
-        return { ...p, stock: finalStock };
-      }
-      return p;
-    });
-
-    // Apply new customer dues
-    const finalCustomers = revertedCustomers.map((cust) => {
-      if (cust.id === updatedInvoice.customerId) {
-        const finalDues = cust.outstanding + updatedInvoice.balanceDue;
-        db.customers.update(cust.id, { outstanding: finalDues });
-        return { ...cust, outstanding: finalDues };
-      }
-      return cust;
-    });
-
     const formattedInvoice: Invoice = {
       ...updatedInvoice,
       customerName: toTitleCase(updatedInvoice.customerName),
@@ -1065,63 +1138,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })),
     };
 
-    // Save locally
-    db.invoices.put({ ...formattedInvoice, isDeleted: false, version: 1 });
-    queueSync('UPDATE', 'Invoice', formattedInvoice.id, formattedInvoice);
-
-    setProducts(finalProducts);
-    setCustomers(finalCustomers);
-    setInvoices((prev) => prev.map((inv) => (inv.id === oldInvoice.id ? formattedInvoice : inv)));
+    try {
+      await api.put(`/invoices/${formattedInvoice.id}`, formattedInvoice);
+      setInvoices((prev) => prev.map((item) => (item.id === formattedInvoice.id ? formattedInvoice : item)));
+      notifyMutation();
+      showToast('Invoice updated successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update invoice', 'error');
+    }
   };
 
-  const deleteInvoice = (id: string) => {
-    const inv = invoices.find((i) => i.id === id || i.invoiceNumber === id);
-    if (!inv) return;
-
-    const binItem: RecycleBinItem = {
-      id: generateId('REC'),
-      originalId: inv.id,
-      name: inv.invoiceNumber,
-      module: 'Invoice',
-      deletedAt: new Date().toISOString(),
-      deletedBy: settings.ownerName || 'Vaibhav Patel',
-      originalData: inv,
-    };
-
-    // Restore stocks locally
-    const finalProducts = products.map((p) => {
-      const matchingItem = inv.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        const finalStock = p.stock + matchingItem.quantity;
-        db.products.update(p.id, { stock: finalStock });
-        return { ...p, stock: finalStock };
-      }
-      return p;
-    });
-
-    // Revert customer dues locally
-    const finalCustomers = customers.map((cust) => {
-      if (cust.id === inv.customerId) {
-        const finalDues = Math.max(0, cust.outstanding - inv.balanceDue);
-        db.customers.update(cust.id, { outstanding: finalDues });
-        return { ...cust, outstanding: finalDues };
-      }
-      return cust;
-    });
-
-    // Save locally
-    db.invoices.update(inv.id, { isDeleted: true });
-    db.recycleBin.add(binItem);
-
-    setProducts(finalProducts);
-    setCustomers(finalCustomers);
-    setInvoices((prev) => prev.filter((i) => i.id !== inv.id));
-    setRecycleBin((prev) => [binItem, ...prev]);
-
-    queueSync('DELETE', 'Invoice', inv.id, null);
+  const deleteInvoice = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete invoice while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/invoices/${id}`);
+      setInvoices((prev) => prev.filter((item) => item.id !== id));
+      notifyMutation();
+      showToast('Invoice soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete invoice', 'error');
+    }
   };
 
-  const addQuotation = (q: Omit<Quotation, 'id' | 'quotationNumber'>) => {
+  const addQuotation = async (q: Omit<Quotation, 'id' | 'quotationNumber'>) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot create quotation while offline.', 'error');
+      return null;
+    }
     const count = quotations.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const quotationNumber = `QT-${formattedCount}`;
@@ -1138,15 +1186,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       quotationNumber,
     };
 
-    setQuotations((prev) => [newQuotation, ...prev]);
-
-    db.quotations.add({ ...newQuotation, isDeleted: false, version: 1 });
-    queueSync('CREATE', 'Quotation', id, newQuotation);
-
-    return newQuotation;
+    try {
+      await api.post('/quotations', { ...newQuotation, quotationId: id, quotationNumber });
+      setQuotations((prev) => [newQuotation, ...prev]);
+      notifyMutation();
+      showToast('Quotation created successfully!');
+      return newQuotation;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to create quotation', 'error');
+      return null;
+    }
   };
 
-  const editQuotation = (q: Quotation) => {
+  const editQuotation = async (q: Quotation) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update quotation while offline.', 'error');
+      return;
+    }
     const formatted: Quotation = {
       ...q,
       customerName: toTitleCase(q.customerName),
@@ -1156,39 +1212,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })),
     };
 
-    setQuotations((prev) => prev.map((item) => (item.id === q.id ? formatted : item)));
-
-    db.quotations.put({ ...formatted, isDeleted: false, version: 1 });
-    queueSync('UPDATE', 'Quotation', q.id, formatted);
-  };
-
-  const deleteQuotation = (id: string) => {
-    const item = quotations.find((q) => q.id === id);
-    if (item) {
-      const binItem: RecycleBinItem = {
-        id: generateId('REC'),
-        originalId: item.id,
-        name: item.quotationNumber,
-        module: 'Quotation',
-        deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Vaibhav Patel',
-        originalData: item,
-      };
-
-      db.quotations.update(id, { isDeleted: true });
-      db.recycleBin.add(binItem);
-
-      setQuotations((prev) => prev.filter((item) => item.id !== id));
-      setRecycleBin((prev) => [binItem, ...prev]);
-
-      queueSync('DELETE', 'Quotation', id, null);
+    try {
+      await api.put(`/quotations/${q.id}`, formatted);
+      setQuotations((prev) => prev.map((item) => (item.id === q.id ? formatted : item)));
+      notifyMutation();
+      showToast('Quotation updated successfully!');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update quotation', 'error');
     }
   };
 
-  const convertQuotationToInvoice = (quotationId: string, amountPaid: number, paymentMethod: string): string => {
+  const deleteQuotation = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete quotation while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/quotations/${id}`);
+      setQuotations((prev) => prev.filter((item) => item.id !== id));
+      notifyMutation();
+      showToast('Quotation soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete quotation', 'error');
+    }
+  };
+
+  const convertQuotationToInvoice = async (quotationId: string, amountPaid: number, paymentMethod: string): Promise<string | null> => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot convert quotation while offline.', 'error');
+      return null;
+    }
     const quotation = quotations.find((q) => q.id === quotationId);
     if (!quotation) {
-      throw new Error(`Quotation not found: ${quotationId}`);
+      showToast(`Quotation not found: ${quotationId}`, 'error');
+      return null;
     }
 
     const invoiceItems = quotation.items.map((item) => ({
@@ -1205,7 +1263,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const todayDate = new Date().toISOString().split('T')[0];
 
-    const newInvoice = addInvoice({
+    const newInvoice = await addInvoice({
       date: todayDate,
       customerId: quotation.customerId,
       customerName: quotation.customerName,
@@ -1221,19 +1279,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: `Converted from Quotation ${quotation.quotationNumber}.` + (quotation.notes ? `\nOriginal Notes: ${quotation.notes}` : ''),
     });
 
-    db.quotations.update(quotationId, { status: 'Converted', convertedInvoiceId: newInvoice.id });
-    queueSync('UPDATE', 'Quotation', quotationId, { ...quotation, status: 'Converted', convertedInvoiceId: newInvoice.id });
-
-    setQuotations((prev) =>
-      prev.map((q) =>
-        q.id === quotationId ? { ...q, status: 'Converted', convertedInvoiceId: newInvoice.id } : q
-      )
-    );
-
-    return newInvoice.id;
+    if (newInvoice) {
+      await editQuotation({ ...quotation, status: 'Converted', convertedInvoiceId: newInvoice.id });
+      return newInvoice.id;
+    }
+    return null;
   };
 
-  const addPurchase = (pur: Omit<Purchase, 'id' | 'purchaseNumber'>) => {
+  const addPurchase = async (pur: Omit<Purchase, 'id' | 'purchaseNumber'>) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot record purchase while offline.', 'error');
+      return null;
+    }
     const count = purchases.length + 1;
     const formattedCount = count.toString().padStart(3, '0');
     const purchaseNumber = `PUR-${settings.invoicePrefix.replace('AB-', '')}${formattedCount}`;
@@ -1250,102 +1307,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       purchaseNumber,
     };
 
-    // Add stock locally
-    const finalProducts = products.map((p) => {
-      const matchingItem = pur.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        const finalStock = p.stock + matchingItem.quantity;
-        db.products.update(p.id, { stock: finalStock });
-        return { ...p, stock: finalStock };
-      }
-      return p;
-    });
-
-    // Revert supplier balance locally
-    const finalSuppliers = suppliers.map((supp) => {
-      if (supp.id === pur.supplierId) {
-        const finalDues = supp.outstanding + pur.balanceDue;
-        db.suppliers.update(supp.id, { outstanding: finalDues });
-        return { ...supp, outstanding: finalDues };
-      }
-      return supp;
-    });
-
-    // Payments logging
-    let generatedPayment: Payment | null = null;
-    if (pur.amountPaid > 0) {
-      const paymentId = generateId('PAY');
-      generatedPayment = {
-        id: paymentId,
-        date: pur.date,
-        type: 'SupplierPayment',
-        contactId: pur.supplierId,
-        contactName: pur.supplierName,
-        amount: pur.amountPaid,
-        paymentMethod: (pur.paymentMethod as any) || 'Bank Transfer',
-        notes: `Against bill ${purchaseNumber}`,
-      };
-      db.payments.add({ ...generatedPayment, isDeleted: false, version: 1 });
-      queueSync('CREATE', 'Payment', paymentId, generatedPayment);
+    try {
+      await api.post('/purchases', { ...newPurchase, purchaseId: id, purchaseNumber });
+      setPurchases((prev) => [newPurchase, ...prev]);
+      notifyMutation();
+      showToast('Purchase recorded successfully!');
+      reloadData();
+      return newPurchase;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to record purchase', 'error');
+      return null;
     }
-
-    db.purchases.add({ ...newPurchase, isDeleted: false, version: 1 });
-    queueSync('CREATE', 'Purchase', id, newPurchase);
-
-    setProducts(finalProducts);
-    setSuppliers(finalSuppliers);
-    if (generatedPayment) {
-      setPayments((prev) => [generatedPayment!, ...prev]);
-    }
-    setPurchases((prev) => [newPurchase, ...prev]);
-
-    return newPurchase;
   };
 
-  const editPurchase = (updatedPurchase: Purchase) => {
-    const oldPurchase = purchases.find((p) => p.id === updatedPurchase.id);
-    if (!oldPurchase) {
-      throw new Error(`Original purchase not found: ${updatedPurchase.purchaseNumber}`);
+  const editPurchase = async (updatedPurchase: Purchase) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update purchase while offline.', 'error');
+      return;
     }
-
-    // Revert old stock changes
-    const revertedProducts = products.map((p) => {
-      const matchingItem = oldPurchase.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        return { ...p, stock: Math.max(0, p.stock - matchingItem.quantity) };
-      }
-      return p;
-    });
-
-    // Revert old supplier dues
-    const revertedSuppliers = suppliers.map((supp) => {
-      if (supp.id === oldPurchase.supplierId) {
-        return { ...supp, outstanding: supp.outstanding - oldPurchase.balanceDue };
-      }
-      return supp;
-    });
-
-    // Apply new stock changes
-    const finalProducts = revertedProducts.map((p) => {
-      const matchingItem = updatedPurchase.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        const finalStock = p.stock + matchingItem.quantity;
-        db.products.update(p.id, { stock: finalStock });
-        return { ...p, stock: finalStock };
-      }
-      return p;
-    });
-
-    // Apply new supplier dues
-    const finalSuppliers = revertedSuppliers.map((supp) => {
-      if (supp.id === updatedPurchase.supplierId) {
-        const finalDues = supp.outstanding + updatedPurchase.balanceDue;
-        db.suppliers.update(supp.id, { outstanding: finalDues });
-        return { ...supp, outstanding: finalDues };
-      }
-      return supp;
-    });
-
     const formattedPurchase: Purchase = {
       ...updatedPurchase,
       supplierName: toTitleCase(updatedPurchase.supplierName),
@@ -1355,61 +1334,37 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       })),
     };
 
-    db.purchases.put({ ...formattedPurchase, isDeleted: false, version: 1 });
-    queueSync('UPDATE', 'Purchase', formattedPurchase.id, formattedPurchase);
-
-    setProducts(finalProducts);
-    setSuppliers(finalSuppliers);
-    setPurchases((prev) => prev.map((p) => (p.id === oldPurchase.id ? formattedPurchase : p)));
+    try {
+      await api.put(`/purchases/${formattedPurchase.id}`, formattedPurchase);
+      setPurchases((prev) => prev.map((item) => (item.id === formattedPurchase.id ? formattedPurchase : item)));
+      notifyMutation();
+      showToast('Purchase updated successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update purchase', 'error');
+    }
   };
 
-  const deletePurchase = (id: string) => {
-    const pur = purchases.find((p) => p.id === id);
-    if (!pur) return;
-
-    const binItem: RecycleBinItem = {
-      id: generateId('REC'),
-      originalId: pur.id,
-      name: pur.purchaseNumber,
-      module: 'Purchase',
-      deletedAt: new Date().toISOString(),
-      deletedBy: settings.ownerName || 'Vaibhav Patel',
-      originalData: pur,
-    };
-
-    // Revert stock added locally
-    const finalProducts = products.map((p) => {
-      const matchingItem = pur.items.find((item) => item.productId === p.id);
-      if (matchingItem) {
-        const finalStock = Math.max(0, p.stock - matchingItem.quantity);
-        db.products.update(p.id, { stock: finalStock });
-        return { ...p, stock: finalStock };
-      }
-      return p;
-    });
-
-    // Revert supplier outstanding balance locally
-    const finalSuppliers = suppliers.map((supp) => {
-      if (supp.id === pur.supplierId) {
-        const finalDues = Math.max(0, supp.outstanding - pur.balanceDue);
-        db.suppliers.update(supp.id, { outstanding: finalDues });
-        return { ...supp, outstanding: finalDues };
-      }
-      return supp;
-    });
-
-    db.purchases.update(pur.id, { isDeleted: true });
-    db.recycleBin.add(binItem);
-
-    setProducts(finalProducts);
-    setSuppliers(finalSuppliers);
-    setPurchases((prev) => prev.filter((p) => p.id !== id));
-    setRecycleBin((prev) => [binItem, ...prev]);
-
-    queueSync('DELETE', 'Purchase', pur.id, null);
+  const deletePurchase = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete purchase while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/purchases/${id}`);
+      notifyMutation();
+      showToast('Purchase soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete purchase', 'error');
+    }
   };
 
-  const addPayment = (pay: Omit<Payment, 'id'>) => {
+  const addPayment = async (pay: Omit<Payment, 'id'>) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot log payment while offline.', 'error');
+      return;
+    }
     const id = generateId('PAY');
     const newPayment: Payment = {
       ...pay,
@@ -1417,134 +1372,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id,
     };
 
-    // Apply ledger changes locally
-    const finalCustomers = customers.map((cust) => {
-      if (pay.type === 'CustomerReceipt' && cust.id === pay.contactId) {
-        const outstanding = cust.outstanding - pay.amount;
-        db.customers.update(cust.id, { outstanding });
-        return { ...cust, outstanding };
-      }
-      return cust;
-    });
-
-    const finalSuppliers = suppliers.map((supp) => {
-      if (pay.type === 'SupplierPayment' && supp.id === pay.contactId) {
-        const outstanding = supp.outstanding - pay.amount;
-        db.suppliers.update(supp.id, { outstanding });
-        return { ...supp, outstanding };
-      }
-      return supp;
-    });
-
-    db.payments.add({ ...newPayment, isDeleted: false, version: 1 });
-    queueSync('CREATE', 'Payment', id, newPayment);
-
-    setCustomers(finalCustomers);
-    setSuppliers(finalSuppliers);
-    setPayments((prev) => [newPayment, ...prev]);
+    try {
+      await api.post('/payments', { ...newPayment, paymentId: id });
+      notifyMutation();
+      showToast('Payment logged successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to log payment', 'error');
+    }
   };
 
-  const editPayment = (updatedPayment: Payment) => {
-    const oldPayment = payments.find((p) => p.id === updatedPayment.id);
-    if (!oldPayment) return;
-
-    // Revert old outstanding
-    let tempCustomers = customers;
-    let tempSuppliers = suppliers;
-
-    if (oldPayment.type === 'CustomerReceipt') {
-      tempCustomers = customers.map((cust) => {
-        if (cust.id === oldPayment.contactId) {
-          return { ...cust, outstanding: cust.outstanding + oldPayment.amount };
-        }
-        return cust;
-      });
-    } else {
-      tempSuppliers = suppliers.map((supp) => {
-        if (supp.id === oldPayment.contactId) {
-          return { ...supp, outstanding: supp.outstanding + oldPayment.amount };
-        }
-        return supp;
-      });
+  const editPayment = async (updatedPayment: Payment) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update payment while offline.', 'error');
+      return;
     }
-
-    // Apply new outstanding
-    const finalCustomers = tempCustomers.map((cust) => {
-      if (updatedPayment.type === 'CustomerReceipt' && cust.id === updatedPayment.contactId) {
-        const outstanding = cust.outstanding - updatedPayment.amount;
-        db.customers.update(cust.id, { outstanding });
-        return { ...cust, outstanding };
-      }
-      return cust;
-    });
-
-    const finalSuppliers = tempSuppliers.map((supp) => {
-      if (updatedPayment.type === 'SupplierPayment' && supp.id === updatedPayment.contactId) {
-        const outstanding = supp.outstanding - updatedPayment.amount;
-        db.suppliers.update(supp.id, { outstanding });
-        return { ...supp, outstanding };
-      }
-      return supp;
-    });
-
     const formattedPayment: Payment = {
       ...updatedPayment,
       contactName: toTitleCase(updatedPayment.contactName),
     };
 
-    db.payments.put({ ...formattedPayment, isDeleted: false, version: 1 });
-    queueSync('UPDATE', 'Payment', formattedPayment.id, formattedPayment);
-
-    setCustomers(finalCustomers);
-    setSuppliers(finalSuppliers);
-    setPayments((prev) => prev.map((p) => (p.id === updatedPayment.id ? formattedPayment : p)));
+    try {
+      await api.put(`/payments/${formattedPayment.id}`, formattedPayment);
+      notifyMutation();
+      showToast('Payment updated successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update payment', 'error');
+    }
   };
 
-  const deletePayment = (id: string) => {
-    const pay = payments.find((p) => p.id === id);
-    if (!pay) return;
-
-    const binItem: RecycleBinItem = {
-      id: generateId('REC'),
-      originalId: pay.id,
-      name: `Payment: ₹${pay.amount} to ${pay.contactName}`,
-      module: 'Payment',
-      deletedAt: new Date().toISOString(),
-      deletedBy: settings.ownerName || 'Vaibhav Patel',
-      originalData: pay,
-    };
-
-    // Revert outstanding balance locally
-    const finalCustomers = customers.map((cust) => {
-      if (pay.type === 'CustomerReceipt' && cust.id === pay.contactId) {
-        const outstanding = cust.outstanding + pay.amount;
-        db.customers.update(cust.id, { outstanding });
-        return { ...cust, outstanding };
-      }
-      return cust;
-    });
-
-    const finalSuppliers = suppliers.map((supp) => {
-      if (pay.type === 'SupplierPayment' && supp.id === pay.contactId) {
-        const outstanding = supp.outstanding + pay.amount;
-        db.suppliers.update(supp.id, { outstanding });
-        return { ...supp, outstanding };
-      }
-      return supp;
-    });
-
-    db.payments.update(pay.id, { isDeleted: true });
-    db.recycleBin.add(binItem);
-
-    setCustomers(finalCustomers);
-    setSuppliers(finalSuppliers);
-    setPayments((prev) => prev.filter((p) => p.id !== id));
-    setRecycleBin((prev) => [binItem, ...prev]);
-
-    queueSync('DELETE', 'Payment', pay.id, null);
+  const deletePayment = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete payment while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/payments/${id}`);
+      notifyMutation();
+      showToast('Payment soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete payment', 'error');
+    }
   };
 
-  const addExpense = (exp: Omit<Expense, 'id'>) => {
+  const addExpense = async (exp: Omit<Expense, 'id'>) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot add expense while offline.', 'error');
+      return null;
+    }
     const id = generateId('EXP');
     const newExpense: Expense = {
       ...exp,
@@ -1553,98 +1430,85 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id,
     };
 
-    setExpenses((prev) => [...prev, newExpense]);
-
-    db.expenses.add({ ...newExpense, isDeleted: false, version: 1 });
-    queueSync('CREATE', 'Expense', id, newExpense);
-
-    return newExpense;
+    try {
+      await api.post('/expenses', { ...newExpense, expenseId: id });
+      setExpenses((prev) => [...prev, newExpense]);
+      notifyMutation();
+      showToast('Expense logged successfully!');
+      return newExpense;
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to add expense', 'error');
+      return null;
+    }
   };
 
-  const editExpense = (exp: Expense) => {
+  const editExpense = async (exp: Expense) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update expense while offline.', 'error');
+      return;
+    }
     const formatted: Expense = {
       ...exp,
       payee: toTitleCase(exp.payee),
       category: toTitleCase(exp.category),
     };
 
-    setExpenses((prev) => prev.map((item) => (item.id === exp.id ? formatted : item)));
-
-    db.expenses.put({ ...formatted, isDeleted: false, version: 1 });
-    queueSync('UPDATE', 'Expense', exp.id, formatted);
+    try {
+      await api.put(`/expenses/${exp.id}`, formatted);
+      setExpenses((prev) => prev.map((item) => (item.id === exp.id ? formatted : item)));
+      notifyMutation();
+      showToast('Expense updated successfully!');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to update expense', 'error');
+    }
   };
 
-  const deleteExpense = (id: string) => {
-    const item = expenses.find((exp) => exp.id === id);
-    if (item) {
-      const binItem: RecycleBinItem = {
-        id: generateId('REC'),
-        originalId: item.id,
-        name: `${item.category}: ₹${item.amount}`,
-        module: 'Expense',
-        deletedAt: new Date().toISOString(),
-        deletedBy: settings.ownerName || 'Vaibhav Patel',
-        originalData: item,
-      };
-
-      db.expenses.update(id, { isDeleted: true });
-      db.recycleBin.add(binItem);
-
+  const deleteExpense = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete expense while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/expenses/${id}`);
       setExpenses((prev) => prev.filter((item) => item.id !== id));
-      setRecycleBin((prev) => [binItem, ...prev]);
-
-      queueSync('DELETE', 'Expense', id, null);
+      notifyMutation();
+      showToast('Expense soft-deleted successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete expense', 'error');
     }
   };
 
   // --- Recycle Bin Restoration / Permanent Deletion Actions ---
 
-  const restoreRecord = (id: string) => {
-    const item = recycleBin.find((r) => r.id === id);
-    if (!item) return;
-
-    // Restore in database
-    if (item.module === 'Product') {
-      db.products.update(item.originalId, { isDeleted: false });
-      setProducts((prev) => [...prev, item.originalData]);
-      queueSync('UPDATE', 'Product', item.originalId, item.originalData);
-    } else if (item.module === 'Customer') {
-      db.customers.update(item.originalId, { isDeleted: false });
-      setCustomers((prev) => [...prev, item.originalData]);
-      queueSync('UPDATE', 'Customer', item.originalId, item.originalData);
-    } else if (item.module === 'Supplier') {
-      db.suppliers.update(item.originalId, { isDeleted: false });
-      setSuppliers((prev) => [...prev, item.originalData]);
-      queueSync('UPDATE', 'Supplier', item.originalId, item.originalData);
-    } else if (item.module === 'Invoice') {
-      db.invoices.update(item.originalId, { isDeleted: false });
-      setInvoices((prev) => [item.originalData, ...prev]);
-      queueSync('UPDATE', 'Invoice', item.originalId, item.originalData);
-    } else if (item.module === 'Quotation') {
-      db.quotations.update(item.originalId, { isDeleted: false });
-      setQuotations((prev) => [item.originalData, ...prev]);
-      queueSync('UPDATE', 'Quotation', item.originalId, item.originalData);
-    } else if (item.module === 'Purchase') {
-      db.purchases.update(item.originalId, { isDeleted: false });
-      setPurchases((prev) => [item.originalData, ...prev]);
-      queueSync('UPDATE', 'Purchase', item.originalId, item.originalData);
-    } else if (item.module === 'Payment') {
-      db.payments.update(item.originalId, { isDeleted: false });
-      setPayments((prev) => [item.originalData, ...prev]);
-      queueSync('UPDATE', 'Payment', item.originalId, item.originalData);
-    } else if (item.module === 'Expense') {
-      db.expenses.update(item.originalId, { isDeleted: false });
-      setExpenses((prev) => [item.originalData, ...prev]);
-      queueSync('UPDATE', 'Expense', item.originalId, item.originalData);
+  const restoreRecord = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot restore item while offline.', 'error');
+      return;
     }
-
-    db.recycleBin.delete(id);
-    setRecycleBin((prev) => prev.filter((r) => r.id !== id));
+    try {
+      await api.post(`/recycle-bin/${id}/restore`);
+      notifyMutation();
+      showToast('Record restored successfully!');
+      reloadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to restore record', 'error');
+    }
   };
 
-  const deletePermanently = (id: string) => {
-    db.recycleBin.delete(id);
-    setRecycleBin((prev) => prev.filter((r) => r.id !== id));
+  const deletePermanently = async (id: string) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot delete item while offline.', 'error');
+      return;
+    }
+    try {
+      await api.delete(`/recycle-bin/${id}`);
+      notifyMutation();
+      showToast('Record permanently deleted!');
+      setRecycleBin((prev) => prev.filter((r) => r.id !== id));
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to delete record permanently', 'error');
+    }
   };
 
   const restoreRecords = (ids: string[]) => {
@@ -1655,45 +1519,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ids.forEach((id) => deletePermanently(id));
   };
 
-  const updateSettings = (updatedSettings: BusinessSettings) => {
+  const updateSettings = async (updatedSettings: BusinessSettings) => {
+    if (!navigator.onLine) {
+      showToast('No internet connection. Cannot update settings while offline.', 'error');
+      return;
+    }
     const formatted = {
       ...updatedSettings,
       businessName: toTitleCase(updatedSettings.businessName),
       ownerName: toTitleCase(updatedSettings.ownerName),
     };
     
-    setSettings(formatted);
-    localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
-    document.title = formatted.businessName || 'AgriBiz';
-
-    db.settings.put({ ...formatted, id: 'business' });
-    queueSync('UPDATE', 'Settings', 'business', formatted);
+    try {
+      await api.put('/settings', formatted);
+      setSettings(formatted);
+      clearAllDirtyForms();
+      localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
+      setCachedBranding({
+        logoUrl: formatted.logo || '/logo-512.png',
+        watermarkLogoUrl: formatted.watermarkLogo || '/logo-512.png',
+        businessName: formatted.businessName,
+      });
+      notifyMutation();
+      document.title = formatted.businessName || 'AgriBiz';
+      showToast('Settings saved successfully!');
+    } catch (err: any) {
+      showToast(err.response?.data?.message || 'Failed to save settings', 'error');
+    }
   };
 
   const resetToDefault = async () => {
-    localStorage.removeItem('agribiz_products');
-    localStorage.removeItem('agribiz_customers');
-    localStorage.removeItem('agribiz_suppliers');
-    localStorage.removeItem('agribiz_invoices');
-    localStorage.removeItem('agribiz_quotations');
-    localStorage.removeItem('agribiz_purchases');
-    localStorage.removeItem('agribiz_payments');
-    localStorage.removeItem('agribiz_settings');
-    localStorage.removeItem('agribiz_expenses');
-    localStorage.removeItem('agribiz_recycle_bin');
-
-    await db.products.clear();
-    await db.customers.clear();
-    await db.suppliers.clear();
-    await db.invoices.clear();
-    await db.quotations.clear();
-    await db.purchases.clear();
-    await db.payments.clear();
-    await db.expenses.clear();
-    await db.recycleBin.clear();
-    await db.settings.clear();
-    await db.syncQueue.clear();
-
+    localStorage.clear();
+    sessionStorage.clear();
     window.location.reload();
   };
 

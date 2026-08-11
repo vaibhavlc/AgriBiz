@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.use(authenticate);
 
+router.get('/stream', authorizeRoles('Owner', 'Accounts', 'Cashier'), settingsController.streamRealtimeUpdates);
+router.get('/version', authorizeRoles('Owner', 'Accounts', 'Cashier'), settingsController.getDataVersion);
 router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), settingsController.getSettings);
 router.put('/', authorizeRoles('Owner'), validate(settingsSchema), settingsController.updateSettings);
 

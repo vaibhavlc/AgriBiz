@@ -19,7 +19,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   editProductData = null,
   onSaveCallback,
 }) => {
-  const { addProduct, editProduct, requestNavigation } = useApp();
+  const { addProduct, editProduct, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
   const [category, setCategory] = useState(CATEGORIES[0]);
@@ -98,15 +98,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const finalSku = sku.trim() || `SKU-${Date.now().toString().slice(-4)}`;
-    const finalStock = stock === '' ? 0 : stock;
-    const finalMinStock = minStock === '' ? 0 : minStock;
-    const finalPurchasePrice = purchasePrice === '' ? 0 : purchasePrice;
-    const finalSellingPrice = sellingPrice === '' ? 0 : sellingPrice;
+    const finalStock = isNaN(stock as number) ? 0 : (stock as number);
+    const finalMinStock = isNaN(minStock as number) ? 0 : (minStock as number);
+    const finalPurchasePrice = isNaN(purchasePrice as number) ? 0 : (purchasePrice as number);
+    const finalSellingPrice = isNaN(sellingPrice as number) ? 0 : (sellingPrice as number);
+
+    const formattedSku = sku.trim().toUpperCase();
+    const finalSku = formattedSku || `SKU-${category.slice(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 
     if (editProductData) {
       editProduct({
@@ -122,7 +124,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         hsn: hsn.trim(),
       });
     } else {
-      const newProd = addProduct({
+      const newProd = await addProduct({
         name,
         sku: finalSku,
         category,
@@ -133,10 +135,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         gstRate,
         hsn: hsn.trim(),
       });
-      if (onSaveCallback) {
+      if (newProd && onSaveCallback) {
         onSaveCallback(newProd);
       }
     }
+    clearAllDirtyForms();
     onClose();
   };
 

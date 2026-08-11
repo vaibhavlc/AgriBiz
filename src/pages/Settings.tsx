@@ -31,7 +31,7 @@ import {
   UserX,
   AlertTriangle,
 } from 'lucide-react';
-import { getFullAddress, initialSettings, toTitleCase } from '../utils/dummyData';
+import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
 const INDIAN_STATES = [
   "Andaman and Nicobar Islands", "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar",
@@ -1919,7 +1919,7 @@ export const Settings: React.FC = () => {
                                       border: '1px solid rgba(16, 185, 129, 0.2)',
                                       position: 'relative'
                                     }}>
-                                      {u.name.charAt(0).toUpperCase()}
+                                      {getUserInitials(u.name)}
                                       <span style={{
                                         position: 'absolute',
                                         bottom: '-2px',
@@ -2039,7 +2039,7 @@ export const Settings: React.FC = () => {
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: '14px',
                                 flexShrink: 0, position: 'relative'
                               }}>
-                                {u.name.charAt(0).toUpperCase()}
+                                {getUserInitials(u.name)}
                                 <span style={{
                                   position: 'absolute',
                                   bottom: '-2px',

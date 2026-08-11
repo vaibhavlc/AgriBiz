@@ -1,8 +1,9 @@
 import Product from '../models/Product.js';
 
 class ProductRepository {
-  async findById(productId, companyId) {
-    return Product.findOne({ productId, companyId, isDeleted: false });
+  async findById(productId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Product.findOne({ productId, companyId, isDeleted: false }, null, opts);
   }
 
   async findAll(companyId) {
@@ -22,6 +23,15 @@ class ProductRepository {
   async update(productId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Product.findOneAndUpdate({ productId, companyId, isDeleted: false }, updateData, opts);
+  }
+
+  async incrementStock(productId, companyId, deltaQuantity, session) {
+    const opts = session ? { session, new: true } : { new: true };
+    return Product.findOneAndUpdate(
+      { productId, companyId, isDeleted: false },
+      { $inc: { stock: deltaQuantity } },
+      opts
+    );
   }
 
   async softDelete(productId, companyId, updatedBy, session) {

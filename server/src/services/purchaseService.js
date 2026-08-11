@@ -23,26 +23,26 @@ class PurchaseService {
         updatedBy: createdBy,
       };
 
+      const updateTasks = [];
+
       // Add product stock levels
-      for (const item of purchasePayload.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (!product) {
-          throw new Error(`Product ${item.productName} (ID: ${item.productId}) not found`);
+      if (purchasePayload.items && Array.isArray(purchasePayload.items)) {
+        for (const item of purchasePayload.items) {
+          updateTasks.push(
+            productRepository.incrementStock(item.productId, companyId, item.quantity, session)
+          );
         }
-        const newStock = product.stock + item.quantity;
-        await productRepository.update(item.productId, companyId, { stock: newStock }, session);
       }
 
-      // Add balance due to supplier outstanding balance (since we owe them money)
-      const supplier = await supplierRepository.findById(purchasePayload.supplierId, companyId);
-      if (!supplier) {
-        throw new Error(`Supplier with ID ${purchasePayload.supplierId} not found`);
+      // Add balance due to supplier outstanding balance
+      if (purchasePayload.supplierId && purchasePayload.balanceDue) {
+        updateTasks.push(
+          supplierRepository.adjustOutstanding(purchasePayload.supplierId, companyId, purchasePayload.balanceDue, session)
+        );
       }
-      const newOutstanding = supplier.outstanding + purchasePayload.balanceDue;
-      await supplierRepository.update(purchasePayload.supplierId, companyId, { outstanding: newOutstanding }, session);
 
       // Create Payment log if purchase was paid instantly
-      if (purchasePayload.amountPaid > 0) {
+      if (purchasePayload.amountPaid > 0 && purchasePayload.supplierId) {
         const paymentPayload = {
           paymentId: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           companyId,
@@ -56,11 +56,15 @@ class PurchaseService {
           createdBy,
           updatedBy: createdBy,
         };
-        await paymentRepository.create(paymentPayload, session);
+        updateTasks.push(paymentRepository.create(paymentPayload, session));
       }
 
-      // Create and save Purchase
-      return purchaseRepository.create(purchasePayload, session);
+      const [purchase] = await Promise.all([
+        purchaseRepository.create(purchasePayload, session),
+        ...updateTasks,
+      ]);
+
+      return purchase;
     });
   }
 

@@ -3,9 +3,51 @@ import userRepository from '../repositories/userRepository.js';
 import { cascadeDeleteCompany } from '../utils/cascadeDelete.js';
 import bcrypt from 'bcryptjs';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import Company from '../models/Company.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
+import { addSseClient, removeSseClient } from '../utils/sseManager.js';
 
 class SettingsController {
+  async streamRealtimeUpdates(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+
+      res.set({
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        'Connection': 'keep-alive',
+        'X-Accel-Buffering': 'no',
+      });
+
+      res.write(`data: ${JSON.stringify({ type: 'CONNECTED', companyId, timestamp: Date.now() })}\n\n`);
+      addSseClient(companyId, res);
+
+      const heartbeatTimer = setInterval(() => {
+        try {
+          res.write(': heartbeat\n\n');
+        } catch (e) {}
+      }, 15000);
+
+      req.on('close', () => {
+        clearInterval(heartbeatTimer);
+        removeSseClient(companyId, res);
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getDataVersion(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const company = await Company.findOne({ companyId }).select('lastDataUpdated');
+      const lastDataUpdated = company?.lastDataUpdated ? new Date(company.lastDataUpdated).getTime() : Date.now();
+      res.status(200).json({ success: true, lastDataUpdated });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getSettings(req, res, next) {
     try {
       const companyId = req.user.companyId;
@@ -21,18 +63,7 @@ class SettingsController {
       const companyId = req.user.companyId;
       logger.info('Updating settings for company %s', companyId);
       const settings = await settingsService.updateSettings(companyId, req.body);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Settings',
-        action: 'UPDATE',
-        recordId: 'business',
-        updatedAt: settings.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Settings', 'UPDATE', 'business', settings);
       res.status(200).json({ success: true, settings });
     } catch (error) {
       next(error);
@@ -87,17 +118,6 @@ class SettingsController {
       logger.warn('Owner %s confirmed full account deletion for company %s. Deleting all records...', userId, companyId);
 
       const deleteResult = await cascadeDeleteCompany(companyId);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Settings',
-        action: 'DELETE',
-        recordId: 'company_account',
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
 
       res.clearCookie('agribiz_refresh_token');
 

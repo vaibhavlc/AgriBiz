@@ -1,6 +1,6 @@
 import purchaseService from '../services/purchaseService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class PurchaseController {
   async getPurchase(req, res, next) {
@@ -32,18 +32,7 @@ class PurchaseController {
       const creatorName = req.user.name;
       logger.info('Creating purchase for company %s by %s', companyId, creatorName);
       const purchase = await purchaseService.createPurchase(req.body, companyId, creatorName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Purchase',
-        action: 'CREATE',
-        recordId: purchase.purchaseId || purchase._id || purchase.id,
-        updatedAt: purchase.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'CREATE', purchase._id || purchase.purchaseId, purchase);
       res.status(201).json({ success: true, purchase });
     } catch (error) {
       next(error);
@@ -59,18 +48,7 @@ class PurchaseController {
       if (!purchase) {
         return res.status(404).json({ success: false, message: 'Purchase not found' });
       }
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Purchase',
-        action: 'UPDATE',
-        recordId: purchase.purchaseId || req.params.id,
-        updatedAt: purchase.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'UPDATE', req.params.id, purchase);
       res.status(200).json({ success: true, purchase });
     } catch (error) {
       next(error);
@@ -83,18 +61,7 @@ class PurchaseController {
       const deleterName = req.user.name;
       logger.info('Deleting purchase %s for company %s by %s', req.params.id, companyId, deleterName);
       await purchaseService.deletePurchase(req.params.id, companyId, deleterName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Purchase',
-        action: 'DELETE',
-        recordId: req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Purchase soft-deleted successfully' });
     } catch (error) {
       next(error);

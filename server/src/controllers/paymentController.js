@@ -1,6 +1,6 @@
 import paymentService from '../services/paymentService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class PaymentController {
   async getPayment(req, res, next) {
@@ -42,18 +42,7 @@ class PaymentController {
       const creatorName = req.user.name;
       logger.info('Creating payment record for company %s by %s', companyId, creatorName);
       const payment = await paymentService.createPayment(req.body, companyId, creatorName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Payment',
-        action: 'CREATE',
-        recordId: payment.paymentId || payment._id || payment.id,
-        updatedAt: payment.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Payments', 'CREATE', payment._id || payment.paymentId, payment);
       res.status(201).json({ success: true, payment });
     } catch (error) {
       next(error);
@@ -69,18 +58,7 @@ class PaymentController {
       if (!payment) {
         return res.status(404).json({ success: false, message: 'Payment record not found' });
       }
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Payment',
-        action: 'UPDATE',
-        recordId: payment.paymentId || req.params.id,
-        updatedAt: payment.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Payments', 'UPDATE', req.params.id, payment);
       res.status(200).json({ success: true, payment });
     } catch (error) {
       next(error);
@@ -93,18 +71,7 @@ class PaymentController {
       const deleterName = req.user.name;
       logger.info('Deleting payment record %s for company %s by %s', req.params.id, companyId, deleterName);
       await paymentService.deletePayment(req.params.id, companyId, deleterName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Payment',
-        action: 'DELETE',
-        recordId: req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Payments', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Payment record soft-deleted successfully' });
     } catch (error) {
       next(error);

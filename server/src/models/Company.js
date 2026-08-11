@@ -59,6 +59,10 @@ const companySchema = new mongoose.Schema(
     planExpiry: {
       type: Date,
     },
+    lastDataUpdated: {
+      type: Date,
+      default: Date.now,
+    },
   },
   {
     timestamps: true,

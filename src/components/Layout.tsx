@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import { Modal } from './Modal';
-import { SyncStatusPanel } from './sync/SyncStatusPanel';
-import { formatINR } from '../utils/dummyData';
+import { formatINR, getUserInitials } from '../utils/dummyData';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -33,7 +32,6 @@ import {
   TrendingDown,
   Trash2,
   Globe,
-  RefreshCw,
   Smartphone,
 } from 'lucide-react';
 
@@ -87,7 +85,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { currentUser, currentCompany, hasPermission, logout, logoutStaff, updateUserPresence } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [showSyncPanel, setShowSyncPanel] = useState(false);
   const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
     const rect = card.getBoundingClientRect();
@@ -678,7 +675,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Glass logo frame */}
           <div className="prem-logo-frame prem-logo-large">
             {settings.showLogo && settings.logo ? (
-              <img src={settings.logo} alt={settings.businessName || 'Logo'} />
+              <img src={settings.logo} alt={settings.businessName || 'Logo'} fetchPriority="high" decoding="async" />
             ) : (
               <div className="prem-logo-fallback">
                 <Store size={32} />
@@ -749,7 +746,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="header-brand-container">
               {settings.showLogo && settings.logo ? (
                 <div className="header-logo-container">
-                  <img src={settings.logo} alt="Logo" />
+                  <img src={settings.logo} alt="Logo" fetchPriority="high" decoding="async" />
                 </div>
               ) : (
                 <div className="header-brand-logo">
@@ -907,7 +904,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               >
                 <div className="avatar-wrapper">
                   <div className="avatar-circle">
-                    {currentUser ? currentUser.name.slice(0, 2).toUpperCase() : 'VP'}
+                    {getUserInitials(currentUser?.name)}
                   </div>
                   <span className={`status-indicator ${userStatus}`}></span>
                 </div>
@@ -936,7 +933,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   {/* Header Identity Card */}
                   <div className="profile-dropdown-header-card">
                     <div className="profile-dropdown-avatar">
-                      {currentUser?.name ? currentUser.name.slice(0, 2).toUpperCase() : 'GP'}
+                      {getUserInitials(currentUser?.name)}
                       <span className={`profile-status-ring ${userStatus}`} />
                     </div>
                     <div className="profile-dropdown-info">
@@ -1016,24 +1013,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         <ChevronRight size={14} className="chevron" />
                       </button>
                     )}
-
-                    <button
-                      type="button"
-                      className="profile-menu-btn"
-                      onClick={() => {
-                        setIsProfileDropdownOpen(false);
-                        setShowSyncPanel(true);
-                      }}
-                    >
-                      <div className="profile-menu-icon icon-sync">
-                        <RefreshCw size={15} />
-                      </div>
-                      <div className="profile-menu-text">
-                        <span className="title">Sync Diagnostics</span>
-                        <span className="desc">Check cloud database status</span>
-                      </div>
-                      <ChevronRight size={14} className="chevron" />
-                    </button>
 
                     <button
                       type="button"
@@ -1336,8 +1315,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </form>
       </Modal>
-
-      <SyncStatusPanel isOpen={showSyncPanel} onClose={() => setShowSyncPanel(false)} />
     </div>
   );
 };

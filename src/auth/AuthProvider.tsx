@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AuthContext } from './AuthContext';
 import { authService } from './authService';
 import { hasPermission as checkRolePermission } from './permissions';
-import { initializeSocket, disconnectSocket } from '../utils/socketService';
 import api from '../utils/api';
-import { db } from '../db/db';
 import { initialSettings } from '../utils/dummyData';
 import type { User, Company, UserRole } from '../types';
 
@@ -30,33 +28,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     refreshUser();
   }, []);
 
-  useEffect(() => {
-    if (currentUser) {
-      initializeSocket();
-    } else {
-      disconnectSocket();
-    }
-  }, [currentUser]);
-
-  // Global socket listener for staff presence changes
-  useEffect(() => {
-    const handlePresenceChanged = (e: CustomEvent) => {
-      const detail = e.detail;
-      if (detail && currentUser && detail.userId === currentUser.id) {
-        setCurrentUser(prev => {
-          if (!prev) return null;
-          const updated = { ...prev, presenceStatus: detail.presenceStatus as any };
-          sessionStorage.setItem('agribiz_current_user', JSON.stringify(updated));
-          return updated;
-        });
-      }
-    };
-    window.addEventListener('staff-presence-changed' as any, handlePresenceChanged as any);
-    return () => {
-      window.removeEventListener('staff-presence-changed' as any, handlePresenceChanged as any);
-    };
-  }, [currentUser?.id]);
-
   const updateUserPresence = async (presenceStatus: 'online' | 'busy' | 'away') => {
     if (!currentUser) return;
     const updated = { ...currentUser, presenceStatus };
@@ -65,7 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       await api.put('/users/presence', { presenceStatus });
     } catch (err) {
-      console.error('Failed to sync presence status with server:', err);
+      console.error('Failed to update presence status with server:', err);
     }
   };
 
@@ -82,35 +53,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await authService.login(mobile, password, role, rememberMe);
     if (res.success && res.company) {
       setCurrentCompany(res.company);
-      try {
-        const companySettings = {
-          ...initialSettings,
-          id: 'business',
-          businessName: res.company.businessName,
-          ownerName: res.company.ownerName,
-          phone: res.company.mobile,
-          email: res.company.email || '',
-          gstin: res.company.gstin || '',
-          city: res.company.city || '',
-          state: res.company.state || '',
-          address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
-        };
-        const existingSettings = await db.settings.get('business');
-        if (!existingSettings || !existingSettings.businessName) {
-          await db.settings.put(companySettings);
-          localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
-        }
-      } catch (e) {
-        console.warn('Failed to populate local settings during login:', e);
-      }
-      try {
-        // Pre-fetch the latest staff list from the server into local database
-        const { pullRemoteUpdates } = await import('../utils/syncEngine');
-        await pullRemoteUpdates();
-      } catch (err) {
-        console.error('Failed to pull staff list during business login:', err);
-      }
-      window.dispatchEvent(new CustomEvent('sync-completed'));
+      const companySettings = {
+        ...initialSettings,
+        id: 'business',
+        businessName: res.company.businessName,
+        ownerName: res.company.ownerName,
+        phone: res.company.mobile,
+        email: res.company.email || '',
+        gstin: res.company.gstin || '',
+        city: res.company.city || '',
+        state: res.company.state || '',
+        address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
+      };
+      localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
     }
     return { success: res.success, message: res.message, company: res.company };
   };
@@ -128,35 +83,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await authService.registerCompany(companyData, ownerPassword, ownerPin);
     if (res.success && res.company) {
       setCurrentCompany(res.company);
-      // Auto-login the owner right after registration — no need to go back to login
       if (res.user) {
         setCurrentUser(res.user);
       }
-      try {
-        const companySettings = {
-          ...initialSettings,
-          id: 'business',
-          businessName: res.company.businessName,
-          ownerName: res.company.ownerName,
-          phone: res.company.mobile,
-          email: res.company.email || '',
-          gstin: res.company.gstin || '',
-          city: res.company.city || '',
-          state: res.company.state || '',
-          address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
-        };
-        await db.settings.put(companySettings);
-        localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
-      } catch (e) {
-        console.warn('Failed to save settings locally during registration:', e);
-      }
-      try {
-        const { pullRemoteUpdates } = await import('../utils/syncEngine');
-        await pullRemoteUpdates();
-      } catch (err) {
-        console.error('Failed to pull staff list during registration:', err);
-      }
-      window.dispatchEvent(new CustomEvent('sync-completed'));
+      const companySettings = {
+        ...initialSettings,
+        id: 'business',
+        businessName: res.company.businessName,
+        ownerName: res.company.ownerName,
+        phone: res.company.mobile,
+        email: res.company.email || '',
+        gstin: res.company.gstin || '',
+        city: res.company.city || '',
+        state: res.company.state || '',
+        address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
+      };
+      localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
     }
     return { success: res.success, message: res.message };
   };

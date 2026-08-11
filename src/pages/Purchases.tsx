@@ -63,6 +63,7 @@ export const Purchases: React.FC = () => {
     setViewSupplier,
     purchaseFormPresetSupplierId,
     setPurchaseFormPresetSupplierId,
+    clearAllDirtyForms,
   } = useApp();
 
   const totalPurchases = purchases.reduce((sum, p) => sum + p.grandTotal, 0);
@@ -1125,7 +1126,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setAttachedFileName('');
     setAttachedFile(null);
     if (exitEditor) {
-      setIsEnteringPurchase(false);
+      setIsEnteringPurchase(false, true);
     }
   };
 
@@ -1251,7 +1252,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setViewPurchase(null);
   };
 
-  const handleSavePurchaseWrapper = (e: React.FormEvent, keepOpen = false) => {
+  const handleSavePurchaseWrapper = async (e: React.FormEvent, keepOpen = false) => {
     if (e) e.preventDefault();
 
     // Validations
@@ -1323,12 +1324,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
       });
 
       showToast(`Purchase bill ${originalPurchase.purchaseNumber} updated successfully!`);
-      handleResetForm(!keepOpen);
+      clearAllDirtyForms();
+      handleResetForm(false);
       if (!keepOpen) {
-        setViewPurchase(originalPurchase.id);
+        setViewPurchase(originalPurchase.id, true);
       }
     } else {
-      const newPurchase = addPurchase({
+      const newPurchase = await addPurchase({
         date: purchaseDate,
         supplierId: selectedSupplierId,
         supplierName: supplier.name,
@@ -1344,9 +1346,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
       });
 
       showToast(`Purchase bill ${supplierInvoiceNumber} saved successfully!`);
-      handleResetForm(!keepOpen);
+      clearAllDirtyForms();
+      handleResetForm(false);
       if (!keepOpen && newPurchase) {
-        setViewPurchase(newPurchase.id);
+        setViewPurchase(newPurchase.id, true);
       }
     }
   };

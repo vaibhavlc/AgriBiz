@@ -68,6 +68,7 @@ export const Sales: React.FC = () => {
     setCurrentTab,
     salesFormPresetCustomerId,
     setSalesFormPresetCustomerId,
+    clearAllDirtyForms,
   } = useApp();
 
   const totalSales = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
@@ -868,7 +869,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setIsCreatingInvoice(true);
   };
 
-  const handleSaveInvoice = (e: React.FormEvent) => {
+  const handleSaveInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedCustomerId) {
@@ -958,6 +959,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Invoice ${originalInvoice.invoiceNumber} updated successfully!`);
 
       // Reset states
+      clearAllDirtyForms();
       setEditingInvoiceId(null);
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
@@ -966,10 +968,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setReferenceNumber('');
       setDueDate('');
       setNotes('');
-      setIsCreatingInvoice(false);
-      setViewInvoice(originalInvoice.id);
+      setViewInvoice(originalInvoice.id, true);
     } else {
-      const newInvoice = addInvoice({
+      const newInvoice = await addInvoice({
         date: invoiceDate,
         customerId: selectedCustomerId,
         customerName: customer.name,
@@ -990,7 +991,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
       showToast(`Invoice created successfully for ${customer.name}!`);
 
-      // Reset states and redirect to details print view
+      // Reset states and redirect directly to details print view
+      clearAllDirtyForms();
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setAmountPaid(0);
@@ -998,8 +1000,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setReferenceNumber('');
       setDueDate('');
       setNotes('');
-      setIsCreatingInvoice(false);
-      setViewInvoice(newInvoice.id);
+      if (newInvoice) {
+        setViewInvoice(newInvoice.id, true);
+      } else {
+        setIsCreatingInvoice(false, true);
+      }
     }
   };
 
@@ -1007,7 +1012,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setDeletingInvoice({ id, invoiceNumber: invoiceNo });
   };
 
-  const handleSaveQuotation = (e: React.FormEvent) => {
+  const handleSaveQuotation = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!selectedCustomerId) {
@@ -1060,14 +1065,14 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Quotation ${originalQuotation.quotationNumber} updated successfully!`);
 
       // Reset states
+      clearAllDirtyForms();
       setEditingQuotationId(null);
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setNotes('');
-      setIsCreatingQuotation(false);
-      setViewQuotation(originalQuotation.id);
+      setViewQuotation(originalQuotation.id, true);
     } else {
-      const newQuotation = addQuotation({
+      const newQuotation = await addQuotation({
         date: invoiceDate,
         validUntil,
         customerId: selectedCustomerId,
@@ -1084,11 +1089,15 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast(`Quotation created successfully for ${customer.name}!`);
 
       // Reset states
+      clearAllDirtyForms();
       setSelectedCustomerId('');
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setNotes('');
-      setIsCreatingQuotation(false);
-      setViewQuotation(newQuotation.id);
+      if (newQuotation) {
+        setViewQuotation(newQuotation.id, true);
+      } else {
+        setIsCreatingQuotation(false, true);
+      }
     }
   };
 
@@ -1337,15 +1346,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <button 
                   className="btn btn-primary" 
                   style={{ flex: 1 }} 
-                  onClick={() => {
+                  onClick={async () => {
                     try {
-                      const invoiceId = convertQuotationToInvoice(convertQuotationId, convertAmountPaid, convertPaymentMethod);
-                      showToast("Quotation converted to Invoice successfully!");
-                      setIsConvertModalOpen(false);
-                      setConvertQuotationId(null);
-                      setSalesActiveTab('invoices');
-                      setViewInvoice(invoiceId);
-                      setViewQuotation(null);
+                      const invoiceId = await convertQuotationToInvoice(convertQuotationId!, convertAmountPaid, convertPaymentMethod);
+                      if (invoiceId) {
+                        showToast("Quotation converted to Invoice successfully!");
+                        clearAllDirtyForms();
+                        setIsConvertModalOpen(false);
+                        setConvertQuotationId(null);
+                        setSalesActiveTab('invoices');
+                        setViewInvoice(invoiceId, true);
+                        setViewQuotation(null, true);
+                      }
                     } catch (err: any) {
                       showToast(err.message || "Failed to convert quotation", "error");
                     }

@@ -16,7 +16,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
   onSaveCallback,
   editSupplierData = null,
 }) => {
-  const { addSupplier, editSupplier, requestNavigation } = useApp();
+  const { addSupplier, editSupplier, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
@@ -66,7 +66,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
     }
   }, [editSupplierData, isOpen]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
@@ -83,7 +83,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
       editSupplier(updated);
       if (onSaveCallback) onSaveCallback(updated);
     } else {
-      const saved = addSupplier({
+      const saved = await addSupplier({
         name,
         phone,
         email,
@@ -91,8 +91,9 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
         gstin: gstin.toUpperCase() || undefined,
         outstanding,
       });
-      if (onSaveCallback) onSaveCallback(saved);
+      if (saved && onSaveCallback) onSaveCallback(saved);
     }
+    clearAllDirtyForms();
     onClose();
   };
 

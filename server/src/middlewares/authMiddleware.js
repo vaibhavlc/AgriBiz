@@ -3,13 +3,19 @@ import logger from '../config/logger.js';
 
 export const authenticate = (req, res, next) => {
   try {
+    let token;
     const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      logger.warn('Authentication failed: Missing or malformed authorization header');
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.split(' ')[1];
+    } else if (req.query && req.query.token) {
+      token = req.query.token;
+    }
+
+    if (!token) {
+      logger.warn('Authentication failed: Missing authorization token');
       return res.status(401).json({ success: false, message: 'Authorization token is required.' });
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = verifyAccessToken(token);
     
     req.user = decoded;

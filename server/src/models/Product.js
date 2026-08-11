@@ -26,6 +26,7 @@ const productSchema = new mongoose.Schema(
 );
 
 productSchema.index({ companyId: 1, isDeleted: 1 });
+productSchema.index({ companyId: 1, productId: 1, isDeleted: 1 });
 productSchema.index({ companyId: 1, updatedAt: -1 });
 
 const Product = mongoose.model('Product', productSchema);

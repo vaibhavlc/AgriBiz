@@ -1,8 +1,8 @@
 import userService from '../services/userService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
 import bcrypt from 'bcryptjs';
 import userRepository from '../repositories/userRepository.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 const mapUserToClient = (user) => {
   if (!user) return null;
@@ -46,17 +46,9 @@ class UserController {
       };
 
       const user = await userService.createUser(payload, companyId);
-
-      socketEmitter.publishStaffEvent({
-        companyId,
-        action: 'CREATE',
-        userId: user.userId,
-        senderUserId: req.user.userId,
-        senderSocketId: req.headers['x-socket-id'] || null,
-        updatedAt: user.updatedAt
-      });
-
-      res.status(201).json({ success: true, message: 'Staff user created successfully', user: mapUserToClient(user) });
+      const mappedUser = mapUserToClient(user);
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Staff', 'CREATE', user._id, mappedUser);
+      res.status(201).json({ success: true, message: 'Staff user created successfully', user: mappedUser });
     } catch (error) {
       next(error);
     }
@@ -67,17 +59,9 @@ class UserController {
       const companyId = req.user.companyId;
       logger.info('Updating staff user %s for company %s', req.params.id, companyId);
       const user = await userService.updateUser(req.params.id, companyId, req.body);
-
-      socketEmitter.publishStaffEvent({
-        companyId,
-        action: 'UPDATE',
-        userId: user.userId,
-        senderUserId: req.user.userId,
-        senderSocketId: req.headers['x-socket-id'] || null,
-        updatedAt: user.updatedAt
-      });
-
-      res.status(200).json({ success: true, message: 'Staff user updated successfully', user: mapUserToClient(user) });
+      const mappedUser = mapUserToClient(user);
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Staff', 'UPDATE', req.params.id, mappedUser);
+      res.status(200).json({ success: true, message: 'Staff user updated successfully', user: mappedUser });
     } catch (error) {
       next(error);
     }
@@ -95,16 +79,8 @@ class UserController {
 
       logger.info('Updating presence status to %s for user %s', presenceStatus, userId);
       const user = await userService.updateUser(userId, companyId, { presenceStatus });
-
-      socketEmitter.publishPresenceEvent({
-        companyId,
-        userId,
-        presenceStatus: user.presenceStatus,
-        senderUserId: req.user.userId,
-        senderSocketId: req.headers['x-socket-id'] || null,
-        updatedAt: user.updatedAt
-      });
-
+      const mappedUser = mapUserToClient(user);
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Staff', 'UPDATE', userId, mappedUser);
       res.status(200).json({ success: true, message: 'Presence status updated', presenceStatus: user.presenceStatus });
     } catch (error) {
       next(error);
@@ -116,16 +92,7 @@ class UserController {
       const companyId = req.user.companyId;
       logger.info('Deleting staff user %s for company %s', req.params.id, companyId);
       await userService.deleteUser(req.params.id, companyId);
-
-      socketEmitter.publishStaffEvent({
-        companyId,
-        action: 'DELETE',
-        userId: req.params.id,
-        senderUserId: req.user.userId,
-        senderSocketId: req.headers['x-socket-id'] || null,
-        updatedAt: new Date().toISOString()
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Staff', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Staff user deleted successfully' });
     } catch (error) {
       next(error);
@@ -183,15 +150,6 @@ class UserController {
       user.pin = await bcrypt.hash(newPin.toString(), 10);
       user.updatedAt = new Date();
       await user.save();
-
-      socketEmitter.publishStaffEvent({
-        companyId,
-        action: 'UPDATE',
-        userId: targetUserId,
-        senderUserId: req.user.userId,
-        senderSocketId: req.headers['x-socket-id'] || null,
-        updatedAt: user.updatedAt
-      });
 
       logger.info('PIN reset for staff %s by owner %s', targetUserId, req.user.userId);
       res.status(200).json({ success: true, message: 'Staff PIN reset successfully.' });

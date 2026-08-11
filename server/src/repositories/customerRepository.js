@@ -1,8 +1,9 @@
 import Customer from '../models/Customer.js';
 
 class CustomerRepository {
-  async findById(customerId, companyId) {
-    return Customer.findOne({ customerId, companyId, isDeleted: false });
+  async findById(customerId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Customer.findOne({ customerId, companyId, isDeleted: false }, null, opts);
   }
 
   async findAll(companyId) {
@@ -22,6 +23,15 @@ class CustomerRepository {
   async update(customerId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Customer.findOneAndUpdate({ customerId, companyId, isDeleted: false }, updateData, opts);
+  }
+
+  async adjustOutstanding(customerId, companyId, deltaAmount, session) {
+    const opts = session ? { session, new: true } : { new: true };
+    return Customer.findOneAndUpdate(
+      { customerId, companyId, isDeleted: false },
+      { $inc: { outstanding: deltaAmount } },
+      opts
+    );
   }
 
   async softDelete(customerId, companyId, updatedBy, session) {

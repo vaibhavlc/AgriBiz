@@ -1,6 +1,6 @@
 import recycleBinService from '../services/recycleBinService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class RecycleBinController {
   async getRecycleBin(req, res, next) {
@@ -18,18 +18,7 @@ class RecycleBinController {
       const companyId = req.user.companyId;
       logger.info('Restoring recycle bin item %s for company %s', req.params.id, companyId);
       const restoredItem = await recycleBinService.restoreRecord(req.params.id, companyId);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: restoredItem?.itemType || 'RecycleBin',
-        action: 'UPDATE',
-        recordId: restoredItem?.originalId || req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'RecycleBin', 'RESTORE', req.params.id);
       res.status(200).json({ success: true, message: 'Record restored successfully', item: restoredItem });
     } catch (error) {
       next(error);
@@ -41,18 +30,7 @@ class RecycleBinController {
       const companyId = req.user.companyId;
       logger.info('Permanently deleting recycle bin item %s for company %s', req.params.id, companyId);
       await recycleBinService.deletePermanently(req.params.id, companyId);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'RecycleBin',
-        action: 'DELETE',
-        recordId: req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'RecycleBin', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Record permanently deleted successfully' });
     } catch (error) {
       next(error);

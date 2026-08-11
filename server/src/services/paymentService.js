@@ -26,19 +26,24 @@ class PaymentService {
         updatedBy: createdBy,
       };
 
+      const updateTasks = [];
+
       if (paymentPayload.type === 'CustomerReceipt') {
-        const customer = await customerRepository.findById(paymentPayload.contactId, companyId);
-        if (!customer) throw new Error('Customer not found');
-        const outstanding = customer.outstanding - paymentPayload.amount;
-        await customerRepository.update(paymentPayload.contactId, companyId, { outstanding }, session);
+        updateTasks.push(
+          customerRepository.adjustOutstanding(paymentPayload.contactId, companyId, -paymentPayload.amount, session)
+        );
       } else {
-        const supplier = await supplierRepository.findById(paymentPayload.contactId, companyId);
-        if (!supplier) throw new Error('Supplier not found');
-        const outstanding = supplier.outstanding - paymentPayload.amount;
-        await supplierRepository.update(paymentPayload.contactId, companyId, { outstanding }, session);
+        updateTasks.push(
+          supplierRepository.adjustOutstanding(paymentPayload.contactId, companyId, -paymentPayload.amount, session)
+        );
       }
 
-      return paymentRepository.create(paymentPayload, session);
+      const [payment] = await Promise.all([
+        paymentRepository.create(paymentPayload, session),
+        ...updateTasks,
+      ]);
+
+      return payment;
     });
   }
 

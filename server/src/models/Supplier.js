@@ -23,6 +23,7 @@ const supplierSchema = new mongoose.Schema(
 );
 
 supplierSchema.index({ companyId: 1, isDeleted: 1 });
+supplierSchema.index({ companyId: 1, supplierId: 1, isDeleted: 1 });
 supplierSchema.index({ companyId: 1, updatedAt: -1 });
 
 const Supplier = mongoose.model('Supplier', supplierSchema);

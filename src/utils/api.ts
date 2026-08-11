@@ -16,11 +16,25 @@ const api = axios.create({
   },
 });
 
+let activeSocketId: string | null = null;
+
+export const setApiSocketId = (socketId: string | null) => {
+  activeSocketId = socketId;
+};
+
 api.interceptors.request.use(
   (config) => {
     const token = sessionStorage.getItem('agribiz_access_token');
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (config.headers) {
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      if (activeSocketId) {
+        config.headers['X-Socket-Id'] = activeSocketId;
+      }
+      config.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+      config.headers['Pragma'] = 'no-cache';
+      config.headers['Expires'] = '0';
     }
     return config;
   },
@@ -93,6 +107,7 @@ api.interceptors.response.use(
           
           api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+          window.dispatchEvent(new Event('agribiz_auth_change'));
           
           processQueue(null, accessToken);
           return api(originalRequest);

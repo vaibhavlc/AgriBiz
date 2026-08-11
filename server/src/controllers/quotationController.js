@@ -1,6 +1,6 @@
 import quotationService from '../services/quotationService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class QuotationController {
   async getQuotation(req, res, next) {
@@ -32,18 +32,7 @@ class QuotationController {
       const creatorName = req.user.name;
       logger.info('Creating quotation for company %s by %s', companyId, creatorName);
       const quotation = await quotationService.createQuotation(req.body, companyId, creatorName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Quotation',
-        action: 'CREATE',
-        recordId: quotation.quotationId || quotation._id || quotation.id,
-        updatedAt: quotation.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Quotations', 'CREATE', quotation._id || quotation.quotationId, quotation);
       res.status(201).json({ success: true, quotation });
     } catch (error) {
       next(error);
@@ -59,18 +48,7 @@ class QuotationController {
       if (!quotation) {
         return res.status(404).json({ success: false, message: 'Quotation not found' });
       }
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Quotation',
-        action: 'UPDATE',
-        recordId: quotation.quotationId || req.params.id,
-        updatedAt: quotation.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Quotations', 'UPDATE', req.params.id, quotation);
       res.status(200).json({ success: true, quotation });
     } catch (error) {
       next(error);
@@ -83,18 +61,7 @@ class QuotationController {
       const deleterName = req.user.name;
       logger.info('Deleting quotation %s for company %s by %s', req.params.id, companyId, deleterName);
       await quotationService.deleteQuotation(req.params.id, companyId, deleterName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Quotation',
-        action: 'DELETE',
-        recordId: req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Quotations', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Quotation soft-deleted successfully' });
     } catch (error) {
       next(error);

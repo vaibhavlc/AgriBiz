@@ -1,6 +1,6 @@
 import supplierService from '../services/supplierService.js';
 import logger from '../config/logger.js';
-import { socketEmitter } from '../realtime/socketEmitter.js';
+import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class SupplierController {
   async getSupplier(req, res, next) {
@@ -32,18 +32,7 @@ class SupplierController {
       const creatorName = req.user.name;
       logger.info('Creating supplier for company %s by %s', companyId, creatorName);
       const supplier = await supplierService.createSupplier(req.body, companyId, creatorName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Supplier',
-        action: 'CREATE',
-        recordId: supplier.supplierId || supplier._id || supplier.id,
-        updatedAt: supplier.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Suppliers', 'CREATE', supplier._id || supplier.supplierId, supplier);
       res.status(201).json({ success: true, supplier });
     } catch (error) {
       next(error);
@@ -59,18 +48,7 @@ class SupplierController {
       if (!supplier) {
         return res.status(404).json({ success: false, message: 'Supplier not found' });
       }
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Supplier',
-        action: 'UPDATE',
-        recordId: supplier.supplierId || req.params.id,
-        updatedAt: supplier.updatedAt || new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.body.deviceId || req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Suppliers', 'UPDATE', req.params.id, supplier);
       res.status(200).json({ success: true, supplier });
     } catch (error) {
       next(error);
@@ -83,18 +61,7 @@ class SupplierController {
       const deleterName = req.user.name;
       logger.info('Deleting supplier %s for company %s by %s', req.params.id, companyId, deleterName);
       await supplierService.deleteSupplier(req.params.id, companyId, deleterName);
-
-      socketEmitter.publishSyncEvent({
-        companyId,
-        module: 'Supplier',
-        action: 'DELETE',
-        recordId: req.params.id,
-        updatedAt: new Date().toISOString(),
-        senderUserId: req.user.userId,
-        senderDeviceId: req.headers['x-device-id'] || null,
-        senderSocketId: req.headers['x-socket-id'] || null
-      });
-
+      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Suppliers', 'DELETE', req.params.id);
       res.status(200).json({ success: true, message: 'Supplier soft-deleted successfully' });
     } catch (error) {
       next(error);

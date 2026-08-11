@@ -1,7 +1,5 @@
 import type { User, Company, AuthSession, UserRole } from '../types';
 import api from '../utils/api';
-import bcrypt from 'bcryptjs';
-import { db } from '../db/db';
 
 const STORAGE_KEYS = {
   SESSION: 'agribiz_auth_session',
@@ -80,6 +78,7 @@ class AuthService {
     } else {
       sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     }
+    window.dispatchEvent(new Event('agribiz_auth_change'));
   }
 
   // --- Session Management ---
@@ -154,45 +153,6 @@ class AuthService {
     userId: string,
     pin: string
   ): Promise<{ success: boolean; message: string; user?: User; company?: Company }> {
-    if (!navigator.onLine) {
-      try {
-        const localUser = await db.users.get(userId);
-        if (!localUser) {
-          return { success: false, message: 'Staff member not found locally.' };
-        }
-        if (localUser.status === 'Inactive') {
-          return { success: false, message: 'This staff account has been disabled.' };
-        }
-        if (!localUser.pin) {
-          return { success: false, message: 'Security PIN has not been set for this staff member.' };
-        }
-        const isMatch = bcrypt.compareSync(pin.toString(), localUser.pin);
-        if (!isMatch) {
-          return { success: false, message: 'Invalid PIN. Please check and try again.' };
-        }
-
-        const localCompany = this.getCurrentCompany();
-        if (!localCompany) {
-          return { success: false, message: 'Company session not found locally.' };
-        }
-
-        // Staff session only in sessionStorage — PIN required after every browser restart
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(localUser));
-
-        const session: AuthSession = {
-          currentUserId: localUser.id,
-          companyId: localUser.companyId,
-          token: this.getAccessToken() || 'offline_token',
-          rememberMe: true,
-        };
-        sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
-
-        return { success: true, message: `Welcome back, ${localUser.name}!`, user: localUser, company: localCompany };
-      } catch (error: any) {
-        return { success: false, message: `Local validation error: ${error.message}` };
-      }
-    }
-
     try {
       const response = await api.post('/auth/staff-login', { companyId, userId, pin });
       const { success, message, accessToken, refreshToken, user, company } = response.data;
@@ -227,25 +187,12 @@ class AuthService {
 
   public async getActiveStaff(): Promise<User[]> {
     try {
-      const company = this.getCurrentCompany();
-      if (navigator.onLine) {
-        try {
-          const res = await api.get('/users');
-          if (res.data && res.data.success && Array.isArray(res.data.users)) {
-            const serverUsers = res.data.users;
-            await db.users.bulkPut(serverUsers);
-            return serverUsers.filter((u: User) => u.status === 'Active');
-          }
-        } catch (err) {
-          console.warn('Failed to fetch staff list from server, falling back to IndexedDB:', err);
-        }
+      const res = await api.get('/users');
+      if (res.data && res.data.success && Array.isArray(res.data.users)) {
+        return res.data.users.filter((u: User) => u.status === 'Active');
       }
-      const localUsers = await db.users.toArray();
-      if (localUsers.length > 0) {
-        return localUsers.filter(u => u.status === 'Active' && (!company || u.companyId === company.id));
-      }
-    } catch (e) {
-      console.error('Failed to load active staff from Dexie:', e);
+    } catch (err) {
+      console.warn('Failed to fetch staff list from server:', err);
     }
     return this.getUsers().filter(u => u.status === 'Active');
   }
@@ -272,13 +219,6 @@ class AuthService {
       const { success, message, accessToken, refreshToken, user, company } = response.data;
 
       if (success) {
-        // Clear old cached IndexedDB data from previous companies before setting up new business
-        try {
-          await db.clearAllLocalData();
-        } catch (e) {
-          console.warn('Failed to clear local Dexie data during registration:', e);
-        }
-
         this.setAccessToken(accessToken);
         if (refreshToken) {
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
@@ -307,7 +247,6 @@ class AuthService {
   }
 
   public async logout(): Promise<void> {
-    // Full logout: clear everything including the persistent company session and Dexie cache
     try {
       await api.post('/auth/logout');
     } catch (e) {
@@ -318,11 +257,6 @@ class AuthService {
       localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-      try {
-        await db.clearAllLocalData();
-      } catch (e) {
-        console.warn('Failed to clear Dexie database during logout:', e);
-      }
     }
   }
 
@@ -349,26 +283,13 @@ class AuthService {
       localStorage.clear();
       sessionStorage.clear();
 
-      try {
-        await db.clearAllLocalData();
-      } catch (e) {
-        console.warn('Error clearing Dexie tables:', e);
-      }
-
       if ('caches' in window) {
         try {
           const keys = await caches.keys();
           await Promise.all(keys.map(k => caches.delete(k)));
         } catch (e) {
-          console.warn('Error clearing PWA caches:', e);
+          console.warn('Error clearing caches:', e);
         }
-      }
-
-      try {
-        const { disconnectSocket } = await import('../utils/socketService');
-        disconnectSocket();
-      } catch (e) {
-        console.warn('Error disconnecting socket:', e);
       }
     } catch (e) {
       console.error('Error during client state purge:', e);
