@@ -379,9 +379,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const token = sessionStorage.getItem('agribiz_access_token');
       if (!token) return;
 
-      const envApi = import.meta.env.VITE_API_URL || '';
-      const socketUrl = envApi ? (envApi.endsWith('/') ? envApi.slice(0, -1) : envApi) : window.location.origin;
+      const getSocketURL = () => {
+        const envSocket = import.meta.env.VITE_SOCKET_URL;
+        if (envSocket) return envSocket.endsWith('/') ? envSocket.slice(0, -1) : envSocket;
+        const envApi = import.meta.env.VITE_API_URL;
+        if (envApi && envApi.startsWith('http')) {
+          return envApi.endsWith('/') ? envApi.slice(0, -1) : envApi;
+        }
+        return window.location.origin;
+      };
 
+      const socketUrl = getSocketURL();
       console.log('[SOCKET] Connecting to Socket.IO server at:', socketUrl);
 
       const socket = io(socketUrl, {
