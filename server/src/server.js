@@ -79,16 +79,11 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server) or listed origins
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some(o => o.includes('*') || origin.endsWith('.vercel.app'))) {
-        callback(null, true);
-      } else {
-        callback(null, true); // Fallback allow for production flexibility
-      }
+      callback(null, true);
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Socket-Id', 'Cache-Control', 'Pragma', 'Expires'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['*'],
   })
 );
 
