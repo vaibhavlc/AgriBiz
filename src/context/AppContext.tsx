@@ -4,7 +4,7 @@ import {
   initialSettings,
   toTitleCase,
 } from '../utils/dummyData';
-import api, { setApiSocketId } from '../utils/api';
+import api, { setApiSocketId, getRawBaseHost } from '../utils/api';
 import { io, Socket } from 'socket.io-client';
 
 interface AppContextType {
@@ -380,12 +380,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!token) return;
 
       const getSocketURL = () => {
-        const envSocket = import.meta.env.VITE_SOCKET_URL;
-        if (envSocket) return envSocket.endsWith('/') ? envSocket.slice(0, -1) : envSocket;
-        const envApi = import.meta.env.VITE_API_URL;
-        if (envApi && envApi.startsWith('http')) {
-          return envApi.endsWith('/') ? envApi.slice(0, -1) : envApi;
-        }
+        const host = getRawBaseHost();
+        if (host) return host;
         return window.location.origin;
       };
 

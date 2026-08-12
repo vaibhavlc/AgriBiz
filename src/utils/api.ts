@@ -1,9 +1,27 @@
 import axios from 'axios';
 
-const getBaseURL = () => {
+export const getRawBaseHost = (): string => {
+  const envSocket = import.meta.env.VITE_SOCKET_URL;
+  if (envSocket && envSocket.trim()) {
+    let url = envSocket.trim();
+    if (url.endsWith('/')) url = url.slice(0, -1);
+    if (url.endsWith('/api/v1')) url = url.slice(0, -7);
+    return url;
+  }
   const envApi = import.meta.env.VITE_API_URL;
-  if (envApi) {
-    return envApi.endsWith('/') ? `${envApi}api/v1` : `${envApi}/api/v1`;
+  if (envApi && envApi.trim()) {
+    let url = envApi.trim();
+    if (url.endsWith('/')) url = url.slice(0, -1);
+    if (url.endsWith('/api/v1')) url = url.slice(0, -7);
+    return url;
+  }
+  return '';
+};
+
+const getBaseURL = () => {
+  const host = getRawBaseHost();
+  if (host) {
+    return `${host}/api/v1`;
   }
   return '/api/v1';
 };
