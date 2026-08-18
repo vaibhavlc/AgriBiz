@@ -1308,9 +1308,10 @@ export const Settings: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', alignItems: 'center', marginTop: '20px' }}>
                   {logo ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '12px', width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)' }}>
-                        <img src={logo} alt="Branding Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                      <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '14px', width: '130px', height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+                        <img src={logo} alt="Custom Branding Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                       </div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ Custom Business Logo Active</div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
                           <Upload size={14} /> Change Logo
@@ -1322,11 +1323,23 @@ export const Settings: React.FC = () => {
                       </div>
                     </div>
                   ) : (
-                    <div style={{ border: '2px dashed var(--border-color)', padding: '30px', borderRadius: '16px', textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                      <ImageIcon size={40} style={{ color: 'var(--text-muted)' }} />
+                    <div style={{ border: '2px dashed var(--border-color)', padding: '24px', borderRadius: '16px', textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px', backgroundColor: 'var(--bg-app)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                        <div style={{
+                          width: '84px', height: '84px', borderRadius: '18px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '2px solid rgba(16, 185, 129, 0.25)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)',
+                          boxShadow: '0 6px 16px rgba(16, 185, 129, 0.12)'
+                        }}>
+                          <Store size={44} />
+                        </div>
+                        <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                          Default Business Logo (Visual Fallback)
+                        </span>
+                      </div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Upload Business Logo</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>PNG, JPG, or SVG format up to 1.5MB</div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Upload Custom Business Logo</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>PNG, JPG, or SVG format up to 1.5MB</div>
                       </div>
                       <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
                         <Upload size={14} /> Choose Image File

@@ -173,8 +173,8 @@ const setCachedBranding = (branding: { logoUrl: string; watermarkLogoUrl: string
   try {
     const cacheObj: BusinessBrandingCache = {
       businessId: branding.businessId || 'company_1',
-      logoUrl: branding.logoUrl || '/logo-512.png',
-      watermarkLogoUrl: branding.watermarkLogoUrl || '/logo-512.png',
+      logoUrl: branding.logoUrl || '',
+      watermarkLogoUrl: branding.watermarkLogoUrl || '',
       logoVersion: Date.now(),
       businessName: branding.businessName || 'AgriBiz',
     };
@@ -213,8 +213,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const raw = local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
     const cachedBranding = getCachedBranding();
     
-    const logo = cachedBranding?.logoUrl || raw.logo || '/logo-512.png';
-    const watermarkLogo = cachedBranding?.watermarkLogoUrl || raw.watermarkLogo || '/logo-512.png';
+    const logo = raw.logo !== undefined ? raw.logo : (cachedBranding?.logoUrl || '');
+    const watermarkLogo = raw.watermarkLogo !== undefined ? raw.watermarkLogo : (cachedBranding?.watermarkLogoUrl || '');
     const businessName = toTitleCase(cachedBranding?.businessName || raw.businessName);
 
     return {
@@ -530,8 +530,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.settings) {
         const remoteSettings: BusinessSettings = settingsRes.value.data.settings;
         setSettings((prev) => {
-          const updatedLogo = remoteSettings.logo || prev.logo || '/logo-512.png';
-          const updatedWatermark = remoteSettings.watermarkLogo || prev.watermarkLogo || '/logo-512.png';
+          const updatedLogo = remoteSettings.logo !== undefined ? remoteSettings.logo : (prev.logo || '');
+          const updatedWatermark = remoteSettings.watermarkLogo !== undefined ? remoteSettings.watermarkLogo : (prev.watermarkLogo || '');
           const updatedName = toTitleCase(remoteSettings.businessName || prev.businessName);
 
           const updatedSettings = {
@@ -1545,8 +1545,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       clearAllDirtyForms();
       localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
       setCachedBranding({
-        logoUrl: formatted.logo || '/logo-512.png',
-        watermarkLogoUrl: formatted.watermarkLogo || '/logo-512.png',
+        logoUrl: formatted.logo || '',
+        watermarkLogoUrl: formatted.watermarkLogo || '',
         businessName: formatted.businessName,
       });
       notifyMutation();

@@ -661,8 +661,8 @@ export const initialSettings: BusinessSettings = {
   pincode: '461775',
 
   // Branding
-  logo: '/logo-512.png',
-  watermarkLogo: '/logo-512.png',
+  logo: '',
+  watermarkLogo: '',
 
   // Banking Details
   bankName: 'State Bank of India',
