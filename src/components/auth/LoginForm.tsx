@@ -47,19 +47,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // On mount: if company session exists, skip business login
-  useEffect(() => {
-    const savedCompany = authService.getCurrentCompany();
-    if (savedCompany) {
-      loadStaffList();
-      setStage('staff-selection');
-    }
-  }, []);
-
   const loadStaffList = useCallback(async () => {
     const staff = await authService.getActiveStaff();
     setStaffList(staff as (UserType & { id: string })[]);
   }, []);
+
+  // On mount: if company session exists, skip business login and go directly to Staff Selection
+  useEffect(() => {
+    const checkSession = async () => {
+      const savedCompany = authService.getCurrentCompany();
+      const storedRefreshToken = localStorage.getItem('agribiz_refresh_token');
+      if (savedCompany || storedRefreshToken) {
+        if (storedRefreshToken) {
+          await authService.refreshSession();
+        }
+        await loadStaffList();
+        setStage('staff-selection');
+      }
+    };
+    checkSession();
+  }, [loadStaffList]);
 
   // ── Stage 1: Business Login ─────────────────────────────────────────────
   const handleBusinessLogin = async (e: React.FormEvent) => {

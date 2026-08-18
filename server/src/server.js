@@ -38,11 +38,18 @@ const PORT = process.env.PORT || 5000;
 
 // Connect to Database & Seed Demo Data
 const initApp = async () => {
-  await connectDB();
-  await authService.seedDemoData();
+  try {
+    await connectDB();
+    await authService.seedDemoData();
+    server.listen(PORT, () => {
+      logger.info(`AgriBiz Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+    });
+  } catch (err) {
+    logger.error('Failed to initialize app: %s', err.message);
+    process.exit(1);
+  }
 };
 
-initApp();
 
 // Morgan request logging mapped to Winston logger
 const morganStream = {
@@ -161,6 +168,5 @@ app.use(errorHandler);
 const server = http.createServer(app);
 initSocket(server);
 
-server.listen(PORT, () => {
-  logger.info(`AgriBiz Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
+initApp();
+

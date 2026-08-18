@@ -7,21 +7,20 @@ import { initialSettings } from '../utils/dummyData';
 import type { User, Company, UserRole } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentCompany, setCurrentCompany] = useState<Company | null>(() => authService.getCurrentCompany());
 
   const refreshUser = async () => {
-    const res = await authService.refreshSession();
-    if (res.success && res.user && res.company) {
-      setCurrentUser(res.user);
-      setCurrentCompany(res.company);
-    } else {
-      // Staff session is sessionStorage-only — cleared on restart, forces PIN re-entry
-      setCurrentUser(null);
-      // But company session persists in localStorage — keep it so staff selection is shown
-      const savedCompany = authService.getCurrentCompany();
-      if (savedCompany) setCurrentCompany(savedCompany);
+    const savedCompany = authService.getCurrentCompany();
+    if (savedCompany) {
+      setCurrentCompany(savedCompany);
     }
+    const res = await authService.refreshSession();
+    if (res.success && res.company) {
+      setCurrentCompany(res.company);
+    }
+    // Always require Staff Selection & Staff PIN authentication on app load / refresh
+    setCurrentUser(null);
   };
 
   useEffect(() => {

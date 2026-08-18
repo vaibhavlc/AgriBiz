@@ -303,32 +303,28 @@ class AuthService {
     this.setAccessToken(null);
   }
 
-  public async refreshSession(): Promise<{ success: boolean; user?: User; company?: Company }> {
+  public async refreshSession(): Promise<{ success: boolean; company?: Company }> {
     try {
       const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (!storedRefreshToken) return { success: false };
       const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
-      const { success, accessToken, refreshToken: newRefreshToken, user, company } = response.data;
+      const { success, accessToken, refreshToken: newRefreshToken, company } = response.data;
 
       if (success && accessToken) {
         this.setAccessToken(accessToken);
         if (newRefreshToken) {
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
         }
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
-
-        const session = this.getSession();
-        if (session) {
-          session.token = accessToken;
-          sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+        if (company) {
+          localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
         }
-
-        return { success: true, user, company };
+        return { success: true, company };
       }
       return { success: false };
     } catch (error) {
       this.setAccessToken(null);
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
       return { success: false };
