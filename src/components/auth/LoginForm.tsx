@@ -404,23 +404,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         <ErrorBanner />
 
         {/* Hidden Input for Mobile Virtual Keyboards */}
-        <input
-          id="hidden-pin-input"
-          type="password"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={4}
-          value={pin}
-          onChange={(e) => {
-            const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-            setPin(val);
-            if (val.length === 4) {
-              setTimeout(() => handlePinSubmit(val), 120);
-            }
-          }}
-          style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1 }}
-          autoFocus
-        />
+        <form onSubmit={(e) => { e.preventDefault(); if (pin.length === 4) handlePinSubmit(pin); }}>
+          <input
+            id="hidden-pin-input"
+            name="pin"
+            type="password"
+            autoComplete="current-password"
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            value={pin}
+            onChange={(e) => {
+              const val = e.target.value.replace(/\D/g, '').slice(0, 4);
+              setPin(val);
+              if (val.length === 4) {
+                setTimeout(() => handlePinSubmit(val), 120);
+              }
+            }}
+            style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1 }}
+            autoFocus
+          />
+        </form>
 
         {/* 4 Distinct PIN Input Digit Boxes */}
         <div
