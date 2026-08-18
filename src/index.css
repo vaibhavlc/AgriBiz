@@ -911,7 +911,9 @@ body.dark-theme .prem-live-dot {
   position: relative;
   display: flex;
   align-items: center;
-  width: 440px;
+  width: 100%;
+  max-width: 440px;
+  min-width: 140px;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -920,7 +922,7 @@ body.dark-theme .prem-live-dot {
 }
 
 .global-search-wrapper:focus-within {
-  width: 540px;
+  max-width: 520px;
 }
 
 .global-search-wrapper .search-icon {
@@ -2914,6 +2916,78 @@ body.dark-theme .lang-selector-btn:hover {
 }
 
 /* Responsive Breakpoints */
+@media (max-width: 1350px) {
+  .header {
+    padding: 0 16px;
+    gap: 12px;
+  }
+  .global-search-wrapper {
+    max-width: 320px;
+  }
+  .global-search-wrapper:focus-within {
+    max-width: 380px;
+  }
+  .brand-badge {
+    display: none !important;
+  }
+  .brand-name {
+    max-width: 140px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .header-outer-wrapper {
+    padding: 12px 16px 6px 16px;
+  }
+  .header {
+    gap: 8px;
+    padding: 0 12px;
+  }
+  .global-search-wrapper {
+    max-width: 220px;
+  }
+  .global-search-wrapper:focus-within {
+    max-width: 260px;
+  }
+  .global-search-wrapper .search-shortcut {
+    display: none !important;
+  }
+  .global-search-wrapper .search-input {
+    padding-right: 32px;
+  }
+  .global-search-wrapper .search-clear-btn {
+    right: 8px;
+  }
+  .brand-name {
+    max-width: 110px;
+  }
+  .profile-trigger .profile-details {
+    display: none !important;
+  }
+  .profile-trigger .profile-chevron {
+    display: none !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .header-left {
+    gap: 8px;
+  }
+  .brand-name {
+    max-width: 95px;
+    font-size: 15px;
+  }
+  .global-search-wrapper {
+    max-width: 160px;
+  }
+  .global-search-wrapper:focus-within {
+    max-width: 200px;
+  }
+  .header-right {
+    gap: 6px;
+  }
+}
+
 @media (max-width: 1024px) {
   .app-container {
     width: 100%;
