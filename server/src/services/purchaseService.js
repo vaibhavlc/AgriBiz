@@ -73,35 +73,25 @@ class PurchaseService {
       const oldPurchase = await purchaseRepository.findById(purchaseId, companyId);
       if (!oldPurchase) throw new Error('Purchase not found');
 
-      // Revert old product stock increases
+      // Revert old product stock additions
       for (const item of oldPurchase.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (product) {
-          const revertedStock = Math.max(0, product.stock - item.quantity);
-          await productRepository.update(item.productId, companyId, { stock: revertedStock }, session);
-        }
+        await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
       }
 
       // Revert old supplier outstanding adjustments
-      const supplier = await supplierRepository.findById(oldPurchase.supplierId, companyId);
-      if (supplier) {
-        const revertedOutstanding = supplier.outstanding - oldPurchase.balanceDue;
-        await supplierRepository.update(oldPurchase.supplierId, companyId, { outstanding: revertedOutstanding }, session);
+      if (oldPurchase.supplierId && oldPurchase.balanceDue) {
+        await supplierRepository.adjustOutstanding(oldPurchase.supplierId, companyId, -oldPurchase.balanceDue, session);
       }
 
-      // Apply new product stock increases
+      // Apply new product stock additions
       for (const item of purchaseData.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (!product) throw new Error(`Product ${item.productName} not found`);
-        const newStock = product.stock + item.quantity;
-        await productRepository.update(item.productId, companyId, { stock: newStock }, session);
+        await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
       }
 
       // Apply new supplier outstanding adjustments
-      const currentSupplier = await supplierRepository.findById(purchaseData.supplierId, companyId);
-      if (!currentSupplier) throw new Error('Supplier not found');
-      const newOutstanding = currentSupplier.outstanding + purchaseData.balanceDue;
-      await supplierRepository.update(purchaseData.supplierId, companyId, { outstanding: newOutstanding }, session);
+      if (purchaseData.supplierId && purchaseData.balanceDue) {
+        await supplierRepository.adjustOutstanding(purchaseData.supplierId, companyId, purchaseData.balanceDue, session);
+      }
 
       const purchasePayload = {
         ...purchaseData,
@@ -118,18 +108,12 @@ class PurchaseService {
 
       // Revert product stocks (deduct the stock added by the purchase)
       for (const item of purchase.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (product) {
-          const revertedStock = Math.max(0, product.stock - item.quantity);
-          await productRepository.update(item.productId, companyId, { stock: revertedStock }, session);
-        }
+        await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
       }
 
       // Revert supplier outstanding balance
-      const supplier = await supplierRepository.findById(purchase.supplierId, companyId);
-      if (supplier) {
-        const revertedOutstanding = Math.max(0, supplier.outstanding - purchase.balanceDue);
-        await supplierRepository.update(purchase.supplierId, companyId, { outstanding: revertedOutstanding }, session);
+      if (purchase.supplierId && purchase.balanceDue) {
+        await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -purchase.balanceDue, session);
       }
 
       // Record to Recycle Bin
@@ -147,6 +131,47 @@ class PurchaseService {
 
       // Perform soft delete
       return purchaseRepository.softDelete(purchaseId, companyId, deletedBy, session);
+    });
+  }
+
+  async returnPurchase(purchaseId, companyId, returnData, createdBy) {
+    return runInTransaction(async (session) => {
+      const purchase = await purchaseRepository.findById(purchaseId, companyId);
+      if (!purchase) throw new Error('Purchase not found');
+
+      // Deduct returned quantity from stock (Stock OUT)
+      if (returnData.items && Array.isArray(returnData.items)) {
+        for (const item of returnData.items) {
+          await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+        }
+      }
+
+      if (purchase.supplierId && returnData.returnAmount) {
+        await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -returnData.returnAmount, session);
+      }
+
+      const updatedItems = purchase.items.map((pItem) => {
+        const retItem = (returnData.items || []).find((r) => r.productId === pItem.productId);
+        if (retItem) {
+          return {
+            ...pItem,
+            returnedQuantity: (pItem.returnedQuantity || 0) + retItem.quantity,
+          };
+        }
+        return pItem;
+      });
+
+      return purchaseRepository.update(
+        purchaseId,
+        companyId,
+        {
+          items: updatedItems,
+          status: 'Returned',
+          returnNotes: returnData.notes || 'Purchase Return processed',
+          updatedBy: createdBy,
+        },
+        session
+      );
     });
   }
 }

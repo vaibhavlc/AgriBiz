@@ -12,12 +12,15 @@ class ProductService {
   }
 
   async createProduct(productData, companyId, createdBy) {
+    const initialStock = Math.max(0, parseInt(productData.openingStock ?? productData.stock ?? 0) || 0);
     const payload = {
       ...productData,
+      stock: initialStock,
       companyId,
       createdBy,
       updatedBy: createdBy,
     };
+    delete payload.openingStock;
     return productRepository.create(payload);
   }
 
@@ -26,6 +29,9 @@ class ProductService {
       ...updateData,
       updatedBy,
     };
+    // CRITICAL STOCK RULE: Product Editing must NEVER modify, overwrite, or reset stock
+    delete payload.stock;
+    delete payload.openingStock;
     return productRepository.update(productId, companyId, payload);
   }
 

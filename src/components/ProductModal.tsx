@@ -116,7 +116,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         name,
         sku: finalSku,
         category,
-        stock: finalStock,
+        stock: editProductData.stock, // ALWAYS preserve existing stock on edit
         minStock: finalMinStock,
         purchasePrice: finalPurchasePrice,
         sellingPrice: finalSellingPrice,
@@ -128,7 +128,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         name,
         sku: finalSku,
         category,
-        stock: finalStock,
+        stock: finalStock, // Opening Stock transaction value (defaults to 0)
         minStock: finalMinStock,
         purchasePrice: finalPurchasePrice,
         sellingPrice: finalSellingPrice,
@@ -147,7 +147,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseClick}
-      title={editProductData ? 'Edit Product Details' : 'Add New Agricultural Product'}
+      title={editProductData ? 'Edit Product Master Details' : 'Add New Agricultural Product'}
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
@@ -213,18 +213,31 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="form-row-three">
           <div className="form-group">
-            <label className="form-label">Stock Qty *</label>
+            <label className="form-label">
+              {editProductData ? 'Current Stock (Read-Only)' : 'Opening Stock (Initial Stock IN)'}
+            </label>
             <input
               type="number"
               className="form-control"
               placeholder="0"
               value={stock}
+              disabled={!!editProductData}
               onChange={(e) => {
                 const val = e.target.value;
                 setStock(val === '' ? '' : Math.max(0, parseInt(val) || 0));
               }}
-              required
+              required={!editProductData}
+              style={editProductData ? { backgroundColor: 'var(--bg-app)', cursor: 'not-allowed', color: 'var(--text-muted)' } : {}}
             />
+            {editProductData ? (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                Controlled via Purchases (Stock IN) & Sales (Stock OUT)
+              </span>
+            ) : (
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', display: 'block' }}>
+                Defaults to 0 if left empty
+              </span>
+            )}
           </div>
           <div className="form-group">
             <label className="form-label">Low Stock limit *</label>

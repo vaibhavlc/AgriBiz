@@ -141,37 +141,71 @@ export const Inventory: React.FC = () => {
   const selectedProduct = products.find((p) => p.id === viewProductId);
 
   if (selectedProduct) {
-    // 1. Gather all sales & purchases containing this product
+    // 1. Gather all sales & purchases containing this product with clear Stock Audit movement labels
     const productSales = invoices.filter(inv => 
-      inv.items.some(item => item.productId === selectedProduct.id)
-    ).map(inv => {
+      inv.items && inv.items.some(item => item.productId === selectedProduct.id)
+    ).flatMap(inv => {
       const item = inv.items.find(item => item.productId === selectedProduct.id)!;
-      return {
-        id: inv.id,
-        date: inv.date,
-        type: 'Sales',
-        number: inv.invoiceNumber,
-        contactName: inv.customerName,
-        quantity: item.quantity,
-        price: item.price,
-        total: item.total
-      };
+      const records = [];
+      if (inv.status === 'Returned') {
+        records.push({
+          id: inv.id,
+          date: inv.date,
+          type: 'Sales Return',
+          movement: 'Stock IN',
+          number: inv.invoiceNumber,
+          contactName: inv.customerName,
+          quantity: item.returnedQuantity || item.quantity,
+          price: item.price,
+          total: (item.returnedQuantity || item.quantity) * item.price
+        });
+      } else {
+        records.push({
+          id: inv.id,
+          date: inv.date,
+          type: 'Sales',
+          movement: 'Stock OUT',
+          number: inv.invoiceNumber,
+          contactName: inv.customerName,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total
+        });
+      }
+      return records;
     });
 
     const productPurchases = purchases.filter(pur => 
-      pur.items.some(item => item.productId === selectedProduct.id)
-    ).map(pur => {
+      pur.items && pur.items.some(item => item.productId === selectedProduct.id)
+    ).flatMap(pur => {
       const item = pur.items.find(item => item.productId === selectedProduct.id)!;
-      return {
-        id: pur.id,
-        date: pur.date,
-        type: 'Purchase',
-        number: pur.purchaseNumber,
-        contactName: pur.supplierName,
-        quantity: item.quantity,
-        price: item.price,
-        total: item.total
-      };
+      const records = [];
+      if (pur.status === 'Returned') {
+        records.push({
+          id: pur.id,
+          date: pur.date,
+          type: 'Purchase Return',
+          movement: 'Stock OUT',
+          number: pur.purchaseNumber,
+          contactName: pur.supplierName,
+          quantity: item.returnedQuantity || item.quantity,
+          price: item.price,
+          total: (item.returnedQuantity || item.quantity) * item.price
+        });
+      } else {
+        records.push({
+          id: pur.id,
+          date: pur.date,
+          type: 'Purchase',
+          movement: 'Stock IN',
+          number: pur.purchaseNumber,
+          contactName: pur.supplierName,
+          quantity: item.quantity,
+          price: item.price,
+          total: item.total
+        });
+      }
+      return records;
     });
 
     const allTransactions = [...productSales, ...productPurchases].sort(

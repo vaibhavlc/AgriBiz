@@ -74,35 +74,25 @@ class InvoiceService {
       const oldInvoice = await invoiceRepository.findById(invoiceId, companyId);
       if (!oldInvoice) throw new Error('Invoice not found');
 
-      // Revert old product stock deductions
+      // Revert old product stock deductions (add back old item quantities)
       for (const item of oldInvoice.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (product) {
-          const revertedStock = product.stock + item.quantity;
-          await productRepository.update(item.productId, companyId, { stock: revertedStock }, session);
-        }
+        await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
       }
 
       // Revert old customer outstanding adjustments
-      const customer = await customerRepository.findById(oldInvoice.customerId, companyId);
-      if (customer) {
-        const revertedOutstanding = customer.outstanding - oldInvoice.balanceDue;
-        await customerRepository.update(oldInvoice.customerId, companyId, { outstanding: revertedOutstanding }, session);
+      if (oldInvoice.customerId && oldInvoice.balanceDue) {
+        await customerRepository.adjustOutstanding(oldInvoice.customerId, companyId, -oldInvoice.balanceDue, session);
       }
 
-      // Apply new product stock deductions
+      // Apply new product stock deductions (deduct new item quantities)
       for (const item of invoiceData.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (!product) throw new Error(`Product ${item.productName} not found`);
-        const newStock = Math.max(0, product.stock - item.quantity);
-        await productRepository.update(item.productId, companyId, { stock: newStock }, session);
+        await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
       }
 
       // Apply new customer outstanding adjustments
-      const currentCustomer = await customerRepository.findById(invoiceData.customerId, companyId);
-      if (!currentCustomer) throw new Error('Customer not found');
-      const newOutstanding = currentCustomer.outstanding + invoiceData.balanceDue;
-      await customerRepository.update(invoiceData.customerId, companyId, { outstanding: newOutstanding }, session);
+      if (invoiceData.customerId && invoiceData.balanceDue) {
+        await customerRepository.adjustOutstanding(invoiceData.customerId, companyId, invoiceData.balanceDue, session);
+      }
 
       const invoicePayload = {
         ...invoiceData,
@@ -117,20 +107,14 @@ class InvoiceService {
       const invoice = await invoiceRepository.findById(invoiceId, companyId);
       if (!invoice) throw new Error('Invoice not found');
 
-      // Revert product stocks
+      // Revert product stocks (add back item quantities)
       for (const item of invoice.items) {
-        const product = await productRepository.findById(item.productId, companyId);
-        if (product) {
-          const revertedStock = product.stock + item.quantity;
-          await productRepository.update(item.productId, companyId, { stock: revertedStock }, session);
-        }
+        await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
       }
 
       // Revert customer outstanding balance
-      const customer = await customerRepository.findById(invoice.customerId, companyId);
-      if (customer) {
-        const revertedOutstanding = Math.max(0, customer.outstanding - invoice.balanceDue);
-        await customerRepository.update(invoice.customerId, companyId, { outstanding: revertedOutstanding }, session);
+      if (invoice.customerId && invoice.balanceDue) {
+        await customerRepository.adjustOutstanding(invoice.customerId, companyId, -invoice.balanceDue, session);
       }
 
       // Record to Recycle Bin
@@ -148,6 +132,48 @@ class InvoiceService {
 
       // Perform soft delete
       return invoiceRepository.softDelete(invoiceId, companyId, deletedBy, session);
+    });
+  }
+
+  async returnInvoice(invoiceId, companyId, returnData, createdBy) {
+    return runInTransaction(async (session) => {
+      const invoice = await invoiceRepository.findById(invoiceId, companyId);
+      if (!invoice) throw new Error('Invoice not found');
+
+      // Add returned quantity back to product stock (Stock IN)
+      if (returnData.items && Array.isArray(returnData.items)) {
+        for (const item of returnData.items) {
+          await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
+        }
+      }
+
+      // Adjust customer outstanding balance if applicable
+      if (invoice.customerId && returnData.returnAmount) {
+        await customerRepository.adjustOutstanding(invoice.customerId, companyId, -returnData.returnAmount, session);
+      }
+
+      const updatedItems = invoice.items.map((iItem) => {
+        const retItem = (returnData.items || []).find((r) => r.productId === iItem.productId);
+        if (retItem) {
+          return {
+            ...iItem,
+            returnedQuantity: (iItem.returnedQuantity || 0) + retItem.quantity,
+          };
+        }
+        return iItem;
+      });
+
+      return invoiceRepository.update(
+        invoiceId,
+        companyId,
+        {
+          items: updatedItems,
+          status: 'Returned',
+          returnNotes: returnData.notes || 'Sales Return processed',
+          updatedBy: createdBy,
+        },
+        session
+      );
     });
   }
 }

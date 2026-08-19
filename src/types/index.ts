@@ -43,6 +43,7 @@ export interface InvoiceItem {
   gstAmount: number;
   subtotal: number; // (Price * Qty) - DiscountAmount
   total: number; // Subtotal + gstAmount
+  returnedQuantity?: number;
 }
 
 export interface Invoice {
@@ -64,6 +65,7 @@ export interface Invoice {
   dueDate?: string;          // Expected date to clear balance due
   notes?: string;
   showSignature?: boolean;
+  status?: string;
 }
 
 export interface QuotationItem {
@@ -106,6 +108,7 @@ export interface PurchaseItem {
   subtotal: number;
   total: number;
   discount?: number;
+  returnedQuantity?: number;
 }
 
 export interface Purchase {
@@ -123,6 +126,7 @@ export interface Purchase {
   paymentStatus: 'Paid' | 'Partial' | 'Unpaid';
   paymentMethod: string;
   notes?: string;
+  status?: string;
 }
 
 export interface Payment {
