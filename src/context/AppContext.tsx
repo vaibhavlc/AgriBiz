@@ -252,6 +252,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [settings.theme]);
 
+  useEffect(() => {
+    if (activeTheme === 'dark') {
+      document.body.classList.add('dark-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  }, [activeTheme]);
+
   // Online / Offline Connectivity State
   const [isOnline, setIsOnline] = useState<boolean>(() => navigator.onLine);
 
