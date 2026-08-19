@@ -1,7 +1,12 @@
 import User from '../models/User.js';
+import mongoose from 'mongoose';
 
 class UserRepository {
   async findById(userId) {
+    if (!userId) return null;
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      return User.findOne({ $or: [{ userId }, { _id: userId }] });
+    }
     return User.findOne({ userId });
   }
 
@@ -16,14 +21,23 @@ class UserRepository {
   async create(userData) {
     // Remove mobile if null/empty so sparse unique index isn't violated
     if (!userData.mobile) delete userData.mobile;
+    if (!userData.presenceStatus) userData.presenceStatus = 'online';
     return User.create(userData);
   }
 
   async update(userId, updateData) {
+    if (!userId) return null;
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      return User.findOneAndUpdate({ $or: [{ userId }, { _id: userId }] }, updateData, { new: true });
+    }
     return User.findOneAndUpdate({ userId }, updateData, { new: true });
   }
 
   async delete(userId) {
+    if (!userId) return null;
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      return User.deleteOne({ $or: [{ userId }, { _id: userId }] });
+    }
     return User.deleteOne({ userId });
   }
 
