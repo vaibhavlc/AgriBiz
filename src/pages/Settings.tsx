@@ -423,6 +423,7 @@ export const Settings: React.FC = () => {
   const [logo, setLogo] = useState(settings.logo || '');
   const [watermarkLogo, setWatermarkLogo] = useState(settings.watermarkLogo || '');
   const [savedSignature, setSavedSignature] = useState(settings.signature || '');
+  const [isPadEditing, setIsPadEditing] = useState(false);
   const isDrawingRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -677,9 +678,8 @@ export const Settings: React.FC = () => {
     setWatermarkLogo('');
   };
 
-  // Synchronously size signature canvas on mount so cursor drawing is 100% smooth
-  useEffect(() => {
-    if (activeTab === 'branding' && !savedSignature && canvasRef.current) {
+  const initSignatureCanvas = () => {
+    if (canvasRef.current) {
       const canvas = canvasRef.current;
       const rect = canvas.getBoundingClientRect();
       const w = Math.round(rect.width || canvas.offsetWidth || 500);
@@ -688,8 +688,20 @@ export const Settings: React.FC = () => {
         canvas.width = w;
         canvas.height = h;
       }
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
     }
-  }, [activeTab, savedSignature]);
+  };
+
+  // Synchronously size signature canvas on mount or tab switch so cursor drawing is 100% smooth
+  useEffect(() => {
+    if (activeTab === 'branding' && (!savedSignature || isPadEditing)) {
+      const timer = setTimeout(initSignatureCanvas, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, savedSignature, isPadEditing]);
 
   // Global mouseup / touchend listener to guarantee mouse cursor release is caught anywhere
   useEffect(() => {
@@ -705,7 +717,7 @@ export const Settings: React.FC = () => {
   }, []);
 
   const getEventCoords = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>,
     canvas: HTMLCanvasElement
   ) => {
     const rect = canvas.getBoundingClientRect();
@@ -731,11 +743,18 @@ export const Settings: React.FC = () => {
   };
 
   const startDrawing = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>
   ) => {
     if (e.cancelable) e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    if ('pointerId' in e && canvas.setPointerCapture) {
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch (err) {}
+    }
+
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
@@ -746,7 +765,7 @@ export const Settings: React.FC = () => {
     }
 
     const coords = getEventCoords(e, canvas);
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 3.5;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1E3A8A'; // Professional dark blue ink
@@ -756,7 +775,7 @@ export const Settings: React.FC = () => {
   };
 
   const draw = (
-    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
+    e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>
   ) => {
     if (!isDrawingRef.current) return;
     if (e.cancelable) e.preventDefault();
@@ -770,8 +789,18 @@ export const Settings: React.FC = () => {
     ctx.stroke();
   };
 
-  const stopDrawing = () => {
+  const stopDrawing = (
+    e?: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement> | React.PointerEvent<HTMLCanvasElement>
+  ) => {
+    if (!isDrawingRef.current) return;
     isDrawingRef.current = false;
+    if (e && 'pointerId' in e && canvasRef.current) {
+      try {
+        if (canvasRef.current.hasPointerCapture(e.pointerId)) {
+          canvasRef.current.releasePointerCapture(e.pointerId);
+        }
+      } catch (err) {}
+    }
   };
 
   const clearSignaturePad = () => {
@@ -845,6 +874,7 @@ export const Settings: React.FC = () => {
     const trimmedCanvas = trimCanvas(canvas);
     const base64Data = trimmedCanvas.toDataURL('image/png');
     setSavedSignature(base64Data);
+    setIsPadEditing(false);
     updateSettings({
       ...settings,
       signature: base64Data
@@ -856,6 +886,7 @@ export const Settings: React.FC = () => {
 
   const handleRemoveSignature = () => {
     setSavedSignature('');
+    setIsPadEditing(true);
     updateSettings({
       ...settings,
       signature: undefined
@@ -1467,15 +1498,25 @@ export const Settings: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
-                  {savedSignature ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ border: '2px dashed var(--border-color)', padding: '12px', borderRadius: '14px', width: '260px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
+                  {savedSignature && !isPadEditing ? (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ border: '2px dashed var(--border-color)', padding: '12px 24px', borderRadius: '14px', width: '280px', height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
                         <img src={savedSignature} alt="E-Signature Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                       </div>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ Authorized Signatory E-Signature Active</div>
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
-                          <Upload size={14} /> Upload New Image
+                      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsPadEditing(true);
+                            setTimeout(initSignatureCanvas, 50);
+                          }}
+                          className="btn btn-primary btn-sm"
+                        >
+                          <Edit2 size={14} /> Draw / Re-sign with Cursor
+                        </button>
+                        <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
+                          <Upload size={14} /> Upload Image
                           <input type="file" accept="image/*" onChange={handleSignatureFileUpload} style={{ display: 'none' }} />
                         </label>
                         <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm">
@@ -1487,16 +1528,20 @@ export const Settings: React.FC = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'stretch' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                         <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          Draw signature below in blue ink, OR upload a signature image file:
+                          Press and drag your mouse cursor inside the box below to sign like in MS Paint:
                         </span>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
                           <Upload size={14} /> Upload Signature Image
                           <input type="file" accept="image/*" onChange={handleSignatureFileUpload} style={{ display: 'none' }} />
                         </label>
                       </div>
-                      <div style={{ position: 'relative', border: '2px dashed var(--border-color)', borderRadius: '14px', backgroundColor: '#fff', overflow: 'hidden', height: '140px', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.02)' }}>
+                      <div style={{ position: 'relative', border: '2px dashed #0284c7', borderRadius: '14px', backgroundColor: '#ffffff', overflow: 'hidden', height: '150px', boxShadow: 'inset 0 2px 8px rgba(0,0,0,0.03)' }}>
                         <canvas
                           ref={canvasRef}
+                          onPointerDown={startDrawing}
+                          onPointerMove={draw}
+                          onPointerUp={stopDrawing}
+                          onPointerCancel={stopDrawing}
                           onMouseDown={startDrawing}
                           onMouseMove={draw}
                           onMouseUp={stopDrawing}
@@ -1507,7 +1552,12 @@ export const Settings: React.FC = () => {
                           style={{ width: '100%', height: '100%', cursor: 'crosshair', display: 'block', touchAction: 'none' }}
                         />
                       </div>
-                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                      <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                        {savedSignature && (
+                          <button type="button" onClick={() => setIsPadEditing(false)} className="btn btn-secondary btn-sm" style={{ marginRight: 'auto' }}>
+                            Cancel
+                          </button>
+                        )}
                         <button type="button" onClick={clearSignaturePad} className="btn btn-secondary btn-sm">
                           Clear Pad
                         </button>
