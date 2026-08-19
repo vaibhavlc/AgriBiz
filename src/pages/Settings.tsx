@@ -423,7 +423,7 @@ export const Settings: React.FC = () => {
   const [logo, setLogo] = useState(settings.logo || '');
   const [watermarkLogo, setWatermarkLogo] = useState(settings.watermarkLogo || '');
   const [savedSignature, setSavedSignature] = useState(settings.signature || '');
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Banking Details
@@ -677,40 +677,57 @@ export const Settings: React.FC = () => {
     setWatermarkLogo('');
   };
 
-  // Initialize signature canvas size cleanly on mount
+  // Synchronously size signature canvas on mount so cursor drawing is 100% smooth
   useEffect(() => {
     if (activeTab === 'branding' && !savedSignature && canvasRef.current) {
       const canvas = canvasRef.current;
       const rect = canvas.getBoundingClientRect();
-      if (rect.width > 0 && rect.height > 0) {
-        canvas.width = rect.width;
-        canvas.height = rect.height;
+      const w = Math.round(rect.width || canvas.offsetWidth || 500);
+      const h = Math.round(rect.height || canvas.offsetHeight || 140);
+      if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
+        canvas.width = w;
+        canvas.height = h;
       }
     }
   }, [activeTab, savedSignature]);
+
+  // Global mouseup / touchend listener to guarantee mouse cursor release is caught anywhere
+  useEffect(() => {
+    const handleGlobalRelease = () => {
+      isDrawingRef.current = false;
+    };
+    window.addEventListener('mouseup', handleGlobalRelease);
+    window.addEventListener('touchend', handleGlobalRelease);
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalRelease);
+      window.removeEventListener('touchend', handleGlobalRelease);
+    };
+  }, []);
 
   const getEventCoords = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
     canvas: HTMLCanvasElement
   ) => {
     const rect = canvas.getBoundingClientRect();
+    let clientX = 0;
+    let clientY = 0;
+
     if ('touches' in e && e.touches && e.touches.length > 0) {
-      return {
-        x: (e.touches[0].clientX - rect.left) * (canvas.width / rect.width),
-        y: (e.touches[0].clientY - rect.top) * (canvas.height / rect.height),
-      };
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
     } else if ('changedTouches' in e && e.changedTouches && e.changedTouches.length > 0) {
-      return {
-        x: (e.changedTouches[0].clientX - rect.left) * (canvas.width / rect.width),
-        y: (e.changedTouches[0].clientY - rect.top) * (canvas.height / rect.height),
-      };
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
     } else {
       const mouseEvent = e as React.MouseEvent<HTMLCanvasElement>;
-      return {
-        x: (mouseEvent.clientX - rect.left) * (canvas.width / rect.width),
-        y: (mouseEvent.clientY - rect.top) * (canvas.height / rect.height),
-      };
+      clientX = mouseEvent.clientX;
+      clientY = mouseEvent.clientY;
     }
+
+    return {
+      x: (clientX - rect.left) * (canvas.width / rect.width),
+      y: (clientY - rect.top) * (canvas.height / rect.height),
+    };
   };
 
   const startDrawing = (
@@ -722,9 +739,10 @@ export const Settings: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    if (canvas.width === 0 || canvas.height === 0 || canvas.width !== canvas.offsetWidth) {
-      canvas.width = canvas.offsetWidth || 500;
-      canvas.height = canvas.offsetHeight || 140;
+    if (canvas.width === 0 || canvas.height === 0) {
+      const rect = canvas.getBoundingClientRect();
+      canvas.width = Math.round(rect.width || canvas.offsetWidth || 500);
+      canvas.height = Math.round(rect.height || canvas.offsetHeight || 140);
     }
 
     const coords = getEventCoords(e, canvas);
@@ -734,13 +752,13 @@ export const Settings: React.FC = () => {
     ctx.strokeStyle = '#1E3A8A'; // Professional dark blue ink
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
-    setIsDrawing(true);
+    isDrawingRef.current = true;
   };
 
   const draw = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>
   ) => {
-    if (!isDrawing) return;
+    if (!isDrawingRef.current) return;
     if (e.cancelable) e.preventDefault();
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -753,7 +771,7 @@ export const Settings: React.FC = () => {
   };
 
   const stopDrawing = () => {
-    setIsDrawing(false);
+    isDrawingRef.current = false;
   };
 
   const clearSignaturePad = () => {
