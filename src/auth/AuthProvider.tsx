@@ -7,20 +7,32 @@ import { initialSettings } from '../utils/dummyData';
 import type { User, Company, UserRole } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(() => authService.getCurrentUser());
   const [currentCompany, setCurrentCompany] = useState<Company | null>(() => authService.getCurrentCompany());
+  const [isInitializing, setIsInitializing] = useState<boolean>(true);
 
   const refreshUser = async () => {
-    const savedCompany = authService.getCurrentCompany();
-    if (savedCompany) {
-      setCurrentCompany(savedCompany);
+    try {
+      const savedCompany = authService.getCurrentCompany();
+      if (savedCompany) {
+        setCurrentCompany(savedCompany);
+      }
+      const savedUser = authService.getCurrentUser();
+      const res = await authService.refreshSession();
+      if (res.success && res.company) {
+        setCurrentCompany(res.company);
+      }
+      // Maintain active staff session on browser refresh if sessionStorage user exists
+      if (savedUser) {
+        setCurrentUser(savedUser);
+      } else {
+        setCurrentUser(null);
+      }
+    } catch (err) {
+      console.warn('Session restoration check warning:', err);
+    } finally {
+      setIsInitializing(false);
     }
-    const res = await authService.refreshSession();
-    if (res.success && res.company) {
-      setCurrentCompany(res.company);
-    }
-    // Always require Staff Selection & Staff PIN authentication on app load / refresh
-    setCurrentUser(null);
   };
 
   useEffect(() => {
@@ -128,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentUser,
         currentCompany,
         isAuthenticated,
+        isInitializing,
         role,
         login,
         staffLogin,

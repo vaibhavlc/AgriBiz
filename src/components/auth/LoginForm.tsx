@@ -25,7 +25,11 @@ const ROLE_CONFIG = {
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwitchToForgot }) => {
   const { login, staffLogin, currentCompany } = useAuth();
 
-  const [stage, setStage] = useState<Stage>('business-login');
+  const [stage, setStage] = useState<Stage>(() => {
+    const savedCompany = authService.getCurrentCompany();
+    const storedRefreshToken = typeof window !== 'undefined' ? localStorage.getItem('agribiz_refresh_token') : null;
+    return (savedCompany || storedRefreshToken) ? 'staff-selection' : 'business-login';
+  });
 
   // Business login
   const [mobile, setMobile] = useState('');
