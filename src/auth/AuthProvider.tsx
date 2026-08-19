@@ -69,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: 'business',
         businessName: res.company.businessName,
         ownerName: res.company.ownerName,
+        logo: res.company.logo || '',
         phone: res.company.mobile,
         email: res.company.email || '',
         gstin: res.company.gstin || '',

@@ -211,8 +211,45 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   // ── Business Brand Header (Displays company logo & name prominently) ───────
   const BusinessBrandHeader = () => {
     const company = currentCompany || authService.getCurrentCompany();
-    const businessName = company?.businessName || 'AgriBiz Trader Suite';
-    const logoUrl = company?.logo;
+
+    // Multi-source fallback resolution for uploaded business logo
+    let logoUrl: string | undefined = company?.logo;
+
+    if (!logoUrl) {
+      try {
+        const savedSettings = typeof window !== 'undefined' ? localStorage.getItem('agribiz_settings') : null;
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed.logo && typeof parsed.logo === 'string' && parsed.logo.trim()) {
+            logoUrl = parsed.logo.trim();
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!logoUrl) {
+      try {
+        const cachedBranding = typeof window !== 'undefined' ? localStorage.getItem('agribiz_business_branding') : null;
+        if (cachedBranding) {
+          const parsed = JSON.parse(cachedBranding);
+          if (parsed.logoUrl && typeof parsed.logoUrl === 'string' && parsed.logoUrl.trim()) {
+            logoUrl = parsed.logoUrl.trim();
+          }
+        }
+      } catch (e) {}
+    }
+
+    let businessName = company?.businessName;
+    if (!businessName) {
+      try {
+        const savedSettings = typeof window !== 'undefined' ? localStorage.getItem('agribiz_settings') : null;
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          if (parsed.businessName) businessName = parsed.businessName;
+        }
+      } catch (e) {}
+    }
+    if (!businessName) businessName = 'AgriBiz Trader Suite';
 
     return (
       <div style={{ textAlign: 'center', marginBottom: '12px' }}>
