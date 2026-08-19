@@ -370,6 +370,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         break;
       }
+      case 'Staff': {
+        if (rawRecord) {
+          const targetUserId = rawRecord.id || rawRecord.userId || recId;
+          const targetPresence = rawRecord.presenceStatus;
+          window.dispatchEvent(new CustomEvent('staff-presence-changed', {
+            detail: { userId: targetUserId, presenceStatus: targetPresence, record: rawRecord }
+          }));
+          window.dispatchEvent(new CustomEvent('staff-list-changed', {
+            detail: { userId: targetUserId, record: rawRecord }
+          }));
+        }
+        break;
+      }
       default: {
         reloadData();
         break;

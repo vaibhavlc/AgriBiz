@@ -192,8 +192,15 @@ export const Settings: React.FC = () => {
 
     const handlePresenceChanged = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail && detail.userId) {
-        setUsersList(prev => prev.map(u => u.id === detail.userId ? { ...u, presenceStatus: detail.presenceStatus } : u));
+      if (detail && detail.userId && detail.presenceStatus) {
+        setUsersList(prev => prev.map(u => {
+          const uId = u.id || (u as any).userId || (u as any)._id;
+          const matchId = detail.userId || detail.record?.id || detail.record?.userId;
+          if (uId === matchId) {
+            return { ...u, presenceStatus: detail.presenceStatus };
+          }
+          return u;
+        }));
       }
     };
 

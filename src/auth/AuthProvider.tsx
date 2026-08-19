@@ -44,6 +44,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const updated = { ...currentUser, presenceStatus };
     setCurrentUser(updated);
     sessionStorage.setItem('agribiz_current_user', JSON.stringify(updated));
+
+    // Dispatch local staff-presence-changed event
+    window.dispatchEvent(new CustomEvent('staff-presence-changed', {
+      detail: { userId: currentUser.id, presenceStatus, record: updated }
+    }));
+
     try {
       await api.put('/users/presence', { presenceStatus });
     } catch (err) {
