@@ -677,21 +677,38 @@ export const Settings: React.FC = () => {
     setWatermarkLogo('');
   };
 
+  // Initialize signature canvas size cleanly on mount
+  useEffect(() => {
+    if (activeTab === 'branding' && !savedSignature && canvasRef.current) {
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+      }
+    }
+  }, [activeTab, savedSignature]);
+
   const getEventCoords = (
     e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>,
     canvas: HTMLCanvasElement
   ) => {
     const rect = canvas.getBoundingClientRect();
-    if ('touches' in e) {
-      if (e.touches.length === 0) return { x: 0, y: 0 };
+    if ('touches' in e && e.touches && e.touches.length > 0) {
       return {
         x: (e.touches[0].clientX - rect.left) * (canvas.width / rect.width),
         y: (e.touches[0].clientY - rect.top) * (canvas.height / rect.height),
       };
-    } else {
+    } else if ('changedTouches' in e && e.changedTouches && e.changedTouches.length > 0) {
       return {
-        x: (e.clientX - rect.left) * (canvas.width / rect.width),
-        y: (e.clientY - rect.top) * (canvas.height / rect.height),
+        x: (e.changedTouches[0].clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.changedTouches[0].clientY - rect.top) * (canvas.height / rect.height),
+      };
+    } else {
+      const mouseEvent = e as React.MouseEvent<HTMLCanvasElement>;
+      return {
+        x: (mouseEvent.clientX - rect.left) * (canvas.width / rect.width),
+        y: (mouseEvent.clientY - rect.top) * (canvas.height / rect.height),
       };
     }
   };
@@ -705,14 +722,15 @@ export const Settings: React.FC = () => {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    if (canvas.width !== canvas.offsetWidth || canvas.height !== canvas.offsetHeight) {
-      canvas.width = canvas.offsetWidth;
-      canvas.height = canvas.offsetHeight;
+    if (canvas.width === 0 || canvas.height === 0 || canvas.width !== canvas.offsetWidth) {
+      canvas.width = canvas.offsetWidth || 500;
+      canvas.height = canvas.offsetHeight || 140;
     }
 
     const coords = getEventCoords(e, canvas);
     ctx.lineWidth = 3;
     ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.strokeStyle = '#1E3A8A'; // Professional dark blue ink
     ctx.beginPath();
     ctx.moveTo(coords.x, coords.y);
@@ -827,6 +845,30 @@ export const Settings: React.FC = () => {
     if (showToast) {
       showToast('Signature removed successfully!');
     }
+  };
+
+  const handleSignatureFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 1.5 * 1024 * 1024) {
+      alert('Selected signature image size exceeds 1.5MB limit. Please upload a smaller compressed image.');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64Data = reader.result as string;
+      setSavedSignature(base64Data);
+      updateSettings({
+        ...settings,
+        signature: base64Data
+      });
+      if (showToast) {
+        showToast('Signature image uploaded successfully!');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleReset = () => {
@@ -1409,19 +1451,32 @@ export const Settings: React.FC = () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', marginTop: '20px' }}>
                   {savedSignature ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '12px', width: '240px', height: '90px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff' }}>
+                      <div style={{ border: '2px dashed var(--border-color)', padding: '12px', borderRadius: '14px', width: '260px', height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
                         <img src={savedSignature} alt="E-Signature Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                       </div>
-                      <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm">
-                        <Trash2 size={14} /> Remove Signature
-                      </button>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ Authorized Signatory E-Signature Active</div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
+                          <Upload size={14} /> Upload New Image
+                          <input type="file" accept="image/*" onChange={handleSignatureFileUpload} style={{ display: 'none' }} />
+                        </label>
+                        <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm">
+                          <Trash2 size={14} /> Remove Signature
+                        </button>
+                      </div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', alignItems: 'stretch' }}>
-                      <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                        Draw your signature inside the box below in blue ink (automatically cropped to boundaries on save):
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'stretch' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                          Draw signature below in blue ink, OR upload a signature image file:
+                        </span>
+                        <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
+                          <Upload size={14} /> Upload Signature Image
+                          <input type="file" accept="image/*" onChange={handleSignatureFileUpload} style={{ display: 'none' }} />
+                        </label>
                       </div>
-                      <div style={{ position: 'relative', border: '2px dashed var(--border-color)', borderRadius: '12px', backgroundColor: '#fff', overflow: 'hidden', height: '120px' }}>
+                      <div style={{ position: 'relative', border: '2px dashed var(--border-color)', borderRadius: '14px', backgroundColor: '#fff', overflow: 'hidden', height: '140px', boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.02)' }}>
                         <canvas
                           ref={canvasRef}
                           onMouseDown={startDrawing}
@@ -1439,7 +1494,7 @@ export const Settings: React.FC = () => {
                           Clear Pad
                         </button>
                         <button type="button" onClick={handleSaveSignature} className="btn btn-primary btn-sm">
-                          Save Signature
+                          Save Drawn Signature
                         </button>
                       </div>
                     </div>
