@@ -61,11 +61,11 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
           border: 1px solid var(--border-color, #e2e8f0);
           border-radius: 20px;
           box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.15), 0 10px 20px -5px rgba(0, 0, 0, 0.04);
-          padding: 22px 28px;
+          padding: 18px 24px;
           box-sizing: border-box;
           position: relative;
           z-index: 10;
-          max-height: calc(98vh - 36px);
+          max-height: calc(98vh - 30px);
           overflow-y: auto;
           overflow-x: hidden;
           animation: authCardIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
@@ -91,7 +91,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         }
 
         .auth-trust-footer {
-          margin-top: 12px;
+          margin-top: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -114,7 +114,7 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
 
         @media (max-width: 480px) {
           .auth-card-main {
-            padding: 22px 18px;
+            padding: 16px 16px;
             border-radius: 16px;
           }
         }

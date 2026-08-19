@@ -4,7 +4,7 @@ import { authService } from '../../auth/authService';
 import api from '../../utils/api';
 import {
   Smartphone, Lock, Eye, EyeOff, ArrowRight,
-  ChevronLeft, Shield, CheckCircle, KeyRound
+  ChevronLeft, KeyRound
 } from 'lucide-react';
 import type { User as UserType } from '../../types';
 
@@ -180,9 +180,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     setErrorMsg('');
     setLoading(true);
     try {
-      // Call the update-pin endpoint (no currentPin needed since no PIN exists yet)
       await api.put('/users/pin', { newPin });
-      // Now log in with the newly created PIN
       const res = await staffLogin(currentCompany!.id, selectedStaff.id, newPin);
       if (!res.success) {
         setErrorMsg(res.message);
@@ -192,31 +190,73 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     } finally {
       setLoading(false);
     }
-  };
-
-  // ── Brand Header ────────────────────────────────────────────────────────
+  };  // ── Brand Header (Default fallback for Business Login) ─────────────────────
   const BrandHeader = () => (
-    <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+    <div style={{ textAlign: 'center', marginBottom: '16px' }}>
       <div style={{
-        width: '52px', height: '52px', borderRadius: '14px',
+        width: '48px', height: '48px', borderRadius: '14px',
         background: 'linear-gradient(135deg,#10b981 0%,#059669 100%)',
         color: '#fff', display: 'flex', alignItems: 'center',
-        justifyContent: 'center', margin: '0 auto 10px', boxShadow: '0 8px 20px rgba(16,185,129,0.28)', fontSize: '22px',
+        justifyContent: 'center', margin: '0 auto 8px', boxShadow: '0 6px 18px rgba(16,185,129,0.28)', fontSize: '20px',
       }}>🌱</div>
-      <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0 }}>
+      <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0 }}>
         AgriBiz Trader Suite
       </h2>
-      <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted,#64748b)', margin: '4px 0 0' }}>
+      <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted,#64748b)', margin: '3px 0 0' }}>
         Manage Billing • Inventory • GST • Reports
       </p>
     </div>
   );
 
+  // ── Business Brand Header (Displays company logo & name prominently) ───────
+  const BusinessBrandHeader = () => {
+    const company = currentCompany || authService.getCurrentCompany();
+    const businessName = company?.businessName || 'AgriBiz Trader Suite';
+    const logoUrl = company?.logo;
+
+    return (
+      <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+        <div style={{
+          width: '50px',
+          height: '50px',
+          borderRadius: '14px',
+          background: logoUrl ? '#ffffff' : 'linear-gradient(135deg,#10b981 0%,#059669 100%)',
+          color: '#fff',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          margin: '0 auto 6px',
+          boxShadow: '0 6px 18px rgba(16,185,129,0.24)',
+          border: logoUrl ? '1.5px solid var(--border-color, #e2e8f0)' : 'none',
+          padding: logoUrl ? '3px' : '0',
+          overflow: 'hidden',
+          boxSizing: 'border-box',
+        }}>
+          {logoUrl ? (
+            <img
+              src={logoUrl}
+              alt={businessName}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', borderRadius: '11px' }}
+            />
+          ) : (
+            <span style={{ fontSize: '22px' }}>🌱</span>
+          )}
+        </div>
+        <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--primary,#10b981)', marginBottom: '2px' }}>
+          You are logging into
+        </div>
+        <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0, lineHeight: 1.25 }}>
+          {businessName}
+        </h2>
+      </div>
+    );
+  };
+
   const ErrorBanner = () => errorMsg ? (
     <div style={{
-      padding: '10px 14px', borderRadius: '10px',
+      padding: '8px 12px', borderRadius: '10px',
       backgroundColor: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
-      color: '#EF4444', fontSize: '13px', fontWeight: 600, marginBottom: '16px',
+      color: '#EF4444', fontSize: '12px', fontWeight: 600, marginBottom: '12px',
     }}>
       {errorMsg}
     </div>
@@ -246,11 +286,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               </span>
               <input type="tel" className="form-control" placeholder="Enter registered mobile"
                 value={mobile} onChange={e => setMobile(e.target.value)}
-                style={{ paddingLeft: '78px', height: '42px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
+                style={{ paddingLeft: '78px', height: '40px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
                 maxLength={10} autoComplete="tel" autoFocus />
             </div>
           </div>
-          <div style={{ marginBottom: '16px' }}>
+          <div style={{ marginBottom: '14px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '4px', color: 'var(--text-secondary,#475569)' }}>
               Password *
             </label>
@@ -261,7 +301,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               <input type={showPassword ? 'text' : 'password'} className="form-control"
                 placeholder="Enter your password" value={password}
                 onChange={e => setPassword(e.target.value)}
-                style={{ paddingLeft: '40px', paddingRight: '40px', height: '42px', borderRadius: '10px', fontSize: '14px' }}
+                style={{ paddingLeft: '40px', paddingRight: '40px', height: '40px', borderRadius: '10px', fontSize: '14px' }}
                 autoComplete="current-password" />
               <button type="button" onClick={() => setShowPassword(!showPassword)}
                 style={{ position: 'absolute', right: '12px', background: 'none', border: 'none', color: 'var(--text-muted,#94a3b8)', cursor: 'pointer', padding: '4px' }}>
@@ -269,7 +309,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               </button>
             </div>
           </div>
-          <div style={{ textAlign: 'right', marginBottom: '16px' }}>
+          <div style={{ textAlign: 'right', marginBottom: '14px' }}>
             <button type="button"
               style={{ background: 'none', border: 'none', color: 'var(--primary,#10b981)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               onClick={onSwitchToForgot}>
@@ -277,16 +317,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             </button>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}
-            style={{ width: '100%', height: '44px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, justifyContent: 'center', boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
+            style={{ width: '100%', height: '42px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, justifyContent: 'center', boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
             {loading ? 'Verifying...' : <><span>Continue</span> <ArrowRight size={16} /></>}
           </button>
         </form>
-        <div style={{ textAlign: 'center', marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-color,#e2e8f0)' }}>
+        <div style={{ textAlign: 'center', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-color,#e2e8f0)' }}>
           <p style={{ fontSize: '12px', color: 'var(--text-muted,#64748b)', margin: '0 0 6px' }}>
             Don't have a business registered?
           </p>
           <button type="button" className="btn btn-secondary"
-            style={{ width: '100%', borderRadius: '10px', height: '38px', justifyContent: 'center', fontWeight: 700 }}
+            style={{ width: '100%', borderRadius: '10px', height: '36px', justifyContent: 'center', fontWeight: 700 }}
             onClick={onSwitchToRegister}>
             Register Business
           </button>
@@ -299,30 +339,26 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   // STAGE 2 – Select Staff Member
   // ══════════════════════════════════════════════════════════════════════
   if (stage === 'staff-selection') {
-    const company = authService.getCurrentCompany();
     return (
       <div>
-        <BrandHeader />
-        {company && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            padding: '10px 14px', borderRadius: '12px',
-            background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)',
-            marginBottom: '18px',
-          }}>
-            <CheckCircle size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-            <div>
-              <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>{company.businessName}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted,#64748b)' }}>Select who is using the app now</div>
-            </div>
-          </div>
-        )}
-        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary,#475569)', marginBottom: '12px' }}>
-          Active Staff Members
+        <BusinessBrandHeader />
+        <div style={{
+          fontSize: '12px',
+          fontWeight: 700,
+          color: 'var(--text-secondary,#475569)',
+          textAlign: 'center',
+          marginBottom: '12px',
+          background: 'rgba(16,185,129,0.06)',
+          border: '1px solid rgba(16,185,129,0.15)',
+          borderRadius: '10px',
+          padding: '6px 10px'
+        }}>
+          Select your staff profile to continue
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+        <ErrorBanner />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
           {staffList.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted,#94a3b8)', fontSize: '13px' }}>
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted,#94a3b8)', fontSize: '12px' }}>
               No active staff found. Please reconnect and try again.
             </div>
           ) : (
@@ -333,8 +369,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 return (
                   <button key={staff.id} type="button" onClick={() => handleSelectStaff(staff)}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '14px',
-                    padding: '12px 16px', borderRadius: '14px', textAlign: 'left',
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '10px 14px', borderRadius: '12px', textAlign: 'left',
                     border: '1.5px solid var(--border-color,#e2e8f0)',
                     background: 'var(--surface,#fff)', cursor: 'pointer', width: '100%',
                     transition: 'all 0.2s ease',
@@ -348,17 +384,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                     (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface,#fff)';
                   }}>
                   <div style={{
-                    width: '44px', height: '44px', borderRadius: '12px',
+                    width: '38px', height: '38px', borderRadius: '10px',
                     background: cfg.bg, border: `1.5px solid ${cfg.color}22`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0,
                   }}>
                     {cfg.emoji}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary,#0f172a)' }}>{staff.name}</div>
-                    <div style={{ fontSize: '12px', fontWeight: 600, color: cfg.color, marginTop: '2px' }}>{staff.role}</div>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>{staff.name}</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: cfg.color, marginTop: '1px' }}>{staff.role}</div>
                   </div>
-                  <ArrowRight size={16} style={{ color: 'var(--text-muted,#94a3b8)', flexShrink: 0 }} />
+                  <ArrowRight size={15} style={{ color: 'var(--text-muted,#94a3b8)', flexShrink: 0 }} />
                 </button>
               );
             })
@@ -373,7 +409,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           style={{
             display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center',
             width: '100%', background: 'none', border: '1px solid var(--border-color,#e2e8f0)',
-            borderRadius: '10px', padding: '10px', fontSize: '12px', fontWeight: 700,
+            borderRadius: '10px', padding: '8px', fontSize: '12px', fontWeight: 700,
             color: 'var(--text-secondary,#475569)', cursor: 'pointer',
           }}>
           <ChevronLeft size={14} /> Switch Business Account
@@ -390,20 +426,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     const digits = [1,2,3,4,5,6,7,8,9,'⌫',0,'✓'];
     return (
       <div>
-        <BrandHeader />
-        <div style={{ textAlign: 'center', marginBottom: '20px' }}>
-          <div style={{
-            width: '60px', height: '60px', borderRadius: '16px', margin: '0 auto 10px',
-            background: cfg.bg, border: `2px solid ${cfg.color}33`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px',
-          }}>
-            {cfg.emoji}
+        <BusinessBrandHeader />
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          justifyContent: 'center',
+          background: cfg.bg,
+          border: `1.5px solid ${cfg.color}33`,
+          borderRadius: '12px',
+          padding: '8px 14px',
+          marginBottom: '12px'
+        }}>
+          <span style={{ fontSize: '20px' }}>{cfg.emoji}</span>
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary,#0f172a)', lineHeight: 1.1 }}>{selectedStaff.name}</div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: cfg.color, marginTop: '2px' }}>{selectedStaff.role}</div>
           </div>
-          <div style={{ fontWeight: 800, fontSize: '16px', color: 'var(--text-primary,#0f172a)' }}>{selectedStaff.name}</div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: cfg.color, marginTop: '3px' }}>{selectedStaff.role}</div>
         </div>
-        <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary,#475569)', textAlign: 'center', marginBottom: '16px' }}>
-          Enter 4-Digit PIN (Type via Keyboard or Keypad)
+
+        <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary,#475569)', textAlign: 'center', marginBottom: '10px' }}>
+          Enter 4-Digit PIN
         </div>
         <ErrorBanner />
 
@@ -432,7 +475,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
         {/* 4 Distinct PIN Input Digit Boxes */}
         <div
-          style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginBottom: '24px', cursor: 'pointer' }}
+          style={{ display: 'flex', justifyContent: 'center', gap: '10px', marginBottom: '14px', cursor: 'pointer' }}
           onClick={() => {
             const el = document.getElementById('hidden-pin-input');
             if (el) el.focus();
@@ -445,9 +488,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               <div
                 key={i}
                 style={{
-                  width: '50px',
-                  height: '58px',
-                  borderRadius: '14px',
+                  width: '44px',
+                  height: '48px',
+                  borderRadius: '12px',
                   border: isCurrent
                     ? `2.5px solid ${cfg.color}`
                     : isFilled
@@ -461,10 +504,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '26px',
+                  fontSize: '24px',
                   fontWeight: 800,
                   color: cfg.color,
-                  boxShadow: isCurrent ? `0 0 14px ${cfg.color}44` : 'none',
+                  boxShadow: isCurrent ? `0 0 12px ${cfg.color}44` : 'none',
                   transition: 'all 0.15s ease',
                   transform: isCurrent ? 'scale(1.04)' : 'scale(1)',
                 }}
@@ -475,7 +518,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           })}
         </div>
         {/* Numeric Keypad */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '18px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px', marginBottom: '12px' }}>
           {digits.map((d, i) => {
             const isBack = d === '⌫', isEnter = d === '✓';
             return (
@@ -486,8 +529,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                   else handlePinDigit(d.toString());
                 }}
                 style={{
-                  height: '54px', borderRadius: '14px',
-                  fontSize: isBack || isEnter ? '18px' : '20px', fontWeight: 700,
+                  height: '44px', borderRadius: '12px',
+                  fontSize: isBack || isEnter ? '17px' : '18px', fontWeight: 700,
                   cursor: 'pointer', transition: 'all 0.15s ease',
                   border: isEnter ? 'none' : '1.5px solid var(--border-color,#e2e8f0)',
                   background: isEnter
@@ -496,7 +539,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                   color: isEnter
                     ? (pin.length === 4 ? '#fff' : 'var(--text-muted,#94a3b8)')
                     : isBack ? '#ef4444' : 'var(--text-primary,#0f172a)',
-                  boxShadow: isEnter && pin.length === 4 ? `0 4px 14px ${cfg.color}44` : 'none',
+                  boxShadow: isEnter && pin.length === 4 ? `0 4px 12px ${cfg.color}44` : 'none',
                 }}>
                 {loading && isEnter ? '...' : d}
               </button>
@@ -508,15 +551,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           style={{
             display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center',
             width: '100%', background: 'none', border: '1px solid var(--border-color,#e2e8f0)',
-            borderRadius: '10px', padding: '10px', fontSize: '12px', fontWeight: 700,
+            borderRadius: '10px', padding: '8px', fontSize: '12px', fontWeight: 700,
             color: 'var(--text-secondary,#475569)', cursor: 'pointer',
           }}>
           <ChevronLeft size={14} /> Back to Staff Selection
         </button>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center', marginTop: '14px' }}>
-          <Shield size={11} style={{ color: 'var(--text-muted,#94a3b8)' }} />
-          <span style={{ fontSize: '11px', color: 'var(--text-muted,#94a3b8)' }}>PIN is encrypted and verified securely</span>
-        </div>
       </div>
     );
   }
