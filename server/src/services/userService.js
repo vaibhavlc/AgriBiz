@@ -40,6 +40,7 @@ class UserService {
     if (updateData.name) payload.name = updateData.name;
     if (updateData.role) payload.role = updateData.role;
     if (updateData.status) payload.status = updateData.status;
+    if (updateData.presenceStatus) payload.presenceStatus = updateData.presenceStatus;
     if (updateData.customPermissions) payload.customPermissions = updateData.customPermissions;
 
     if (updateData.password && updateData.password.trim()) {
