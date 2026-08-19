@@ -9,6 +9,8 @@ const STORAGE_KEYS = {
   CURRENT_USER: 'agribiz_current_user',           // sessionStorage — cleared on tab close
   CURRENT_COMPANY: 'agribiz_current_company',      // localStorage  — persists across restarts
   REFRESH_TOKEN: 'agribiz_refresh_token',          // localStorage  — persists for auto-refresh
+  STAFF_PIN_VERIFIED: 'agribiz_staff_pin_verified',// sessionStorage — strictly set only after correct PIN
+  TAB_TOKEN: 'agribiz_tab_token',                  // sessionStorage — window.name bound tab token
 };
 
 // Initial Mock Seed Data for Instant 1-Click Demo Testing (used for local fallback)
@@ -60,8 +62,28 @@ class AuthService {
     }
   }
 
+  // Ensures new browser tabs require Staff PIN entry, preventing session inheritance bypass
+  public initTabSession(): void {
+    if (typeof window === 'undefined') return;
+
+    const storedTabToken = sessionStorage.getItem(STORAGE_KEYS.TAB_TOKEN);
+    const currentWindowName = window.name;
+
+    if (!currentWindowName || !storedTabToken || currentWindowName !== storedTabToken) {
+      const newTabToken = 'tab_' + Math.random().toString(36).slice(2) + Date.now();
+      window.name = newTabToken;
+      sessionStorage.setItem(STORAGE_KEYS.TAB_TOKEN, newTabToken);
+
+      // New tab requires PIN entry — clear staff PIN authentication state for this tab
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
+      sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+    }
+  }
+
   constructor() {
     this.initStorage();
+    this.initTabSession();
   }
 
   // --- Token Management ---
@@ -96,6 +118,11 @@ class AuthService {
 
   public getCurrentUser(): User | null {
     if (typeof window === 'undefined') return null;
+
+    // Strict security check: User must have completed PIN verification in this tab
+    const isPinVerified = sessionStorage.getItem(STORAGE_KEYS.STAFF_PIN_VERIFIED) === 'true';
+    if (!isPinVerified) return null;
+
     const raw = sessionStorage.getItem(STORAGE_KEYS.CURRENT_USER);
     if (!raw) return null;
     try {
@@ -162,8 +189,9 @@ class AuthService {
         if (refreshToken) {
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
-        // Staff session → sessionStorage only (forces PIN on each browser open)
+        // Staff session → sessionStorage only (forces PIN on each browser open / tab open)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
         // Refresh company info in localStorage
         localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
@@ -223,8 +251,9 @@ class AuthService {
         if (refreshToken) {
           localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
-        // Staff/owner session in sessionStorage (forces PIN on restart)
+        // Staff/owner session in sessionStorage (forces PIN on restart / new tab)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
         // Company session in localStorage (persists across browser restarts)
         localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
@@ -256,7 +285,10 @@ class AuthService {
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+      sessionStorage.removeItem(STORAGE_KEYS.TAB_TOKEN);
+      if (typeof window !== 'undefined') window.name = '';
     }
   }
 
@@ -299,6 +331,7 @@ class AuthService {
   // Only clears the staff session — keeps company session alive so next open goes to Staff Selection
   public logoutStaff(): void {
     sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
     sessionStorage.removeItem(STORAGE_KEYS.SESSION);
     this.setAccessToken(null);
   }
@@ -326,6 +359,7 @@ class AuthService {
       localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
       localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+      sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
       return { success: false };
     }
