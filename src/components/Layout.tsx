@@ -82,7 +82,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     suppliers,
   } = useApp();
 
-  const { currentUser, currentCompany, hasPermission, logout, logoutStaff, updateUserPresence } = useAuth();
+  const { currentUser, currentCompany, hasPermission, logout, logoutStaff } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -107,23 +107,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isMobileMoreOpen, setIsMobileMoreOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  const [userStatus, setUserStatus] = useState<'online' | 'busy' | 'away'>(currentUser?.presenceStatus || 'online');
-
-  useEffect(() => {
-    if (currentUser?.presenceStatus) {
-      setUserStatus(currentUser.presenceStatus as any);
-    }
-  }, [currentUser?.presenceStatus]);
-
-  const handleUpdatePresence = async (newStatus: 'online' | 'busy' | 'away') => {
-    setUserStatus(newStatus);
-    try {
-      await updateUserPresence(newStatus);
-      showToast(`Status updated to ${newStatus.charAt(0).toUpperCase() + newStatus.slice(1)}`, 'success');
-    } catch (err) {
-      console.error('Failed to update presence status:', err);
-    }
-  };
 
   const mainWrapperRef = useRef<HTMLDivElement>(null);
   const bottomNavRef = useRef<HTMLDivElement>(null);
@@ -903,7 +886,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="avatar-circle">
                     {getUserInitials(currentUser?.name)}
                   </div>
-                  <span className={`status-indicator ${userStatus}`}></span>
                 </div>
                 <div className="profile-details">
                   <span className="profile-username">
@@ -931,7 +913,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <div className="profile-dropdown-header-card">
                     <div className="profile-dropdown-avatar">
                       {getUserInitials(currentUser?.name)}
-                      <span className={`profile-status-ring ${userStatus}`} />
                     </div>
                     <div className="profile-dropdown-info">
                       <div className="profile-dropdown-name-row">
@@ -950,40 +931,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           <span>+91 {currentUser.mobile}</span>
                         </div>
                       )}
-                    </div>
-                  </div>
-
-                  {/* Presence Selector Segmented Control */}
-                  <div className="profile-dropdown-section">
-                    <div className="profile-section-title">Set Status</div>
-                    <div className="status-selector-pills">
-                      <button
-                        type="button"
-                        className={`status-pill ${userStatus === 'online' ? 'active online' : ''}`}
-                        onClick={() => handleUpdatePresence('online')}
-                        title="Set status to Online"
-                      >
-                        <span className="status-dot online" />
-                        <span>Online</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`status-pill ${userStatus === 'busy' ? 'active busy' : ''}`}
-                        onClick={() => handleUpdatePresence('busy')}
-                        title="Set status to Busy"
-                      >
-                        <span className="status-dot busy" />
-                        <span>Busy</span>
-                      </button>
-                      <button
-                        type="button"
-                        className={`status-pill ${userStatus === 'away' ? 'active away' : ''}`}
-                        onClick={() => handleUpdatePresence('away')}
-                        title="Set status to Away"
-                      >
-                        <span className="status-dot away" />
-                        <span>Away</span>
-                      </button>
                     </div>
                   </div>
 

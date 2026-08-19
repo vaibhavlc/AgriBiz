@@ -2067,17 +2067,6 @@ export const Settings: React.FC = () => {
                                       position: 'relative'
                                     }}>
                                       {getUserInitials(u.name)}
-                                      <span style={{
-                                        position: 'absolute',
-                                        bottom: '-2px',
-                                        right: '-2px',
-                                        width: '10px',
-                                        height: '10px',
-                                        borderRadius: '50%',
-                                        border: '1.5px solid var(--card-bg, #ffffff)',
-                                        backgroundColor: (u as any).presenceStatus === 'busy' ? '#EF4444' : (u as any).presenceStatus === 'away' ? '#F59E0B' : '#10B981',
-                                        display: 'inline-block'
-                                      }} title={(u as any).presenceStatus || 'online'}></span>
                                     </div>
                                     <div style={{ textAlign: 'left' }}>
                                       <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary)' }}>{u.name}</div>
@@ -2104,10 +2093,8 @@ export const Settings: React.FC = () => {
                                       Disabled
                                     </span>
                                   ) : (
-                                    <span className={`badge ${
-                                      u.presenceStatus === 'busy' ? 'badge-danger' : u.presenceStatus === 'away' ? 'badge-warning' : 'badge-success'
-                                    }`} style={{ fontSize: '11px', padding: '3px 8px', textTransform: 'capitalize' }}>
-                                      {u.presenceStatus || 'online'}
+                                    <span className="badge badge-success" style={{ fontSize: '11px', padding: '3px 8px' }}>
+                                      Active
                                     </span>
                                   )}
                                 </td>
@@ -2187,17 +2174,6 @@ export const Settings: React.FC = () => {
                                 flexShrink: 0, position: 'relative'
                               }}>
                                 {getUserInitials(u.name)}
-                                <span style={{
-                                  position: 'absolute',
-                                  bottom: '-2px',
-                                  right: '-2px',
-                                  width: '10px',
-                                  height: '10px',
-                                  borderRadius: '50%',
-                                  border: '1.5px solid var(--card-bg, #ffffff)',
-                                  backgroundColor: (u as any).presenceStatus === 'busy' ? '#EF4444' : (u as any).presenceStatus === 'away' ? '#F59E0B' : '#10B981',
-                                  display: 'inline-block'
-                                }} title={(u as any).presenceStatus || 'online'}></span>
                               </div>
                               <div style={{ minWidth: 0, flex: 1 }}>
                                 <div className="staff-mobile-name-text">{u.name}</div>
@@ -2209,10 +2185,8 @@ export const Settings: React.FC = () => {
                                 Disabled
                               </span>
                             ) : (
-                              <span className={`badge ${
-                                u.presenceStatus === 'busy' ? 'badge-danger' : u.presenceStatus === 'away' ? 'badge-warning' : 'badge-success'
-                              }`} style={{ fontSize: '11px', textTransform: 'capitalize', flexShrink: 0 }}>
-                                {u.presenceStatus || 'online'}
+                              <span className="badge badge-success" style={{ fontSize: '11px', flexShrink: 0 }}>
+                                Active
                               </span>
                             )}
                           </div>
