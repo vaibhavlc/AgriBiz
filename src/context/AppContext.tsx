@@ -95,6 +95,7 @@ interface AppContextType {
   deletePayment: (id: string) => void;
 
   updateSettings: (settings: BusinessSettings) => void;
+  setTheme: (theme: 'light' | 'dark' | 'system') => void;
   resetToDefault: () => void;
 
   expenses: Expense[];
@@ -1538,6 +1539,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     ids.forEach((id) => deletePermanently(id));
   };
 
+  const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
+    const isDark = newTheme === 'dark' || (newTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    if (isDark) {
+      document.body.classList.add('dark-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    setActiveTheme(isDark ? 'dark' : 'light');
+
+    const updated = {
+      ...settings,
+      theme: newTheme,
+    };
+    setSettings(updated);
+
+    try {
+      localStorage.setItem('agribiz_settings', JSON.stringify(updated));
+    } catch (e) {}
+
+    if (navigator.onLine) {
+      api.put('/settings', updated).catch(() => {});
+    }
+  };
+
   const updateSettings = async (updatedSettings: BusinessSettings) => {
     if (!navigator.onLine) {
       showToast('No internet connection. Cannot update settings while offline.', 'error');
@@ -1548,6 +1577,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       businessName: toTitleCase(updatedSettings.businessName),
       ownerName: toTitleCase(updatedSettings.ownerName),
     };
+
+    // Apply theme change instantly
+    if (formatted.theme) {
+      const isDark = formatted.theme === 'dark' || (formatted.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      if (isDark) {
+        document.body.classList.add('dark-theme');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-theme');
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+      setActiveTheme(isDark ? 'dark' : 'light');
+    }
     
     try {
       await api.put('/settings', formatted);
@@ -1652,6 +1694,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         editPayment,
         deletePayment,
         updateSettings,
+        setTheme,
         resetToDefault,
         expenses,
         addExpense,

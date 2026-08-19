@@ -44,7 +44,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     currentTab,
     settings,
     activeTheme,
-    updateSettings,
+    setTheme,
     searchQuery,
     setSearchQuery,
     currentInvoiceId,
@@ -363,10 +363,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   };
 
   const toggleTheme = () => {
-    updateSettings({
-      ...settings,
-      theme: activeTheme === 'light' ? 'dark' : 'light',
-    });
+    setTheme(activeTheme === 'light' ? 'dark' : 'light');
   };
 
 
