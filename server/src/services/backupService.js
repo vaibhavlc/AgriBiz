@@ -10,6 +10,7 @@ import Purchase from '../models/Purchase.js';
 import Expense from '../models/Expense.js';
 import Payment from '../models/Payment.js';
 import RecycleBinItem from '../models/RecycleBinItem.js';
+import TemporaryEraseSnapshot from '../models/TemporaryEraseSnapshot.js';
 import logger from '../config/logger.js';
 import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
@@ -357,6 +358,13 @@ class BackupService {
           { ...opts, upsert: true }
         );
       }
+
+      // 5. Expire any active or temporary erase snapshots for this company (prevents duplicate restore via Undo)
+      await TemporaryEraseSnapshot.updateMany(
+        { companyId, status: { $in: ['ACTIVE', 'SUPERSEDED', 'RESTORING'] } },
+        { $set: { status: 'EXPIRED' } },
+        opts
+      );
 
       // COMMIT TRANSACTION
       if (useTransaction && session) {
