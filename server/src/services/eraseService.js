@@ -257,7 +257,8 @@ class EraseService {
         throw new Error('No active temporary erase snapshot available to undo for this company.');
       }
 
-      const { data, eraseId, dataSummary } = snapshot;
+      const data = snapshot.data || {};
+      const { eraseId, dataSummary } = snapshot;
 
       const prepareDocs = (docs) => {
         if (!docs || !Array.isArray(docs)) return [];

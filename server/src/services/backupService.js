@@ -239,6 +239,7 @@ class BackupService {
         dataSummary: calculatedSummary,
       },
       calculatedSummary,
+      data,
     };
   }
 
@@ -252,7 +253,8 @@ class BackupService {
       throw new Error(validation.message);
     }
 
-    const { data, metadata, calculatedSummary } = validation;
+    const { metadata, calculatedSummary } = validation;
+    const data = backupPayload.data || {};
 
     logger.info('Initiating atomic restore for company %s...', companyId);
 
