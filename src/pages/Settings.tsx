@@ -33,7 +33,6 @@ import {
   HardDrive,
   Download,
   UploadCloud,
-  Database,
   ShieldCheck,
   FileCheck,
   AlertCircle,
@@ -194,6 +193,78 @@ export const Settings: React.FC = () => {
   const [isRestoring, setIsRestoring] = useState(false);
   const [restoreErrorMsg, setRestoreErrorMsg] = useState('');
 
+  // Phase 2: Google Drive & Automatic Backup states
+  const [gdriveStatus, setGdriveStatus] = useState<any>(null);
+  const [backupHistoryData, setBackupHistoryData] = useState<any>(null);
+  const [isConnectingDrive, setIsConnectingDrive] = useState(false);
+  const [isDisconnectingDrive, setIsDisconnectingDrive] = useState(false);
+  const [isTriggeringBackupNow, setIsTriggeringBackupNow] = useState(false);
+
+  const fetchGoogleDriveAndHistory = async () => {
+    try {
+      const res = await api.get('/settings/backup/history');
+      if (res.data.success) {
+        setGdriveStatus(res.data.driveStatus);
+        setBackupHistoryData({
+          lastSuccessfulBackup: res.data.lastSuccessfulBackup,
+          latestAttempt: res.data.latestAttempt,
+          historyList: res.data.historyList || [],
+        });
+      }
+    } catch (err) {
+      console.error('Failed to fetch backup history:', err);
+    }
+  };
+
+  const handleConnectGoogleDrive = async () => {
+    setIsConnectingDrive(true);
+    try {
+      const res = await api.get('/settings/backup/google/auth-url');
+      setIsConnectingDrive(false);
+      if (res.data.success && res.data.url) {
+        window.location.href = res.data.url;
+      }
+    } catch (err: any) {
+      setIsConnectingDrive(false);
+      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to generate Google auth link.', 'error');
+    }
+  };
+
+  const handleDisconnectGoogleDrive = async () => {
+    setIsDisconnectingDrive(true);
+    try {
+      const res = await api.post('/settings/backup/google/disconnect');
+      setIsDisconnectingDrive(false);
+      if (res.data.success) {
+        if (showToast) showToast(res.data.message || 'Google Drive disconnected.', 'info');
+        fetchGoogleDriveAndHistory();
+      }
+    } catch (err: any) {
+      setIsDisconnectingDrive(false);
+      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to disconnect Google Drive.', 'error');
+    }
+  };
+
+  const handleBackupNow = async () => {
+    setIsTriggeringBackupNow(true);
+    try {
+      const res = await api.post('/settings/backup/google/trigger');
+      setIsTriggeringBackupNow(false);
+      if (res.data.success) {
+        if (showToast) showToast('Backup successfully generated and verified on Google Drive!', 'success');
+        fetchGoogleDriveAndHistory();
+        fetchLastBackupInfo();
+      } else {
+        if (showToast) showToast(res.data.message || 'Backup pipeline failed.', 'error');
+        fetchGoogleDriveAndHistory();
+      }
+    } catch (err: any) {
+      setIsTriggeringBackupNow(false);
+      if (showToast) showToast(err.response?.data?.message || err.message || 'Manual Google Drive backup failed.', 'error');
+      fetchGoogleDriveAndHistory();
+    }
+  };
+
   const fetchLastBackupInfo = async () => {
     try {
       const res = await api.get('/settings/backup/last');
@@ -325,6 +396,7 @@ export const Settings: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'backup' && currentCompany) {
       fetchLastBackupInfo();
+      fetchGoogleDriveAndHistory();
     }
     if (activeTab === 'erase' && currentCompany) {
       fetchEraseSummary();
@@ -2531,16 +2603,180 @@ export const Settings: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {/* SECTION 1: Create Backup */}
+                  {/* PHASE 2: Google Drive Automatic Backup Card */}
                   <div className="card">
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Database size={18} />
+                          <HardDrive size={18} />
                         </div>
                         <div>
-                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Create Company Backup</h3>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Generate a complete, downloadable JSON snapshot of current business data</p>
+                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Automatic Google Drive Backup</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Daily scheduled backups at 02:00 AM IST uploaded securely to your private Google Drive</p>
+                        </div>
+                      </div>
+                      <span className={`badge ${gdriveStatus?.connected ? 'badge-success' : 'badge-secondary'}`} style={{ fontSize: '12px', padding: '6px 12px' }}>
+                        {gdriveStatus?.connected ? '✓ Connected' : 'Not Connected'}
+                      </span>
+                    </div>
+
+                    {gdriveStatus?.connected ? (
+                      <div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', backgroundColor: 'var(--bg-secondary)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                          <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Connected Google Account</div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px' }}>{gdriveStatus.googleEmail || 'Google Account'}</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Automatic Schedule</div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#059669', marginTop: '4px' }}>Daily at 02:00 AM IST</div>
+                          </div>
+                          <div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Retention Policy</div>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '4px' }}>7 Daily • 4 Weekly • 12 Monthly</div>
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+                          <button
+                            type="button"
+                            className="btn btn-primary"
+                            onClick={handleBackupNow}
+                            disabled={isTriggeringBackupNow}
+                            style={{ backgroundColor: '#2563eb', borderColor: '#2563eb', fontWeight: 700 }}
+                          >
+                            {isTriggeringBackupNow ? (
+                              <>
+                                <RefreshCw size={15} className="spin" /> Generating & Uploading Backup...
+                              </>
+                            ) : (
+                              <>
+                                <UploadCloud size={15} /> Backup Now (Upload to Drive)
+                              </>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="btn btn-secondary danger"
+                            onClick={handleDisconnectGoogleDrive}
+                            disabled={isDisconnectingDrive}
+                          >
+                            {isDisconnectingDrive ? <RefreshCw size={14} className="spin" /> : 'Disconnect Google Drive'}
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
+                          Connect your Google Drive account to enable automatic 02:00 AM daily backups. Backups are stored in your private Google Drive under <strong>AgriBiz Backups / {currentCompany?.businessName || 'Company'}</strong>. The server automatically refreshes tokens and maintains 7 Daily, 4 Weekly, and 12 Monthly backups.
+                        </p>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={handleConnectGoogleDrive}
+                          disabled={isConnectingDrive}
+                          style={{ fontWeight: 700 }}
+                        >
+                          {isConnectingDrive ? <RefreshCw size={15} className="spin" /> : <HardDrive size={15} />} Connect Google Drive
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 2: Last Successful Backup vs Latest Attempt */}
+                  {backupHistoryData && (
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                      <div className="card" style={{ borderLeft: '4px solid #10b981' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', marginBottom: '6px' }}>
+                          Last Successful Backup
+                        </div>
+                        {backupHistoryData.lastSuccessfulBackup ? (
+                          <div>
+                            <div style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {new Date(backupHistoryData.lastSuccessfulBackup.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                              Type: <strong>{backupHistoryData.lastSuccessfulBackup.backupType}</strong> • File: {backupHistoryData.lastSuccessfulBackup.fileName || 'Google Drive File'}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No successful backups recorded yet.</div>
+                        )}
+                      </div>
+
+                      <div className="card" style={{ borderLeft: backupHistoryData.latestAttempt?.status === 'FAILED' ? '4px solid #ef4444' : '4px solid #3b82f6' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: backupHistoryData.latestAttempt?.status === 'FAILED' ? '#b91c1c' : '#1d4ed8', textTransform: 'uppercase', marginBottom: '6px' }}>
+                          Latest Backup Attempt
+                        </div>
+                        {backupHistoryData.latestAttempt ? (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {new Date(backupHistoryData.latestAttempt.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                              </span>
+                              <span className={`badge ${backupHistoryData.latestAttempt.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`}>
+                                {backupHistoryData.latestAttempt.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
+                              </span>
+                            </div>
+                            {backupHistoryData.latestAttempt.status === 'FAILED' && (
+                              <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px', fontWeight: 600 }}>
+                                Reason: {backupHistoryData.latestAttempt.failureReason || 'Upload or verification failed.'}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No backup attempts recorded yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SECTION 3: Backup Audit History Table */}
+                  {backupHistoryData?.historyList && backupHistoryData.historyList.length > 0 && (
+                    <div className="card">
+                      <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>Backup Audit History</h4>
+                      <div className="table-responsive">
+                        <table className="table" style={{ fontSize: '13px' }}>
+                          <thead>
+                            <tr>
+                              <th>Date & Time</th>
+                              <th>Type</th>
+                              <th>Status</th>
+                              <th>File Name</th>
+                              <th>Size</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {backupHistoryData.historyList.map((item: any) => (
+                              <tr key={item._id || item.historyId}>
+                                <td>{new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
+                                <td><span className="badge badge-secondary">{item.backupType}</span></td>
+                                <td>
+                                  <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`}>
+                                    {item.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
+                                  </span>
+                                </td>
+                                <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{item.fileName || '-'}</td>
+                                <td>{item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '-'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* SECTION 4: Create Manual Backup File */}
+                  <div className="card">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Download size={18} />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Create Manual Backup File</h3>
+                          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Download a complete JSON data file directly to your computer</p>
                         </div>
                       </div>
                       <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>

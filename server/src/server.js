@@ -39,6 +39,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 import emailService from './services/emailService.js';
+import backupSchedulerService from './services/backupSchedulerService.js';
 
 // Connect to Database & Seed Demo Data
 const initApp = async () => {
@@ -46,6 +47,7 @@ const initApp = async () => {
     await connectDB();
     await authService.seedDemoData();
     await emailService.verifySmtpConfig();
+    backupSchedulerService.initScheduler();
     server.listen(PORT, () => {
       logger.info(`AgriBiz Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     });

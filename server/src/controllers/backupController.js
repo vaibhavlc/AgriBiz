@@ -1,4 +1,5 @@
 import backupService from '../services/backupService.js';
+import googleDriveService from '../services/googleDriveService.js';
 import logger from '../config/logger.js';
 
 class BackupController {
@@ -87,6 +88,83 @@ class BackupController {
         success: true,
         ...info,
       });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getGoogleAuthUrl(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const url = googleDriveService.getAuthUrl(companyId);
+      res.status(200).json({ success: true, url });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async handleGoogleCallback(req, res, next) {
+    try {
+      const { code, state } = req.query;
+      const companyId = state || (req.user ? req.user.companyId : null);
+
+      if (!code || !companyId) {
+        return res.status(400).send('Missing authorization code or company identifier.');
+      }
+
+      await googleDriveService.handleOAuthCallback(code, companyId);
+
+      // Redirect back to Settings UI page
+      res.redirect(`http://localhost:5173/#settings?gdrive=connected`);
+    } catch (error) {
+      logger.error('Google OAuth callback error: %s', error.message);
+      res.redirect(`http://localhost:5173/#settings?gdrive=error&msg=${encodeURIComponent(error.message)}`);
+    }
+  }
+
+  async getGoogleDriveStatus(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const status = await googleDriveService.getStatus(companyId);
+      res.status(200).json({ success: true, ...status });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async disconnectGoogleDrive(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const result = await googleDriveService.disconnectGoogleDrive(companyId);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async triggerManualGoogleBackup(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const socketId = req.headers['x-socket-id'] || null;
+      const result = await googleDriveService.uploadAndVerifyBackup(companyId, 'Manual', socketId, req.user);
+      
+      if (!result.success) {
+        return res.status(500).json(result);
+      }
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Manual Google Drive backup failed.',
+      });
+    }
+  }
+
+  async getBackupHistory(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const historyData = await googleDriveService.getHistory(companyId);
+      res.status(200).json({ success: true, ...historyData });
     } catch (error) {
       next(error);
     }
