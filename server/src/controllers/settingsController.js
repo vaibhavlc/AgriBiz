@@ -1,4 +1,5 @@
 import settingsService from '../services/settingsService.js';
+import eraseService from '../services/eraseService.js';
 import userRepository from '../repositories/userRepository.js';
 import { cascadeDeleteCompany } from '../utils/cascadeDelete.js';
 import bcrypt from 'bcryptjs';
@@ -128,6 +129,76 @@ class SettingsController {
       });
     } catch (error) {
       next(error);
+    }
+  }
+
+  async getEraseSummary(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const data = await eraseService.getEraseSummary(companyId);
+      res.status(200).json({ success: true, ...data });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async temporaryErase(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { confirmText } = req.body;
+
+      if (confirmText !== 'ERASE') {
+        return res.status(400).json({
+          success: false,
+          message: 'Confirmation mismatch. You must type "ERASE" exactly to confirm temporary erasure.',
+        });
+      }
+
+      const socketId = req.headers['x-socket-id'] || null;
+      const result = await eraseService.temporaryErase(companyId, req.user, socketId);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Temporary erase failed safely.',
+      });
+    }
+  }
+
+  async undoLastErase(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const socketId = req.headers['x-socket-id'] || null;
+      const result = await eraseService.undoLastErase(companyId, req.user, socketId);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Undo operation failed safely.',
+      });
+    }
+  }
+
+  async permanentErase(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { confirmText } = req.body;
+
+      if (confirmText !== 'ERASE') {
+        return res.status(400).json({
+          success: false,
+          message: 'Confirmation mismatch. You must type "ERASE" exactly to confirm permanent erasure.',
+        });
+      }
+
+      const socketId = req.headers['x-socket-id'] || null;
+      const result = await eraseService.permanentErase(companyId, req.user, socketId);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Permanent erase failed safely.',
+      });
     }
   }
 }

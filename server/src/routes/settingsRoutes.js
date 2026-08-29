@@ -16,4 +16,10 @@ router.put('/', authorizeRoles('Owner'), validate(settingsSchema), settingsContr
 // DELETE Business Account (Owner only)
 router.delete('/company', authorizeRoles('Owner'), settingsController.deleteCompanyAccount);
 
+// Erase Business Data Routes (Owner only)
+router.get('/erase/summary', authorizeRoles('Owner'), settingsController.getEraseSummary);
+router.post('/erase/temporary', authorizeRoles('Owner'), settingsController.temporaryErase);
+router.post('/erase/undo', authorizeRoles('Owner'), settingsController.undoLastErase);
+router.post('/erase/permanent', authorizeRoles('Owner'), settingsController.permanentErase);
+
 export default router;

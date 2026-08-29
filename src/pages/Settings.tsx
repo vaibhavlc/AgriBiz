@@ -38,6 +38,8 @@ import {
   FileCheck,
   AlertCircle,
   Clock,
+  RotateCcw,
+  Flame,
 } from 'lucide-react';
 import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
@@ -96,8 +98,84 @@ export const Settings: React.FC = () => {
   const { settings, updateSettings, setTheme, resetToDefault, showToast } = useApp();
   const { currentUser, currentCompany } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Erase Business Data module states
+  const [eraseSummaryData, setEraseSummaryData] = useState<any>(null);
+  const [isLoadingEraseSummary, setIsLoadingEraseSummary] = useState(false);
+  const [selectedEraseMode, setSelectedEraseMode] = useState<'temporary' | 'permanent'>('temporary');
+  const [eraseConfirmText, setEraseConfirmText] = useState('');
+  const [isExecutingErase, setIsExecutingErase] = useState(false);
+  const [isUndoingErase, setIsUndoingErase] = useState(false);
+  const [eraseErrorMsg, setEraseErrorMsg] = useState('');
+
+  const fetchEraseSummary = async () => {
+    setIsLoadingEraseSummary(true);
+    try {
+      const res = await api.get('/settings/erase/summary');
+      if (res.data.success) {
+        setEraseSummaryData(res.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch erase summary:', err);
+    } finally {
+      setIsLoadingEraseSummary(false);
+    }
+  };
+
+  const handleExecuteEraseMode = async () => {
+    if (eraseConfirmText !== 'ERASE') {
+      setEraseErrorMsg('You must type ERASE exactly to confirm erasure.');
+      return;
+    }
+
+    setEraseErrorMsg('');
+    setIsExecutingErase(true);
+
+    try {
+      const endpoint = selectedEraseMode === 'temporary' ? '/settings/erase/temporary' : '/settings/erase/permanent';
+      const res = await api.post(endpoint, { confirmText: 'ERASE' });
+      setIsExecutingErase(false);
+
+      if (res.data.success) {
+        if (showToast) showToast(res.data.message || 'Business data erased successfully.', 'success');
+        setEraseConfirmText('');
+        fetchEraseSummary();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        setEraseErrorMsg(res.data.message || 'Erase operation failed.');
+      }
+    } catch (err: any) {
+      setIsExecutingErase(false);
+      setEraseErrorMsg(err.response?.data?.message || err.message || 'Erase operation failed safely. Existing data remains intact.');
+    }
+  };
+
+  const handleUndoLastErase = async () => {
+    setEraseErrorMsg('');
+    setIsUndoingErase(true);
+
+    try {
+      const res = await api.post('/settings/erase/undo');
+      setIsUndoingErase(false);
+
+      if (res.data.success) {
+        if (showToast) showToast('Previous business data restored successfully! Refreshing...', 'success');
+        fetchEraseSummary();
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        setEraseErrorMsg(res.data.message || 'Undo operation failed.');
+      }
+    } catch (err: any) {
+      setIsUndoingErase(false);
+      setEraseErrorMsg(err.response?.data?.message || err.message || 'Undo operation failed safely.');
+    }
+  };
 
   // Backup & Restore module states
   const [lastBackupMeta, setLastBackupMeta] = useState<any>(null);
@@ -247,6 +325,9 @@ export const Settings: React.FC = () => {
   useEffect(() => {
     if (activeTab === 'backup' && currentCompany) {
       fetchLastBackupInfo();
+    }
+    if (activeTab === 'erase' && currentCompany) {
+      fetchEraseSummary();
     }
   }, [activeTab, currentCompany]);
 
@@ -1164,6 +1245,15 @@ export const Settings: React.FC = () => {
           data-active={activeTab === 'backup'}
         >
           <HardDrive size={15} /> Backup & Restore
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('erase')}
+          className={`settings-tab-pill ${activeTab === 'erase' ? 'active' : ''}`}
+          data-active={activeTab === 'erase'}
+          style={activeTab === 'erase' ? { backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' } : undefined}
+        >
+          <Trash2 size={15} /> Erase Business Data
         </button>
       </div>
 
@@ -2685,8 +2775,282 @@ export const Settings: React.FC = () => {
             </div>
           )}
 
+          {/* TAB 8: Erase Business Data */}
+          {activeTab === 'erase' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {currentUser?.role !== 'Owner' ? (
+                <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <ShieldAlert size={48} style={{ color: '#ef4444', margin: '0 auto 16px' }} />
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Access Restricted</h3>
+                  <p style={{ color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', fontSize: '14px' }}>
+                    Only the registered Business Owner is authorized to erase company business data.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Undo Last Erase Section (If Active Temporary Erase Snapshot Exists) */}
+                  {eraseSummaryData?.activeTemporaryErase && (
+                    <div style={{ border: '2px solid #10b981', backgroundColor: '#ecfdf5', borderRadius: '12px', padding: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px', flexWrap: 'wrap', gap: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: '#065f46' }}>
+                          <RotateCcw size={20} />
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>ACTIVE TEMPORARY ERASE DETECTED</h3>
+                        </div>
+                        <span className="badge badge-success" style={{ fontSize: '12px', padding: '6px 12px' }}>
+                          UNDO AVAILABLE
+                        </span>
+                      </div>
+
+                      <p style={{ fontSize: '13px', color: '#047857', margin: '0 0 14px' }}>
+                        A previous temporary erase snapshot exists for <strong>{eraseSummaryData?.companyName}</strong>. You can undo this operation to restore all business records to their exact state before the erase.
+                      </p>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px', color: '#065f46', backgroundColor: '#ffffff', padding: '12px', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.2)', marginBottom: '16px' }}>
+                        <div><strong>Erased At:</strong> {new Date(eraseSummaryData.activeTemporaryErase.erasedAt).toLocaleString()}</div>
+                        <div><strong>Initiated By:</strong> {eraseSummaryData.activeTemporaryErase.erasedBy}</div>
+                        <div><strong>Snapshot ID:</strong> {eraseSummaryData.activeTemporaryErase.eraseId}</div>
+                      </div>
+
+                      {eraseSummaryData.activeTemporaryErase.dataSummary && (
+                        <div style={{ marginBottom: '16px' }}>
+                          <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#047857', marginBottom: '8px' }}>
+                            Records Available to Restore:
+                          </div>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                            <span className="badge badge-secondary">Customers: {eraseSummaryData.activeTemporaryErase.dataSummary.customers || 0}</span>
+                            <span className="badge badge-secondary">Suppliers: {eraseSummaryData.activeTemporaryErase.dataSummary.suppliers || 0}</span>
+                            <span className="badge badge-secondary">Products: {eraseSummaryData.activeTemporaryErase.dataSummary.products || 0}</span>
+                            <span className="badge badge-secondary">Invoices: {eraseSummaryData.activeTemporaryErase.dataSummary.invoices || 0}</span>
+                            <span className="badge badge-secondary">Quotations: {eraseSummaryData.activeTemporaryErase.dataSummary.quotations || 0}</span>
+                            <span className="badge badge-secondary">Purchases: {eraseSummaryData.activeTemporaryErase.dataSummary.purchases || 0}</span>
+                            <span className="badge badge-secondary">Expenses: {eraseSummaryData.activeTemporaryErase.dataSummary.expenses || 0}</span>
+                            <span className="badge badge-secondary">Payments: {eraseSummaryData.activeTemporaryErase.dataSummary.payments || 0}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handleUndoLastErase}
+                        disabled={isUndoingErase}
+                        style={{ backgroundColor: '#059669', borderColor: '#059669', fontWeight: 700 }}
+                      >
+                        {isUndoingErase ? (
+                          <>
+                            <RefreshCw size={15} className="spin" /> Undoing Temporary Erase...
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw size={15} /> Undo Last Erase & Restore All Records
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Section 1: Live Business Data Summary */}
+                  <div className="card">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#dc2626', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Trash2 size={18} />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Erase Business Data</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Manage company operational records removal without affecting account ownership or access</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={fetchEraseSummary}
+                        disabled={isLoadingEraseSummary}
+                      >
+                        <RefreshCw size={13} className={isLoadingEraseSummary ? 'spin' : ''} /> Refresh Counts
+                      </button>
+                    </div>
+
+                    <div style={{ marginBottom: '20px' }}>
+                      <h4 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>
+                        Current Operational Records for <strong>{eraseSummaryData?.companyName || currentCompany?.businessName}</strong>:
+                      </h4>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Customers</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.customers || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Suppliers</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.suppliers || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Products / Items</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.products || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Invoices (Sales)</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.invoices || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Quotations</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.quotations || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Purchases</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.purchases || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Expenses</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.expenses || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Payments</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.payments || 0}</div>
+                        </div>
+                        <div style={{ padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Recycle Bin</div>
+                          <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.recycleBin || 0}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Section 2: Account Preservation Status Box */}
+                    <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: '#ecfdf5', borderRadius: '10px', padding: '14px', marginBottom: '20px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 800, color: '#065f46', textTransform: 'uppercase', marginBottom: '8px' }}>
+                        Account & Identity Safeguards (NEVER Touched / Deleted):
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '13px', color: '#047857', fontWeight: 600 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> Company Account: <strong>WILL REMAIN</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> Users & Credentials: <strong>WILL REMAIN</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> Login & Access: <strong>WILL REMAIN</strong></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Section 3: Erase Mode Selection */}
+                  <div className="card">
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>Select Erase Mode</h4>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+                      {/* Temporary Card */}
+                      <div
+                        onClick={() => { setSelectedEraseMode('temporary'); setEraseConfirmText(''); setEraseErrorMsg(''); }}
+                        style={{
+                          border: selectedEraseMode === 'temporary' ? '2px solid #f59e0b' : '1px solid var(--border-color)',
+                          backgroundColor: selectedEraseMode === 'temporary' ? '#fffbeb' : 'var(--bg-card)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: '#b45309', fontSize: '15px' }}>
+                            <RotateCcw size={18} /> Temporary Erase
+                          </div>
+                          <span className="badge badge-warning" style={{ fontSize: '11px' }}>UNDO AVAILABLE</span>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#92400e', lineHeight: 1.5, margin: 0 }}>
+                          Temporarily remove all business data from the active company. The erased dataset is safely retained in an internal snapshot so the most recent temporary erase can be undone.
+                        </p>
+                      </div>
+
+                      {/* Permanent Card */}
+                      <div
+                        onClick={() => { setSelectedEraseMode('permanent'); setEraseConfirmText(''); setEraseErrorMsg(''); }}
+                        style={{
+                          border: selectedEraseMode === 'permanent' ? '2px solid #dc2626' : '1px solid var(--border-color)',
+                          backgroundColor: selectedEraseMode === 'permanent' ? '#fef2f2' : 'var(--bg-card)',
+                          borderRadius: '12px',
+                          padding: '16px',
+                          cursor: 'pointer',
+                          transition: 'all 0.2s ease',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: '#dc2626', fontSize: '15px' }}>
+                            <Flame size={18} /> Permanent Erase
+                          </div>
+                          <span className="badge badge-danger" style={{ fontSize: '11px' }}>IRREVERSIBLE</span>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#991b1b', lineHeight: 1.5, margin: 0 }}>
+                          Permanently delete all operational business data for the active company. Expires all temporary snapshots and cannot be undone.
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Section 4: Mode Confirmation Gate */}
+                    <div style={{
+                      backgroundColor: selectedEraseMode === 'temporary' ? '#fffbe0' : '#fff1f2',
+                      border: selectedEraseMode === 'temporary' ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(244, 63, 94, 0.4)',
+                      borderRadius: '12px',
+                      padding: '18px',
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: selectedEraseMode === 'temporary' ? '#b45309' : '#be123c', fontWeight: 800, fontSize: '14px', marginBottom: '8px' }}>
+                        <AlertTriangle size={18} />
+                        {selectedEraseMode === 'temporary' ? 'TEMPORARY ERASE CONFIRMATION' : '⚠️ PERMANENT DELETION CONFIRMATION'}
+                      </div>
+                      <p style={{ fontSize: '13px', color: selectedEraseMode === 'temporary' ? '#92400e' : '#9f1239', lineHeight: 1.5, margin: '0 0 14px' }}>
+                        {selectedEraseMode === 'temporary'
+                          ? `You are about to TEMPORARILY ERASE business data for ${eraseSummaryData?.companyName || 'your company'}. Erased records will be safely retained in a snapshot and can be restored using Undo.`
+                          : `You are about to PERMANENTLY DELETE all business data for ${eraseSummaryData?.companyName || 'your company'}. This action cannot be undone.`}
+                      </p>
+
+                      <div style={{ marginBottom: '14px' }}>
+                        <label className="form-label" style={{ fontWeight: 700, color: selectedEraseMode === 'temporary' ? '#78350f' : '#881337', fontSize: '12px' }}>
+                          To enable {selectedEraseMode === 'temporary' ? 'temporary' : 'permanent'} erasure, type <strong>ERASE</strong> below:
+                        </label>
+                        <input
+                          type="text"
+                          className="form-control"
+                          placeholder="Type ERASE to confirm"
+                          value={eraseConfirmText}
+                          onChange={(e) => setEraseConfirmText(e.target.value)}
+                          style={{ maxWidth: '280px', borderColor: eraseConfirmText === 'ERASE' ? '#10b981' : (selectedEraseMode === 'temporary' ? '#f59e0b' : '#f43f5e') }}
+                        />
+                      </div>
+
+                      {eraseErrorMsg && (
+                        <div style={{ color: '#e11d48', fontSize: '12px', fontWeight: 600, marginBottom: '12px' }}>
+                          {eraseErrorMsg}
+                        </div>
+                      )}
+
+                      <button
+                        type="button"
+                        className={`btn ${selectedEraseMode === 'temporary' ? 'btn-primary' : 'btn-secondary danger'}`}
+                        disabled={eraseConfirmText !== 'ERASE' || isExecutingErase}
+                        onClick={handleExecuteEraseMode}
+                        style={{
+                          backgroundColor: eraseConfirmText === 'ERASE' ? (selectedEraseMode === 'temporary' ? '#d97706' : '#dc2626') : undefined,
+                          color: eraseConfirmText === 'ERASE' ? '#ffffff' : undefined,
+                          opacity: eraseConfirmText === 'ERASE' && !isExecutingErase ? 1 : 0.6,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {isExecutingErase ? (
+                          <>
+                            <RefreshCw size={15} className="spin" /> Executing Erase...
+                          </>
+                        ) : selectedEraseMode === 'temporary' ? (
+                          <>
+                            <RotateCcw size={15} /> Temporarily Erase Business Data
+                          </>
+                        ) : (
+                          <>
+                            <Flame size={15} /> Permanently Erase Business Data
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Persistent Action Footer with Inline Success Banner (Only for form tabs) */}
-          {activeTab !== 'users' && activeTab !== 'backup' && (
+          {activeTab !== 'users' && activeTab !== 'backup' && activeTab !== 'erase' && (
             <div className="settings-footer-unified">
               <div style={{ flex: 1 }}>
                 {savedSuccess && (
