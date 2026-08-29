@@ -8,8 +8,12 @@ import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Load config
-dotenv.config();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load config explicitly from server/.env and root .env regardless of working directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import http from 'http';
 import logger from './config/logger.js';
@@ -26,21 +30,22 @@ import purchaseRoutes from './routes/purchaseRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import expenseRoutes from './routes/expenseRoutes.js';
 import settingsRoutes from './routes/settingsRoutes.js';
+import backupRoutes from './routes/backupRoutes.js';
 import recycleBinRoutes from './routes/recycleBinRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+import emailService from './services/emailService.js';
 
 // Connect to Database & Seed Demo Data
 const initApp = async () => {
   try {
     await connectDB();
     await authService.seedDemoData();
+    await emailService.verifySmtpConfig();
     server.listen(PORT, () => {
       logger.info(`AgriBiz Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     });
@@ -94,10 +99,11 @@ app.use(
   })
 );
 
-// Rate Limiting (prevent brute force / DDoS)
+// Rate Limiting (prevent brute force / DDoS in production; skipped during development/testing)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000,
+  max: process.env.NODE_ENV === 'production' ? 2000 : 50000,
+  skip: () => process.env.NODE_ENV !== 'production',
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -131,6 +137,7 @@ app.use('/api/v1/purchases', purchaseRoutes);
 app.use('/api/v1/payments', paymentRoutes);
 app.use('/api/v1/expenses', expenseRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/v1/settings/backup', backupRoutes);
 app.use('/api/v1/recycle-bin', recycleBinRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/users', userRoutes);

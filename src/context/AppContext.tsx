@@ -5,6 +5,7 @@ import {
   toTitleCase,
 } from '../utils/dummyData';
 import api, { setApiSocketId, getRawBaseHost } from '../utils/api';
+import authService from '../auth/authService';
 import { io, Socket } from 'socket.io-client';
 
 interface AppContextType {
@@ -159,9 +160,13 @@ const BRANDING_CACHE_KEY = 'agribiz_business_branding';
 const getCachedBranding = (): Partial<BusinessBrandingCache> | null => {
   if (typeof window === 'undefined') return null;
   try {
-    const cached = localStorage.getItem(BRANDING_CACHE_KEY);
-    if (cached) {
-      return JSON.parse(cached);
+    const activeCompany = authService.getCurrentCompany();
+    const cachedSession = sessionStorage.getItem(BRANDING_CACHE_KEY);
+    if (cachedSession) {
+      const parsed = JSON.parse(cachedSession);
+      if (parsed && (!activeCompany || !parsed.businessId || parsed.businessId === activeCompany.id)) {
+        return parsed;
+      }
     }
   } catch (e) {
     console.error('Failed to parse branding cache:', e);
@@ -179,7 +184,7 @@ const setCachedBranding = (branding: { logoUrl: string; watermarkLogoUrl: string
       logoVersion: Date.now(),
       businessName: branding.businessName || 'AgriBiz',
     };
-    localStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify(cacheObj));
+    sessionStorage.setItem(BRANDING_CACHE_KEY, JSON.stringify(cacheObj));
   } catch (e) {
     console.error('Failed to save branding cache:', e);
   }
@@ -208,22 +213,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>([]);
 
-  // Small settings & theme managed in localStorage + Stale-While-Revalidate Branding Cache
+  // Settings & branding managed in tab-isolated sessionStorage + Stale-While-Revalidate Branding Cache
   const [settings, setSettings] = useState<BusinessSettings>(() => {
-    const local = localStorage.getItem('agribiz_settings');
-    const raw = local ? { ...initialSettings, ...JSON.parse(local) } : initialSettings;
+    const activeCompany = authService.getCurrentCompany();
+    const session = sessionStorage.getItem('agribiz_settings');
+    let raw = initialSettings;
+    if (session) {
+      try {
+        const parsed = JSON.parse(session);
+        if (!activeCompany || parsed.companyId === activeCompany.id || parsed.id === activeCompany.id) {
+          raw = { ...initialSettings, ...parsed };
+        }
+      } catch (e) {}
+    }
     const cachedBranding = getCachedBranding();
+
+    // Strict business-scoped logo resolution:
+    // Uses current business logo or empty string (which renders default general app logo).
+    let logo = activeCompany?.logo || '';
+    if (!logo && raw.logo && (raw.companyId === activeCompany?.id || raw.id === activeCompany?.id)) {
+      logo = raw.logo;
+    }
+    if (!logo && cachedBranding?.logoUrl && cachedBranding?.businessId === activeCompany?.id) {
+      logo = cachedBranding.logoUrl;
+    }
     
-    const logo = raw.logo !== undefined ? raw.logo : (cachedBranding?.logoUrl || '');
     const watermarkLogo = raw.watermarkLogo !== undefined ? raw.watermarkLogo : (cachedBranding?.watermarkLogoUrl || '');
-    const businessName = toTitleCase(cachedBranding?.businessName || raw.businessName);
+    const businessName = toTitleCase(activeCompany?.businessName || cachedBranding?.businessName || raw.businessName || 'AgriBiz Suite');
 
     return {
       ...raw,
       logo,
       watermarkLogo,
       businessName,
-      ownerName: toTitleCase(raw.ownerName),
+      ownerName: toTitleCase(activeCompany?.ownerName || raw.ownerName),
     };
   });
 
@@ -498,6 +521,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn('System is offline. Skipping REST API reloadData.');
       return;
     }
+    const token = authService.getAccessToken();
+    if (!token) {
+      return;
+    }
     const t = Date.now();
     try {
       const [
@@ -554,8 +581,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.settings) {
         const remoteSettings: BusinessSettings = settingsRes.value.data.settings;
         setSettings((prev) => {
-          const updatedLogo = remoteSettings.logo !== undefined ? remoteSettings.logo : (prev.logo || '');
-          const updatedWatermark = remoteSettings.watermarkLogo !== undefined ? remoteSettings.watermarkLogo : (prev.watermarkLogo || '');
+          const updatedLogo = remoteSettings.logo || '';
+          const updatedWatermark = remoteSettings.watermarkLogo || '';
           const updatedName = toTitleCase(remoteSettings.businessName || prev.businessName);
 
           const updatedSettings = {
@@ -565,13 +592,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             businessName: updatedName,
           };
 
-          // Save to localStorage for instant stale-while-revalidate on next boot
-          localStorage.setItem('agribiz_settings', JSON.stringify(updatedSettings));
+          // Save to sessionStorage for tab isolation (never pollute global localStorage)
+          sessionStorage.setItem('agribiz_settings', JSON.stringify(updatedSettings));
           setCachedBranding({
             logoUrl: updatedLogo,
             watermarkLogoUrl: updatedWatermark,
             businessName: updatedName,
-            businessId: (remoteSettings as any).companyId,
+            businessId: (remoteSettings as any).companyId || (remoteSettings as any).id,
           });
 
           return updatedSettings;
@@ -1572,7 +1599,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSettings(updated);
 
     try {
-      localStorage.setItem('agribiz_settings', JSON.stringify(updated));
+      sessionStorage.setItem('agribiz_settings', JSON.stringify(updated));
     } catch (e) {}
 
     if (navigator.onLine) {
@@ -1608,7 +1635,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put('/settings', formatted);
       setSettings(formatted);
       clearAllDirtyForms();
-      localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
+      sessionStorage.setItem('agribiz_settings', JSON.stringify(formatted));
       setCachedBranding({
         logoUrl: formatted.logo || '',
         watermarkLogoUrl: formatted.watermarkLogo || '',

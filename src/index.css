@@ -1990,6 +1990,22 @@ body.dark-theme .prem-live-dot {
   white-space: nowrap !important;
 }
 
+/* Reports page tables center alignment */
+.reports-page-wrapper table th,
+.reports-page-wrapper table td,
+.reports-page-wrapper .data-table th,
+.reports-page-wrapper .data-table td,
+.reports-page-wrapper .gstr3b-ca-table th,
+.reports-page-wrapper .gstr3b-ca-table td,
+.reports-page-wrapper .align-right,
+.reports-page-wrapper .align-left,
+#reports-pdf-content table th,
+#reports-pdf-content table td,
+#reports-pdf-content .align-right,
+#reports-pdf-content .align-left {
+  text-align: center !important;
+}
+
 @media (min-width: 1025px) {
   .expense-table-fit {
     table-layout: fixed !important;

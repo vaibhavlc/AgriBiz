@@ -37,6 +37,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     refreshUser();
+
+    const handleSyncAuth = () => {
+      const savedCompany = authService.getCurrentCompany();
+      const savedUser = authService.getCurrentUser();
+      setCurrentCompany(savedCompany || null);
+      setCurrentUser(savedUser || null);
+    };
+
+    window.addEventListener('agribiz_tab_auth_change', handleSyncAuth);
+    window.addEventListener('agribiz_auth_change', handleSyncAuth);
+    return () => {
+      window.removeEventListener('agribiz_tab_auth_change', handleSyncAuth);
+      window.removeEventListener('agribiz_auth_change', handleSyncAuth);
+    };
   }, []);
 
   const updateUserPresence = async (presenceStatus: 'online' | 'busy' | 'away') => {
@@ -72,7 +86,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setCurrentCompany(res.company);
       const companySettings = {
         ...initialSettings,
-        id: 'business',
+        companyId: res.company.id,
+        id: res.company.id,
         businessName: res.company.businessName,
         ownerName: res.company.ownerName,
         logo: res.company.logo || '',
@@ -83,7 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         state: res.company.state || '',
         address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
       };
-      localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+      sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+      try {
+        localStorage.removeItem('agribiz_settings');
+        localStorage.removeItem('agribiz_business_branding');
+      } catch (e) {}
     }
     return { success: res.success, message: res.message, company: res.company };
   };
@@ -106,9 +125,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       const companySettings = {
         ...initialSettings,
-        id: 'business',
+        companyId: res.company.id,
+        id: res.company.id,
         businessName: res.company.businessName,
         ownerName: res.company.ownerName,
+        logo: res.company.logo || '',
         phone: res.company.mobile,
         email: res.company.email || '',
         gstin: res.company.gstin || '',
@@ -116,7 +137,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         state: res.company.state || '',
         address: `${res.company.city || ''}, ${res.company.state || ''}`.trim(),
       };
-      localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+      sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+      try {
+        localStorage.removeItem('agribiz_settings');
+        localStorage.removeItem('agribiz_business_branding');
+      } catch (e) {}
     }
     return { success: res.success, message: res.message };
   };

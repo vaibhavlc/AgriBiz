@@ -19,19 +19,56 @@ import { Reports } from './pages/Reports';
 import { Settings } from './pages/Settings';
 import { RecycleBin } from './pages/RecycleBin';
 
+import { VerifyEmail } from './pages/VerifyEmail';
+import { ResetOwnerPin } from './pages/ResetOwnerPin';
+
 const AuthApp: React.FC = () => {
-  const [authView, setAuthView] = useState<'login' | 'register' | 'forgot'>('login');
+  const [authView, setAuthView] = useState<'login' | 'register' | 'forgot' | 'verify' | 'reset-owner-pin'>('login');
+  const [regStep, setRegStep] = useState<1 | 2 | 3 | undefined>(undefined);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const stepParam = params.get('step');
+    if (window.location.pathname.startsWith('/reset-owner-pin')) {
+      setAuthView('reset-owner-pin');
+    } else if (stepParam === '3') {
+      setRegStep(3);
+      setAuthView('register');
+    } else if (params.get('view') === 'register' || params.has('step')) {
+      setAuthView('register');
+    } else if (params.has('token') || params.has('verifyToken') || window.location.pathname.startsWith('/verify-email')) {
+      setAuthView('verify');
+    }
+  }, []);
 
   switch (authView) {
+    case 'reset-owner-pin':
+      return <ResetOwnerPin onSwitchToLogin={() => setAuthView('login')} />;
+    case 'verify':
+      return (
+        <VerifyEmail
+          onSwitchToLogin={() => setAuthView('login')}
+          onSwitchToRegisterStep3={() => {
+            setRegStep(3);
+            setAuthView('register');
+          }}
+        />
+      );
     case 'register':
-      return <Register onSwitchToLogin={() => setAuthView('login')} />;
+      return <Register onSwitchToLogin={() => setAuthView('login')} initialStep={regStep} />;
     case 'forgot':
       return <ForgotPassword onSwitchToLogin={() => setAuthView('login')} />;
     case 'login':
     default:
       return (
         <Login
-          onSwitchToRegister={() => setAuthView('register')}
+          onSwitchToRegister={() => {
+            localStorage.removeItem('agribiz_verified_email');
+            localStorage.removeItem('agribiz_reg_draft');
+            sessionStorage.removeItem('agribiz_registration_session_id');
+            setRegStep(1);
+            setAuthView('register');
+          }}
           onSwitchToForgot={() => setAuthView('forgot')}
         />
       );
@@ -42,9 +79,12 @@ const AppContent: React.FC = () => {
   const { currentTab, setCurrentTab } = useApp();
   const { hasPermission } = useAuth();
 
-  // Guarantee initial scroll position at top right below header on app load
+  // Guarantee initial scroll position and clean up registration URL parameters on login
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (typeof window !== 'undefined' && (window.location.search.includes('token') || window.location.search.includes('step') || window.location.search.includes('view'))) {
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   // If user lacks permission for currentTab, automatically redirect to first permitted tab

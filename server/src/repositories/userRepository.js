@@ -14,6 +14,16 @@ class UserRepository {
     return User.findOne({ mobile });
   }
 
+  async findByEmail(email) {
+    if (!email) return null;
+    return User.findOne({ email: email.trim().toLowerCase() });
+  }
+
+  async findByVerificationTokenHash(tokenHash) {
+    if (!tokenHash) return null;
+    return User.findOne({ emailVerificationTokenHash: tokenHash });
+  }
+
   async findByCompanyId(companyId) {
     return User.find({ companyId });
   }

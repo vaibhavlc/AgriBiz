@@ -4439,7 +4439,7 @@ export const Reports: React.FC = () => {
   ];
 
   return (
-    <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+    <div className="reports-page-wrapper" style={{ animation: 'fadeIn 0.2s ease-out' }}>
       {/* Top filter row */}
       <div className="filters-row-unified no-print">
         <div className="filters-group-one" style={{ flexWrap: 'wrap', gap: '8px' }}>

@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../../auth/AuthContext';
+import authService from '../../auth/authService';
+import registrationSync, { type RegistrationSyncEvent } from '../../utils/registrationSync';
 import { PasswordStrength } from './PasswordStrength';
-import { Building2, User, Lock, Smartphone, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Mail, KeyRound } from 'lucide-react';
+import { Building2, User, Lock, Smartphone, ArrowRight, ArrowLeft, CheckCircle2, ShieldCheck, Mail, KeyRound, AlertCircle, Send } from 'lucide-react';
 
 // ── 4-Box PIN Input Matching Login Behavior (Defined outside to preserve DOM focus) ──
 const PinInput = ({
@@ -110,30 +112,149 @@ const PinInput = ({
 
 interface RegisterFormProps {
   onSwitchToLogin: () => void;
+  initialStep?: 1 | 2 | 3;
 }
 
-export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
+export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, initialStep }) => {
   const { registerCompany } = useAuth();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
+  
+  // Get or create temporary registration session ID for cross-tab matching
+  const registrationSessionId = registrationSync.getOrCreateSessionId();
+
+  // Load saved draft from localStorage
+  const getSavedDraft = () => {
+    try {
+      const raw = localStorage.getItem('agribiz_reg_draft');
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const draft = getSavedDraft();
 
   // Step 1: Business Details
-  const [businessName, setBusinessName] = useState('');
-  const [gstin, setGstin] = useState('');
-  const [email, setEmail] = useState('');
-  const [city, setCity] = useState('Pipariya');
-  const [state, setState] = useState('Madhya Pradesh');
+  const [businessName, setBusinessName] = useState<string>(draft.businessName || '');
+  const [gstin, setGstin] = useState<string>(draft.gstin || '');
+  const [email, setEmail] = useState<string>(() => {
+    const verifiedEmail = localStorage.getItem('agribiz_verified_email');
+    return verifiedEmail ? verifiedEmail.trim() : (draft.email || '');
+  });
+  const [city, setCity] = useState<string>(draft.city || 'Pipariya');
+  const [state, setState] = useState<string>(draft.state || 'Madhya Pradesh');
 
   // Step 2: Owner Details
-  const [ownerName, setOwnerName] = useState('');
-  const [mobile, setMobile] = useState('');
+  const [ownerName, setOwnerName] = useState<string>(draft.ownerName || '');
+  const [mobile, setMobile] = useState<string>(draft.mobile || '');
 
   // Step 3: Password + PIN
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [ownerPin, setOwnerPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
+
+  const [step, setStep] = useState<1 | 2 | 3>(() => {
+    if (initialStep) return initialStep;
+    const params = new URLSearchParams(window.location.search);
+    const stepParam = params.get('step');
+    if (stepParam === '3') return 3;
+    if (stepParam === '2') return 2;
+    return 1;
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState('');
+  const [registeredSuccessInfo, setRegisteredSuccessInfo] = useState<{ email: string; devVerificationLink?: string } | null>(null);
+
+  // Email Verification UI State
+  const [isEmailVerified, setIsEmailVerified] = useState<boolean>(() => {
+    const verifiedEmail = localStorage.getItem('agribiz_verified_email');
+    const cur = (verifiedEmail || draft.email || '').trim().toLowerCase();
+    return Boolean(verifiedEmail && cur && verifiedEmail.trim().toLowerCase() === cur);
+  });
+  const [verificationSent, setVerificationSent] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+
+  // Save form draft to localStorage whenever fields change
+  React.useEffect(() => {
+    const regDraft = { registrationSessionId, businessName, gstin, email, city, state, ownerName, mobile };
+    localStorage.setItem('agribiz_reg_draft', JSON.stringify(regDraft));
+  }, [registrationSessionId, businessName, gstin, email, city, state, ownerName, mobile]);
+
+  // Subscribe to registrationSync cross-tab events
+  React.useEffect(() => {
+    const unsubscribe = registrationSync.subscribe((evt: RegistrationSyncEvent) => {
+      if (evt.registrationSessionId && evt.registrationSessionId !== registrationSessionId) {
+        return; // Ignore events from unrelated registration sessions
+      }
+
+      if (evt.type === 'EMAIL_VERIFIED') {
+        if (evt.email) {
+          localStorage.setItem('agribiz_verified_email', evt.email.trim().toLowerCase());
+          setEmail(evt.email.trim());
+        }
+        setIsEmailVerified(true);
+        setStep(3);
+      } else if (evt.type === 'REGISTRATION_COMPLETED') {
+        registrationSync.clearSession();
+        onSwitchToLogin();
+      }
+    });
+
+    return unsubscribe;
+  }, [registrationSessionId, onSwitchToLogin]);
+
+  // Listen for verification event or storage changes
+  React.useEffect(() => {
+    const checkVerified = () => {
+      const verifiedEmail = localStorage.getItem('agribiz_verified_email');
+      const currentEmail = email.trim().toLowerCase();
+
+      if (verifiedEmail && verifiedEmail.trim()) {
+        if (!email.trim()) {
+          setEmail(verifiedEmail.trim());
+        }
+        const vClean = verifiedEmail.trim().toLowerCase();
+        if (!currentEmail || currentEmail === vClean) {
+          setIsEmailVerified(true);
+        } else {
+          setIsEmailVerified(false);
+        }
+      } else if (currentEmail && verifiedEmail && currentEmail === verifiedEmail.trim().toLowerCase()) {
+        setIsEmailVerified(true);
+      } else {
+        setIsEmailVerified(false);
+      }
+    };
+
+    checkVerified();
+    window.addEventListener('agribiz_email_verified', checkVerified);
+    window.addEventListener('storage', checkVerified);
+    const interval = setInterval(checkVerified, 1000);
+    return () => {
+      window.removeEventListener('agribiz_email_verified', checkVerified);
+      window.removeEventListener('storage', checkVerified);
+      clearInterval(interval);
+    };
+  }, [email]);
+
+  const handleSendVerification = async () => {
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMsg('Please enter a valid Email Address before sending verification email.');
+      return;
+    }
+    setErrorMsg('');
+    setSendingEmail(true);
+
+    const res = await authService.resendVerification(email.trim());
+    setSendingEmail(false);
+
+    if (res.success) {
+      setVerificationSent(true);
+    } else {
+      setErrorMsg(res.message || 'Failed to send verification email.');
+    }
+  };
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
@@ -146,6 +267,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
       if (!ownerName.trim()) { setErrorMsg('Please enter the Owner Name.'); return; }
       if (!mobile.trim() || mobile.replace(/\D/g, '').length < 10) {
         setErrorMsg('Please enter a valid 10-digit Mobile Number.'); return;
+      }
+      if (!email.trim()) { setErrorMsg('Please enter your Email Address.'); return; }
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        setErrorMsg('Please enter a valid Email Address.'); return;
+      }
+      if (!isEmailVerified) {
+        setErrorMsg('Please verify your email before continuing.');
+        return;
       }
       setStep(3);
     }
@@ -168,9 +297,107 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
       ownerPin
     );
     setLoading(false);
-    if (!res.success) setErrorMsg(res.message);
-    // On success: AuthProvider auto-logs in → ProtectedRoute → Dashboard
+    if (!res.success) {
+      if (res.message && (res.message.includes('already exists') || res.message.includes('already completed'))) {
+        registrationSync.broadcast({
+          type: 'REGISTRATION_COMPLETED',
+          registrationSessionId,
+        });
+        registrationSync.clearSession();
+        onSwitchToLogin();
+        return;
+      }
+      setErrorMsg(res.message);
+    } else {
+      registrationSync.broadcast({
+        type: 'REGISTRATION_COMPLETED',
+        registrationSessionId,
+      });
+      registrationSync.clearSession();
+      localStorage.removeItem('agribiz_reg_draft');
+      localStorage.removeItem('agribiz_verified_email');
+      setRegisteredSuccessInfo({
+        email: email.trim(),
+        devVerificationLink: (res as any).devVerificationLink,
+      });
+    }
   };
+
+  if (registeredSuccessInfo) {
+    return (
+      <div style={{ textAlign: 'center', padding: '10px 0', animation: 'fadeIn 0.25s ease-out' }}>
+        <div style={{
+          width: '56px', height: '56px', borderRadius: '50%',
+          background: 'rgba(16,185,129,0.1)', color: '#10b981',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 14px', fontSize: '28px',
+        }}>
+          <CheckCircle2 size={36} />
+        </div>
+
+        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: '0 0 6px' }}>
+          Registration Successful!
+        </h2>
+        <p style={{ fontSize: '13px', color: 'var(--text-muted,#64748b)', margin: '0 0 16px' }}>
+          A verification link has been sent to your email address:
+        </p>
+
+        <div style={{
+          padding: '12px 16px', borderRadius: '10px',
+          background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)',
+          color: 'var(--text-primary,#0f172a)', fontSize: '14px', fontWeight: 700,
+          marginBottom: '16px', wordBreak: 'break-all',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+        }}>
+          <Mail size={18} style={{ color: '#10b981' }} />
+          {registeredSuccessInfo.email}
+        </div>
+
+        {/* Development mode verification link prompt */}
+        {registeredSuccessInfo.devVerificationLink && (
+          <div style={{
+            padding: '14px', borderRadius: '12px',
+            background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.25)',
+            marginBottom: '18px', textAlign: 'left',
+          }}>
+            <div style={{ fontWeight: 800, fontSize: '13px', color: '#d97706', marginBottom: '4px' }}>
+              🛠️ Local Dev Mode Verification Link
+            </div>
+            <p style={{ fontSize: '12px', color: 'var(--text-secondary,#475569)', margin: '0 0 10px', lineHeight: 1.4 }}>
+              Click below to verify your email directly in local testing:
+            </p>
+            <a
+              href={registeredSuccessInfo.devVerificationLink}
+              style={{
+                display: 'inline-block',
+                padding: '8px 14px',
+                borderRadius: '8px',
+                background: '#10b981',
+                color: '#ffffff',
+                fontWeight: 700,
+                fontSize: '12px',
+                textDecoration: 'none',
+                boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
+              }}
+            >
+              🔗 Click Here to Verify Email
+            </a>
+          </div>
+        )}
+
+        <button
+          onClick={() => window.location.reload()}
+          className="btn btn-primary"
+          style={{
+            width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center',
+            boxShadow: '0 4px 14px rgba(16,185,129,0.25)',
+          }}
+        >
+          🚀 Continue to AgriBiz Suite
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -294,15 +521,92 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) =
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: '18px' }}>
-            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Email Address <span style={{ fontWeight: 400, color: 'var(--text-muted,#94a3b8)' }}>(Optional)</span>
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Email Address *</label>
+              {isEmailVerified ? (
+                <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <CheckCircle2 size={14} /> ✓ Email verified
+                </span>
+              ) : (
+                <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <AlertCircle size={14} /> Email not verified
+                </span>
+              )}
+            </div>
+
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><Mail size={16} /></span>
-              <input type="email" className="form-control" placeholder="e.g. vaibhav@agribizstore.com"
-                value={email} onChange={e => setEmail(e.target.value)}
-                style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} />
+              <input
+                type="email"
+                className="form-control"
+                placeholder="e.g. vaibhav@agribizstore.com"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setIsEmailVerified(false);
+                  setVerificationSent(false);
+                }}
+                style={{
+                  paddingLeft: '40px',
+                  height: '44px',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  borderColor: isEmailVerified ? '#10b981' : undefined,
+                }}
+                required
+              />
             </div>
+
+            {/* Send / Resend Verification Button */}
+            {!isEmailVerified && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim()) && (
+              <div style={{ marginTop: '10px' }}>
+                <button
+                  type="button"
+                  onClick={handleSendVerification}
+                  disabled={sendingEmail}
+                  className="btn btn-secondary"
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    borderRadius: '8px',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    justifyContent: 'center',
+                    gap: '6px',
+                    background: 'rgba(16,185,129,0.08)',
+                    color: '#10b981',
+                    border: '1px solid rgba(16,185,129,0.25)',
+                  }}
+                >
+                  {sendingEmail ? (
+                    'Sending Email...'
+                  ) : verificationSent ? (
+                    <><Send size={14} /> Resend Verification Email</>
+                  ) : (
+                    <><Send size={14} /> Send Verification Email</>
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Verification Sent Notice */}
+            {verificationSent && !isEmailVerified && (
+              <div style={{
+                marginTop: '8px',
+                padding: '8px 12px',
+                borderRadius: '8px',
+                background: 'rgba(16,185,129,0.06)',
+                border: '1px solid rgba(16,185,129,0.2)',
+                fontSize: '12px',
+                fontWeight: 600,
+                color: '#10b981',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <CheckCircle2 size={14} /> Verification email sent. Check your inbox.
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', gap: '10px' }}>
             <button type="button" className="btn btn-secondary"

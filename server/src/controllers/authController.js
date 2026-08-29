@@ -22,7 +22,7 @@ class AuthController {
 
       res.status(201).json({
         success: true,
-        message: 'Business registered successfully!',
+        message: 'Business registered successfully! Please verify your email address.',
         accessToken,
         refreshToken,
         user: {
@@ -33,6 +33,7 @@ class AuthController {
           email: user.email,
           role: user.role,
           status: user.status,
+          isEmailVerified: user.isEmailVerified || false,
           presenceStatus: user.presenceStatus || 'online',
           createdAt: user.createdAt,
         },
@@ -209,6 +210,56 @@ class AuthController {
       res.status(200).json({
         success: true,
         message: 'Password reset successfully! You can now log in.'
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async verifyEmail(req, res, next) {
+    try {
+      const { token } = req.body;
+      logger.info('Email verification request received');
+      const result = await authService.verifyEmail(token);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resendVerification(req, res, next) {
+    try {
+      const { email } = req.body;
+      logger.info('Resend verification request received for email: %s', email);
+      const result = await authService.resendVerificationEmail(email);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async forgotOwnerPin(req, res, next) {
+    try {
+      const { companyId, userId } = req.body;
+      logger.info('Forgot Owner PIN request received for company: %s, user: %s', companyId, userId);
+      const result = await authService.forgotOwnerPin({ companyId, userId });
+      res.status(200).json({
+        success: true,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async resetOwnerPin(req, res, next) {
+    try {
+      const { token, newPin } = req.body;
+      logger.info('Reset Owner PIN request received');
+      const result = await authService.resetOwnerPin({ token, newPin });
+      res.status(200).json({
+        success: true,
+        message: result.message,
       });
     } catch (error) {
       next(error);

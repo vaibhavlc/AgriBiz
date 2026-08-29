@@ -143,6 +143,8 @@ export interface Payment {
 
 export interface BusinessSettings {
   // Business Information
+  id?: string;
+  companyId?: string;
   businessName: string;
   ownerName: string;
   gstin: string;
@@ -258,6 +260,7 @@ export interface User {
   name: string;
   mobile?: string;
   email?: string;
+  isEmailVerified?: boolean;
   password?: string;
   pin?: string;
   role: UserRole;

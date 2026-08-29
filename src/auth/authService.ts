@@ -101,6 +101,7 @@ class AuthService {
       sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
     }
     window.dispatchEvent(new Event('agribiz_auth_change'));
+    window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
   }
 
   // --- Session Management ---
@@ -132,13 +133,13 @@ class AuthService {
     }
   }
 
-  // Company session lives in localStorage — survives browser restarts
+  // Company session lives strictly in tab-isolated sessionStorage
   public getCurrentCompany(): Company | null {
     if (typeof window === 'undefined') return null;
-    const raw = localStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY);
-    if (!raw) return null;
+    const rawSession = sessionStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY);
+    if (!rawSession) return null;
     try {
-      return JSON.parse(raw);
+      return JSON.parse(rawSession);
     } catch {
       return null;
     }
@@ -159,12 +160,41 @@ class AuthService {
       if (success) {
         this.setAccessToken(accessToken);
         if (refreshToken) {
-          // Refresh token in localStorage so auto-refresh works after restart
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
-        // Company session → localStorage so it survives browser close/restart
-        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+        // Save company session in tab-isolated sessionStorage so tabs don't overwrite each other
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
+        // Save tab-isolated settings & branding for Staff PIN page
+        const companySettings = {
+          companyId: company.id,
+          id: company.id,
+          businessName: company.businessName,
+          ownerName: company.ownerName,
+          phone: company.mobile,
+          email: company.email || '',
+          gstin: company.gstin || '',
+          city: company.city || '',
+          state: company.state || '',
+          address: `${company.city || ''}, ${company.state || ''}`.trim(),
+          logo: company.logo || '',
+        };
+        sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+        sessionStorage.setItem('agribiz_business_branding', JSON.stringify({
+          businessId: company.id,
+          logoUrl: company.logo || '',
+          businessName: company.businessName,
+        }));
+
+        // Clear any stale global localStorage branding/settings to avoid cross-business bleeding
+        try {
+          localStorage.removeItem('agribiz_settings');
+          localStorage.removeItem('agribiz_business_branding');
+          localStorage.removeItem('agribiz_refresh_token');
+          localStorage.removeItem('agribiz_current_company');
+        } catch (e) {}
+
+        window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
         return { success: true, message, user, company };
       }
 
@@ -187,13 +217,13 @@ class AuthService {
       if (success) {
         this.setAccessToken(accessToken);
         if (refreshToken) {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
         // Staff session → sessionStorage only (forces PIN on each browser open / tab open)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
         sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
-        // Refresh company info in localStorage
-        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+        // Refresh company info in tab-isolated sessionStorage
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
         const session: AuthSession = {
           currentUserId: user.id,
@@ -237,25 +267,46 @@ class AuthService {
     },
     ownerPassword: string,
     ownerPin: string
-  ): Promise<{ success: boolean; message: string; user?: User; company?: Company }> {
+  ): Promise<{ success: boolean; message: string; user?: User; company?: Company; devVerificationLink?: string }> {
     try {
       const response = await api.post('/auth/register', {
         ...companyInput,
         password: ownerPassword,
         pin: ownerPin,
       });
-      const { success, message, accessToken, refreshToken, user, company } = response.data;
+      const { success, message, accessToken, refreshToken, user, company, devVerificationLink } = response.data;
 
       if (success) {
         this.setAccessToken(accessToken);
         if (refreshToken) {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
         // Staff/owner session in sessionStorage (forces PIN on restart / new tab)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
         sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
-        // Company session in localStorage (persists across browser restarts)
-        localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+        // Save company session in tab-isolated sessionStorage
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+
+        // Save tab-isolated settings & branding for new company
+        const companySettings = {
+          companyId: company.id,
+          id: company.id,
+          businessName: company.businessName,
+          ownerName: company.ownerName,
+          phone: company.mobile,
+          email: company.email || '',
+          gstin: company.gstin || '',
+          city: company.city || '',
+          state: company.state || '',
+          address: `${company.city || ''}, ${company.state || ''}`.trim(),
+          logo: company.logo || '',
+        };
+        sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+        sessionStorage.setItem('agribiz_business_branding', JSON.stringify({
+          businessId: company.id,
+          logoUrl: company.logo || '',
+          businessName: company.businessName,
+        }));
 
         const session: AuthSession = {
           currentUserId: user.id,
@@ -265,7 +316,7 @@ class AuthService {
         };
         sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
 
-        return { success: true, message, user, company };
+        return { success: true, message, user, company, devVerificationLink };
       }
 
       return { success: false, message: message || 'Registration failed.' };
@@ -282,13 +333,16 @@ class AuthService {
       // Ignore network errors on logout
     } finally {
       this.setAccessToken(null);
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
+      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
       sessionStorage.removeItem(STORAGE_KEYS.TAB_TOKEN);
+      sessionStorage.removeItem('agribiz_settings');
+      sessionStorage.removeItem('agribiz_business_branding');
       if (typeof window !== 'undefined') window.name = '';
+      window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
     }
   }
 
@@ -338,7 +392,7 @@ class AuthService {
 
   public async refreshSession(): Promise<{ success: boolean; company?: Company }> {
     try {
-      const storedRefreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      const storedRefreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       if (!storedRefreshToken) return { success: false };
       const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
       const { success, accessToken, refreshToken: newRefreshToken, company } = response.data;
@@ -346,18 +400,18 @@ class AuthService {
       if (success && accessToken) {
         this.setAccessToken(accessToken);
         if (newRefreshToken) {
-          localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
+          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
         }
         if (company) {
-          localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+          sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
         }
         return { success: true, company };
       }
       return { success: false };
     } catch (error) {
       this.setAccessToken(null);
-      localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
+      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
       sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
       sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
       sessionStorage.removeItem(STORAGE_KEYS.SESSION);
@@ -478,6 +532,30 @@ class AuthService {
     user.updatedAt = new Date().toISOString();
     localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(users));
     return true;
+  }
+
+  public async verifyEmail(token: string): Promise<{ success: boolean; message: string; email?: string }> {
+    try {
+      const response = await api.post('/auth/verify-email', { token });
+      return response.data;
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Failed to verify email. Please try again.',
+      };
+    }
+  }
+
+  public async resendVerification(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.post('/auth/resend-verification', { email });
+      return response.data;
+    } catch (err: any) {
+      return {
+        success: false,
+        message: err.response?.data?.message || 'Failed to resend verification email. Please try again.',
+      };
+    }
   }
 }
 

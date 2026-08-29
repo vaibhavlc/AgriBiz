@@ -4,6 +4,7 @@ import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import { Modal } from './Modal';
 import { formatINR, getUserInitials } from '../utils/dummyData';
+import authService from '../auth/authService';
 import {
   LayoutDashboard,
   FileSpreadsheet,
@@ -33,6 +34,7 @@ import {
   Trash2,
   Globe,
   Smartphone,
+  Mail,
 } from 'lucide-react';
 
 interface LayoutProps {
@@ -1001,6 +1003,48 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
 
         <main className="content-body">
+          {currentUser?.role === 'Owner' && currentUser?.isEmailVerified === false && (
+            <div style={{
+              padding: '12px 16px',
+              marginBottom: '16px',
+              borderRadius: '12px',
+              background: 'rgba(245,158,11,0.09)',
+              border: '1px solid rgba(245,158,11,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '10px',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>
+                <Mail size={18} style={{ color: '#d97706', flexShrink: 0 }} />
+                <span>
+                  <strong>Email Verification Pending:</strong> A verification email was sent to <strong>{currentUser.email}</strong>. Please check your inbox and verify your email address.
+                </span>
+              </div>
+              <button
+                onClick={async () => {
+                  if (currentUser.email) {
+                    const res = await authService.resendVerification(currentUser.email);
+                    showToast(res.message, res.success ? 'success' : 'error');
+                  }
+                }}
+                style={{
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  background: '#d97706',
+                  color: '#ffffff',
+                  border: 'none',
+                  fontWeight: 700,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                Resend Verification Email
+              </button>
+            </div>
+          )}
           <div 
             key={currentTab} 
             className="page-transition-wrapper"

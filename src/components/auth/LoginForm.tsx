@@ -27,7 +27,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
   const [stage, setStage] = useState<Stage>(() => {
     const savedCompany = authService.getCurrentCompany();
-    const storedRefreshToken = typeof window !== 'undefined' ? localStorage.getItem('agribiz_refresh_token') : null;
+    const storedRefreshToken = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_refresh_token') : null;
     return (savedCompany || storedRefreshToken) ? 'staff-selection' : 'business-login';
   });
 
@@ -51,6 +51,39 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
+  // Forgot Owner PIN state
+  const [forgotPinLoading, setForgotPinLoading] = useState(false);
+  const [forgotPinSuccessMsg, setForgotPinSuccessMsg] = useState('');
+
+  const handleForgotOwnerPin = async () => {
+    if (!selectedStaff || selectedStaff.role !== 'Owner') return;
+    const company = currentCompany || authService.getCurrentCompany();
+    if (!company) {
+      setErrorMsg('Business session not found. Please log in again.');
+      return;
+    }
+
+    setForgotPinLoading(true);
+    setErrorMsg('');
+    setForgotPinSuccessMsg('');
+
+    try {
+      const res = await api.post('/auth/forgot-owner-pin', {
+        companyId: company.id,
+        userId: selectedStaff.id,
+      });
+      if (res.data.success) {
+        setForgotPinSuccessMsg(res.data.message || 'Owner PIN reset link has been sent to your email.');
+      } else {
+        setErrorMsg(res.data.message || 'Failed to send PIN reset link.');
+      }
+    } catch (err: any) {
+      setErrorMsg(err.response?.data?.message || 'Failed to request Owner PIN reset. Please try again.');
+    } finally {
+      setForgotPinLoading(false);
+    }
+  };
+
   const loadStaffList = useCallback(async () => {
     const staff = await authService.getActiveStaff();
     setStaffList(staff as (UserType & { id: string })[]);
@@ -60,7 +93,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   useEffect(() => {
     const checkSession = async () => {
       const savedCompany = authService.getCurrentCompany();
-      const storedRefreshToken = localStorage.getItem('agribiz_refresh_token');
+      const storedRefreshToken = sessionStorage.getItem('agribiz_refresh_token');
       if (savedCompany || storedRefreshToken) {
         if (storedRefreshToken) {
           await authService.refreshSession();
@@ -215,24 +248,24 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     // Multi-source fallback resolution for uploaded business logo
     let logoUrl: string | undefined = company?.logo;
 
-    if (!logoUrl) {
+    if (!logoUrl && company) {
       try {
-        const savedSettings = typeof window !== 'undefined' ? localStorage.getItem('agribiz_settings') : null;
+        const savedSettings = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_settings') : null;
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings);
-          if (parsed.logo && typeof parsed.logo === 'string' && parsed.logo.trim()) {
+          if ((parsed.companyId === company.id || parsed.id === company.id) && parsed.logo && typeof parsed.logo === 'string' && parsed.logo.trim()) {
             logoUrl = parsed.logo.trim();
           }
         }
       } catch (e) {}
     }
 
-    if (!logoUrl) {
+    if (!logoUrl && company) {
       try {
-        const cachedBranding = typeof window !== 'undefined' ? localStorage.getItem('agribiz_business_branding') : null;
+        const cachedBranding = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_business_branding') : null;
         if (cachedBranding) {
           const parsed = JSON.parse(cachedBranding);
-          if (parsed.logoUrl && typeof parsed.logoUrl === 'string' && parsed.logoUrl.trim()) {
+          if (parsed.businessId === company.id && parsed.logoUrl && typeof parsed.logoUrl === 'string' && parsed.logoUrl.trim()) {
             logoUrl = parsed.logoUrl.trim();
           }
         }
@@ -240,12 +273,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     }
 
     let businessName = company?.businessName;
-    if (!businessName) {
+    if (!businessName && company) {
       try {
-        const savedSettings = typeof window !== 'undefined' ? localStorage.getItem('agribiz_settings') : null;
+        const savedSettings = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_settings') : null;
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings);
-          if (parsed.businessName) businessName = parsed.businessName;
+          if ((parsed.companyId === company.id || parsed.id === company.id) && parsed.businessName) {
+            businessName = parsed.businessName;
+          }
         }
       } catch (e) {}
     }
@@ -583,8 +618,49 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             );
           })}
         </div>
+
+        {/* Forgot PIN button - STRICTLY ONLY for Owner role */}
+        {selectedStaff.role === 'Owner' && (
+          <div style={{ textAlign: 'center', marginBottom: '10px' }}>
+            <button
+              type="button"
+              disabled={forgotPinLoading}
+              onClick={handleForgotOwnerPin}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--primary,#10b981)',
+                fontSize: '12px',
+                fontWeight: 700,
+                cursor: forgotPinLoading ? 'not-allowed' : 'pointer',
+                textDecoration: 'underline',
+              }}
+            >
+              {forgotPinLoading ? 'Sending Reset Link...' : 'Forgot PIN?'}
+            </button>
+          </div>
+        )}
+
+        {/* Success Banner for Forgot PIN */}
+        {forgotPinSuccessMsg && (
+          <div style={{
+            padding: '10px 12px',
+            borderRadius: '10px',
+            background: 'rgba(16,185,129,0.08)',
+            border: '1px solid rgba(16,185,129,0.2)',
+            color: '#065f46',
+            fontSize: '12px',
+            fontWeight: 600,
+            textAlign: 'center',
+            marginBottom: '10px',
+            lineHeight: 1.4,
+          }}>
+            {forgotPinSuccessMsg}
+          </div>
+        )}
+
         <button type="button"
-          onClick={() => { setStage('staff-selection'); setPin(''); setErrorMsg(''); }}
+          onClick={() => { setStage('staff-selection'); setPin(''); setErrorMsg(''); setForgotPinSuccessMsg(''); }}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center',
             width: '100%', background: 'none', border: '1px solid var(--border-color,#e2e8f0)',

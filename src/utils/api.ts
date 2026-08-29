@@ -102,7 +102,7 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = localStorage.getItem('agribiz_refresh_token') || sessionStorage.getItem('agribiz_refresh_token');
+        const storedRefreshToken = sessionStorage.getItem('agribiz_refresh_token');
         if (!storedRefreshToken) {
           processQueue(new Error('No refresh token available.'));
           return Promise.reject(error);
@@ -118,7 +118,6 @@ api.interceptors.response.use(
         if (success && accessToken) {
           sessionStorage.setItem('agribiz_access_token', accessToken);
           if (newRefreshToken) {
-            localStorage.setItem('agribiz_refresh_token', newRefreshToken);
             sessionStorage.setItem('agribiz_refresh_token', newRefreshToken);
           }
           sessionStorage.setItem('agribiz_current_user', JSON.stringify(user));

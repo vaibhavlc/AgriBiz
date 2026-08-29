@@ -30,6 +30,14 @@ import {
   UserCheck,
   UserX,
   AlertTriangle,
+  HardDrive,
+  Download,
+  UploadCloud,
+  Database,
+  ShieldCheck,
+  FileCheck,
+  AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
@@ -86,9 +94,161 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 export const Settings: React.FC = () => {
   console.log('[Component Re-rendered] Settings');
   const { settings, updateSettings, setTheme, resetToDefault, showToast } = useApp();
+  const { currentUser, currentCompany } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
+
+  // Backup & Restore module states
+  const [lastBackupMeta, setLastBackupMeta] = useState<any>(null);
+  const [lastRestoreMeta, setLastRestoreMeta] = useState<any>(null);
+  const [isExportingBackup, setIsExportingBackup] = useState(false);
+  const [selectedBackupFile, setSelectedBackupFile] = useState<File | null>(null);
+  const [parsedBackupData, setParsedBackupData] = useState<any>(null);
+  const [isValidatingBackup, setIsValidatingBackup] = useState(false);
+  const [validationResult, setValidationResult] = useState<{
+    valid: boolean;
+    metadata?: any;
+    dataSummary?: any;
+    message?: string;
+  } | null>(null);
+  const [restoreConfirmText, setRestoreConfirmText] = useState('');
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [restoreErrorMsg, setRestoreErrorMsg] = useState('');
+
+  const fetchLastBackupInfo = async () => {
+    try {
+      const res = await api.get('/settings/backup/last');
+      if (res.data.success) {
+        setLastBackupMeta(res.data.lastBackupMetadata);
+        setLastRestoreMeta(res.data.lastRestoreMetadata);
+      }
+    } catch (err) {
+      console.error('Failed to fetch last backup info:', err);
+    }
+  };
+
+  const handleCreateBackup = async () => {
+    setIsExportingBackup(true);
+    try {
+      const res = await api.get('/settings/backup/export', { responseType: 'blob' });
+      const dateStr = new Date().toISOString().split('T')[0];
+      const filename = `agribiz-backup-${currentCompany?.id || 'company'}-${dateStr}.json`;
+      const url = window.URL.createObjectURL(new Blob([res.data], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      if (showToast) showToast('Backup created and downloaded successfully!', 'success');
+      fetchLastBackupInfo();
+    } catch (err: any) {
+      if (showToast) showToast(err.response?.data?.message || 'Failed to generate backup file.', 'error');
+    } finally {
+      setIsExportingBackup(false);
+    }
+  };
+
+  const handleFileSelect = (file: File) => {
+    setSelectedBackupFile(file);
+    setValidationResult(null);
+    setParsedBackupData(null);
+    setRestoreErrorMsg('');
+    setRestoreConfirmText('');
+
+    if (!file.name.toLowerCase().endsWith('.json')) {
+      setValidationResult({
+        valid: false,
+        message: 'Invalid file format: Backup file must be a .json file.',
+      });
+      return;
+    }
+
+    setIsValidatingBackup(true);
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target?.result as string;
+        const parsed = JSON.parse(text);
+        setParsedBackupData(parsed);
+
+        const res = await api.post('/settings/backup/validate', parsed);
+        setIsValidatingBackup(false);
+        if (res.data.success && res.data.valid) {
+          setValidationResult({
+            valid: true,
+            metadata: res.data.metadata,
+            dataSummary: res.data.dataSummary,
+          });
+        } else {
+          setValidationResult({
+            valid: false,
+            message: res.data.message || 'Backup file validation failed.',
+          });
+        }
+      } catch (err: any) {
+        setIsValidatingBackup(false);
+        setValidationResult({
+          valid: false,
+          message: err.response?.data?.message || 'Corrupted or malformed JSON backup file.',
+        });
+      }
+    };
+    reader.onerror = () => {
+      setIsValidatingBackup(false);
+      setValidationResult({
+        valid: false,
+        message: 'Failed to read the selected backup file.',
+      });
+    };
+    reader.readAsText(file);
+  };
+
+  const handleExecuteRestore = async () => {
+    if (restoreConfirmText !== 'RESTORE') {
+      setRestoreErrorMsg('You must type RESTORE exactly to confirm data restoration.');
+      return;
+    }
+    if (!parsedBackupData || !validationResult?.valid) {
+      setRestoreErrorMsg('No valid backup payload available to restore.');
+      return;
+    }
+
+    setRestoreErrorMsg('');
+    setIsRestoring(true);
+
+    try {
+      const res = await api.post('/settings/backup/restore', {
+        backupPayload: parsedBackupData,
+        confirmText: 'RESTORE',
+      });
+      setIsRestoring(false);
+
+      if (res.data.success) {
+        if (showToast) showToast('Company data restored successfully! Refreshing...', 'success');
+        setSelectedBackupFile(null);
+        setParsedBackupData(null);
+        setValidationResult(null);
+        setRestoreConfirmText('');
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        setRestoreErrorMsg(res.data.message || 'Restoration failed.');
+      }
+    } catch (err: any) {
+      setIsRestoring(false);
+      setRestoreErrorMsg(err.response?.data?.message || err.message || 'Data restoration failed safely. Previous company data remains intact.');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'backup' && currentCompany) {
+      fetchLastBackupInfo();
+    }
+  }, [activeTab, currentCompany]);
 
   const settingsTabsRef = useRef<HTMLDivElement>(null);
 
@@ -106,7 +266,6 @@ export const Settings: React.FC = () => {
     }
   }, [activeTab]);
 
-  const { currentUser, currentCompany } = useAuth();
   const [usersList, setUsersList] = useState<User[]>([]);
   const [userSearch, setUserSearch] = useState('');
   const [userRoleFilter, setUserRoleFilter] = useState<'All' | UserRole>('All');
@@ -997,6 +1156,14 @@ export const Settings: React.FC = () => {
           data-active={activeTab === 'users'}
         >
           <Users size={15} /> Staff & Roles
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('backup')}
+          className={`settings-tab-pill ${activeTab === 'backup' ? 'active' : ''}`}
+          data-active={activeTab === 'backup'}
+        >
+          <HardDrive size={15} /> Backup & Restore
         </button>
       </div>
 
@@ -2261,8 +2428,265 @@ export const Settings: React.FC = () => {
             </div>
           )}
 
+          {/* TAB 7: Backup & Restore */}
+          {activeTab === 'backup' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+              {currentUser?.role !== 'Owner' ? (
+                <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+                  <ShieldAlert size={48} style={{ color: '#ef4444', margin: '0 auto 16px' }} />
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Access Restricted</h3>
+                  <p style={{ color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', fontSize: '14px' }}>
+                    Only the registered Business Owner is authorized to generate or restore company data backups.
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* SECTION 1: Create Backup */}
+                  <div className="card">
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Database size={18} />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Create Company Backup</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Generate a complete, downloadable JSON snapshot of current business data</p>
+                        </div>
+                      </div>
+                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <ShieldCheck size={12} /> Company Isolated
+                      </span>
+                    </div>
+
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
+                      Creating a backup will compile all records for your active business company into a single JSON file.
+                      Includes: <strong>Customers, Suppliers, Products, Invoices, Quotations, Purchases, Expenses, Payments, and Recycle Bin items</strong>.
+                      <br />
+                      <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
+                        * Sensitive login credentials, passwords, session tokens, and subscription plans are strictly excluded.
+                      </span>
+                    </p>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                      <button
+                        type="button"
+                        className="btn btn-primary"
+                        onClick={handleCreateBackup}
+                        disabled={isExportingBackup}
+                      >
+                        {isExportingBackup ? (
+                          <>
+                            <RefreshCw size={15} className="spin" /> Generating Backup...
+                          </>
+                        ) : (
+                          <>
+                            <Download size={15} /> Create & Download Backup
+                          </>
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Last Backup Information */}
+                    {lastBackupMeta && (
+                      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginTop: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+                          <Clock size={16} style={{ color: 'var(--primary)' }} />
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Most Recent Backup Export</h4>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          <div><strong>Date & Time:</strong> {new Date(lastBackupMeta.createdAt).toLocaleString()}</div>
+                          <div><strong>Created By:</strong> {lastBackupMeta.createdBy || 'Business Owner'}</div>
+                          <div><strong>File Name:</strong> {lastBackupMeta.fileName}</div>
+                        </div>
+
+                        {lastBackupMeta.dataSummary && (
+                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px border-dashed var(--border-color)' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>Record Counts Summary</div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                              <span className="badge badge-secondary">Customers: {lastBackupMeta.dataSummary.customers || 0}</span>
+                              <span className="badge badge-secondary">Suppliers: {lastBackupMeta.dataSummary.suppliers || 0}</span>
+                              <span className="badge badge-secondary">Products: {lastBackupMeta.dataSummary.products || 0}</span>
+                              <span className="badge badge-secondary">Invoices: {lastBackupMeta.dataSummary.invoices || 0}</span>
+                              <span className="badge badge-secondary">Quotations: {lastBackupMeta.dataSummary.quotations || 0}</span>
+                              <span className="badge badge-secondary">Purchases: {lastBackupMeta.dataSummary.purchases || 0}</span>
+                              <span className="badge badge-secondary">Expenses: {lastBackupMeta.dataSummary.expenses || 0}</span>
+                              <span className="badge badge-secondary">Payments: {lastBackupMeta.dataSummary.payments || 0}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {lastRestoreMeta && (
+                      <div style={{ backgroundColor: '#ecfdf5', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', padding: '16px', marginTop: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#065f46' }}>
+                          <FileCheck size={16} />
+                          <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>Most Recent Restoration Event</h4>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px', color: '#047857' }}>
+                          <div><strong>Restored At:</strong> {new Date(lastRestoreMeta.restoredAt).toLocaleString()}</div>
+                          <div><strong>Restored By:</strong> {lastRestoreMeta.restoredBy || 'Business Owner'}</div>
+                          <div><strong>Original Backup Created:</strong> {new Date(lastRestoreMeta.backupCreatedAt).toLocaleString()}</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 2: Restore Backup */}
+                  <div className="card" style={{ border: '1.5px solid rgba(239, 68, 68, 0.3)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <HardDrive size={18} />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Restore Company Backup</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Validate and replace current company data with a previously exported JSON backup</p>
+                        </div>
+                      </div>
+                      <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <AlertTriangle size={12} /> Replace Strategy
+                      </span>
+                    </div>
+
+                    {/* Step 1: Upload File */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label className="form-label" style={{ fontWeight: 700 }}>Step 1: Select Backup File (.json)</label>
+                      <input
+                        type="file"
+                        accept=".json"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) handleFileSelect(file);
+                        }}
+                        style={{ display: 'none' }}
+                        id="backup-file-input"
+                      />
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <label htmlFor="backup-file-input" className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                          <UploadCloud size={15} /> Choose Backup File
+                        </label>
+                        {selectedBackupFile && (
+                          <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {selectedBackupFile.name} ({(selectedBackupFile.size / 1024).toFixed(1)} KB)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Validation Loading */}
+                    {isValidatingBackup && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
+                        <RefreshCw size={15} className="spin" style={{ color: 'var(--primary)' }} />
+                        <span>Validating backup file format, company identity, and integrity...</span>
+                      </div>
+                    )}
+
+                    {/* Step 2: Validation Failure or Preview */}
+                    {validationResult && (
+                      <div style={{ marginBottom: '24px' }}>
+                        {!validationResult.valid ? (
+                          <div style={{ padding: '14px', backgroundColor: '#fef2f2', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', color: '#991b1b', fontSize: '13px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, marginBottom: '4px' }}>
+                              <AlertCircle size={16} /> Backup Validation Failed
+                            </div>
+                            <div>{validationResult.message}</div>
+                          </div>
+                        ) : (
+                          <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: '#ecfdf5', borderRadius: '12px', padding: '16px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 800, fontSize: '14px', marginBottom: '12px' }}>
+                              <FileCheck size={18} /> Backup Validated & Ready for Restore
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px', color: '#047857', marginBottom: '14px' }}>
+                              <div><strong>Company Name:</strong> {validationResult.metadata?.companyName}</div>
+                              <div><strong>Backup Created:</strong> {new Date(validationResult.metadata?.createdAt).toLocaleString()}</div>
+                              <div><strong>Version:</strong> {validationResult.metadata?.backupVersion}</div>
+                            </div>
+
+                            <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                              <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#065f46', marginBottom: '8px' }}>
+                                Preview of Data to be Restored (Calculated from file):
+                              </div>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '12px', color: '#1f2937' }}>
+                                <div>👥 Customers: <strong>{validationResult.dataSummary?.customers || 0}</strong></div>
+                                <div>🏭 Suppliers: <strong>{validationResult.dataSummary?.suppliers || 0}</strong></div>
+                                <div>📦 Products: <strong>{validationResult.dataSummary?.products || 0}</strong></div>
+                                <div>📄 Invoices: <strong>{validationResult.dataSummary?.invoices || 0}</strong></div>
+                                <div>📋 Quotations: <strong>{validationResult.dataSummary?.quotations || 0}</strong></div>
+                                <div>🛒 Purchases: <strong>{validationResult.dataSummary?.purchases || 0}</strong></div>
+                                <div>💸 Expenses: <strong>{validationResult.dataSummary?.expenses || 0}</strong></div>
+                                <div>💳 Payments: <strong>{validationResult.dataSummary?.payments || 0}</strong></div>
+                                <div>🗑️ Recycle Bin: <strong>{validationResult.dataSummary?.recycleBin || 0}</strong></div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Step 3: Explicit Confirmation & Restore Action */}
+                    {validationResult?.valid && (
+                      <div style={{ backgroundColor: '#fff1f2', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '12px', padding: '18px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#be123c', fontWeight: 800, fontSize: '14px', marginBottom: '8px' }}>
+                          <AlertTriangle size={18} /> WARNING: Irreversible Operation
+                        </div>
+                        <p style={{ fontSize: '13px', color: '#9f1239', lineHeight: 1.5, margin: '0 0 14px' }}>
+                          Restoring this backup will <strong>replace all existing business data</strong> for <strong>{currentCompany?.businessName}</strong>.
+                          This action cannot be undone. User login accounts and authentication records will remain intact.
+                        </p>
+
+                        <div style={{ marginBottom: '14px' }}>
+                          <label className="form-label" style={{ fontWeight: 700, color: '#881337', fontSize: '12px' }}>
+                            To enable restoration, type <strong>RESTORE</strong> below:
+                          </label>
+                          <input
+                            type="text"
+                            className="form-control"
+                            placeholder="Type RESTORE to confirm"
+                            value={restoreConfirmText}
+                            onChange={(e) => setRestoreConfirmText(e.target.value)}
+                            style={{ maxWidth: '280px', borderColor: restoreConfirmText === 'RESTORE' ? '#10b981' : '#f43f5e' }}
+                          />
+                        </div>
+
+                        {restoreErrorMsg && (
+                          <div style={{ color: '#e11d48', fontSize: '12px', fontWeight: 600, marginBottom: '12px' }}>
+                            {restoreErrorMsg}
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          className="btn btn-secondary danger"
+                          disabled={restoreConfirmText !== 'RESTORE' || isRestoring}
+                          onClick={handleExecuteRestore}
+                          style={{
+                            backgroundColor: restoreConfirmText === 'RESTORE' ? '#dc2626' : undefined,
+                            color: restoreConfirmText === 'RESTORE' ? '#ffffff' : undefined,
+                            opacity: restoreConfirmText === 'RESTORE' && !isRestoring ? 1 : 0.6,
+                          }}
+                        >
+                          {isRestoring ? (
+                            <>
+                              <RefreshCw size={15} className="spin" /> Restoring Company Data...
+                            </>
+                          ) : (
+                            <>
+                              <HardDrive size={15} /> Replace & Restore Business Data
+                            </>
+                          )}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Persistent Action Footer with Inline Success Banner (Only for form tabs) */}
-          {activeTab !== 'users' && (
+          {activeTab !== 'users' && activeTab !== 'backup' && (
             <div className="settings-footer-unified">
               <div style={{ flex: 1 }}>
                 {savedSuccess && (
