@@ -119,8 +119,6 @@ const AppContent: React.FC = () => {
         return <Payments />;
       case 'expenses':
         return <Expenses />;
-      case 'staff':
-        return <Settings initialTab="users" />;
       case 'reports':
         return <Reports />;
       case 'settings':

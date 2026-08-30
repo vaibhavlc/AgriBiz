@@ -34,7 +34,6 @@ import backupRoutes from './routes/backupRoutes.js';
 import recycleBinRoutes from './routes/recycleBinRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
-import salaryRoutes from './routes/salaryRoutes.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
 
 const app = express();
@@ -146,7 +145,6 @@ app.use('/api/v1/recycle-bin', recycleBinRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
-app.use('/api/v1/salary', salaryRoutes);
 
 // ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
 import { cascadeDeleteByMobile } from './utils/cascadeDelete.js';

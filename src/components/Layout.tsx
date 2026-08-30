@@ -369,8 +369,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         return 'Supplier Directory';
       case 'payments':
         return 'Payments Ledger';
-      case 'staff':
-        return 'Staff & Payroll Management';
       case 'reports':
         return 'Business Reports';
       case 'settings':
@@ -396,7 +394,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={18} />, color: '#0d9488', glow: 'rgba(13, 148, 136, 0.15)' },
     { id: 'customers', label: 'Customers List', icon: <Users size={18} />, color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)' },
     { id: 'suppliers', label: 'Suppliers List', icon: <Truck size={18} />, color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)' },
-    { id: 'staff', label: 'Staff & Payroll', icon: <Users size={18} />, color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)' },
   ];
 
   const adminItems = [
@@ -414,7 +411,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { id: 'payments', label: 'Payments', icon: <IndianRupee size={18} /> },
     { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
     { id: 'suppliers', label: 'Suppliers', icon: <Truck size={18} /> },
-    { id: 'staff', label: 'Staff', icon: <Users size={18} /> },
     { id: 'reports', label: 'Reports', icon: <TrendingUp size={18} /> },
     { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} /> },
     { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
