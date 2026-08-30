@@ -2929,11 +2929,11 @@ export const Settings: React.FC = () => {
                           <table className="table" style={{ fontSize: '13px', margin: 0, width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
                             <thead>
                               <tr style={{ borderBottom: '1.5px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '22%', verticalAlign: 'middle' }}>Backup</th>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '24%', verticalAlign: 'middle' }}>Date & Time</th>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '18%', verticalAlign: 'middle' }}>Status</th>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '14%', verticalAlign: 'middle' }}>Size</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap', width: '22%', verticalAlign: 'middle' }}>Actions</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '20%', textAlign: 'center', verticalAlign: 'middle' }}>Backup</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '25%', textAlign: 'center', verticalAlign: 'middle' }}>Date & Time</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '18%', textAlign: 'center', verticalAlign: 'middle' }}>Status</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '12%', textAlign: 'center', verticalAlign: 'middle' }}>Size</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', whiteSpace: 'nowrap', width: '25%', verticalAlign: 'middle' }}>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -2941,13 +2941,13 @@ export const Settings: React.FC = () => {
                                 const isUnavailable = item.failureReason && item.failureReason.toLowerCase().includes('unavailable');
                                 return (
                                   <tr key={item._id || item.historyId} style={{ borderBottom: '1px solid var(--border-color)' }}>
-                                    <td style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                    <td style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle' }}>
                                       📁 {item.backupType || 'Daily'} Backup
                                     </td>
-                                    <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                    <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle' }}>
                                       {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                                     </td>
-                                    <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                    <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle' }}>
                                       {isUnavailable ? (
                                         <span className="badge badge-danger" style={{ fontSize: '11px', padding: '4px 8px' }}>🔴 Unavailable</span>
                                       ) : (
@@ -2956,12 +2956,12 @@ export const Settings: React.FC = () => {
                                         </span>
                                       )}
                                     </td>
-                                    <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                    <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle' }}>
                                       {item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '-'}
                                     </td>
-                                    <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                    <td style={{ padding: '12px 14px', textAlign: 'center', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                                       {item.status === 'SUCCESS' && !isUnavailable ? (
-                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'center', whiteSpace: 'nowrap' }}>
                                           <button
                                             type="button"
                                             className="btn btn-secondary"
