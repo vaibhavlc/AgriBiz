@@ -393,8 +393,9 @@ class BackupService {
 
         // COMMIT TRANSACTION
         if (useTransaction && session) {
-          await session.commitTransaction();
-          session.endSession();
+          if (session.inTransaction()) {
+            await session.commitTransaction();
+          }
         }
 
         // Notify connected frontend clients
@@ -411,10 +412,105 @@ class BackupService {
       } catch (error) {
         if (useTransaction && session) {
           logger.error('Aborting restore transaction for company %s due to error: %s', companyId, error.message);
-          await session.abortTransaction();
-          session.endSession();
+          try {
+            if (session.inTransaction()) {
+              await session.abortTransaction();
+            }
+          } catch (abortErr) {
+            logger.warn('Failed to abort transaction: %s', abortErr.message);
+          }
         }
+
+        // Fallback for standalone/Atlas session transaction errors (e.g. active transaction number is -1)
+        if (error.message && (error.message.includes('does not match any in-progress transactions') || error.message.includes('active transaction number is -1'))) {
+          logger.warn('Retrying restore operation with sequential fallback for company %s...', companyId);
+          
+          await Customer.deleteMany({ companyId });
+          await Supplier.deleteMany({ companyId });
+          await Product.deleteMany({ companyId });
+          await Invoice.deleteMany({ companyId });
+          await Quotation.deleteMany({ companyId });
+          await Purchase.deleteMany({ companyId });
+          await Expense.deleteMany({ companyId });
+          await Payment.deleteMany({ companyId });
+          await RecycleBinItem.deleteMany({ companyId });
+
+          const restoredCustomers = prepareDocs(data.customers);
+          const restoredSuppliers = prepareDocs(data.suppliers);
+          const restoredProducts = prepareDocs(data.products);
+          const restoredInvoices = prepareDocs(data.invoices);
+          const restoredQuotations = prepareDocs(data.quotations);
+          const restoredPurchases = prepareDocs(data.purchases);
+          const restoredExpenses = prepareDocs(data.expenses);
+          const restoredPayments = prepareDocs(data.payments);
+          const restoredRecycleBin = prepareDocs(data.recycleBin);
+
+          if (restoredCustomers.length > 0) await Customer.insertMany(restoredCustomers, { ordered: true });
+          if (restoredSuppliers.length > 0) await Supplier.insertMany(restoredSuppliers, { ordered: true });
+          if (restoredProducts.length > 0) await Product.insertMany(restoredProducts, { ordered: true });
+          if (restoredInvoices.length > 0) await Invoice.insertMany(restoredInvoices, { ordered: true });
+          if (restoredQuotations.length > 0) await Quotation.insertMany(restoredQuotations, { ordered: true });
+          if (restoredPurchases.length > 0) await Purchase.insertMany(restoredPurchases, { ordered: true });
+          if (restoredExpenses.length > 0) await Expense.insertMany(restoredExpenses, { ordered: true });
+          if (restoredPayments.length > 0) await Payment.insertMany(restoredPayments, { ordered: true });
+          if (restoredRecycleBin.length > 0) await RecycleBinItem.insertMany(restoredRecycleBin, { ordered: true });
+
+          if (data.company) {
+            const allowedCompanyFields = {
+              businessName: data.company.businessName,
+              ownerName: data.company.ownerName,
+              mobile: data.company.mobile,
+              email: data.company.email,
+              gstin: data.company.gstin,
+              address: data.company.address,
+              city: data.company.city,
+              state: data.company.state,
+              lastDataUpdated: new Date(),
+            };
+            Object.keys(allowedCompanyFields).forEach((key) => allowedCompanyFields[key] === undefined && delete allowedCompanyFields[key]);
+            await Company.findOneAndUpdate({ companyId }, { $set: allowedCompanyFields }, { new: true });
+          }
+
+          if (data.settings) {
+            const { _id, companyId: cId, lastBackupMetadata, ...settingsRest } = data.settings;
+            await Settings.findOneAndUpdate(
+              { companyId },
+              {
+                $set: {
+                  ...settingsRest,
+                  companyId,
+                  lastRestoreMetadata: {
+                    restoredAt: new Date().toISOString(),
+                    restoredBy: user?.name || user?.userId || 'Business Owner',
+                    backupCreatedAt: metadata.createdAt,
+                    dataSummary: calculatedSummary,
+                  },
+                },
+              },
+              { upsert: true }
+            );
+          }
+
+          await TemporaryEraseSnapshot.updateMany(
+            { companyId, status: { $in: ['ACTIVE', 'SUPERSEDED', 'RESTORING'] } },
+            { $set: { status: 'EXPIRED' } }
+          );
+
+          await touchCompanyData(companyId, socketId, 'System', 'RESTORE');
+
+          return {
+            success: true,
+            message: 'Company business data restored successfully.',
+            restoredAt: new Date().toISOString(),
+            dataSummary: calculatedSummary,
+          };
+        }
+
         throw new Error(`Atomic data restoration failed. Database was safely rolled back: ${error.message}`);
+      } finally {
+        if (session) {
+          try { session.endSession(); } catch (e) { /* ignore */ }
+        }
       }
     } finally {
       this.releaseCompanyLock(companyId);
