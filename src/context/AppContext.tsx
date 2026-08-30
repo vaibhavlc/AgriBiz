@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem } from '../types';
+import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem, SalaryRecord, SalaryAdvance } from '../types';
 import {
   initialSettings,
   toTitleCase,
@@ -21,6 +21,8 @@ interface AppContextType {
   quotations: Quotation[];
   purchases: Purchase[];
   payments: Payment[];
+  salaryRecords: SalaryRecord[];
+  salaryAdvances: SalaryAdvance[];
   settings: BusinessSettings;
   activeTheme: 'light' | 'dark';
   currentTab: string;
@@ -212,6 +214,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [salaryRecords, setSalaryRecords] = useState<SalaryRecord[]>([]);
+  const [salaryAdvances, setSalaryAdvances] = useState<SalaryAdvance[]>([]);
   const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>([]);
 
   // Settings & branding managed in tab-isolated sessionStorage + Stale-While-Revalidate Branding Cache
@@ -538,7 +542,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         paymentsRes,
         expensesRes,
         recycleBinRes,
-        settingsRes
+        settingsRes,
+        salaryRecordsRes,
+        salaryAdvancesRes
       ] = await Promise.allSettled([
         api.get(`/products?_t=${t}`),
         api.get(`/customers?_t=${t}`),
@@ -550,6 +556,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         api.get(`/expenses?_t=${t}`),
         api.get(`/recycle-bin?_t=${t}`),
         api.get(`/settings?_t=${t}`),
+        api.get(`/salary/records?_t=${t}`),
+        api.get(`/salary/advances?_t=${t}`),
       ]);
 
       if (productsRes.status === 'fulfilled' && productsRes.value.data?.products) {
@@ -575,6 +583,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
       if (expensesRes.status === 'fulfilled' && expensesRes.value.data?.expenses) {
         setExpenses(expensesRes.value.data.expenses.map((e: any) => ({ ...e, id: e.expenseId || e.id })));
+      }
+      if (salaryRecordsRes.status === 'fulfilled' && salaryRecordsRes.value.data?.records) {
+        setSalaryRecords(salaryRecordsRes.value.data.records.map((r: any) => ({ ...r, id: r.salaryId || r.id })));
+      }
+      if (salaryAdvancesRes.status === 'fulfilled' && salaryAdvancesRes.value.data?.advances) {
+        setSalaryAdvances(salaryAdvancesRes.value.data.advances.map((a: any) => ({ ...a, id: a.advanceId || a.id })));
       }
       if (recycleBinRes.status === 'fulfilled' && recycleBinRes.value.data?.items) {
         setRecycleBin(recycleBinRes.value.data.items);
@@ -640,6 +654,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else if (collectionName === 'expenses' || collectionName === 'Expense' || collectionName === 'Expenses') {
         const res = await api.get(`/expenses?_t=${t}`);
         if (res.data?.expenses) setExpenses(res.data.expenses.map((e: any) => ({ ...e, id: e.expenseId || e.id })));
+      } else if (collectionName === 'salaryRecords' || collectionName === 'SalaryRecord') {
+        const res = await api.get(`/salary/records?_t=${t}`);
+        if (res.data?.records) setSalaryRecords(res.data.records.map((r: any) => ({ ...r, id: r.salaryId || r.id })));
+      } else if (collectionName === 'salaryAdvances' || collectionName === 'SalaryAdvance') {
+        const res = await api.get(`/salary/advances?_t=${t}`);
+        if (res.data?.advances) setSalaryAdvances(res.data.advances.map((a: any) => ({ ...a, id: a.advanceId || a.id })));
       } else if (collectionName === 'recycleBin' || collectionName === 'RecycleBin') {
         const res = await api.get(`/recycle-bin?_t=${t}`);
         if (res.data?.items) setRecycleBin(res.data.items);
@@ -1809,6 +1829,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openNewPaymentForm,
         openEditPaymentForm,
         handleSavePayment,
+        salaryRecords,
+        salaryAdvances,
         isOnline,
         reloadData,
         refreshCollection,

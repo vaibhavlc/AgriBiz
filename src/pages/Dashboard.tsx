@@ -200,6 +200,8 @@ export const Dashboard: React.FC = () => {
     purchases,
     payments,
     expenses,
+    salaryRecords,
+    salaryAdvances,
     setCurrentTab,
     searchQuery,
     setSearchQuery,
@@ -423,6 +425,27 @@ export const Dashboard: React.FC = () => {
     const netProfit = grossProfit - totalExpenses;
     const grossProfitMargin = totalSalesBase > 0 ? (grossProfit / totalSalesBase) * 100 : 0;
 
+    // Staff & Salary Calculations
+    const filteredSalaryRecords = (salaryRecords || []).filter((r) => {
+      const d = new Date(r.date || r.createdAt || Date.now());
+      return d >= start && d <= end;
+    });
+
+    const totalSalaryPayable = filteredSalaryRecords.reduce((sum, r) => sum + r.netSalaryPayable, 0);
+    const totalSalaryPaid = filteredSalaryRecords.reduce((sum, r) => sum + r.amountPaid, 0);
+    const pendingSalary = filteredSalaryRecords.reduce((sum, r) => sum + r.balanceDue, 0);
+
+    const activeAdvancesGiven = (salaryAdvances || [])
+      .filter((a) => {
+        const d = new Date(a.date || a.createdAt || Date.now());
+        return d >= start && d <= end;
+      })
+      .reduce((sum, a) => sum + a.amount, 0);
+
+    const staffSalaryCost = totalSalaryPaid + activeAdvancesGiven;
+    const profitBeforeSalary = grossProfit - totalExpenses;
+    const profitAfterSalary = profitBeforeSalary - staffSalaryCost;
+
     // Receivables / Payables (Always current cumulative values)
     const receivables = customers.reduce((sum, c) => sum + (c.outstanding > 0 ? c.outstanding : 0), 0);
     const payables = suppliers.reduce((sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0), 0);
@@ -473,12 +496,18 @@ export const Dashboard: React.FC = () => {
       invoicesCount,
       purchasesCount,
       totalTransactions,
+      totalSalaryPayable,
+      totalSalaryPaid,
+      pendingSalary,
+      staffSalaryCost,
+      profitBeforeSalary,
+      profitAfterSalary,
       filteredInvoices,
       filteredPurchases,
       filteredPayments,
       filteredExpenses,
     };
-  }, [invoices, purchases, payments, expenses, products, customers, suppliers, dateLimits]);
+  }, [invoices, purchases, payments, expenses, products, customers, suppliers, salaryRecords, salaryAdvances, dateLimits]);
 
   // 3. Chart computations
   const chartData = useMemo(() => {
@@ -949,12 +978,30 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Net Operating Profit"
-              value={<AnimatedCounter value={stats.netProfit} isCurrency />}
-              subtext="Gross profit minus expenses"
+              label="Staff & Salary Expense"
+              value={<AnimatedCounter value={stats.staffSalaryCost} isCurrency />}
+              subtext={`Paid: ${formatINR(stats.totalSalaryPaid)} | Pending: ${formatINR(stats.pendingSalary)}`}
+              icon={<Users size={20} />}
+              variant="warning"
+              className={shouldBlink(['salary', 'staff', 'payroll', 'wages']) ? 'search-blink-highlight' : ''}
+            />
+
+            <KpiCard
+              label="Profit Before Staff Cost"
+              value={<AnimatedCounter value={stats.profitBeforeSalary} isCurrency />}
+              subtext="Operating profit before staff payroll"
               icon={<DollarSign size={20} />}
               variant="success"
-              className={shouldBlink(['profit', 'net', 'earnings', 'income']) ? 'search-blink-highlight' : ''}
+              className={shouldBlink(['profit', 'before salary', 'operating profit']) ? 'search-blink-highlight' : ''}
+            />
+
+            <KpiCard
+              label="Profit After Staff Cost"
+              value={<AnimatedCounter value={stats.profitAfterSalary} isCurrency />}
+              subtext="Net business profit after all staff costs"
+              icon={<DollarSign size={20} />}
+              variant={stats.profitAfterSalary >= 0 ? 'success' : 'danger'}
+              className={shouldBlink(['profit', 'after salary', 'net profit']) ? 'search-blink-highlight' : ''}
             />
 
             <KpiCard

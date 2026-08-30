@@ -31,9 +31,11 @@ export const Reports: React.FC = () => {
     suppliers,
     settings,
     expenses,
+    salaryRecords,
+    salaryAdvances,
   } = useApp();
 
-  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'expense' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
+  const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'expense' | 'profit' | 'staffSalary' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
   
   // Date filtering state
   const [dateRange, setDateRange] = useState('All');
@@ -738,7 +740,22 @@ export const Reports: React.FC = () => {
     return { name: topCatName, amount: maxVal };
   }, [filteredExpenses]);
 
-  const netProfit = grossProfit;
+  // Staff & Salary Calculations for selected date range
+  const filteredSalaryRecords = (salaryRecords || []).filter((r) => filterByDate(r.date || r.createdAt || ''));
+  const filteredSalaryAdvances = (salaryAdvances || []).filter((a) => filterByDate(a.date || a.createdAt || ''));
+
+  const totalSalaryPayable = filteredSalaryRecords.reduce((sum, r) => sum + r.netSalaryPayable, 0);
+  const totalSalaryPaid = filteredSalaryRecords.reduce((sum, r) => sum + r.amountPaid, 0);
+  const pendingSalaryVal = filteredSalaryRecords.reduce((sum, r) => sum + r.balanceDue, 0);
+  const totalAdvancesGiven = filteredSalaryAdvances.reduce((sum, a) => sum + a.amount, 0);
+  const totalAdvancesSettled = filteredSalaryAdvances.reduce((sum, a) => sum + a.settledAmount, 0);
+  const totalBonusPaid = filteredSalaryRecords.reduce((sum, r) => sum + r.bonus, 0);
+  const totalDeductionsVal = filteredSalaryRecords.reduce((sum, r) => sum + r.deductions, 0);
+
+  const staffSalaryExpenseCost = totalSalaryPaid + totalAdvancesGiven;
+  const profitBeforeSalaryCost = grossProfit - totalExpenses;
+  const profitAfterSalaryCost = profitBeforeSalaryCost - staffSalaryExpenseCost;
+  const netProfit = profitAfterSalaryCost;
   const profitMarginPercent = totalSalesBase > 0 ? (netProfit / totalSalesBase) * 100 : 0;
 
   // 4. Stock Valuation Report
@@ -2501,12 +2518,55 @@ export const Reports: React.FC = () => {
                 variant="danger"
               />
               <KpiCard
-                label="Net Profit (Loss)"
-                value={formatINR(netProfit)}
+                label="Profit Before Staff Cost"
+                value={formatINR(profitBeforeSalaryCost)}
+                subtext="Operating profit before staff payroll"
+                icon={<DollarSign size={20} />}
+                variant={profitBeforeSalaryCost >= 0 ? "success" : "danger"}
+              />
+              <KpiCard
+                label="Staff & Salary Cost"
+                value={formatINR(staffSalaryExpenseCost)}
+                subtext={`Paid: ${formatINR(totalSalaryPaid)} | Advances: ${formatINR(totalAdvancesGiven)}`}
+                icon={<Users size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Profit After Staff Cost"
+                value={formatINR(profitAfterSalaryCost)}
                 subtext={`Margin percentage: ${profitMarginPercent.toFixed(1)}%`}
                 icon={<Percent size={20} />}
-                variant={netProfit >= 0 ? "success" : "danger"}
+                variant={profitAfterSalaryCost >= 0 ? "success" : "danger"}
               />
+            </div>
+
+            {/* Profit Summary Financial Breakdown Box */}
+            <div className="card" style={{ padding: '24px', borderRadius: '16px', border: '1.5px solid var(--border-color)', marginBottom: '24px', backgroundColor: 'var(--bg-card)' }}>
+              <h4 style={{ fontWeight: 800, fontSize: '16px', marginBottom: '16px', color: 'var(--text-primary)' }}>
+                📊 Comprehensive Financial Profit Statement
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', maxWidth: '540px', fontSize: '14px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                  <span>REVENUE (Taxable Sales)</span>
+                  <span style={{ color: 'var(--color-success-dark,#059669)' }}>{formatINR(totalSalesBase)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                  <span>OTHER BUSINESS EXPENSES (COGS + Operating Expenses)</span>
+                  <span style={{ color: 'var(--color-danger-dark,#dc2626)' }}>- {formatINR(coGS + totalExpenses)}</span>
+                </div>
+                <div style={{ borderTop: '2px dashed var(--border-color)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '15px' }}>
+                  <span>PROFIT BEFORE STAFF COST</span>
+                  <span style={{ color: profitBeforeSalaryCost >= 0 ? '#059669' : '#dc2626' }}>{formatINR(profitBeforeSalaryCost)}</span>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 600 }}>
+                  <span>STAFF & SALARY COST</span>
+                  <span style={{ color: '#d97706' }}>- {formatINR(staffSalaryExpenseCost)}</span>
+                </div>
+                <div style={{ borderTop: '2px solid var(--primary)', paddingTop: '10px', display: 'flex', justifyContent: 'space-between', fontWeight: 800, fontSize: '16px' }}>
+                  <span>PROFIT AFTER STAFF COST</span>
+                  <span style={{ color: profitAfterSalaryCost >= 0 ? '#059669' : '#dc2626' }}>{formatINR(profitAfterSalaryCost)}</span>
+                </div>
+              </div>
             </div>
 
             <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
@@ -2618,6 +2678,113 @@ export const Reports: React.FC = () => {
                     <span className="mobile-list-card-label">Average Margin</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800 }}>{profitMarginPercent.toFixed(1)}%</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'staffSalary':
+        return (
+          <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
+            <div style={kpiGridStyle}>
+              <KpiCard
+                label="Total Salary Payable"
+                value={formatINR(totalSalaryPayable)}
+                subtext="Net salary due for period"
+                icon={<Users size={20} />}
+                variant="info"
+              />
+              <KpiCard
+                label="Total Salary Paid"
+                value={formatINR(totalSalaryPaid)}
+                subtext="Actual cash payroll disbursed"
+                icon={<DollarSign size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Pending Salary Dues"
+                value={formatINR(pendingSalaryVal)}
+                subtext="Unpaid salary liability"
+                icon={<AlertTriangle size={20} />}
+                variant={pendingSalaryVal > 0 ? "danger" : "success"}
+              />
+              <KpiCard
+                label="Salary Advances Given"
+                value={formatINR(totalAdvancesGiven)}
+                subtext={`Settled: ${formatINR(totalAdvancesSettled)}`}
+                icon={<TrendingDown size={20} />}
+                variant="warning"
+              />
+              <KpiCard
+                label="Bonus & Additional Paid"
+                value={formatINR(totalBonusPaid)}
+                subtext="Incentive earnings disbursed"
+                icon={<TrendingUp size={20} />}
+                variant="success"
+              />
+              <KpiCard
+                label="Other Deductions"
+                value={formatINR(totalDeductionsVal)}
+                subtext="Payroll deductions applied"
+                icon={<Percent size={20} />}
+                variant="info"
+              />
+            </div>
+
+            {/* Salary Breakdown Table */}
+            <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
+              <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Staff Payroll & Salary Breakdown</h4>
+              <div className="desktop-only-table">
+                <div className="table-wrapper">
+                  <table className="data-table">
+                    <thead>
+                      <tr>
+                        <th>Staff Name</th>
+                        <th>Period</th>
+                        <th style={{ textAlign: 'right' }}>Base Salary (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Bonus & Extra (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Deductions (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Advances (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Net Payable (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Paid (₹)</th>
+                        <th style={{ textAlign: 'right' }}>Pending (₹)</th>
+                        <th style={{ textAlign: 'center' }}>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredSalaryRecords.length === 0 ? (
+                        <tr>
+                          <td colSpan={10} style={{ textAlign: 'center', padding: '24px', color: 'var(--text-muted)' }}>
+                            No salary records found for the selected date range.
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredSalaryRecords.map((r) => (
+                          <tr key={r.id}>
+                            <td style={{ fontWeight: 700, color: 'var(--primary-dark)' }}>{r.staffName}</td>
+                            <td>{r.period}</td>
+                            <td style={{ textAlign: 'right' }}>{formatINR(r.baseSalary).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: '#059669' }}>+{formatINR(r.bonus + r.additionalEarnings).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: '#dc2626' }}>-{formatINR(r.deductions).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: '#d97706' }}>-{formatINR(r.advancesDeducted).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', fontWeight: 700 }}>{formatINR(r.netSalaryPayable).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: '#059669', fontWeight: 700 }}>{formatINR(r.amountPaid).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'right', color: r.balanceDue > 0 ? '#dc2626' : 'var(--text-muted)', fontWeight: 700 }}>{formatINR(r.balanceDue).replace('₹', '')}</td>
+                            <td style={{ textAlign: 'center' }}>
+                              <span style={{
+                                padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 800,
+                                backgroundColor: r.status === 'Paid' ? '#ecfdf5' : r.status === 'Partial' ? '#fffbeb' : '#fef2f2',
+                                color: r.status === 'Paid' ? '#059669' : r.status === 'Partial' ? '#d97706' : '#dc2626',
+                              }}>
+                                {r.status}
+                              </span>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -4429,6 +4596,7 @@ export const Reports: React.FC = () => {
     { id: 'purchase', label: 'Purchase Report', icon: <FileText size={18} /> },
     { id: 'expense', label: 'Expense Report', icon: <TrendingDown size={18} /> },
     { id: 'profit', label: 'Profit & Loss Summary', icon: <Briefcase size={18} /> },
+    { id: 'staffSalary', label: 'Staff & Salary Report', icon: <Users size={18} /> },
     { id: 'stock', label: 'Stock Asset Value', icon: <Layers size={18} /> },
     { id: 'gst', label: 'GST Tax Summary', icon: <Percent size={18} /> },
     { id: 'custLedger', label: 'Customer Dues Ledger', icon: <Users size={18} /> },
