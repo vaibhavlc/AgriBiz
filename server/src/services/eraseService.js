@@ -11,6 +11,7 @@ import Expense from '../models/Expense.js';
 import Payment from '../models/Payment.js';
 import RecycleBinItem from '../models/RecycleBinItem.js';
 import TemporaryEraseSnapshot from '../models/TemporaryEraseSnapshot.js';
+import backupService from './backupService.js';
 import logger from '../config/logger.js';
 import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
@@ -75,152 +76,157 @@ class EraseService {
    * Performs Temporary Erase: Creates snapshot & clears operational data inside a single transaction.
    */
   async temporaryErase(companyId, user, socketId = null) {
-    logger.info('User %s initiated TEMPORARY ERASE for company %s', user.userId, companyId);
-
-    let session = null;
-    let useTransaction = false;
-
+    backupService.acquireCompanyLock(companyId, 'Temporary Erase');
     try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-      useTransaction = true;
-    } catch (err) {
-      logger.warn('Mongoose session transaction unavailable: %s. Using fallback mode.', err.message);
-      if (session) session.endSession();
-      session = null;
-    }
+      logger.info('User %s initiated TEMPORARY ERASE for company %s', user.userId, companyId);
 
-    const opts = session ? { session } : {};
+      let session = null;
+      let useTransaction = false;
 
-    try {
-      // 1. Extract current operational business records
-      const [
-        companyDoc,
-        settingsDoc,
-        customers,
-        suppliers,
-        products,
-        invoices,
-        quotations,
-        purchases,
-        expenses,
-        payments,
-        recycleBinItems,
-      ] = await Promise.all([
-        Company.findOne({ companyId }, null, opts).lean(),
-        Settings.findOne({ companyId }, null, opts).lean(),
-        Customer.find({ companyId }, null, opts).lean(),
-        Supplier.find({ companyId }, null, opts).lean(),
-        Product.find({ companyId }, null, opts).lean(),
-        Invoice.find({ companyId }, null, opts).lean(),
-        Quotation.find({ companyId }, null, opts).lean(),
-        Purchase.find({ companyId }, null, opts).lean(),
-        Expense.find({ companyId }, null, opts).lean(),
-        Payment.find({ companyId }, null, opts).lean(),
-        RecycleBinItem.find({ companyId }, null, opts).lean(),
-      ]);
-
-      const dataSummary = {
-        customers: customers.length,
-        suppliers: suppliers.length,
-        products: products.length,
-        invoices: invoices.length,
-        quotations: quotations.length,
-        purchases: purchases.length,
-        expenses: expenses.length,
-        payments: payments.length,
-        recycleBin: recycleBinItems.length,
-      };
-
-      const sanitizeDocs = (docs) => {
-        if (!docs || !Array.isArray(docs)) return [];
-        return docs.map((doc) => {
-          const { _id, __v, ...rest } = doc;
-          return rest;
-        });
-      };
-
-      const snapshotPayload = {
-        company: companyDoc ? { businessName: companyDoc.businessName, ownerName: companyDoc.ownerName, mobile: companyDoc.mobile, email: companyDoc.email, gstin: companyDoc.gstin, address: companyDoc.address, city: companyDoc.city, state: companyDoc.state } : null,
-        settings: settingsDoc ? (() => { const { _id, __v, ...rest } = settingsDoc; return rest; })() : null,
-        customers: sanitizeDocs(customers),
-        suppliers: sanitizeDocs(suppliers),
-        products: sanitizeDocs(products),
-        invoices: sanitizeDocs(invoices),
-        quotations: sanitizeDocs(quotations),
-        purchases: sanitizeDocs(purchases),
-        expenses: sanitizeDocs(expenses),
-        payments: sanitizeDocs(payments),
-        recycleBin: sanitizeDocs(recycleBinItems),
-      };
-
-      // Check snapshot size safety (12MB BSON safety threshold)
-      const estimatedSize = Buffer.byteLength(JSON.stringify(snapshotPayload));
-      const maxAllowedSize = 12 * 1024 * 1024; // 12 MB
-      if (estimatedSize > maxAllowedSize) {
-        throw new Error(`Business dataset size (${(estimatedSize / (1024 * 1024)).toFixed(2)} MB) exceeds temporary snapshot memory limit (12 MB). Please perform a Permanent Erase or download a manual Backup file.`);
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+        useTransaction = true;
+      } catch (err) {
+        logger.warn('Mongoose session transaction unavailable: %s. Using fallback mode.', err.message);
+        if (session) session.endSession();
+        session = null;
       }
 
-      // 2. Mark existing ACTIVE snapshots for this company as SUPERSEDED
-      await TemporaryEraseSnapshot.updateMany(
-        { companyId, status: 'ACTIVE' },
-        { $set: { status: 'SUPERSEDED' } },
-        opts
-      );
+      const opts = session ? { session } : {};
 
-      // 3. Save new ACTIVE snapshot inside transaction
-      const eraseId = `ERS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-      await TemporaryEraseSnapshot.create(
-        [
-          {
-            eraseId,
-            companyId,
-            erasedBy: user.name || user.userId || 'Business Owner',
-            erasedAt: new Date(),
-            dataSummary,
-            data: snapshotPayload,
-            status: 'ACTIVE',
-          },
-        ],
-        opts
-      );
+      try {
+        // 1. Extract current operational business records
+        const [
+          companyDoc,
+          settingsDoc,
+          customers,
+          suppliers,
+          products,
+          invoices,
+          quotations,
+          purchases,
+          expenses,
+          payments,
+          recycleBinItems,
+        ] = await Promise.all([
+          Company.findOne({ companyId }, null, opts).lean(),
+          Settings.findOne({ companyId }, null, opts).lean(),
+          Customer.find({ companyId }, null, opts).lean(),
+          Supplier.find({ companyId }, null, opts).lean(),
+          Product.find({ companyId }, null, opts).lean(),
+          Invoice.find({ companyId }, null, opts).lean(),
+          Quotation.find({ companyId }, null, opts).lean(),
+          Purchase.find({ companyId }, null, opts).lean(),
+          Expense.find({ companyId }, null, opts).lean(),
+          Payment.find({ companyId }, null, opts).lean(),
+          RecycleBinItem.find({ companyId }, null, opts).lean(),
+        ]);
 
-      // 4. Delete operational documents for companyId ONLY
-      await Promise.all([
-        Customer.deleteMany({ companyId }, opts),
-        Supplier.deleteMany({ companyId }, opts),
-        Product.deleteMany({ companyId }, opts),
-        Invoice.deleteMany({ companyId }, opts),
-        Quotation.deleteMany({ companyId }, opts),
-        Purchase.deleteMany({ companyId }, opts),
-        Expense.deleteMany({ companyId }, opts),
-        Payment.deleteMany({ companyId }, opts),
-        RecycleBinItem.deleteMany({ companyId }, opts),
-      ]);
+        const dataSummary = {
+          customers: customers.length,
+          suppliers: suppliers.length,
+          products: products.length,
+          invoices: invoices.length,
+          quotations: quotations.length,
+          purchases: purchases.length,
+          expenses: expenses.length,
+          payments: payments.length,
+          recycleBin: recycleBinItems.length,
+        };
 
-      if (useTransaction && session) {
-        await session.commitTransaction();
-        session.endSession();
+        const sanitizeDocs = (docs) => {
+          if (!docs || !Array.isArray(docs)) return [];
+          return docs.map((doc) => {
+            const { _id, __v, ...rest } = doc;
+            return rest;
+          });
+        };
+
+        const snapshotPayload = {
+          company: companyDoc ? { businessName: companyDoc.businessName, ownerName: companyDoc.ownerName, mobile: companyDoc.mobile, email: companyDoc.email, gstin: companyDoc.gstin, address: companyDoc.address, city: companyDoc.city, state: companyDoc.state } : null,
+          settings: settingsDoc ? (() => { const { _id, __v, ...rest } = settingsDoc; return rest; })() : null,
+          customers: sanitizeDocs(customers),
+          suppliers: sanitizeDocs(suppliers),
+          products: sanitizeDocs(products),
+          invoices: sanitizeDocs(invoices),
+          quotations: sanitizeDocs(quotations),
+          purchases: sanitizeDocs(purchases),
+          expenses: sanitizeDocs(expenses),
+          payments: sanitizeDocs(payments),
+          recycleBin: sanitizeDocs(recycleBinItems),
+        };
+
+        // Check snapshot size safety (12MB BSON safety threshold)
+        const estimatedSize = Buffer.byteLength(JSON.stringify(snapshotPayload));
+        const maxAllowedSize = 12 * 1024 * 1024; // 12 MB
+        if (estimatedSize > maxAllowedSize) {
+          throw new Error(`Business dataset size (${(estimatedSize / (1024 * 1024)).toFixed(2)} MB) exceeds temporary snapshot memory limit (12 MB). Please perform a Permanent Erase or download a manual Backup file.`);
+        }
+
+        // 2. Mark existing ACTIVE snapshots for this company as SUPERSEDED
+        await TemporaryEraseSnapshot.updateMany(
+          { companyId, status: 'ACTIVE' },
+          { $set: { status: 'SUPERSEDED' } },
+          opts
+        );
+
+        // 3. Save new ACTIVE snapshot inside transaction
+        const eraseId = `ERS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        await TemporaryEraseSnapshot.create(
+          [
+            {
+              eraseId,
+              companyId,
+              erasedBy: user.name || user.userId || 'Business Owner',
+              erasedAt: new Date(),
+              dataSummary,
+              data: snapshotPayload,
+              status: 'ACTIVE',
+            },
+          ],
+          opts
+        );
+
+        // 4. Delete operational documents for companyId ONLY
+        await Promise.all([
+          Customer.deleteMany({ companyId }, opts),
+          Supplier.deleteMany({ companyId }, opts),
+          Product.deleteMany({ companyId }, opts),
+          Invoice.deleteMany({ companyId }, opts),
+          Quotation.deleteMany({ companyId }, opts),
+          Purchase.deleteMany({ companyId }, opts),
+          Expense.deleteMany({ companyId }, opts),
+          Payment.deleteMany({ companyId }, opts),
+          RecycleBinItem.deleteMany({ companyId }, opts),
+        ]);
+
+        if (useTransaction && session) {
+          await session.commitTransaction();
+          session.endSession();
+        }
+
+        // Notify connected clients
+        await touchCompanyData(companyId, socketId, 'System', 'ERASE_TEMPORARY');
+
+        logger.info('TEMPORARY ERASE completed for company %s. Snapshot ID: %s', companyId, eraseId);
+
+        return {
+          success: true,
+          message: 'Business data temporarily erased. Your Company account and login access remain intact.',
+          eraseId,
+          dataSummary,
+        };
+      } catch (error) {
+        if (useTransaction && session) {
+          logger.error('Aborting TEMPORARY ERASE transaction for company %s: %s', companyId, error.message);
+          await session.abortTransaction();
+          session.endSession();
+        }
+        throw error;
       }
-
-      // Notify connected clients
-      await touchCompanyData(companyId, socketId, 'System', 'ERASE_TEMPORARY');
-
-      logger.info('TEMPORARY ERASE completed for company %s. Snapshot ID: %s', companyId, eraseId);
-
-      return {
-        success: true,
-        message: 'Business data temporarily erased. Your Company account and login access remain intact.',
-        eraseId,
-        dataSummary,
-      };
-    } catch (error) {
-      if (useTransaction && session) {
-        logger.error('Aborting TEMPORARY ERASE transaction for company %s: %s', companyId, error.message);
-        await session.abortTransaction();
-        session.endSession();
-      }
-      throw error;
+    } finally {
+      backupService.releaseCompanyLock(companyId);
     }
   }
 

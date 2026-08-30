@@ -169,6 +169,77 @@ class BackupController {
       next(error);
     }
   }
+
+  async getCloudBackupPreview(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { historyId } = req.params;
+
+      const { historyRecord, payload } = await googleDriveService.downloadDrivePayload(companyId, historyId);
+      const validation = backupService.validateBackup(payload, companyId);
+
+      if (!validation.valid) {
+        return res.status(400).json({
+          success: false,
+          valid: false,
+          message: validation.message,
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        valid: true,
+        historyRecord,
+        metadata: validation.metadata,
+        dataSummary: validation.calculatedSummary,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to preview cloud backup.',
+      });
+    }
+  }
+
+  async downloadCloudBackup(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { historyId } = req.params;
+      await googleDriveService.streamDriveFile(companyId, historyId, res);
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to download cloud backup file.',
+      });
+    }
+  }
+
+  async restoreCloudBackup(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { historyId } = req.params;
+      const { confirmText } = req.body;
+      const socketId = req.headers['x-socket-id'] || null;
+
+      const result = await backupService.restoreCloudBackup(companyId, historyId, confirmText, socketId, req.user);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error.message || 'Cloud restoration failed.',
+      });
+    }
+  }
+
+  async getBackupHealth(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const healthInfo = await backupService.getBackupHealthStatus(companyId);
+      res.status(200).json({ success: true, ...healthInfo });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
 
 export default new BackupController();

@@ -11,10 +11,32 @@ import Expense from '../models/Expense.js';
 import Payment from '../models/Payment.js';
 import RecycleBinItem from '../models/RecycleBinItem.js';
 import TemporaryEraseSnapshot from '../models/TemporaryEraseSnapshot.js';
+import BackupHistory from '../models/BackupHistory.js';
+import googleDriveService from './googleDriveService.js';
 import logger from '../config/logger.js';
 import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class BackupService {
+  constructor() {
+    this.activeCompanyLocks = new Set();
+  }
+
+  /**
+   * Acquires a company-scoped execution lock for Restore or Erase.
+   */
+  acquireCompanyLock(companyId, operationName = 'Data Operation') {
+    if (this.activeCompanyLocks.has(companyId)) {
+      throw new Error(`An operation (${operationName}) is already in progress for this company. Please wait for it to complete.`);
+    }
+    this.activeCompanyLocks.add(companyId);
+  }
+
+  /**
+   * Releases company-scoped execution lock.
+   */
+  releaseCompanyLock(companyId) {
+    this.activeCompanyLocks.delete(companyId);
+  }
   /**
    * Generates a complete business backup for the active company.
    * Strictly excludes sensitive authentication, session, and platform subscription data.
@@ -254,142 +276,148 @@ class BackupService {
       throw new Error(validation.message);
     }
 
-    const { metadata, calculatedSummary } = validation;
-    const data = backupPayload.data || {};
-
-    logger.info('Initiating atomic restore for company %s...', companyId);
-
-    const prepareDocs = (docs) => {
-      if (!docs || !Array.isArray(docs)) return [];
-      return docs.map((doc) => {
-        const { _id, __v, ...rest } = doc;
-        return { ...rest, companyId };
-      });
-    };
-
-    let session = null;
-    let useTransaction = false;
+    this.acquireCompanyLock(companyId, 'Restore');
 
     try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-      useTransaction = true;
-    } catch (err) {
-      logger.warn('Mongoose sessions/transactions unavailable or failed to start: %s. Using safe fallback snapshot.', err.message);
-      if (session) session.endSession();
-      session = null;
-    }
+      const { metadata, calculatedSummary } = validation;
+      const data = backupPayload.data || {};
 
-    try {
-      const opts = session ? { session } : {};
+      logger.info('Initiating atomic restore for company %s...', companyId);
 
-      // 1. Delete existing business operational data for active company ONLY
-      await Customer.deleteMany({ companyId }, opts);
-      await Supplier.deleteMany({ companyId }, opts);
-      await Product.deleteMany({ companyId }, opts);
-      await Invoice.deleteMany({ companyId }, opts);
-      await Quotation.deleteMany({ companyId }, opts);
-      await Purchase.deleteMany({ companyId }, opts);
-      await Expense.deleteMany({ companyId }, opts);
-      await Payment.deleteMany({ companyId }, opts);
-      await RecycleBinItem.deleteMany({ companyId }, opts);
+      const prepareDocs = (docs) => {
+        if (!docs || !Array.isArray(docs)) return [];
+        return docs.map((doc) => {
+          const { _id, __v, ...rest } = doc;
+          return { ...rest, companyId };
+        });
+      };
 
-      // 2. Insert restored collection documents
-      const restoredCustomers = prepareDocs(data.customers);
-      const restoredSuppliers = prepareDocs(data.suppliers);
-      const restoredProducts = prepareDocs(data.products);
-      const restoredInvoices = prepareDocs(data.invoices);
-      const restoredQuotations = prepareDocs(data.quotations);
-      const restoredPurchases = prepareDocs(data.purchases);
-      const restoredExpenses = prepareDocs(data.expenses);
-      const restoredPayments = prepareDocs(data.payments);
-      const restoredRecycleBin = prepareDocs(data.recycleBin);
+      let session = null;
+      let useTransaction = false;
 
-      if (restoredCustomers.length > 0) await Customer.insertMany(restoredCustomers, { ...opts, ordered: true });
-      if (restoredSuppliers.length > 0) await Supplier.insertMany(restoredSuppliers, { ...opts, ordered: true });
-      if (restoredProducts.length > 0) await Product.insertMany(restoredProducts, { ...opts, ordered: true });
-      if (restoredInvoices.length > 0) await Invoice.insertMany(restoredInvoices, { ...opts, ordered: true });
-      if (restoredQuotations.length > 0) await Quotation.insertMany(restoredQuotations, { ...opts, ordered: true });
-      if (restoredPurchases.length > 0) await Purchase.insertMany(restoredPurchases, { ...opts, ordered: true });
-      if (restoredExpenses.length > 0) await Expense.insertMany(restoredExpenses, { ...opts, ordered: true });
-      if (restoredPayments.length > 0) await Payment.insertMany(restoredPayments, { ...opts, ordered: true });
-      if (restoredRecycleBin.length > 0) await RecycleBinItem.insertMany(restoredRecycleBin, { ...opts, ordered: true });
-
-      // 3. Selectively update ONLY explicit business profile fields in Company (DO NOT OVERWRITE plan, status, etc.)
-      if (data.company) {
-        const allowedCompanyFields = {
-          businessName: data.company.businessName,
-          ownerName: data.company.ownerName,
-          mobile: data.company.mobile,
-          email: data.company.email,
-          gstin: data.company.gstin,
-          address: data.company.address,
-          city: data.company.city,
-          state: data.company.state,
-          lastDataUpdated: new Date(),
-        };
-        // Remove undefined keys
-        Object.keys(allowedCompanyFields).forEach((key) => allowedCompanyFields[key] === undefined && delete allowedCompanyFields[key]);
-
-        await Company.findOneAndUpdate(
-          { companyId },
-          { $set: allowedCompanyFields },
-          { ...opts, new: true }
-        );
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+        useTransaction = true;
+      } catch (err) {
+        logger.warn('Mongoose sessions/transactions unavailable or failed to start: %s. Using safe fallback snapshot.', err.message);
+        if (session) session.endSession();
+        session = null;
       }
 
-      // 4. Update Settings business preferences (preserve server-controlled lastBackupMetadata)
-      if (data.settings) {
-        const { _id, companyId: cId, lastBackupMetadata, ...settingsRest } = data.settings;
-        await Settings.findOneAndUpdate(
-          { companyId },
-          {
-            $set: {
-              ...settingsRest,
-              companyId,
-              lastRestoreMetadata: {
-                restoredAt: new Date().toISOString(),
-                restoredBy: user?.name || user?.userId || 'Business Owner',
-                backupCreatedAt: metadata.createdAt,
-                dataSummary: calculatedSummary,
+      try {
+        const opts = session ? { session } : {};
+
+        // 1. Delete existing business operational data for active company ONLY
+        await Customer.deleteMany({ companyId }, opts);
+        await Supplier.deleteMany({ companyId }, opts);
+        await Product.deleteMany({ companyId }, opts);
+        await Invoice.deleteMany({ companyId }, opts);
+        await Quotation.deleteMany({ companyId }, opts);
+        await Purchase.deleteMany({ companyId }, opts);
+        await Expense.deleteMany({ companyId }, opts);
+        await Payment.deleteMany({ companyId }, opts);
+        await RecycleBinItem.deleteMany({ companyId }, opts);
+
+        // 2. Insert restored collection documents
+        const restoredCustomers = prepareDocs(data.customers);
+        const restoredSuppliers = prepareDocs(data.suppliers);
+        const restoredProducts = prepareDocs(data.products);
+        const restoredInvoices = prepareDocs(data.invoices);
+        const restoredQuotations = prepareDocs(data.quotations);
+        const restoredPurchases = prepareDocs(data.purchases);
+        const restoredExpenses = prepareDocs(data.expenses);
+        const restoredPayments = prepareDocs(data.payments);
+        const restoredRecycleBin = prepareDocs(data.recycleBin);
+
+        if (restoredCustomers.length > 0) await Customer.insertMany(restoredCustomers, { ...opts, ordered: true });
+        if (restoredSuppliers.length > 0) await Supplier.insertMany(restoredSuppliers, { ...opts, ordered: true });
+        if (restoredProducts.length > 0) await Product.insertMany(restoredProducts, { ...opts, ordered: true });
+        if (restoredInvoices.length > 0) await Invoice.insertMany(restoredInvoices, { ...opts, ordered: true });
+        if (restoredQuotations.length > 0) await Quotation.insertMany(restoredQuotations, { ...opts, ordered: true });
+        if (restoredPurchases.length > 0) await Purchase.insertMany(restoredPurchases, { ...opts, ordered: true });
+        if (restoredExpenses.length > 0) await Expense.insertMany(restoredExpenses, { ...opts, ordered: true });
+        if (restoredPayments.length > 0) await Payment.insertMany(restoredPayments, { ...opts, ordered: true });
+        if (restoredRecycleBin.length > 0) await RecycleBinItem.insertMany(restoredRecycleBin, { ...opts, ordered: true });
+
+        // 3. Selectively update ONLY explicit business profile fields in Company (DO NOT OVERWRITE plan, status, etc.)
+        if (data.company) {
+          const allowedCompanyFields = {
+            businessName: data.company.businessName,
+            ownerName: data.company.ownerName,
+            mobile: data.company.mobile,
+            email: data.company.email,
+            gstin: data.company.gstin,
+            address: data.company.address,
+            city: data.company.city,
+            state: data.company.state,
+            lastDataUpdated: new Date(),
+          };
+          // Remove undefined keys
+          Object.keys(allowedCompanyFields).forEach((key) => allowedCompanyFields[key] === undefined && delete allowedCompanyFields[key]);
+
+          await Company.findOneAndUpdate(
+            { companyId },
+            { $set: allowedCompanyFields },
+            { ...opts, new: true }
+          );
+        }
+
+        // 4. Update Settings business preferences (preserve server-controlled lastBackupMetadata)
+        if (data.settings) {
+          const { _id, companyId: cId, lastBackupMetadata, ...settingsRest } = data.settings;
+          await Settings.findOneAndUpdate(
+            { companyId },
+            {
+              $set: {
+                ...settingsRest,
+                companyId,
+                lastRestoreMetadata: {
+                  restoredAt: new Date().toISOString(),
+                  restoredBy: user?.name || user?.userId || 'Business Owner',
+                  backupCreatedAt: metadata.createdAt,
+                  dataSummary: calculatedSummary,
+                },
               },
             },
-          },
-          { ...opts, upsert: true }
+            { ...opts, upsert: true }
+          );
+        }
+
+        // 5. Expire any active or temporary erase snapshots for this company (prevents duplicate restore via Undo)
+        await TemporaryEraseSnapshot.updateMany(
+          { companyId, status: { $in: ['ACTIVE', 'SUPERSEDED', 'RESTORING'] } },
+          { $set: { status: 'EXPIRED' } },
+          opts
         );
+
+        // COMMIT TRANSACTION
+        if (useTransaction && session) {
+          await session.commitTransaction();
+          session.endSession();
+        }
+
+        // Notify connected frontend clients
+        await touchCompanyData(companyId, socketId, 'System', 'RESTORE');
+
+        logger.info('Atomic restore successfully completed for company %s', companyId);
+
+        return {
+          success: true,
+          message: 'Company business data restored successfully.',
+          restoredAt: new Date().toISOString(),
+          dataSummary: calculatedSummary,
+        };
+      } catch (error) {
+        if (useTransaction && session) {
+          logger.error('Aborting restore transaction for company %s due to error: %s', companyId, error.message);
+          await session.abortTransaction();
+          session.endSession();
+        }
+        throw new Error(`Atomic data restoration failed. Database was safely rolled back: ${error.message}`);
       }
-
-      // 5. Expire any active or temporary erase snapshots for this company (prevents duplicate restore via Undo)
-      await TemporaryEraseSnapshot.updateMany(
-        { companyId, status: { $in: ['ACTIVE', 'SUPERSEDED', 'RESTORING'] } },
-        { $set: { status: 'EXPIRED' } },
-        opts
-      );
-
-      // COMMIT TRANSACTION
-      if (useTransaction && session) {
-        await session.commitTransaction();
-        session.endSession();
-      }
-
-      // Notify connected frontend clients
-      await touchCompanyData(companyId, socketId, 'System', 'RESTORE');
-
-      logger.info('Atomic restore successfully completed for company %s', companyId);
-
-      return {
-        success: true,
-        message: 'Company business data restored successfully.',
-        restoredAt: new Date().toISOString(),
-        dataSummary: calculatedSummary,
-      };
-    } catch (error) {
-      if (useTransaction && session) {
-        logger.error('Aborting restore transaction for company %s due to error: %s', companyId, error.message);
-        await session.abortTransaction();
-        session.endSession();
-      }
-      throw new Error(`Atomic data restoration failed. Database was safely rolled back: ${error.message}`);
+    } finally {
+      this.releaseCompanyLock(companyId);
     }
   }
 
@@ -402,6 +430,93 @@ class BackupService {
       lastBackupMetadata: settingsDoc?.lastBackupMetadata || null,
       lastRestoreMetadata: settingsDoc?.lastRestoreMetadata || null,
     };
+  }
+
+  /**
+   * Calculates 3-Tier Backup Health Priority for company:
+   * 1. No successful automatic backup within 48 hours -> BACKUP OVERDUE
+   * 2. Otherwise, latest scheduled attempt failed -> ATTENTION REQUIRED
+   * 3. Otherwise -> HEALTHY
+   */
+  async getBackupHealthStatus(companyId) {
+    const now = Date.now();
+    const fortyEightHoursMs = 48 * 60 * 60 * 1000;
+
+    // Find latest successful automatic backup (Daily, Weekly, Monthly)
+    const lastSuccessfulAuto = await BackupHistory.findOne({
+      companyId,
+      backupType: { $in: ['Daily', 'Weekly', 'Monthly'] },
+      status: 'SUCCESS',
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Priority 1: Check if overdue (>48h or never completed an automatic backup)
+    if (!lastSuccessfulAuto || (now - new Date(lastSuccessfulAuto.createdAt).getTime()) > fortyEightHoursMs) {
+      return {
+        healthState: 'OVERDUE',
+        badgeText: '⚠ Backup Overdue',
+        description: 'No successful automatic backup has completed within the expected 48-hour schedule.',
+        lastSuccessfulAuto: lastSuccessfulAuto || null,
+      };
+    }
+
+    // Find latest scheduled automatic attempt
+    const latestAutoAttempt = await BackupHistory.findOne({
+      companyId,
+      backupType: { $in: ['Daily', 'Weekly', 'Monthly'] },
+    })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Priority 2: Check if latest scheduled attempt failed
+    if (latestAutoAttempt && latestAutoAttempt.status === 'FAILED') {
+      return {
+        healthState: 'ATTENTION_REQUIRED',
+        badgeText: '⚠ Attention Required',
+        description: `The latest scheduled automatic backup attempt failed: ${latestAutoAttempt.failureReason || 'Upload failed'}.`,
+        lastSuccessfulAuto,
+        latestAutoAttempt,
+      };
+    }
+
+    // Priority 3: Healthy
+    return {
+      healthState: 'HEALTHY',
+      badgeText: '✓ Healthy',
+      description: 'Automatic backup system is healthy and up to date.',
+      lastSuccessfulAuto,
+      latestAutoAttempt,
+    };
+  }
+
+  /**
+   * Centralized Cloud Restoration: Downloads cloud payload via googleDriveService,
+   * acquires company concurrency lock, validates payload, and executes atomic transaction restore.
+   */
+  async restoreCloudBackup(companyId, historyId, confirmText, socketId = null, user = null) {
+    if (confirmText !== 'RESTORE') {
+      throw new Error('Confirmation mismatch. You must type "RESTORE" exactly to confirm data restoration.');
+    }
+
+    this.acquireCompanyLock(companyId, 'Cloud Restore');
+
+    try {
+      // 1. Download payload via googleDriveService
+      const { payload } = await googleDriveService.downloadDrivePayload(companyId, historyId);
+
+      // 2. Validate payload & company match
+      const validation = this.validateBackup(payload, companyId);
+      if (!validation.valid) {
+        throw new Error(`Cloud backup validation failed: ${validation.message}`);
+      }
+
+      // 3. Execute atomic transaction replace-restore
+      const result = await this.restoreBackup(companyId, payload, socketId, user);
+      return result;
+    } finally {
+      this.releaseCompanyLock(companyId);
+    }
   }
 }
 

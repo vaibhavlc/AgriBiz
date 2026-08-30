@@ -334,6 +334,79 @@ class GoogleDriveService {
   }
 
   /**
+   * Verifies if a specific Google Drive file ID exists and is active.
+   */
+  async verifyDriveFile(oauth2Client, driveFileId) {
+    if (!oauth2Client || !driveFileId) return false;
+    try {
+      const drive = google.drive({ version: 'v3', auth: oauth2Client });
+      const res = await drive.files.get({
+        fileId: driveFileId,
+        fields: 'id, name, size, trashed',
+      });
+      return res.data && !res.data.trashed;
+    } catch (err) {
+      logger.warn('Drive file verification failed for fileId %s: %s', driveFileId, err.message);
+      return false;
+    }
+  }
+
+  /**
+   * On-Demand: Downloads JSON payload for a specific history record from Google Drive.
+   */
+  async downloadDrivePayload(companyId, historyId) {
+    const historyRecord = await BackupHistory.findOne({ historyId, companyId }).lean();
+    if (!historyRecord || !historyRecord.driveFileId) {
+      throw new Error('Backup history record not found or missing Google Drive reference.');
+    }
+
+    const oauth2Client = await this.getOAuth2ClientForCompany(companyId);
+    if (!oauth2Client) {
+      throw new Error('Google Drive is not connected for this company.');
+    }
+
+    const isAvailable = await this.verifyDriveFile(oauth2Client, historyRecord.driveFileId);
+    if (!isAvailable) {
+      // Mark record as unavailable/failed in history
+      await BackupHistory.updateOne(
+        { historyId },
+        { $set: { failureReason: 'Backup file unavailable or deleted from Google Drive.' } }
+      );
+      throw new Error('Backup File Unavailable: The file could not be found in your Google Drive account.');
+    }
+
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+    const fileRes = await drive.files.get({
+      fileId: historyRecord.driveFileId,
+      alt: 'media',
+    });
+
+    const payload = typeof fileRes.data === 'string' ? JSON.parse(fileRes.data) : fileRes.data;
+    return { historyRecord, payload };
+  }
+
+  /**
+   * Streams a selected Google Drive backup directly to the client HTTP download response.
+   */
+  async streamDriveFile(companyId, historyId, res) {
+    const { historyRecord } = await this.downloadDrivePayload(companyId, historyId);
+
+    const oauth2Client = await this.getOAuth2ClientForCompany(companyId);
+    const drive = google.drive({ version: 'v3', auth: oauth2Client });
+
+    const fileName = historyRecord.fileName || `agribiz-backup-${historyId}.json`;
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+    const driveStream = await drive.files.get(
+      { fileId: historyRecord.driveFileId, alt: 'media' },
+      { responseType: 'stream' }
+    );
+
+    driveStream.data.pipe(res);
+  }
+
+  /**
    * Returns Backup History list and distinguishes Last Successful Backup vs Latest Attempt.
    */
   async getHistory(companyId) {

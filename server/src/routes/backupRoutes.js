@@ -15,11 +15,17 @@ router.post('/validate', authorizeRoles('Owner'), backupController.validateBacku
 router.post('/restore', authorizeRoles('Owner'), backupController.restoreBackup);
 router.get('/last', authorizeRoles('Owner'), backupController.getLastBackupInfo);
 
-// Phase 2: Google Drive & Automatic Backup Routes (Owner only)
+// Phase 2 & Phase 3: Google Drive & Automatic Backup Routes (Owner only)
 router.get('/google/auth-url', authorizeRoles('Owner'), backupController.getGoogleAuthUrl);
 router.get('/google/status', authorizeRoles('Owner'), backupController.getGoogleDriveStatus);
 router.post('/google/disconnect', authorizeRoles('Owner'), backupController.disconnectGoogleDrive);
 router.post('/google/trigger', authorizeRoles('Owner'), backupController.triggerManualGoogleBackup);
 router.get('/history', authorizeRoles('Owner'), backupController.getBackupHistory);
+
+// Phase 3: Cloud Preview, Streaming Download, Cloud Restore & Health (Owner only)
+router.get('/cloud/preview/:historyId', authorizeRoles('Owner'), backupController.getCloudBackupPreview);
+router.get('/cloud/download/:historyId', authorizeRoles('Owner'), backupController.downloadCloudBackup);
+router.post('/cloud/restore/:historyId', authorizeRoles('Owner'), backupController.restoreCloudBackup);
+router.get('/health', authorizeRoles('Owner'), backupController.getBackupHealth);
 
 export default router;
