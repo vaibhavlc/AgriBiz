@@ -2698,7 +2698,7 @@ export const Settings: React.FC = () => {
 
           {/* TAB 7: Backup & Restore */}
           {activeTab === 'backup' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {currentUser?.role !== 'Owner' ? (
                 <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <ShieldAlert size={48} style={{ color: '#ef4444', margin: '0 auto 16px' }} />
@@ -2709,79 +2709,148 @@ export const Settings: React.FC = () => {
                 </div>
               ) : (
                 <>
-                  {/* SECTION 1: Automatic Google Drive Backup Card & Backup Health Status */}
-                  <div className="card">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <UploadCloud size={18} />
-                        </div>
-                        <div>
-                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Automatic Google Drive Backup</h3>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Daily scheduled backups at 02:00 AM IST uploaded securely to your private Google Drive</p>
-                        </div>
-                      </div>
-                      <span className={`badge ${gdriveStatus?.connected ? 'badge-success' : 'badge-secondary'}`} style={{ fontSize: '12px', padding: '6px 12px' }}>
-                        {gdriveStatus?.connected ? '✓ Connected' : 'Not Connected'}
-                      </span>
-                    </div>
-
+                  {/* SECTION 1: Backup Status Header Card */}
+                  <div className="card" style={{ padding: '20px' }}>
                     {/* Backup Health Banner */}
-                    {backupHealth && (
+                    {backupHealth ? (
                       <div style={{
                         padding: '14px 16px',
-                        borderRadius: '10px',
+                        borderRadius: '12px',
                         marginBottom: '20px',
                         backgroundColor: backupHealth.healthState === 'HEALTHY' ? '#ecfdf5' : backupHealth.healthState === 'OVERDUE' ? '#fffbebfb' : '#fef2f2',
                         border: `1px solid ${backupHealth.healthState === 'HEALTHY' ? 'rgba(16, 185, 129, 0.3)' : backupHealth.healthState === 'OVERDUE' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
                         gap: '12px',
-                        flexWrap: 'wrap'
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <ShieldCheck size={20} style={{ color: backupHealth.healthState === 'HEALTHY' ? '#059669' : backupHealth.healthState === 'OVERDUE' ? '#d97706' : '#dc2626' }} />
-                          <div>
-                            <div style={{ fontSize: '13px', fontWeight: 800, color: backupHealth.healthState === 'HEALTHY' ? '#065f46' : backupHealth.healthState === 'OVERDUE' ? '#92400e' : '#991b1b' }}>
-                              System Health: {backupHealth.badgeText}
-                            </div>
-                            <div style={{ fontSize: '11px', color: backupHealth.healthState === 'HEALTHY' ? '#047857' : backupHealth.healthState === 'OVERDUE' ? '#b45309' : '#b91c1c', marginTop: '2px' }}>
-                              {backupHealth.description}
-                            </div>
+                        {backupHealth.healthState === 'HEALTHY' ? (
+                          <ShieldCheck size={24} style={{ color: '#059669', flexShrink: 0 }} />
+                        ) : backupHealth.healthState === 'OVERDUE' ? (
+                          <AlertCircle size={24} style={{ color: '#d97706', flexShrink: 0 }} />
+                        ) : (
+                          <AlertTriangle size={24} style={{ color: '#dc2626', flexShrink: 0 }} />
+                        )}
+                        <div>
+                          <div style={{ fontSize: '15px', fontWeight: 800, color: backupHealth.healthState === 'HEALTHY' ? '#065f46' : backupHealth.healthState === 'OVERDUE' ? '#92400e' : '#991b1b' }}>
+                            {backupHealth.badgeText}
+                          </div>
+                          <div style={{ fontSize: '12px', color: backupHealth.healthState === 'HEALTHY' ? '#047857' : backupHealth.healthState === 'OVERDUE' ? '#b45309' : '#b91c1c', marginTop: '2px', lineHeight: 1.4 }}>
+                            {backupHealth.description}
                           </div>
                         </div>
                       </div>
+                    ) : (
+                      <div style={{ padding: '14px', borderRadius: '12px', marginBottom: '20px', backgroundColor: 'var(--bg-secondary)', display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                        <RefreshCw size={16} className="spin" style={{ color: 'var(--primary)' }} />
+                        <span>Checking system backup health status...</span>
+                      </div>
                     )}
+
+                    {/* Quick Status Cards Grid */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
+                      {/* Last Successful Backup */}
+                      <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '14px 16px', border: '1px solid var(--border-color)', borderLeft: '4px solid #10b981' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: '#047857', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <CheckCircle2 size={13} /> Last Successful Backup
+                        </div>
+                        {backupHistoryData?.lastSuccessfulBackup ? (
+                          <div>
+                            <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                              {new Date(backupHistoryData.lastSuccessfulBackup.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                              Type: <strong>{backupHistoryData.lastSuccessfulBackup.backupType}</strong>
+                              {backupHistoryData.lastSuccessfulBackup.fileSize && (
+                                <> • {(backupHistoryData.lastSuccessfulBackup.fileSize / 1024).toFixed(1)} KB</>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No successful backups recorded yet.</div>
+                        )}
+                      </div>
+
+                      {/* Latest Backup Attempt */}
+                      <div style={{ backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', padding: '14px 16px', border: '1px solid var(--border-color)', borderLeft: backupHistoryData?.latestAttempt?.status === 'FAILED' ? '4px solid #ef4444' : '4px solid #3b82f6' }}>
+                        <div style={{ fontSize: '11px', fontWeight: 700, color: backupHistoryData?.latestAttempt?.status === 'FAILED' ? '#b91c1c' : '#1d4ed8', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <Clock size={13} /> Latest Backup Attempt
+                        </div>
+                        {backupHistoryData?.latestAttempt ? (
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                {new Date(backupHistoryData.latestAttempt.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                              </span>
+                              <span className={`badge ${backupHistoryData.latestAttempt.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px', padding: '3px 8px' }}>
+                                {backupHistoryData.latestAttempt.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
+                              </span>
+                            </div>
+                            {backupHistoryData.latestAttempt.status === 'FAILED' && (
+                              <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px', fontWeight: 600 }}>
+                                Reason: {backupHistoryData.latestAttempt.failureReason || 'Upload failed.'}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No backup attempts recorded yet.</div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* SECTION 2: Automatic Google Drive Backup Card */}
+                  <div className="card" style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <UploadCloud size={20} />
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Google Drive Backup</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Automatic daily cloud backups to your private Google Drive</p>
+                        </div>
+                      </div>
+                      <span className={`badge ${gdriveStatus?.connected ? 'badge-success' : 'badge-secondary'}`} style={{ fontSize: '12px', padding: '6px 12px', fontWeight: 700 }}>
+                        {gdriveStatus?.connected ? '✓ Connected' : 'Google Drive Not Connected'}
+                      </span>
+                    </div>
 
                     {gdriveStatus?.connected ? (
                       <div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', backgroundColor: 'var(--bg-secondary)', padding: '16px', borderRadius: '10px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                        {/* Status Info Grid */}
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', backgroundColor: 'var(--bg-secondary)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '18px' }}>
                           <div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Connected Google Account</div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px' }}>{gdriveStatus.googleEmail || 'Google Account'}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Connected Account</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginTop: '4px', wordBreak: 'break-all' }}>
+                              {gdriveStatus.googleEmail || 'Google Account'}
+                            </div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Automatic Schedule</div>
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#059669', marginTop: '4px' }}>Daily at 02:00 AM IST</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Automatic Schedule</div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: '#059669', marginTop: '4px' }}>
+                              Every day at 02:00 AM IST
+                            </div>
                           </div>
                           <div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Retention Policy</div>
-                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '4px' }}>7 Daily • 4 Weekly • 12 Monthly</div>
+                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>Backups Kept</div>
+                            <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '4px' }}>
+                              7 Daily • 4 Weekly • 12 Monthly
+                            </div>
                           </div>
                         </div>
 
+                        {/* Action Buttons */}
                         <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
                           <button
                             type="button"
                             className="btn btn-primary"
                             onClick={handleBackupNow}
                             disabled={isTriggeringBackupNow}
-                            style={{ backgroundColor: '#2563eb', borderColor: '#2563eb', fontWeight: 700 }}
+                            style={{ backgroundColor: '#2563eb', borderColor: '#2563eb', fontWeight: 700, padding: '10px 20px', fontSize: '13px' }}
                           >
                             {isTriggeringBackupNow ? (
                               <>
-                                <RefreshCw size={15} className="spin" /> Generating & Uploading Backup...
+                                <RefreshCw size={15} className="spin" /> Uploading to Google Drive...
                               </>
                             ) : (
                               <>
@@ -2792,9 +2861,10 @@ export const Settings: React.FC = () => {
 
                           <button
                             type="button"
-                            className="btn btn-secondary danger"
+                            className="btn btn-secondary"
                             onClick={handleDisconnectGoogleDrive}
                             disabled={isDisconnectingDrive}
+                            style={{ color: 'var(--text-muted)', fontSize: '12px', fontWeight: 600 }}
                           >
                             {isDisconnectingDrive ? <RefreshCw size={14} className="spin" /> : 'Disconnect Google Drive'}
                           </button>
@@ -2802,15 +2872,18 @@ export const Settings: React.FC = () => {
                       </div>
                     ) : (
                       <div>
-                        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px', lineHeight: 1.5 }}>
-                          Connect your Google Drive account to enable automatic 02:00 AM daily backups. Backups are stored in your private Google Drive under <strong>AgriBiz Backups / {currentCompany?.businessName || 'Company'}</strong>. The server automatically refreshes tokens and maintains 7 Daily, 4 Weekly, and 12 Monthly backups.
-                        </p>
+                        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '18px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '16px' }}>
+                          <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>Google Drive is not connected</div>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                            Connect your Google Drive account to enable automatic daily backups at 02:00 AM IST. Backups are saved securely inside your private Google Drive under <strong>AgriBiz Backups / {currentCompany?.businessName || 'Company'}</strong>.
+                          </p>
+                        </div>
                         <button
                           type="button"
                           className="btn btn-primary"
                           onClick={handleConnectGoogleDrive}
                           disabled={isConnectingDrive}
-                          style={{ fontWeight: 700 }}
+                          style={{ fontWeight: 700, padding: '10px 20px' }}
                         >
                           {isConnectingDrive ? <RefreshCw size={15} className="spin" /> : <HardDrive size={15} />} Connect Google Drive
                         </button>
@@ -2818,120 +2891,198 @@ export const Settings: React.FC = () => {
                     )}
                   </div>
 
-                  {/* SECTION 3: Backup Audit History Table & On-Demand Actions */}
-                  {backupHistoryData?.historyList && backupHistoryData.historyList.length > 0 && (
-                    <div className="card">
-                      <h4 style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '16px' }}>Backup Audit History</h4>
-                      <div className="table-responsive">
-                        <table className="table" style={{ fontSize: '13px' }}>
-                          <thead>
-                            <tr>
-                              <th>Date & Time</th>
-                              <th>Type</th>
-                              <th>Status</th>
-                              <th>File Name</th>
-                              <th>Size</th>
-                              <th style={{ textAlign: 'right' }}>Actions</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {backupHistoryData.historyList.map((item: any) => {
-                              const isUnavailable = item.failureReason && item.failureReason.toLowerCase().includes('unavailable');
-                              return (
-                                <tr key={item._id || item.historyId}>
-                                  <td>{new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</td>
-                                  <td><span className="badge badge-secondary">{item.backupType}</span></td>
-                                  <td>
-                                    {isUnavailable ? (
-                                      <span className="badge badge-danger">⚠ Backup File Unavailable</span>
-                                    ) : (
-                                      <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`}>
-                                        {item.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
+                  {/* SECTION 3: Backup History */}
+                  <div className="card" style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Backup History</h4>
+                      {backupHistoryData?.historyList && backupHistoryData.historyList.length > 0 && (
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600 }}>
+                          {backupHistoryData.historyList.length} recorded backup{backupHistoryData.historyList.length === 1 ? '' : 's'}
+                        </span>
+                      )}
+                    </div>
+
+                    {backupHistoryData?.historyList && backupHistoryData.historyList.length > 0 ? (
+                      <div>
+                        {/* Desktop Table View */}
+                        <div className="d-none d-md-block table-responsive">
+                          <table className="table" style={{ fontSize: '13px', margin: 0 }}>
+                            <thead>
+                              <tr>
+                                <th>Date & Time</th>
+                                <th>Backup Type</th>
+                                <th>Status</th>
+                                <th>File Size</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {backupHistoryData.historyList.map((item: any) => {
+                                const isUnavailable = item.failureReason && item.failureReason.toLowerCase().includes('unavailable');
+                                return (
+                                  <tr key={item._id || item.historyId}>
+                                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                      {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                                    </td>
+                                    <td>
+                                      <span className="badge badge-secondary" style={{ fontSize: '11px', fontWeight: 700 }}>
+                                        {item.backupType || 'Daily'} Backup
                                       </span>
-                                    )}
-                                  </td>
-                                  <td style={{ fontFamily: 'monospace', fontSize: '12px' }}>{item.fileName || '-'}</td>
-                                  <td>{item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '-'}</td>
-                                  <td style={{ textAlign: 'right' }}>
-                                    {item.status === 'SUCCESS' && !isUnavailable ? (
-                                      <div style={{ display: 'inline-flex', gap: '6px' }}>
-                                        <button
-                                          type="button"
-                                          className="btn btn-secondary"
-                                          style={{ fontSize: '11px', padding: '3px 8px' }}
-                                          onClick={() => handleCloudPreview(item)}
-                                          disabled={cloudPreviewLoadingId === item.historyId}
-                                        >
-                                          {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Preview'}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="btn btn-secondary"
-                                          style={{ fontSize: '11px', padding: '3px 8px' }}
-                                          onClick={() => handleCloudDownload(item)}
-                                          disabled={cloudDownloadLoadingId === item.historyId}
-                                        >
-                                          {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Download'}
-                                        </button>
-                                        <button
-                                          type="button"
-                                          className="btn btn-primary"
-                                          style={{ fontSize: '11px', padding: '3px 8px', backgroundColor: '#dc2626', borderColor: '#dc2626' }}
-                                          onClick={() => handleCloudPreview(item)}
-                                          disabled={cloudPreviewLoadingId === item.historyId}
-                                        >
-                                          Restore
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>-</span>
-                                    )}
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
+                                    </td>
+                                    <td>
+                                      {isUnavailable ? (
+                                        <span className="badge badge-danger" style={{ fontSize: '11px' }}>⚠ Backup File Unavailable</span>
+                                      ) : (
+                                        <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px' }}>
+                                          {item.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
+                                        </span>
+                                      )}
+                                    </td>
+                                    <td style={{ color: 'var(--text-secondary)' }}>
+                                      {item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '-'}
+                                    </td>
+                                    <td style={{ textAlign: 'right' }}>
+                                      {item.status === 'SUCCESS' && !isUnavailable ? (
+                                        <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                          <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 600 }}
+                                            onClick={() => handleCloudPreview(item)}
+                                            disabled={cloudPreviewLoadingId === item.historyId}
+                                          >
+                                            {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Preview'}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="btn btn-secondary"
+                                            style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 600 }}
+                                            onClick={() => handleCloudDownload(item)}
+                                            disabled={cloudDownloadLoadingId === item.historyId}
+                                          >
+                                            {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Download'}
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="btn btn-primary"
+                                            style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', borderColor: '#dc2626', fontWeight: 700 }}
+                                            onClick={() => handleCloudPreview(item)}
+                                            disabled={cloudPreviewLoadingId === item.historyId}
+                                          >
+                                            Restore
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>-</span>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        {/* Mobile Cards View (< 768px) */}
+                        <div className="d-block d-md-none" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {backupHistoryData.historyList.map((item: any) => {
+                            const isUnavailable = item.failureReason && item.failureReason.toLowerCase().includes('unavailable');
+                            return (
+                              <div key={item._id || item.historyId} style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                                    {item.backupType || 'Daily'} Backup
+                                  </span>
+                                  {isUnavailable ? (
+                                    <span className="badge badge-danger" style={{ fontSize: '10px' }}>Unavailable</span>
+                                  ) : (
+                                    <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '10px' }}>
+                                      {item.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
+                                    </span>
+                                  )}
+                                </div>
+                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
+                                  {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                                  {item.fileSize && <> • {(item.fileSize / 1024).toFixed(1)} KB</>}
+                                </div>
+                                {item.status === 'SUCCESS' && !isUnavailable && (
+                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '6px' }}>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      style={{ fontSize: '11px', padding: '6px 0', textAlign: 'center', justifyContent: 'center' }}
+                                      onClick={() => handleCloudPreview(item)}
+                                      disabled={cloudPreviewLoadingId === item.historyId}
+                                    >
+                                      {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Preview'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-secondary"
+                                      style={{ fontSize: '11px', padding: '6px 0', textAlign: 'center', justifyContent: 'center' }}
+                                      onClick={() => handleCloudDownload(item)}
+                                      disabled={cloudDownloadLoadingId === item.historyId}
+                                    >
+                                      {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Download'}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-primary"
+                                      style={{ fontSize: '11px', padding: '6px 0', backgroundColor: '#dc2626', borderColor: '#dc2626', textAlign: 'center', justifyContent: 'center', fontWeight: 700 }}
+                                      onClick={() => handleCloudPreview(item)}
+                                      disabled={cloudPreviewLoadingId === item.historyId}
+                                    >
+                                      Restore
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px border-dashed var(--border-color)' }}>
+                        <HardDrive size={32} style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
+                        <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>No backups available yet</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+                          Create your first backup to protect your business data.
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* SECTION 4: Create Manual Backup Card */}
+                  <div className="card" style={{ padding: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
+                      <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <Download size={20} />
+                      </div>
+                      <div>
+                        <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Create Manual Backup</h3>
+                        <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Download a copy of your current business data directly to your device</p>
                       </div>
                     </div>
-                  )}
 
-                  {/* SECTION 4: Create Manual Backup File */}
-                  <div className="card">
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <Download size={18} />
-                        </div>
-                        <div>
-                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Create Manual Backup File</h3>
-                          <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Download a complete JSON data file directly to your computer</p>
-                        </div>
-                      </div>
-                      <span className="badge badge-info" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <ShieldCheck size={12} /> Company Isolated
-                      </span>
-                    </div>
-
-                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '20px' }}>
-                      Creating a backup will compile all records for your active business company into a single JSON file.
-                      Includes: <strong>Customers, Suppliers, Products, Invoices, Quotations, Purchases, Expenses, Payments, and Recycle Bin items</strong>.
+                    <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '16px' }}>
+                      Includes: Customers, Suppliers, Products, Invoices, Quotations, Purchases, Expenses, Payments, and Recycle Bin items.
                       <br />
-                      <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>
-                        * Sensitive login credentials, passwords, session tokens, and subscription plans are strictly excluded.
+                      <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
+                        * User passwords, login credentials, and session access keys are strictly excluded for safety.
                       </span>
                     </p>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap', marginBottom: '20px' }}>
+                    <div style={{ marginBottom: '16px' }}>
                       <button
                         type="button"
                         className="btn btn-primary"
                         onClick={handleCreateBackup}
                         disabled={isExportingBackup}
+                        style={{ fontWeight: 700, padding: '10px 20px', fontSize: '13px' }}
                       >
                         {isExportingBackup ? (
                           <>
-                            <RefreshCw size={15} className="spin" /> Generating Backup...
+                            <RefreshCw size={15} className="spin" /> Creating Backup...
                           </>
                         ) : (
                           <>
@@ -2941,76 +3092,60 @@ export const Settings: React.FC = () => {
                       </button>
                     </div>
 
-                    {/* Last Backup Information */}
-                    {lastBackupMeta && (
-                      <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px', marginTop: '10px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                          <Clock size={16} style={{ color: 'var(--primary)' }} />
-                          <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Most Recent Backup Export</h4>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                          <div><strong>Date & Time:</strong> {new Date(lastBackupMeta.createdAt).toLocaleString()}</div>
-                          <div><strong>Created By:</strong> {lastBackupMeta.createdBy || 'Business Owner'}</div>
-                          <div><strong>File Name:</strong> {lastBackupMeta.fileName}</div>
-                        </div>
+                    {/* Most Recent Manual Backup Export & Last Restore Event Summaries */}
+                    {(lastBackupMeta || lastRestoreMeta) && (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        {lastBackupMeta && (
+                          <div style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                              <Clock size={14} style={{ color: 'var(--primary)' }} />
+                              <span>Most Recent Manual Export</span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                              {new Date(lastBackupMeta.createdAt).toLocaleString()} • Created by {lastBackupMeta.createdBy || 'Owner'}
+                            </div>
+                          </div>
+                        )}
 
-                        {lastBackupMeta.dataSummary && (
-                          <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px border-dashed var(--border-color)' }}>
-                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', color: 'var(--text-muted)', marginBottom: '8px' }}>Record Counts Summary</div>
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                              <span className="badge badge-secondary">Customers: {lastBackupMeta.dataSummary.customers || 0}</span>
-                              <span className="badge badge-secondary">Suppliers: {lastBackupMeta.dataSummary.suppliers || 0}</span>
-                              <span className="badge badge-secondary">Products: {lastBackupMeta.dataSummary.products || 0}</span>
-                              <span className="badge badge-secondary">Invoices: {lastBackupMeta.dataSummary.invoices || 0}</span>
-                              <span className="badge badge-secondary">Quotations: {lastBackupMeta.dataSummary.quotations || 0}</span>
-                              <span className="badge badge-secondary">Purchases: {lastBackupMeta.dataSummary.purchases || 0}</span>
-                              <span className="badge badge-secondary">Expenses: {lastBackupMeta.dataSummary.expenses || 0}</span>
-                              <span className="badge badge-secondary">Payments: {lastBackupMeta.dataSummary.payments || 0}</span>
+                        {lastRestoreMeta && (
+                          <div style={{ backgroundColor: '#ecfdf5', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', padding: '14px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: 700, color: '#065f46', marginBottom: '4px' }}>
+                              <FileCheck size={14} />
+                              <span>Most Recent Restoration Event</span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#047857' }}>
+                              {new Date(lastRestoreMeta.restoredAt).toLocaleString()} • Restored by {lastRestoreMeta.restoredBy || 'Owner'}
                             </div>
                           </div>
                         )}
                       </div>
                     )}
-
-                    {lastRestoreMeta && (
-                      <div style={{ backgroundColor: '#ecfdf5', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px', padding: '16px', marginTop: '12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', color: '#065f46' }}>
-                          <FileCheck size={16} />
-                          <h4 style={{ fontSize: '13px', fontWeight: 700, margin: 0 }}>Most Recent Restoration Event</h4>
-                        </div>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px', fontSize: '12px', color: '#047857' }}>
-                          <div><strong>Restored At:</strong> {new Date(lastRestoreMeta.restoredAt).toLocaleString()}</div>
-                          <div><strong>Restored By:</strong> {lastRestoreMeta.restoredBy || 'Business Owner'}</div>
-                          <div><strong>Original Backup Created:</strong> {new Date(lastRestoreMeta.backupCreatedAt).toLocaleString()}</div>
-                        </div>
-                      </div>
-                    )}
                   </div>
 
-                  {/* SECTION 5: Restore Backup Card with Source Selector Tabs */}
-                  <div id="restore-section-card" className="card" style={{ border: '1.5px solid rgba(239, 68, 68, 0.3)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  {/* SECTION 5: Restore Backup Card (Visually Separated) */}
+                  <div id="restore-section-card" className="card" style={{ padding: '20px', border: '1.5px solid rgba(239, 68, 68, 0.3)', backgroundColor: 'var(--card-bg)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '18px', flexWrap: 'wrap', gap: '10px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <HardDrive size={18} />
+                        <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <HardDrive size={20} />
                         </div>
                         <div>
-                          <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Restore Company Backup</h3>
-                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Validate and replace current company data using a Device JSON file or Google Drive backup</p>
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Restore Company Backup</h3>
+                          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>Replace current business data using a Device JSON file or Google Drive backup</p>
                         </div>
                       </div>
-                      <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '11px', padding: '4px 10px' }}>
                         <AlertTriangle size={12} /> Replace Strategy
                       </span>
                     </div>
 
-                    {/* Restore Source Toggle Tabs */}
-                    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
+                    {/* Source Toggle Tabs */}
+                    <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', flexWrap: 'wrap' }}>
                       <button
                         type="button"
                         className={`btn ${restoreSourceTab === 'device' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setRestoreSourceTab('device')}
-                        style={{ fontSize: '13px', fontWeight: 700 }}
+                        style={{ fontSize: '13px', fontWeight: 700, padding: '8px 16px' }}
                       >
                         <UploadCloud size={14} /> Restore From Device
                       </button>
@@ -3018,7 +3153,7 @@ export const Settings: React.FC = () => {
                         type="button"
                         className={`btn ${restoreSourceTab === 'gdrive' ? 'btn-primary' : 'btn-secondary'}`}
                         onClick={() => setRestoreSourceTab('gdrive')}
-                        style={{ fontSize: '13px', fontWeight: 700 }}
+                        style={{ fontSize: '13px', fontWeight: 700, padding: '8px 16px' }}
                       >
                         <HardDrive size={14} /> Restore From Google Drive
                       </button>
@@ -3027,9 +3162,9 @@ export const Settings: React.FC = () => {
                     {/* TAB A: Restore From Device */}
                     {restoreSourceTab === 'device' && (
                       <div>
-                        {/* Step 1: Upload File */}
+                        {/* File Selector */}
                         <div style={{ marginBottom: '20px' }}>
-                          <label className="form-label" style={{ fontWeight: 700 }}>Step 1: Select Backup File (.json)</label>
+                          <label className="form-label" style={{ fontWeight: 700, fontSize: '13px' }}>Select Backup File (.json)</label>
                           <input
                             type="file"
                             accept=".json"
@@ -3040,8 +3175,8 @@ export const Settings: React.FC = () => {
                             style={{ display: 'none' }}
                             id="backup-file-input"
                           />
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                            <label htmlFor="backup-file-input" className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                            <label htmlFor="backup-file-input" className="btn btn-secondary" style={{ cursor: 'pointer', fontWeight: 600 }}>
                               <UploadCloud size={15} /> Choose Backup File
                             </label>
                             {selectedBackupFile && (
@@ -3056,37 +3191,37 @@ export const Settings: React.FC = () => {
                         {isValidatingBackup && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '8px', marginBottom: '20px', fontSize: '13px' }}>
                             <RefreshCw size={15} className="spin" style={{ color: 'var(--primary)' }} />
-                            <span>Validating backup file format, company identity, and integrity...</span>
+                            <span>Validating Backup...</span>
                           </div>
                         )}
 
-                        {/* Step 2: Validation Failure or Preview */}
+                        {/* Validation Failure or Preview */}
                         {validationResult && (
-                          <div style={{ marginBottom: '24px' }}>
+                          <div style={{ marginBottom: '20px' }}>
                             {!validationResult.valid ? (
                               <div style={{ padding: '14px', backgroundColor: '#fef2f2', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '10px', color: '#991b1b', fontSize: '13px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 700, marginBottom: '4px' }}>
-                                  <AlertCircle size={16} /> Backup Validation Failed
+                                  <AlertCircle size={16} /> This backup file cannot be used
                                 </div>
                                 <div>{validationResult.message}</div>
                               </div>
                             ) : (
                               <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: '#ecfdf5', borderRadius: '12px', padding: '16px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 800, fontSize: '14px', marginBottom: '12px' }}>
-                                  <FileCheck size={18} /> Backup Validated & Ready for Restore
+                                  <FileCheck size={18} /> Backup Ready to Restore
                                 </div>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px', color: '#047857', marginBottom: '14px' }}>
-                                  <div><strong>Company Name:</strong> {validationResult.metadata?.companyName}</div>
-                                  <div><strong>Backup Created:</strong> {new Date(validationResult.metadata?.createdAt).toLocaleString()}</div>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '12px', color: '#047857', marginBottom: '14px' }}>
+                                  <div><strong>Company:</strong> {validationResult.metadata?.companyName}</div>
+                                  <div><strong>Backup Date:</strong> {new Date(validationResult.metadata?.createdAt).toLocaleString()}</div>
                                   <div><strong>Version:</strong> {validationResult.metadata?.backupVersion}</div>
                                 </div>
 
-                                <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                                <div style={{ backgroundColor: '#ffffff', borderRadius: '10px', padding: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                                   <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#065f46', marginBottom: '8px' }}>
-                                    Preview of Data to be Restored (Calculated from file):
+                                    Record Counts Summary:
                                   </div>
-                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '12px', color: '#1f2937' }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '12px', color: '#1f2937' }}>
                                     <div>👥 Customers: <strong>{validationResult.dataSummary?.customers || 0}</strong></div>
                                     <div>🏭 Suppliers: <strong>{validationResult.dataSummary?.suppliers || 0}</strong></div>
                                     <div>📦 Products: <strong>{validationResult.dataSummary?.products || 0}</strong></div>
@@ -3103,16 +3238,19 @@ export const Settings: React.FC = () => {
                           </div>
                         )}
 
-                        {/* Step 3: Explicit Confirmation & Restore Action */}
+                        {/* Explicit Confirmation & Restore Warning */}
                         {validationResult?.valid && (
                           <div style={{ backgroundColor: '#fff1f2', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '12px', padding: '18px' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#be123c', fontWeight: 800, fontSize: '14px', marginBottom: '8px' }}>
-                              <AlertTriangle size={18} /> WARNING: Irreversible Operation
+                              <AlertTriangle size={18} /> WARNING: Data Replacement
                             </div>
-                            <p style={{ fontSize: '13px', color: '#9f1239', lineHeight: 1.5, margin: '0 0 14px' }}>
-                              Restoring this backup will <strong>replace all existing business data</strong> for <strong>{currentCompany?.businessName}</strong>.
-                              This action cannot be undone. User login accounts and authentication records will remain intact.
+                            <p style={{ fontSize: '13px', color: '#9f1239', lineHeight: 1.5, margin: '0 0 12px' }}>
+                              Restoring this backup will replace your current business data with the data from this backup.
                             </p>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: '#047857', fontWeight: 700, marginBottom: '14px', backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '8px' }}>
+                              <div>✓ Company account will remain safe</div>
+                              <div>✓ User accounts and login access will remain safe</div>
+                            </div>
 
                             <div style={{ marginBottom: '14px' }}>
                               <label className="form-label" style={{ fontWeight: 700, color: '#881337', fontSize: '12px' }}>
@@ -3143,11 +3281,12 @@ export const Settings: React.FC = () => {
                                 backgroundColor: restoreConfirmText === 'RESTORE' ? '#dc2626' : undefined,
                                 color: restoreConfirmText === 'RESTORE' ? '#ffffff' : undefined,
                                 opacity: restoreConfirmText === 'RESTORE' && !isRestoring ? 1 : 0.6,
+                                fontWeight: 700,
                               }}
                             >
                               {isRestoring ? (
                                 <>
-                                  <RefreshCw size={15} className="spin" /> Executing Atomic Restoration...
+                                  <RefreshCw size={15} className="spin" /> Restoring Data...
                                 </>
                               ) : (
                                 'Replace & Restore Business Data'
@@ -3163,22 +3302,22 @@ export const Settings: React.FC = () => {
                       <div>
                         {selectedCloudHistory && cloudValidationResult ? (
                           <div>
-                            <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: '#ecfdf5', borderRadius: '12px', padding: '16px', marginBottom: '20px' }}>
+                            <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: '#ecfdf5', borderRadius: '12px', padding: '16px', marginBottom: '18px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46', fontWeight: 800, fontSize: '14px', marginBottom: '12px' }}>
-                                <FileCheck size={18} /> Google Drive Backup Verified & Ready for Restore
+                                <FileCheck size={18} /> Backup Ready to Restore (Google Drive)
                               </div>
 
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '12px', color: '#047857', marginBottom: '14px' }}>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '12px', color: '#047857', marginBottom: '14px' }}>
                                 <div><strong>Selected File:</strong> {selectedCloudHistory.fileName}</div>
-                                <div><strong>Backup Type:</strong> {selectedCloudHistory.backupType}</div>
+                                <div><strong>Backup Type:</strong> {selectedCloudHistory.backupType || 'Daily'}</div>
                                 <div><strong>Backup Date:</strong> {new Date(selectedCloudHistory.createdAt).toLocaleString()}</div>
                               </div>
 
-                              <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                              <div style={{ backgroundColor: '#ffffff', borderRadius: '10px', padding: '12px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
                                 <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#065f46', marginBottom: '8px' }}>
-                                  Preview of Data to be Restored (Verified from Google Drive):
+                                  Record Counts Summary:
                                 </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px', fontSize: '12px', color: '#1f2937' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '8px', fontSize: '12px', color: '#1f2937' }}>
                                   <div>👥 Customers: <strong>{cloudValidationResult.dataSummary?.customers || 0}</strong></div>
                                   <div>🏭 Suppliers: <strong>{cloudValidationResult.dataSummary?.suppliers || 0}</strong></div>
                                   <div>📦 Products: <strong>{cloudValidationResult.dataSummary?.products || 0}</strong></div>
@@ -3192,15 +3331,18 @@ export const Settings: React.FC = () => {
                               </div>
                             </div>
 
-                            {/* Cloud Restore Confirmation */}
+                            {/* Cloud Restore Confirmation & Warning */}
                             <div style={{ backgroundColor: '#fff1f2', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '12px', padding: '18px' }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#be123c', fontWeight: 800, fontSize: '14px', marginBottom: '8px' }}>
-                                <AlertTriangle size={18} /> WARNING: Irreversible Operation
+                                <AlertTriangle size={18} /> WARNING: Data Replacement
                               </div>
-                              <p style={{ fontSize: '13px', color: '#9f1239', lineHeight: 1.5, margin: '0 0 14px' }}>
-                                Restoring this Google Drive backup will <strong>replace all current operational business data</strong> for <strong>{currentCompany?.businessName}</strong>.
-                                User accounts, login credentials, and session access will remain intact.
+                              <p style={{ fontSize: '13px', color: '#9f1239', lineHeight: 1.5, margin: '0 0 12px' }}>
+                                Restoring this backup will replace your current business data with the data from this backup.
                               </p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '12px', color: '#047857', fontWeight: 700, marginBottom: '14px', backgroundColor: '#ffffff', padding: '10px 12px', borderRadius: '8px' }}>
+                                <div>✓ Company account will remain safe</div>
+                                <div>✓ User accounts and login access will remain safe</div>
+                              </div>
 
                               <div style={{ marginBottom: '14px' }}>
                                 <label className="form-label" style={{ fontWeight: 700, color: '#881337', fontSize: '12px' }}>
@@ -3231,11 +3373,12 @@ export const Settings: React.FC = () => {
                                   backgroundColor: cloudConfirmInput === 'RESTORE' ? '#dc2626' : undefined,
                                   color: cloudConfirmInput === 'RESTORE' ? '#ffffff' : undefined,
                                   opacity: cloudConfirmInput === 'RESTORE' && !isRestoringCloud ? 1 : 0.6,
+                                  fontWeight: 700,
                                 }}
                               >
                                 {isRestoringCloud ? (
                                   <>
-                                    <RefreshCw size={15} className="spin" /> Restoring From Google Drive...
+                                    <RefreshCw size={15} className="spin" /> Restoring Data...
                                   </>
                                 ) : (
                                   'Restore Selected Backup From Google Drive'
@@ -3246,9 +3389,9 @@ export const Settings: React.FC = () => {
                         ) : (
                           <div style={{ textAlign: 'center', padding: '30px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px border-dashed var(--border-color)' }}>
                             <HardDrive size={32} style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Select a Backup from Backup Audit History Above</div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Select a Backup from Backup History Above</div>
                             <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '400px', margin: '4px auto 0' }}>
-                              Click <strong>Preview</strong> or <strong>Restore</strong> on any successful backup entry in the Backup Audit History table above to load its cloud preview.
+                              Click <strong>Preview</strong> or <strong>Restore</strong> on any backup in the Backup History section above to load its cloud preview.
                             </div>
                           </div>
                         )}
