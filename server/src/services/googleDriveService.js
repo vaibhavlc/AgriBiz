@@ -10,18 +10,72 @@ import logger from '../config/logger.js';
 import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class GoogleDriveService {
-  getOAuth2Client() {
-    const clientId = process.env.GOOGLE_CLIENT_ID || 'dummy_client_id';
-    const clientSecret = process.env.GOOGLE_CLIENT_SECRET || 'dummy_client_secret';
+  async getOAuth2Client(companyId = null) {
+    let clientId = process.env.GOOGLE_CLIENT_ID;
+    let clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (companyId) {
+      const config = await GoogleDriveConfig.findOne({ companyId }).select('+customClientSecret');
+      if (config?.customClientId && config?.customClientSecret) {
+        clientId = config.customClientId;
+        clientSecret = config.customClientSecret;
+      }
+    }
+
+    if (!clientId || clientId === 'dummy_client_id' || !clientSecret || clientSecret === 'dummy_client_secret') {
+      return null;
+    }
+
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/settings/backup/google/callback';
     return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
 
   /**
+   * Saves custom OAuth credentials for company.
+   */
+  async saveCredentials(companyId, clientId, clientSecret) {
+    if (!clientId || !clientSecret) {
+      throw new Error('Client ID and Client Secret are required.');
+    }
+
+    await GoogleDriveConfig.findOneAndUpdate(
+      { companyId },
+      {
+        $set: {
+          customClientId: clientId.trim(),
+          customClientSecret: clientSecret.trim(),
+        },
+      },
+      { upsert: true, new: true }
+    );
+
+    return { success: true, message: 'Google OAuth credentials saved successfully.' };
+  }
+
+  /**
+   * Gets credential configuration status for company.
+   */
+  async getCredentialsStatus(companyId) {
+    const config = await GoogleDriveConfig.findOne({ companyId }).lean();
+    const envConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'dummy_client_id');
+    const customConfigured = !!(config?.customClientId);
+
+    return {
+      configured: envConfigured || customConfigured,
+      clientId: config?.customClientId || (envConfigured ? process.env.GOOGLE_CLIENT_ID : ''),
+      source: customConfigured ? 'custom' : envConfigured ? 'env' : 'none',
+    };
+  }
+
+  /**
    * Generates Google OAuth Auth URL for connecting Drive.
    */
-  getAuthUrl(companyId) {
-    const oauth2Client = this.getOAuth2Client();
+  async getAuthUrl(companyId) {
+    const oauth2Client = await this.getOAuth2Client(companyId);
+    if (!oauth2Client) {
+      throw new Error('Google Drive OAuth credentials (Client ID & Client Secret) are not configured. Please configure your Google Client ID & Secret in Settings or server/.env file.');
+    }
+
     const scopes = [
       'https://www.googleapis.com/auth/drive.file',
       'https://www.googleapis.com/auth/userinfo.email',
@@ -39,7 +93,11 @@ class GoogleDriveService {
    * Handles OAuth callback code exchange & saves refreshToken securely in GoogleDriveConfig.
    */
   async handleOAuthCallback(code, companyId) {
-    const oauth2Client = this.getOAuth2Client();
+    const oauth2Client = await this.getOAuth2Client(companyId);
+    if (!oauth2Client) {
+      throw new Error('Google OAuth credentials are not configured.');
+    }
+
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
@@ -87,7 +145,9 @@ class GoogleDriveService {
       return null;
     }
 
-    const oauth2Client = this.getOAuth2Client();
+    const oauth2Client = await this.getOAuth2Client(companyId);
+    if (!oauth2Client) return null;
+
     oauth2Client.setCredentials({ refresh_token: config.refreshToken });
     return oauth2Client;
   }

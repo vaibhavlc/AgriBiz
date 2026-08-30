@@ -10,17 +10,27 @@ const googleDriveConfigSchema = new mongoose.Schema(
     },
     refreshToken: {
       type: String,
-      required: true,
+      required: false,
+      default: '',
       select: false, // Prevent returning refresh token in queries by default
     },
     googleEmail: {
       type: String,
       default: '',
     },
+    customClientId: {
+      type: String,
+      default: '',
+    },
+    customClientSecret: {
+      type: String,
+      default: '',
+      select: false,
+    },
     status: {
       type: String,
       enum: ['CONNECTED', 'DISCONNECTED'],
-      default: 'CONNECTED',
+      default: 'DISCONNECTED',
       index: true,
     },
     folderIds: {

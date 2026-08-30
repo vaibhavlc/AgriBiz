@@ -213,6 +213,13 @@ export const Settings: React.FC = () => {
   const [cloudRestoreErrorMsg, setCloudRestoreErrorMsg] = useState('');
   const [showManualBackupDetails, setShowManualBackupDetails] = useState(false);
 
+  // Google OAuth Credentials Modal state
+  const [showOAuthSetupModal, setShowOAuthSetupModal] = useState(false);
+  const [oauthClientId, setOauthClientId] = useState('');
+  const [oauthClientSecret, setOauthClientSecret] = useState('');
+  const [isSavingOAuthCredentials, setIsSavingOAuthCredentials] = useState(false);
+  const [oauthErrorMsg, setOauthErrorMsg] = useState('');
+
   const fetchBackupHealth = async () => {
     try {
       const res = await api.get('/settings/backup/health');
@@ -328,12 +335,42 @@ export const Settings: React.FC = () => {
     try {
       const res = await api.get('/settings/backup/google/auth-url');
       setIsConnectingDrive(false);
-      if (res.data.success && res.data.url) {
+      if (res.data.success && res.data.url && res.data.configured !== false) {
         window.location.href = res.data.url;
+      } else {
+        setShowOAuthSetupModal(true);
       }
     } catch (err: any) {
       setIsConnectingDrive(false);
-      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to generate Google auth link.', 'error');
+      setShowOAuthSetupModal(true);
+    }
+  };
+
+  const handleSaveOAuthCredentials = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!oauthClientId.trim() || !oauthClientSecret.trim()) {
+      setOauthErrorMsg('Please fill in both Client ID and Client Secret.');
+      return;
+    }
+
+    setIsSavingOAuthCredentials(true);
+    setOauthErrorMsg('');
+    try {
+      const res = await api.post('/settings/backup/google/credentials', {
+        clientId: oauthClientId.trim(),
+        clientSecret: oauthClientSecret.trim(),
+      });
+      setIsSavingOAuthCredentials(false);
+      if (res.data.success) {
+        setShowOAuthSetupModal(false);
+        if (showToast) showToast('Credentials saved! Requesting Google OAuth connection...', 'success');
+        handleConnectGoogleDrive();
+      } else {
+        setOauthErrorMsg(res.data.message || 'Failed to save credentials.');
+      }
+    } catch (err: any) {
+      setIsSavingOAuthCredentials(false);
+      setOauthErrorMsg(err.response?.data?.message || err.message || 'Failed to save credentials.');
     }
   };
 
@@ -4243,6 +4280,99 @@ export const Settings: React.FC = () => {
                 }}
               >
                 {deleteLoading ? 'Deleting Account...' : '🔥 Permanently Delete'}
+              </button>
+            </div>
+          </form>
+        </Modal>
+      )}
+
+      {/* Google OAuth Credentials Setup Modal */}
+      {showOAuthSetupModal && (
+        <Modal
+          isOpen={showOAuthSetupModal}
+          onClose={() => setShowOAuthSetupModal(false)}
+          title="🔑 Configure Google OAuth Credentials"
+        >
+          <form onSubmit={handleSaveOAuthCredentials} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <div style={{
+              padding: '14px 16px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(59, 130, 246, 0.08)',
+              border: '1px solid rgba(59, 130, 246, 0.25)',
+              color: 'var(--text-primary)',
+              fontSize: '13px',
+              lineHeight: '1.5',
+            }}>
+              <strong>📌 Why are Google OAuth credentials needed?</strong><br />
+              Google Drive requires an official <strong>Client ID & Secret</strong> from the Google Cloud Console to allow your application to securely store backups in your Google Drive.
+            </div>
+
+            {oauthErrorMsg && (
+              <div style={{
+                padding: '10px 14px', borderRadius: '10px',
+                backgroundColor: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+                color: '#EF4444', fontSize: '13px', fontWeight: 600,
+              }}>
+                {oauthErrorMsg}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
+                Google OAuth Client ID *
+              </label>
+              <input
+                type="text"
+                className="form-control"
+                placeholder="e.g. 123456789-abc.apps.googleusercontent.com"
+                value={oauthClientId}
+                onChange={(e) => setOauthClientId(e.target.value)}
+                required
+                autoFocus
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
+                Google OAuth Client Secret *
+              </label>
+              <input
+                type="password"
+                className="form-control"
+                placeholder="e.g. GOCSPX-..."
+                value={oauthClientSecret}
+                onChange={(e) => setOauthClientSecret(e.target.value)}
+                required
+              />
+            </div>
+
+            <div style={{
+              padding: '12px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--bg-app)',
+              fontSize: '12px',
+              color: 'var(--text-muted)',
+              lineHeight: '1.4',
+            }}>
+              💡 <strong>Quick Alternative:</strong> You don't need Google credentials to create backups! Click <strong>"Export Data Backup"</strong> on the Backup tab to instantly download a complete JSON backup file to your computer.
+            </div>
+
+            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={() => setShowOAuthSetupModal(false)}
+                style={{ flex: 1, borderRadius: '10px', height: '44px', fontWeight: 700, justifyContent: 'center' }}
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSavingOAuthCredentials || !oauthClientId.trim() || !oauthClientSecret.trim()}
+                style={{ flex: 1, borderRadius: '10px', height: '44px', fontWeight: 800, justifyContent: 'center' }}
+              >
+                {isSavingOAuthCredentials ? 'Saving Credentials...' : 'Save & Connect Google Drive'}
               </button>
             </div>
           </form>

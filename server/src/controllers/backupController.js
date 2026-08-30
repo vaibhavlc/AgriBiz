@@ -93,13 +93,41 @@ class BackupController {
     }
   }
 
+  async getOAuthCredentials(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const status = await googleDriveService.getCredentialsStatus(companyId);
+      res.status(200).json({ success: true, ...status });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async saveOAuthCredentials(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const { clientId, clientSecret } = req.body;
+      const result = await googleDriveService.saveCredentials(companyId, clientId, clientSecret);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to save Google OAuth credentials.',
+      });
+    }
+  }
+
   async getGoogleAuthUrl(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const url = googleDriveService.getAuthUrl(companyId);
-      res.status(200).json({ success: true, url });
+      const url = await googleDriveService.getAuthUrl(companyId);
+      res.status(200).json({ success: true, configured: true, url });
     } catch (error) {
-      next(error);
+      res.status(200).json({
+        success: false,
+        configured: false,
+        message: error.message || 'Google Drive OAuth is not configured.',
+      });
     }
   }
 
