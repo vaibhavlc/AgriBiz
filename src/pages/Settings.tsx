@@ -93,12 +93,16 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 
-export const Settings: React.FC = () => {
+interface SettingsProps {
+  initialTab?: 'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase';
+}
+
+export const Settings: React.FC<SettingsProps> = ({ initialTab }) => {
   console.log('[Component Re-rendered] Settings');
   const { settings, updateSettings, setTheme, resetToDefault, showToast } = useApp();
   const { currentUser, currentCompany } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase'>(initialTab || 'profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Erase Business Data module states

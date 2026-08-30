@@ -11,6 +11,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     'suppliers',
     'payments',
     'expenses',
+    'staff',
     'reports',
   ],
 
@@ -32,6 +33,7 @@ export const ALL_PAGE_PERMISSIONS = [
   { id: 'suppliers', label: 'Suppliers List', description: 'Supplier directory & payables' },
   { id: 'payments', label: 'Payments Book', description: 'Record incoming & outgoing payments' },
   { id: 'expenses', label: 'Expenses Book', description: 'Track store expenses & billings' },
+  { id: 'staff', label: 'Staff & Payroll', description: 'Manage staff accounts and salary payroll' },
   { id: 'reports', label: 'Business Reports', description: 'Sales, tax, profit & loss reports' },
   { id: 'recycle', label: 'Recycle Bin', description: 'Restore or permanently delete items' },
   { id: 'settings', label: 'Store Settings', description: 'Manage business profile & staff users' },
