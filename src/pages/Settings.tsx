@@ -2905,71 +2905,71 @@ export const Settings: React.FC = () => {
                     {backupHistoryData?.historyList && backupHistoryData.historyList.length > 0 ? (
                       <div>
                         {/* Desktop Table View */}
-                        <div className="d-none d-md-block table-responsive">
-                          <table className="table" style={{ fontSize: '13px', margin: 0 }}>
+                        <div className="d-none d-md-block table-responsive" style={{ overflowX: 'auto' }}>
+                          <table className="table" style={{ fontSize: '13px', margin: 0, width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
                             <thead>
-                              <tr>
-                                <th>Date & Time</th>
-                                <th>Backup Type</th>
-                                <th>Status</th>
-                                <th>File Size</th>
-                                <th style={{ textAlign: 'right' }}>Actions</th>
+                              <tr style={{ borderBottom: '1.5px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '24%', verticalAlign: 'middle' }}>Date & Time</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '16%', verticalAlign: 'middle' }}>Backup Type</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '20%', verticalAlign: 'middle' }}>Status</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '15%', verticalAlign: 'middle' }}>File Size</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap', width: '25%', verticalAlign: 'middle' }}>Actions</th>
                               </tr>
                             </thead>
                             <tbody>
                               {backupHistoryData.historyList.map((item: any) => {
                                 const isUnavailable = item.failureReason && item.failureReason.toLowerCase().includes('unavailable');
                                 return (
-                                  <tr key={item._id || item.historyId}>
-                                    <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                                  <tr key={item._id || item.historyId} style={{ borderBottom: '1px solid var(--border-color)' }}>
+                                    <td style={{ padding: '12px 14px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                                       {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
                                     </td>
-                                    <td>
-                                      <span className="badge badge-secondary" style={{ fontSize: '11px', fontWeight: 700 }}>
+                                    <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
+                                      <span className="badge badge-secondary" style={{ fontSize: '11px', fontWeight: 700, padding: '4px 8px' }}>
                                         {item.backupType || 'Daily'} Backup
                                       </span>
                                     </td>
-                                    <td>
+                                    <td style={{ padding: '12px 14px', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                                       {isUnavailable ? (
-                                        <span className="badge badge-danger" style={{ fontSize: '11px' }}>⚠ Backup File Unavailable</span>
+                                        <span className="badge badge-danger" style={{ fontSize: '11px', padding: '4px 8px' }}>⚠ Backup File Unavailable</span>
                                       ) : (
-                                        <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px' }}>
+                                        <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px', padding: '4px 8px' }}>
                                           {item.status === 'SUCCESS' ? '✓ Successful' : '⚠ Failed'}
                                         </span>
                                       )}
                                     </td>
-                                    <td style={{ color: 'var(--text-secondary)' }}>
+                                    <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                                       {item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : '-'}
                                     </td>
-                                    <td style={{ textAlign: 'right' }}>
+                                    <td style={{ padding: '12px 14px', textAlign: 'right', whiteSpace: 'nowrap', verticalAlign: 'middle' }}>
                                       {item.status === 'SUCCESS' && !isUnavailable ? (
-                                        <div style={{ display: 'inline-flex', gap: '6px' }}>
+                                        <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', justifyContent: 'flex-end', whiteSpace: 'nowrap' }}>
                                           <button
                                             type="button"
                                             className="btn btn-secondary"
-                                            style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 600 }}
+                                            style={{ fontSize: '11px', padding: '5px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                                             onClick={() => handleCloudPreview(item)}
                                             disabled={cloudPreviewLoadingId === item.historyId}
                                           >
-                                            {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Preview'}
+                                            {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Eye size={12} />} Preview
                                           </button>
                                           <button
                                             type="button"
                                             className="btn btn-secondary"
-                                            style={{ fontSize: '11px', padding: '4px 10px', fontWeight: 600 }}
+                                            style={{ fontSize: '11px', padding: '5px 12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                                             onClick={() => handleCloudDownload(item)}
                                             disabled={cloudDownloadLoadingId === item.historyId}
                                           >
-                                            {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Download'}
+                                            {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Download size={12} />} Download
                                           </button>
                                           <button
                                             type="button"
                                             className="btn btn-primary"
-                                            style={{ fontSize: '11px', padding: '4px 10px', backgroundColor: '#dc2626', borderColor: '#dc2626', fontWeight: 700 }}
+                                            style={{ fontSize: '11px', padding: '5px 12px', backgroundColor: '#dc2626', borderColor: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}
                                             onClick={() => handleCloudPreview(item)}
                                             disabled={cloudPreviewLoadingId === item.historyId}
                                           >
-                                            Restore
+                                            <RotateCcw size={12} /> Restore
                                           </button>
                                         </div>
                                       ) : (
@@ -3010,29 +3010,29 @@ export const Settings: React.FC = () => {
                                     <button
                                       type="button"
                                       className="btn btn-secondary"
-                                      style={{ fontSize: '11px', padding: '6px 0', textAlign: 'center', justifyContent: 'center' }}
+                                      style={{ fontSize: '11px', padding: '6px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px' }}
                                       onClick={() => handleCloudPreview(item)}
                                       disabled={cloudPreviewLoadingId === item.historyId}
                                     >
-                                      {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Preview'}
+                                      {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Eye size={11} />} Preview
                                     </button>
                                     <button
                                       type="button"
                                       className="btn btn-secondary"
-                                      style={{ fontSize: '11px', padding: '6px 0', textAlign: 'center', justifyContent: 'center' }}
+                                      style={{ fontSize: '11px', padding: '6px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px' }}
                                       onClick={() => handleCloudDownload(item)}
                                       disabled={cloudDownloadLoadingId === item.historyId}
                                     >
-                                      {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : 'Download'}
+                                      {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Download size={11} />} Download
                                     </button>
                                     <button
                                       type="button"
                                       className="btn btn-primary"
-                                      style={{ fontSize: '11px', padding: '6px 0', backgroundColor: '#dc2626', borderColor: '#dc2626', textAlign: 'center', justifyContent: 'center', fontWeight: 700 }}
+                                      style={{ fontSize: '11px', padding: '6px 0', backgroundColor: '#dc2626', borderColor: '#dc2626', textAlign: 'center', justifyContent: 'center', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
                                       onClick={() => handleCloudPreview(item)}
                                       disabled={cloudPreviewLoadingId === item.historyId}
                                     >
-                                      Restore
+                                      <RotateCcw size={11} /> Restore
                                     </button>
                                   </div>
                                 )}
