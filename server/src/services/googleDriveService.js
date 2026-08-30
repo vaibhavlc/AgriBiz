@@ -253,7 +253,12 @@ class GoogleDriveService {
         try { fs.unlinkSync(tempFilePath); } catch (e) { /* ignore */ }
       }
 
-      logger.error('FAILED %s backup pipeline for company %s: %s', backupType, companyId, error.message);
+      let errorMessage = error.message;
+      if (errorMessage.includes('invalid_client') || errorMessage.includes('dummy_client_id')) {
+        errorMessage = 'Google Drive OAuth credentials are not configured in server/.env (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET). Please configure Google OAuth credentials or use Local Manual Export to download backup directly to your device.';
+      }
+
+      logger.error('FAILED %s backup pipeline for company %s: %s', backupType, companyId, errorMessage);
 
       const historyRecord = await BackupHistory.create({
         historyId,
@@ -262,12 +267,12 @@ class GoogleDriveService {
         status: 'FAILED',
         createdAt: startTime,
         completedAt: new Date(),
-        failureReason: error.message,
+        failureReason: errorMessage,
       });
 
       return {
         success: false,
-        message: `Backup pipeline failed: ${error.message}`,
+        message: errorMessage,
         historyRecord,
       };
     }
