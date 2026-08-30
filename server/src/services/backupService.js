@@ -588,31 +588,25 @@ class BackupService {
 
   /**
    * Centralized Cloud Restoration: Downloads cloud payload via googleDriveService,
-   * acquires company concurrency lock, validates payload, and executes atomic transaction restore.
+   * validates payload, and delegates to restoreBackup (which handles lock acquisition and atomic restore).
    */
   async restoreCloudBackup(companyId, historyId, confirmText, socketId = null, user = null) {
     if (confirmText !== 'RESTORE') {
       throw new Error('Confirmation mismatch. You must type "RESTORE" exactly to confirm data restoration.');
     }
 
-    this.acquireCompanyLock(companyId, 'Cloud Restore');
+    // 1. Download payload via googleDriveService
+    const { payload } = await googleDriveService.downloadDrivePayload(companyId, historyId);
 
-    try {
-      // 1. Download payload via googleDriveService
-      const { payload } = await googleDriveService.downloadDrivePayload(companyId, historyId);
-
-      // 2. Validate payload & company match
-      const validation = this.validateBackup(payload, companyId);
-      if (!validation.valid) {
-        throw new Error(`Cloud backup validation failed: ${validation.message}`);
-      }
-
-      // 3. Execute atomic transaction replace-restore
-      const result = await this.restoreBackup(companyId, payload, socketId, user);
-      return result;
-    } finally {
-      this.releaseCompanyLock(companyId);
+    // 2. Validate payload & company match
+    const validation = this.validateBackup(payload, companyId);
+    if (!validation.valid) {
+      throw new Error(`Cloud backup validation failed: ${validation.message}`);
     }
+
+    // 3. Execute atomic replace-restore (restoreBackup acquires and releases company lock)
+    const result = await this.restoreBackup(companyId, payload, socketId, user);
+    return result;
   }
 }
 
