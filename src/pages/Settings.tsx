@@ -1698,56 +1698,6 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
 
-              {/* Danger Zone: Delete Business Account (Owner only) */}
-              {currentUser?.role === 'Owner' && (
-                <div style={{
-                  marginTop: '28px',
-                  padding: '20px 24px',
-                  borderRadius: '16px',
-                  background: 'rgba(239, 68, 68, 0.05)',
-                  border: '1.5px solid rgba(239, 68, 68, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: '16px',
-                  flexWrap: 'wrap',
-                }}>
-                  <div style={{ flex: 1, minWidth: '260px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      <AlertTriangle size={18} style={{ color: '#EF4444' }} />
-                      <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: '#EF4444' }}>
-                        Danger Zone — Delete Business Account
-                      </h4>
-                    </div>
-                    <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary,#475569)', lineHeight: '1.5' }}>
-                      Permanently delete this business account, all staff members, inventory, invoices, reports, customers, and all MongoDB records. <strong>This action cannot be undone.</strong>
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="btn btn-secondary danger"
-                    onClick={() => {
-                      setDeleteConfirmText('');
-                      setDeletePasswordOrPin('');
-                      setDeleteErrorMsg('');
-                      setIsDeleteCompanyModalOpen(true);
-                    }}
-                    style={{
-                      borderRadius: '12px',
-                      padding: '10px 20px',
-                      fontWeight: 800,
-                      fontSize: '13px',
-                      backgroundColor: '#EF4444',
-                      color: '#FFFFFF',
-                      border: 'none',
-                      boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <Trash2 size={16} /> Delete Business Account
-                  </button>
-                </div>
-              )}
             </>
           )}
 
@@ -3831,6 +3781,59 @@ export const Settings: React.FC = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Danger Zone: Delete Entire Business Account (Owner only) */}
+                  {currentUser?.role === 'Owner' && (
+                    <div style={{
+                      padding: '24px',
+                      borderRadius: '16px',
+                      background: 'rgba(239, 68, 68, 0.05)',
+                      border: '1.5px solid rgba(239, 68, 68, 0.3)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '16px',
+                      flexWrap: 'wrap',
+                    }}>
+                      <div style={{ flex: 1, minWidth: '260px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+                          <AlertTriangle size={20} style={{ color: '#dc2626' }} />
+                          <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>
+                            Danger Zone — Delete Business Account
+                          </h4>
+                        </div>
+                        <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary,#475569)', lineHeight: '1.5' }}>
+                          Permanently delete this business account, all staff members, inventory, invoices, reports, customers, and all database records. <strong>This action cannot be undone.</strong>
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn btn-secondary danger"
+                        onClick={() => {
+                          setDeleteConfirmText('');
+                          setDeletePasswordOrPin('');
+                          setDeleteErrorMsg('');
+                          setIsDeleteCompanyModalOpen(true);
+                        }}
+                        style={{
+                          borderRadius: '12px',
+                          padding: '12px 24px',
+                          fontWeight: 800,
+                          fontSize: '13px',
+                          backgroundColor: '#dc2626',
+                          color: '#FFFFFF',
+                          border: 'none',
+                          boxShadow: '0 4px 14px rgba(239, 68, 68, 0.3)',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                        }}
+                      >
+                        <Trash2 size={16} /> Delete Business Account
+                      </button>
+                    </div>
+                  )}
                 </>
               )}
             </div>
