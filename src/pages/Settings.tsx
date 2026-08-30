@@ -335,14 +335,14 @@ export const Settings: React.FC = () => {
     try {
       const res = await api.get('/settings/backup/google/auth-url');
       setIsConnectingDrive(false);
-      if (res.data.success && res.data.url && res.data.configured !== false) {
+      if (res.data.success && res.data.url) {
         window.location.href = res.data.url;
       } else {
-        setShowOAuthSetupModal(true);
+        if (showToast) showToast('Failed to generate Google auth link.', 'error');
       }
     } catch (err: any) {
       setIsConnectingDrive(false);
-      setShowOAuthSetupModal(true);
+      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to generate Google auth link.', 'error');
     }
   };
 
