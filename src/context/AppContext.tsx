@@ -135,6 +135,7 @@ interface AppContextType {
 
   isOnline: boolean;
   reloadData: () => Promise<void>;
+  refreshCollection: (collectionName: string) => Promise<void>;
   synchronize: () => Promise<void>;
 }
 
@@ -606,6 +607,47 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch (err) {
       console.error('Failed to load data from REST API:', err);
+    }
+  };
+
+  const refreshCollection = async (collectionName: string) => {
+    if (!navigator.onLine) return;
+    const token = authService.getAccessToken();
+    if (!token) return;
+    const t = Date.now();
+    try {
+      if (collectionName === 'products' || collectionName === 'Product' || collectionName === 'Products') {
+        const res = await api.get(`/products?_t=${t}`);
+        if (res.data?.products) setProducts(res.data.products.map((p: any) => ({ ...p, id: p.productId || p.id })));
+      } else if (collectionName === 'customers' || collectionName === 'Customer' || collectionName === 'Customers') {
+        const res = await api.get(`/customers?_t=${t}`);
+        if (res.data?.customers) setCustomers(res.data.customers.map((c: any) => ({ ...c, id: c.customerId || c.id })));
+      } else if (collectionName === 'suppliers' || collectionName === 'Supplier' || collectionName === 'Suppliers') {
+        const res = await api.get(`/suppliers?_t=${t}`);
+        if (res.data?.suppliers) setSuppliers(res.data.suppliers.map((s: any) => ({ ...s, id: s.supplierId || s.id })));
+      } else if (collectionName === 'invoices' || collectionName === 'Invoices' || collectionName === 'Invoice') {
+        const res = await api.get(`/invoices?_t=${t}`);
+        if (res.data?.invoices) setInvoices(res.data.invoices.map((i: any) => ({ ...i, id: i.invoiceId || i.id })));
+      } else if (collectionName === 'quotations' || collectionName === 'Quotation' || collectionName === 'Quotations') {
+        const res = await api.get(`/quotations?_t=${t}`);
+        if (res.data?.quotations) setQuotations(res.data.quotations.map((q: any) => ({ ...q, id: q.quotationId || q.id })));
+      } else if (collectionName === 'purchases' || collectionName === 'Purchase' || collectionName === 'Purchases') {
+        const res = await api.get(`/purchases?_t=${t}`);
+        if (res.data?.purchases) setPurchases(res.data.purchases.map((p: any) => ({ ...p, id: p.purchaseId || p.id })));
+      } else if (collectionName === 'payments' || collectionName === 'Payment' || collectionName === 'Payments') {
+        const res = await api.get(`/payments?_t=${t}`);
+        if (res.data?.payments) setPayments(res.data.payments.map((p: any) => ({ ...p, id: p.paymentId || p.id })));
+      } else if (collectionName === 'expenses' || collectionName === 'Expense' || collectionName === 'Expenses') {
+        const res = await api.get(`/expenses?_t=${t}`);
+        if (res.data?.expenses) setExpenses(res.data.expenses.map((e: any) => ({ ...e, id: e.expenseId || e.id })));
+      } else if (collectionName === 'recycleBin' || collectionName === 'RecycleBin') {
+        const res = await api.get(`/recycle-bin?_t=${t}`);
+        if (res.data?.items) setRecycleBin(res.data.items);
+      } else {
+        await reloadData();
+      }
+    } catch (err) {
+      console.error(`Failed to refresh collection ${collectionName}:`, err);
     }
   };
 
@@ -1769,6 +1811,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         handleSavePayment,
         isOnline,
         reloadData,
+        refreshCollection,
         synchronize,
       }}
     >

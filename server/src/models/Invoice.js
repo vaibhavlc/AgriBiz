@@ -46,6 +46,7 @@ const invoiceSchema = new mongoose.Schema(
 );
 
 invoiceSchema.index({ companyId: 1, isDeleted: 1 });
+invoiceSchema.index({ companyId: 1, isDeleted: 1, createdAt: -1 });
 invoiceSchema.index({ companyId: 1, updatedAt: -1 });
 
 const Invoice = mongoose.model('Invoice', invoiceSchema);

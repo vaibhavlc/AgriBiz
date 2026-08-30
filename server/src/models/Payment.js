@@ -25,6 +25,7 @@ const paymentSchema = new mongoose.Schema(
 );
 
 paymentSchema.index({ companyId: 1, isDeleted: 1 });
+paymentSchema.index({ companyId: 1, isDeleted: 1, createdAt: -1 });
 paymentSchema.index({ companyId: 1, updatedAt: -1 });
 
 const Payment = mongoose.model('Payment', paymentSchema);
