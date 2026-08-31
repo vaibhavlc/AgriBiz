@@ -69,15 +69,24 @@ class AuthService {
     const storedTabToken = sessionStorage.getItem(STORAGE_KEYS.TAB_TOKEN);
     const currentWindowName = window.name;
 
+    // If window name is empty on OAuth return or refresh, restore tab token
+    if (!currentWindowName && storedTabToken) {
+      window.name = storedTabToken;
+      return;
+    }
+
     if (!currentWindowName || !storedTabToken || currentWindowName !== storedTabToken) {
       const newTabToken = 'tab_' + Math.random().toString(36).slice(2) + Date.now();
       window.name = newTabToken;
       sessionStorage.setItem(STORAGE_KEYS.TAB_TOKEN, newTabToken);
 
-      // New tab requires PIN entry — clear staff PIN authentication state for this tab
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
-      sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+      // Only clear if no active login session exists
+      const hasToken = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN) || localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+      if (!hasToken) {
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
+        sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+      }
     }
   }
 

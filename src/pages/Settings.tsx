@@ -330,6 +330,30 @@ export const Settings: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    fetchEraseSummary();
+    fetchBackupHealth();
+    fetchGoogleDriveAndHistory();
+
+    // Check for Google Drive OAuth callback parameters
+    const hashString = window.location.hash || '';
+    const searchString = window.location.search || '';
+    const queryPart = hashString.includes('?') ? hashString.split('?')[1] : searchString.slice(1);
+    const params = new URLSearchParams(queryPart);
+    const gdriveStatus = params.get('gdrive');
+    const msg = params.get('msg');
+
+    if (gdriveStatus === 'connected') {
+      setActiveTab('backup');
+      if (showToast) showToast('Google Drive connected successfully! 🟢', 'success');
+      window.history.replaceState({}, '', window.location.pathname + '#settings');
+    } else if (gdriveStatus === 'error') {
+      setActiveTab('backup');
+      if (showToast) showToast(`Google Drive connection failed: ${msg || 'Authorization error'}`, 'error');
+      window.history.replaceState({}, '', window.location.pathname + '#settings');
+    }
+  }, []);
+
   const handleConnectGoogleDrive = async () => {
     setIsConnectingDrive(true);
     try {

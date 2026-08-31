@@ -22,9 +22,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (res.success && res.company) {
         setCurrentCompany(res.company);
       }
-      // Maintain active staff session on browser refresh if sessionStorage user exists
-      if (savedUser) {
-        setCurrentUser(savedUser);
+      // Maintain active session on browser refresh or OAuth redirect if valid user exists
+      const validUser = savedUser || (res.success ? res.user : null);
+      if (validUser) {
+        setCurrentUser(validUser);
+        sessionStorage.setItem('agribiz_current_user', JSON.stringify(validUser));
+        sessionStorage.setItem('agribiz_staff_pin_verified', 'true');
       } else {
         setCurrentUser(null);
       }

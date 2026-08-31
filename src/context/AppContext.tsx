@@ -695,7 +695,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // UI State
-  const [currentTab, _setCurrentTab] = useState<string>(() => window.location.hash.slice(1) || 'dashboard');
+  const [currentTab, _setCurrentTab] = useState<string>(() => {
+    const rawHash = window.location.hash.slice(1);
+    if (!rawHash) return 'dashboard';
+    const cleanTab = rawHash.split('?')[0].split('&')[0];
+    return cleanTab || 'dashboard';
+  });
   const [currentInvoiceId, _setViewInvoice] = useState<string | null>(null);
   const [currentQuotationId, _setViewQuotation] = useState<string | null>(null);
   const [currentPurchaseId, _setViewPurchase] = useState<string | null>(null);
