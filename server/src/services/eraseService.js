@@ -73,29 +73,15 @@ class EraseService {
   }
 
   /**
-   * Performs Temporary Erase: Creates snapshot & clears operational data inside a single transaction.
+   * Performs Temporary Erase: Creates snapshot & clears operational data.
+   * Uses multi-document transaction when available, with automatic non-transactional fallback for standalone MongoDB instances.
    */
   async temporaryErase(companyId, user, socketId = null) {
     backupService.acquireCompanyLock(companyId, 'Temporary Erase');
     try {
       logger.info('User %s initiated TEMPORARY ERASE for company %s', user.userId, companyId);
 
-      let session = null;
-      let useTransaction = false;
-
-      try {
-        session = await mongoose.startSession();
-        session.startTransaction();
-        useTransaction = true;
-      } catch (err) {
-        logger.warn('Mongoose session transaction unavailable: %s. Using fallback mode.', err.message);
-        if (session) session.endSession();
-        session = null;
-      }
-
-      const opts = session ? { session } : {};
-
-      try {
+      const executeEraseLogic = async (opts = {}) => {
         // 1. Extract current operational business records
         const [
           companyDoc,
@@ -135,44 +121,40 @@ class EraseService {
           recycleBin: recycleBinItems.length,
         };
 
-        const sanitizeDocs = (docs) => {
-          if (!docs || !Array.isArray(docs)) return [];
-          return docs.map((doc) => {
-            const { _id, __v, ...rest } = doc;
-            return rest;
-          });
-        };
+        const companyName = companyDoc?.businessName || settingsDoc?.businessName || `Company-${companyId}`;
+        const eraseId = `ERASE-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
 
         const snapshotPayload = {
-          company: companyDoc ? { businessName: companyDoc.businessName, ownerName: companyDoc.ownerName, mobile: companyDoc.mobile, email: companyDoc.email, gstin: companyDoc.gstin, address: companyDoc.address, city: companyDoc.city, state: companyDoc.state } : null,
-          settings: settingsDoc ? (() => { const { _id, __v, ...rest } = settingsDoc; return rest; })() : null,
-          customers: sanitizeDocs(customers),
-          suppliers: sanitizeDocs(suppliers),
-          products: sanitizeDocs(products),
-          invoices: sanitizeDocs(invoices),
-          quotations: sanitizeDocs(quotations),
-          purchases: sanitizeDocs(purchases),
-          expenses: sanitizeDocs(expenses),
-          payments: sanitizeDocs(payments),
-          recycleBin: sanitizeDocs(recycleBinItems),
+          metadata: {
+            appName: 'AgriBiz',
+            backupVersion: '1.0',
+            createdAt: new Date().toISOString(),
+            companyId,
+            companyName,
+            dataSummary,
+            erasedBy: user.name || user.userId || 'Business Owner',
+          },
+          company: companyDoc,
+          settings: settingsDoc,
+          customers,
+          suppliers,
+          products,
+          invoices,
+          quotations,
+          purchases,
+          expenses,
+          payments,
+          recycleBin: recycleBinItems,
         };
 
-        // Check snapshot size safety (12MB BSON safety threshold)
-        const estimatedSize = Buffer.byteLength(JSON.stringify(snapshotPayload));
-        const maxAllowedSize = 12 * 1024 * 1024; // 12 MB
-        if (estimatedSize > maxAllowedSize) {
-          throw new Error(`Business dataset size (${(estimatedSize / (1024 * 1024)).toFixed(2)} MB) exceeds temporary snapshot memory limit (12 MB). Please perform a Permanent Erase or download a manual Backup file.`);
-        }
-
-        // 2. Mark existing ACTIVE snapshots for this company as SUPERSEDED
+        // 2. Expire prior ACTIVE snapshots for this companyId ONLY
         await TemporaryEraseSnapshot.updateMany(
           { companyId, status: 'ACTIVE' },
           { $set: { status: 'SUPERSEDED' } },
           opts
         );
 
-        // 3. Save new ACTIVE snapshot inside transaction
-        const eraseId = `ERS-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+        // 3. Create new TemporaryEraseSnapshot
         await TemporaryEraseSnapshot.create(
           [
             {
@@ -201,29 +183,50 @@ class EraseService {
           RecycleBinItem.deleteMany({ companyId }, opts),
         ]);
 
-        if (useTransaction && session) {
-          await session.commitTransaction();
-          session.endSession();
-        }
+        return { eraseId, dataSummary };
+      };
 
-        // Notify connected clients
+      let session = null;
+      try {
+        session = await mongoose.startSession();
+        session.startTransaction();
+        const res = await executeEraseLogic({ session });
+        await session.commitTransaction();
+        session.endSession();
+
         await touchCompanyData(companyId, socketId, 'System', 'ERASE_TEMPORARY');
-
-        logger.info('TEMPORARY ERASE completed for company %s. Snapshot ID: %s', companyId, eraseId);
-
+        logger.info('TEMPORARY ERASE completed for company %s. Snapshot ID: %s', companyId, res.eraseId);
         return {
           success: true,
           message: 'Business data temporarily erased. Your Company account and login access remain intact.',
-          eraseId,
-          dataSummary,
+          ...res,
         };
-      } catch (error) {
-        if (useTransaction && session) {
-          logger.error('Aborting TEMPORARY ERASE transaction for company %s: %s', companyId, error.message);
-          await session.abortTransaction();
+      } catch (txnError) {
+        if (session) {
+          try { await session.abortTransaction(); } catch (e) { /* ignore */ }
           session.endSession();
         }
-        throw error;
+
+        const isTxnNotSupported =
+          txnError.message?.includes('in-progress transactions') ||
+          txnError.message?.includes('Transaction numbers are only allowed') ||
+          txnError.message?.includes('replica set') ||
+          txnError.message?.includes('standalone') ||
+          txnError.message?.includes('Transaction is not supported');
+
+        if (isTxnNotSupported) {
+          logger.info('MongoDB environment does not support transactions (likely running standalone). Falling back to non-transactional execution.');
+          const res = await executeEraseLogic({});
+          await touchCompanyData(companyId, socketId, 'System', 'ERASE_TEMPORARY');
+          logger.info('TEMPORARY ERASE completed for company %s in fallback mode. Snapshot ID: %s', companyId, res.eraseId);
+          return {
+            success: true,
+            message: 'Business data temporarily erased. Your Company account and login access remain intact.',
+            ...res,
+          };
+        }
+
+        throw txnError;
       }
     } finally {
       backupService.releaseCompanyLock(companyId);
@@ -236,23 +239,7 @@ class EraseService {
   async undoLastErase(companyId, user, socketId = null) {
     logger.info('User %s requested UNDO LAST ERASE for company %s', user.userId, companyId);
 
-    let session = null;
-    let useTransaction = false;
-
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-      useTransaction = true;
-    } catch (err) {
-      logger.warn('Mongoose session transaction unavailable: %s', err.message);
-      if (session) session.endSession();
-      session = null;
-    }
-
-    const opts = session ? { session } : {};
-
-    try {
-      // Atomic concurrency lock: acquire ACTIVE snapshot and lock status
+    const executeUndoLogic = async (opts = {}) => {
       const snapshot = await TemporaryEraseSnapshot.findOneAndUpdate(
         { companyId, status: 'ACTIVE' },
         { $set: { status: 'RESTORING' } },
@@ -315,28 +302,50 @@ class EraseService {
         opts
       );
 
-      if (useTransaction && session) {
-        await session.commitTransaction();
-        session.endSession();
-      }
+      return { eraseId, dataSummary };
+    };
+
+    let session = null;
+    try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+      const res = await executeUndoLogic({ session });
+      await session.commitTransaction();
+      session.endSession();
 
       await touchCompanyData(companyId, socketId, 'System', 'UNDO_ERASE');
-
-      logger.info('UNDO LAST ERASE completed successfully for company %s (Snapshot ID: %s)', companyId, eraseId);
-
+      logger.info('UNDO LAST ERASE completed successfully for company %s (Snapshot ID: %s)', companyId, res.eraseId);
       return {
         success: true,
         message: 'Previous business data restored successfully.',
-        eraseId,
-        dataSummary,
+        ...res,
       };
-    } catch (error) {
-      if (useTransaction && session) {
-        logger.error('Aborting UNDO LAST ERASE transaction for company %s: %s', companyId, error.message);
-        await session.abortTransaction();
+    } catch (txnError) {
+      if (session) {
+        try { await session.abortTransaction(); } catch (e) { /* ignore */ }
         session.endSession();
       }
-      throw error;
+
+      const isTxnNotSupported =
+        txnError.message?.includes('in-progress transactions') ||
+        txnError.message?.includes('Transaction numbers are only allowed') ||
+        txnError.message?.includes('replica set') ||
+        txnError.message?.includes('standalone') ||
+        txnError.message?.includes('Transaction is not supported');
+
+      if (isTxnNotSupported) {
+        logger.info('MongoDB environment does not support transactions (likely running standalone). Falling back to non-transactional execution.');
+        const res = await executeUndoLogic({});
+        await touchCompanyData(companyId, socketId, 'System', 'UNDO_ERASE');
+        logger.info('UNDO LAST ERASE completed for company %s in fallback mode (Snapshot ID: %s)', companyId, res.eraseId);
+        return {
+          success: true,
+          message: 'Previous business data restored successfully.',
+          ...res,
+        };
+      }
+
+      throw txnError;
     }
   }
 
@@ -346,22 +355,7 @@ class EraseService {
   async permanentErase(companyId, user, socketId = null) {
     logger.info('User %s initiated PERMANENT ERASE for company %s', user.userId, companyId);
 
-    let session = null;
-    let useTransaction = false;
-
-    try {
-      session = await mongoose.startSession();
-      session.startTransaction();
-      useTransaction = true;
-    } catch (err) {
-      logger.warn('Mongoose session transaction unavailable: %s', err.message);
-      if (session) session.endSession();
-      session = null;
-    }
-
-    const opts = session ? { session } : {};
-
-    try {
+    const executePermanentLogic = async (opts = {}) => {
       // 1. Permanently delete operational business records for companyId
       await Promise.all([
         Customer.deleteMany({ companyId }, opts),
@@ -375,33 +369,53 @@ class EraseService {
         RecycleBinItem.deleteMany({ companyId }, opts),
       ]);
 
-      // 2. Expire all temporary erase snapshots for this company inside the transaction
+      // 2. Expire all temporary erase snapshots for this company
       await TemporaryEraseSnapshot.updateMany(
         { companyId, status: { $in: ['ACTIVE', 'SUPERSEDED', 'RESTORING'] } },
         { $set: { status: 'EXPIRED' } },
         opts
       );
+    };
 
-      if (useTransaction && session) {
-        await session.commitTransaction();
-        session.endSession();
-      }
+    let session = null;
+    try {
+      session = await mongoose.startSession();
+      session.startTransaction();
+      await executePermanentLogic({ session });
+      await session.commitTransaction();
+      session.endSession();
 
       await touchCompanyData(companyId, socketId, 'System', 'ERASE_PERMANENT');
-
       logger.info('PERMANENT ERASE completed for company %s', companyId);
-
       return {
         success: true,
         message: 'Business data permanently erased. Your Company account and login access remain intact.',
       };
-    } catch (error) {
-      if (useTransaction && session) {
-        logger.error('Aborting PERMANENT ERASE transaction for company %s: %s', companyId, error.message);
-        await session.abortTransaction();
+    } catch (txnError) {
+      if (session) {
+        try { await session.abortTransaction(); } catch (e) { /* ignore */ }
         session.endSession();
       }
-      throw error;
+
+      const isTxnNotSupported =
+        txnError.message?.includes('in-progress transactions') ||
+        txnError.message?.includes('Transaction numbers are only allowed') ||
+        txnError.message?.includes('replica set') ||
+        txnError.message?.includes('standalone') ||
+        txnError.message?.includes('Transaction is not supported');
+
+      if (isTxnNotSupported) {
+        logger.info('MongoDB environment does not support transactions (likely running standalone). Falling back to non-transactional execution.');
+        await executePermanentLogic({});
+        await touchCompanyData(companyId, socketId, 'System', 'ERASE_PERMANENT');
+        logger.info('PERMANENT ERASE completed for company %s in fallback mode', companyId);
+        return {
+          success: true,
+          message: 'Business data permanently erased. Your Company account and login access remain intact.',
+        };
+      }
+
+      throw txnError;
     }
   }
 }
