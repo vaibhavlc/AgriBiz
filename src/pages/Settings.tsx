@@ -2934,9 +2934,7 @@ export const Settings: React.FC = () => {
                     </div>
 
                     {backupHistoryData?.historyList && backupHistoryData.historyList.length > 0 ? (
-                      <div>
-                        {/* Desktop Modern Table View */}
-                        <div className="d-none d-md-block table-responsive" style={{ overflowX: 'auto' }}>
+                      <div className="table-responsive" style={{ overflowX: 'auto' }}>
                           <table className="table" style={{ fontSize: '13px', margin: 0, width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
                             <thead>
                               <tr style={{ borderBottom: '1.5px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
@@ -3011,65 +3009,6 @@ export const Settings: React.FC = () => {
                             </tbody>
                           </table>
                         </div>
-
-                        {/* Mobile Cards View (< 768px) */}
-                        <div className="d-block d-md-none" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {backupHistoryData.historyList.map((item: any) => {
-                            const isUnavailable = item.failureReason && item.failureReason.toLowerCase().includes('unavailable');
-                            return (
-                              <div key={item._id || item.historyId} style={{ backgroundColor: 'var(--bg-secondary)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '14px' }}>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                                  <span style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                                    📁 {item.backupType || 'Daily'} Backup
-                                  </span>
-                                  {isUnavailable ? (
-                                    <span className="badge badge-danger" style={{ fontSize: '10px' }}>Unavailable</span>
-                                  ) : (
-                                    <span className={`badge ${item.status === 'SUCCESS' ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '10px' }}>
-                                      {item.status === 'SUCCESS' ? '🟢 Successful' : '🔴 Failed'}
-                                    </span>
-                                  )}
-                                </div>
-                                <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '12px' }}>
-                                  {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
-                                  {item.fileSize && <> • {(item.fileSize / 1024).toFixed(1)} KB</>}
-                                </div>
-                                {item.status === 'SUCCESS' && !isUnavailable && (
-                                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
-                                    <button
-                                      type="button"
-                                      className="btn btn-secondary"
-                                      style={{ fontSize: '11px', padding: '8px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                      onClick={() => handleCloudPreview(item)}
-                                      disabled={cloudPreviewLoadingId === item.historyId}
-                                    >
-                                      {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Eye size={11} />} Preview
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="btn btn-secondary"
-                                      style={{ fontSize: '11px', padding: '8px 0', textAlign: 'center', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '4px' }}
-                                      onClick={() => handleCloudDownload(item)}
-                                      disabled={cloudDownloadLoadingId === item.historyId}
-                                    >
-                                      {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Download size={11} />} Download
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="btn btn-primary"
-                                      style={{ fontSize: '11px', padding: '8px 0', backgroundColor: '#dc2626', borderColor: '#dc2626', textAlign: 'center', justifyContent: 'center', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}
-                                      onClick={() => handleCloudPreview(item)}
-                                      disabled={cloudPreviewLoadingId === item.historyId}
-                                    >
-                                      <RotateCcw size={11} /> Restore
-                                    </button>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
                     ) : (
                       <div style={{ textAlign: 'center', padding: '36px 16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '14px', border: '1px border-dashed var(--border-color)' }}>
                         <HardDrive size={36} style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
