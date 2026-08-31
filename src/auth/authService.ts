@@ -399,12 +399,12 @@ class AuthService {
     this.setAccessToken(null);
   }
 
-  public async refreshSession(): Promise<{ success: boolean; company?: Company }> {
+  public async refreshSession(): Promise<{ success: boolean; company?: Company; user?: User }> {
     try {
       const storedRefreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
       if (!storedRefreshToken) return { success: false };
       const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
-      const { success, accessToken, refreshToken: newRefreshToken, company } = response.data;
+      const { success, accessToken, refreshToken: newRefreshToken, company, user } = response.data;
 
       if (success && accessToken) {
         this.setAccessToken(accessToken);
@@ -414,7 +414,10 @@ class AuthService {
         if (company) {
           sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
         }
-        return { success: true, company };
+        if (user) {
+          sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        }
+        return { success: true, company, user };
       }
       return { success: false };
     } catch (error) {
