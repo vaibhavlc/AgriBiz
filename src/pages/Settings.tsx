@@ -3180,6 +3180,14 @@ export const Settings: React.FC = () => {
                           type="button"
                           className={`btn ${restoreSourceTab === 'gdrive' ? 'btn-primary' : 'btn-secondary'}`}
                           style={{ fontSize: '12px', fontWeight: 700, width: '100%' }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setRestoreSourceTab('gdrive');
+                            const latest = backupHistoryData?.historyList?.find((item: any) => item.status === 'SUCCESS');
+                            if (latest && !selectedCloudHistory) {
+                              handleCloudPreview(latest);
+                            }
+                          }}
                         >
                           <HardDrive size={14} /> Select Cloud Backup
                         </button>
@@ -3326,7 +3334,30 @@ export const Settings: React.FC = () => {
 
                     {/* WORKFLOW B: From Google Drive */}
                     {restoreSourceTab === 'gdrive' && (
-                      <div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                        {/* Dropdown Selector for Cloud & History Backups */}
+                        <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '16px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
+                          <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
+                            📁 Select Recorded Cloud Backup to Restore *
+                          </label>
+                          <select
+                            className="form-control"
+                            value={selectedCloudHistory?.historyId || selectedCloudHistory?._id || ''}
+                            onChange={(e) => {
+                              const chosen = backupHistoryData?.historyList?.find((item: any) => (item.historyId || item._id) === e.target.value);
+                              if (chosen) handleCloudPreview(chosen);
+                            }}
+                            style={{ padding: '10px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: 700 }}
+                          >
+                            <option value="">-- Choose a recorded backup --</option>
+                            {backupHistoryData?.historyList?.filter((item: any) => item.status === 'SUCCESS').map((item: any) => (
+                              <option key={item._id || item.historyId} value={item.historyId || item._id}>
+                                📁 {item.backupType || 'Daily'} Backup — {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })} ({item.fileSize ? `${(item.fileSize / 1024).toFixed(1)} KB` : 'Cloud'})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
                         {selectedCloudHistory && cloudValidationResult ? (
                           <div>
                             {/* 7. BACKUP PREVIEW DESIGN (Cloud) */}
@@ -3416,11 +3447,11 @@ export const Settings: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <div style={{ textAlign: 'center', padding: '32px 16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px border-dashed var(--border-color)' }}>
-                            <HardDrive size={32} style={{ color: 'var(--text-muted)', marginBottom: '10px' }} />
-                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Select a Backup from Backup History Above</div>
+                          <div style={{ textAlign: 'center', padding: '24px 16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px border-dashed var(--border-color)' }}>
+                            <HardDrive size={28} style={{ color: 'var(--text-muted)', marginBottom: '8px' }} />
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>Select a backup from the dropdown above</div>
                             <p style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 0' }}>
-                              Click <strong>Preview</strong> or <strong>Restore</strong> on any backup in the Backup History section above to load its cloud preview.
+                              Choose any recorded backup from the dropdown list above or click <strong>Preview</strong> on the Backup History table.
                             </p>
                           </div>
                         )}
