@@ -279,3 +279,19 @@ export interface AuthSession {
   token: string;
   rememberMe: boolean;
 }
+
+export interface BackupHistoryItem {
+  _id?: string;
+  historyId: string;
+  companyId: string;
+  backupType: 'Daily' | 'Weekly' | 'Monthly' | 'Manual';
+  status: 'SUCCESS' | 'FAILED';
+  availabilityStatus?: 'AVAILABLE' | 'UNAVAILABLE' | 'EXPIRED_BY_RETENTION' | 'FAILED';
+  fileName: string;
+  driveFileId?: string;
+  fileSize?: number;
+  createdAt: string;
+  completedAt?: string;
+  failureReason?: string;
+  dataSummary?: any;
+}

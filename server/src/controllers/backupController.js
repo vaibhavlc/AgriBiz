@@ -191,7 +191,11 @@ class BackupController {
   async getBackupHistory(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const historyData = await googleDriveService.getHistory(companyId);
+      const { type, backupType, date, month } = req.query;
+      const filterType = type || backupType || 'All';
+      const dateFilter = date || month || '';
+
+      const historyData = await googleDriveService.getHistory(companyId, filterType, dateFilter);
       res.status(200).json({ success: true, ...historyData });
     } catch (error) {
       next(error);

@@ -24,6 +24,12 @@ const backupHistorySchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    availabilityStatus: {
+      type: String,
+      enum: ['AVAILABLE', 'UNAVAILABLE', 'EXPIRED_BY_RETENTION', 'FAILED'],
+      default: 'AVAILABLE',
+      index: true,
+    },
     fileName: {
       type: String,
       default: '',
@@ -58,7 +64,7 @@ const backupHistorySchema = new mongoose.Schema(
   }
 );
 
-backupHistorySchema.index({ companyId: 1, backupType: 1, status: 1, createdAt: -1 });
+backupHistorySchema.index({ companyId: 1, backupType: 1, status: 1, availabilityStatus: 1, createdAt: -1 });
 
 const BackupHistory = mongoose.model('BackupHistory', backupHistorySchema);
 export default BackupHistory;

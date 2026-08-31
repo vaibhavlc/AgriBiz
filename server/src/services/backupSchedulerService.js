@@ -38,17 +38,11 @@ class BackupSchedulerService {
       for (const config of activeConfigs) {
         const { companyId } = config;
         try {
-          // 1. Always run Daily backup
+          // 1. Always run Daily backup (Rolling 30 Daily Window)
           logger.info('Running Daily scheduled backup for company %s...', companyId);
           await googleDriveService.uploadAndVerifyBackup(companyId, 'Daily');
 
-          // 2. Run Weekly backup on Sundays
-          if (isSunday) {
-            logger.info('Running Weekly scheduled backup for company %s...', companyId);
-            await googleDriveService.uploadAndVerifyBackup(companyId, 'Weekly');
-          }
-
-          // 3. Run Monthly backup on 1st of month
+          // 2. Run Monthly backup on 1st of month (Rolling 24 Monthly Window)
           if (isFirstOfMonth) {
             logger.info('Running Monthly scheduled backup for company %s...', companyId);
             await googleDriveService.uploadAndVerifyBackup(companyId, 'Monthly');

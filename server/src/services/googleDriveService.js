@@ -11,15 +11,24 @@ import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class GoogleDriveService {
   async getOAuth2Client(companyId = null) {
-    let clientId = process.env.GOOGLE_CLIENT_ID || 'agribiz-drive-backup.apps.googleusercontent.com';
-    let clientSecret = process.env.GOOGLE_CLIENT_SECRET || 'agribiz_drive_secret';
+    let clientId = process.env.GOOGLE_CLIENT_ID;
+    let clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
-    if (companyId) {
-      const config = await GoogleDriveConfig.findOne({ companyId }).select('+customClientSecret');
-      if (config?.customClientId && config?.customClientSecret) {
-        clientId = config.customClientId;
-        clientSecret = config.customClientSecret;
+    if (!clientId || clientId.includes('agribiz-drive-backup')) {
+      if (companyId) {
+        const config = await GoogleDriveConfig.findOne({ companyId }).select('+customClientSecret');
+        if (config?.customClientId && config?.customClientSecret && !config.customClientId.includes('agribiz-drive-backup')) {
+          clientId = config.customClientId;
+          clientSecret = config.customClientSecret;
+        }
       }
+    }
+
+    if (!clientId || clientId.includes('agribiz-drive-backup')) {
+      clientId = process.env.GOOGLE_CLIENT_ID || '';
+    }
+    if (!clientSecret || clientSecret.includes('agribiz_drive_secret')) {
+      clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
     }
 
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/settings/backup/google/callback';
@@ -53,8 +62,8 @@ class GoogleDriveService {
    */
   async getCredentialsStatus(companyId) {
     const config = await GoogleDriveConfig.findOne({ companyId }).lean();
-    const envConfigured = !!(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_ID !== 'dummy_client_id');
-    const customConfigured = !!(config?.customClientId);
+    const envConfigured = !!(process.env.GOOGLE_CLIENT_ID && !process.env.GOOGLE_CLIENT_ID.includes('agribiz-drive-backup'));
+    const customConfigured = !!(config?.customClientId && !config.customClientId.includes('agribiz-drive-backup'));
 
     return {
       configured: true,
@@ -74,12 +83,15 @@ class GoogleDriveService {
       'https://www.googleapis.com/auth/userinfo.email',
     ];
 
-    return oauth2Client.generateAuthUrl({
+    const authUrl = oauth2Client.generateAuthUrl({
       access_type: 'offline',
       prompt: 'consent',
       scope: scopes,
       state: companyId,
     });
+
+    logger.info('Generated Google Auth URL for company %s with Client ID: %s', companyId, oauth2Client._clientId);
+    return authUrl;
   }
 
   /**
@@ -188,10 +200,9 @@ class GoogleDriveService {
     const rootFolderId = await findOrCreateFolder('AgriBiz Backups');
     const companyFolderId = await findOrCreateFolder(companyName, rootFolderId);
     const dailyFolderId = await findOrCreateFolder('Daily', companyFolderId);
-    const weeklyFolderId = await findOrCreateFolder('Weekly', companyFolderId);
     const monthlyFolderId = await findOrCreateFolder('Monthly', companyFolderId);
 
-    const folderIds = { rootFolderId, companyFolderId, dailyFolderId, weeklyFolderId, monthlyFolderId };
+    const folderIds = { rootFolderId, companyFolderId, dailyFolderId, monthlyFolderId };
 
     await GoogleDriveConfig.updateOne({ companyId }, { $set: { folderIds } });
 
@@ -332,19 +343,23 @@ class GoogleDriveService {
   }
 
   /**
-   * Applies Retention Policy (Deletes older SUCCESSFUL backups past quota limits).
-   * Daily: Keep 7, Weekly: Keep 4, Monthly: Keep 12.
+   * Applies Rolling Retention Policy:
+   * - Daily: Keep latest 30 successful verified backups.
+   * - Monthly: Keep latest 24 successful verified backups.
+   * - Manual / Legacy Weekly: Retained without rolling deletion.
    * Failed attempts NEVER trigger retention cleanup.
+   * Oldest backup deleted ONLY AFTER new backup has been verified & recorded as SUCCESS.
    */
   async applyRetentionPolicy(oauth2Client, companyId, backupType, targetFolderId) {
-    let limit = 7; // Daily
-    if (backupType === 'Weekly') limit = 4;
-    if (backupType === 'Monthly') limit = 12;
+    let limit = 30; // Daily default (latest 30)
+    if (backupType === 'Monthly') limit = 24; // Monthly (latest 24)
+    if (backupType === 'Manual' || backupType === 'Weekly') return; // Do not apply rolling retention auto-cleanup to manual or legacy weekly
 
     const successfulBackups = await BackupHistory.find({
       companyId,
       backupType,
       status: 'SUCCESS',
+      availabilityStatus: { $ne: 'EXPIRED_BY_RETENTION' },
     })
       .sort({ createdAt: -1 })
       .lean();
@@ -362,6 +377,12 @@ class GoogleDriveService {
             logger.warn('Retention Policy: Failed to delete Google Drive file %s: %s', oldBackup.driveFileId, err.message);
           }
         }
+
+        // Mark history record as EXPIRED_BY_RETENTION
+        await BackupHistory.updateOne(
+          { historyId: oldBackup.historyId, companyId },
+          { $set: { availabilityStatus: 'EXPIRED_BY_RETENTION' } }
+        );
       }
     }
   }
@@ -407,6 +428,46 @@ class GoogleDriveService {
       logger.warn('Drive file verification failed for fileId %s: %s', driveFileId, err.message);
       return false;
     }
+  }
+
+  /**
+   * Returns Backup History list with filters (type, date/month) and availability status.
+   */
+  async getHistory(companyId, filterType = 'All', dateFilter = '') {
+    const query = { companyId };
+
+    if (filterType && filterType !== 'All') {
+      query.backupType = filterType;
+    }
+
+    if (dateFilter) {
+      // Date filter format: YYYY-MM-DD or YYYY-MM
+      if (dateFilter.length === 10) {
+        const start = new Date(dateFilter);
+        const end = new Date(dateFilter);
+        end.setDate(end.getDate() + 1);
+        query.createdAt = { $gte: start, $lt: end };
+      } else if (dateFilter.length === 7) {
+        const [year, month] = dateFilter.split('-').map(Number);
+        const start = new Date(year, month - 1, 1);
+        const end = new Date(year, month, 1);
+        query.createdAt = { $gte: start, $lt: end };
+      }
+    }
+
+    const [history, lastSuccessfulDaily, latestDailyAttempt, driveStatus] = await Promise.all([
+      BackupHistory.find(query).sort({ createdAt: -1 }).limit(100).lean(),
+      BackupHistory.findOne({ companyId, backupType: 'Daily', status: 'SUCCESS' }).sort({ createdAt: -1 }).lean(),
+      BackupHistory.findOne({ companyId, backupType: 'Daily' }).sort({ createdAt: -1 }).lean(),
+      this.getStatus(companyId),
+    ]);
+
+    return {
+      driveStatus,
+      lastSuccessfulBackup: lastSuccessfulDaily,
+      latestAttempt: latestDailyAttempt,
+      historyList: history,
+    };
   }
 
   /**

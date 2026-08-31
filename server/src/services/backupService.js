@@ -538,51 +538,54 @@ class BackupService {
     const now = Date.now();
     const fortyEightHoursMs = 48 * 60 * 60 * 1000;
 
-    // Find latest successful automatic backup (Daily, Weekly, Monthly)
-    const lastSuccessfulAuto = await BackupHistory.findOne({
+    const now = Date.now();
+    const thirtyHoursMs = 30 * 60 * 60 * 1000;
+
+    // Find latest successful automatic Daily backup
+    const lastSuccessfulDaily = await BackupHistory.findOne({
       companyId,
-      backupType: { $in: ['Daily', 'Weekly', 'Monthly'] },
+      backupType: 'Daily',
       status: 'SUCCESS',
     })
       .sort({ createdAt: -1 })
       .lean();
 
-    // Priority 1: Check if overdue (>48h or never completed an automatic backup)
-    if (!lastSuccessfulAuto || (now - new Date(lastSuccessfulAuto.createdAt).getTime()) > fortyEightHoursMs) {
+    // Priority 1: Check if Daily backup is overdue (>30h or never completed a Daily backup)
+    if (!lastSuccessfulDaily || (now - new Date(lastSuccessfulDaily.createdAt).getTime()) > thirtyHoursMs) {
       return {
         healthState: 'OVERDUE',
         badgeText: '⚠ Backup Overdue',
-        description: 'No successful automatic backup has completed within the expected 48-hour schedule.',
-        lastSuccessfulAuto: lastSuccessfulAuto || null,
+        description: 'No successful automatic Daily backup has completed within the expected 24-hour schedule.',
+        lastSuccessfulAuto: lastSuccessfulDaily || null,
       };
     }
 
-    // Find latest scheduled automatic attempt
-    const latestAutoAttempt = await BackupHistory.findOne({
+    // Find latest scheduled Daily attempt
+    const latestDailyAttempt = await BackupHistory.findOne({
       companyId,
-      backupType: { $in: ['Daily', 'Weekly', 'Monthly'] },
+      backupType: 'Daily',
     })
       .sort({ createdAt: -1 })
       .lean();
 
-    // Priority 2: Check if latest scheduled attempt failed
-    if (latestAutoAttempt && latestAutoAttempt.status === 'FAILED') {
+    // Priority 2: Check if latest scheduled Daily attempt failed
+    if (latestDailyAttempt && latestDailyAttempt.status === 'FAILED') {
       return {
         healthState: 'ATTENTION_REQUIRED',
         badgeText: '⚠ Attention Required',
-        description: `The latest scheduled automatic backup attempt failed: ${latestAutoAttempt.failureReason || 'Upload failed'}.`,
-        lastSuccessfulAuto,
-        latestAutoAttempt,
+        description: `The latest scheduled automatic Daily backup attempt failed: ${latestDailyAttempt.failureReason || 'Upload failed'}.`,
+        lastSuccessfulAuto: lastSuccessfulDaily,
+        latestAutoAttempt: latestDailyAttempt,
       };
     }
 
     // Priority 3: Healthy
     return {
       healthState: 'HEALTHY',
-      badgeText: '✓ Healthy',
-      description: 'Automatic backup system is healthy and up to date.',
-      lastSuccessfulAuto,
-      latestAutoAttempt,
+      badgeText: '✓ Backup Healthy',
+      description: 'Automatic Daily backups are completing successfully on schedule.',
+      lastSuccessfulAuto: lastSuccessfulDaily,
+      latestAutoAttempt: latestDailyAttempt,
     };
   }
 
