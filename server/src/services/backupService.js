@@ -536,9 +536,6 @@ class BackupService {
    */
   async getBackupHealthStatus(companyId) {
     const now = Date.now();
-    const fortyEightHoursMs = 48 * 60 * 60 * 1000;
-
-    const now = Date.now();
     const thirtyHoursMs = 30 * 60 * 60 * 1000;
 
     // Find latest successful automatic Daily backup
