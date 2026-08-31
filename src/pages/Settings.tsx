@@ -253,7 +253,13 @@ export const Settings: React.FC = () => {
     } catch (err: any) {
       setCloudPreviewLoadingId(null);
       const msg = err.response?.data?.message || err.message || 'Failed to preview cloud backup.';
-      if (showToast) showToast(msg, 'error');
+      if (showToast) {
+        if (msg.includes('Unavailable') || msg.includes('not be found')) {
+          showToast('Backup File Unavailable: This file was removed from your Google Drive. Click "Backup Now" to create a fresh cloud backup!', 'error');
+        } else {
+          showToast(msg, 'error');
+        }
+      }
       fetchGoogleDriveAndHistory();
     }
   };
@@ -274,7 +280,13 @@ export const Settings: React.FC = () => {
       if (showToast) showToast('Cloud backup downloaded successfully!', 'success');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to download cloud backup file.';
-      if (showToast) showToast(msg, 'error');
+      if (showToast) {
+        if (msg.includes('Unavailable') || msg.includes('not be found')) {
+          showToast('Backup File Unavailable: This file was removed from your Google Drive. Click "Backup Now" to create a fresh cloud backup!', 'error');
+        } else {
+          showToast(msg, 'error');
+        }
+      }
       fetchGoogleDriveAndHistory();
     } finally {
       setCloudDownloadLoadingId(null);
