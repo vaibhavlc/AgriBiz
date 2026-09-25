@@ -1425,7 +1425,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-                <div className="print-watermark-logo">
+                <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
                   <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
                 </div>
               )}
@@ -1846,7 +1846,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-                <div className="print-watermark-logo">
+                <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
                   <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
                 </div>
               )}

@@ -1589,7 +1589,7 @@ export const Reports: React.FC = () => {
         <div className="gstr3b-pdf-page">
           {/* Watermark Logo */}
           {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-            <div className="print-watermark-logo">
+            <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
               <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
             </div>
           )}
@@ -1791,7 +1791,7 @@ export const Reports: React.FC = () => {
         <div className="gstr3b-pdf-page">
           {/* Watermark Logo */}
           {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-            <div className="print-watermark-logo">
+            <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
               <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
             </div>
           )}
@@ -1966,7 +1966,7 @@ export const Reports: React.FC = () => {
         <div className="gstr3b-pdf-page">
           {/* Watermark Logo */}
           {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-            <div className="print-watermark-logo">
+            <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
               <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
             </div>
           )}

@@ -167,6 +167,8 @@ export interface BusinessSettings {
   // Branding
   logo?: string;
   watermarkLogo?: string;
+  watermarkColorMode?: 'bw' | 'as_is';
+  watermarkAsIs?: boolean;
   signature?: string;
 
   // Banking Details

@@ -27,6 +27,8 @@ const settingsSchema = new mongoose.Schema(
     // Branding
     logo: { type: String },
     watermarkLogo: { type: String },
+    watermarkColorMode: { type: String, enum: ['bw', 'as_is'], default: 'bw' },
+    watermarkAsIs: { type: Boolean, default: false },
     signature: { type: String },
     
     // Bank Details

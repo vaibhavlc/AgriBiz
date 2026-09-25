@@ -4692,6 +4692,11 @@ html.light .glass-bottom-nav {
   filter: grayscale(100%) contrast(120%);
 }
 
+.print-watermark-logo.as-is img,
+.print-watermark-logo.watermark-as-is img {
+  filter: none !important;
+}
+
 .invoice-header-bar {
   display: flex;
   justify-content: space-between;
@@ -6959,6 +6964,11 @@ html.light .glass-bottom-nav {
   max-height: 100%;
   object-fit: contain;
   filter: grayscale(100%) contrast(120%);
+}
+
+.gstr3b-pdf-page .print-watermark-logo.as-is img,
+.gstr3b-pdf-page .print-watermark-logo.watermark-as-is img {
+  filter: none !important;
 }
 
 /* Visual connectivity badge */

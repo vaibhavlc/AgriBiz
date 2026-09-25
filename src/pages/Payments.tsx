@@ -689,7 +689,7 @@ export const Payments: React.FC = () => {
             <div className="printable-invoice-card" style={{ padding: '24px', border: '1px solid var(--border-color)', boxShadow: 'none', position: 'relative', overflow: 'hidden' }}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-                <div className="print-watermark-logo">
+                <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
                   <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
                 </div>
               )}

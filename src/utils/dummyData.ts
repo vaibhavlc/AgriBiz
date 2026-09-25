@@ -663,6 +663,8 @@ export const initialSettings: BusinessSettings = {
   // Branding
   logo: '',
   watermarkLogo: '',
+  watermarkColorMode: 'bw',
+  watermarkAsIs: false,
 
   // Banking Details
   bankName: 'State Bank of India',

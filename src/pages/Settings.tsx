@@ -937,6 +937,8 @@ export const Settings: React.FC = () => {
   // Branding
   const [logo, setLogo] = useState(settings.logo || '');
   const [watermarkLogo, setWatermarkLogo] = useState(settings.watermarkLogo || '');
+  const [watermarkAsIs, setWatermarkAsIs] = useState<boolean>(settings.watermarkAsIs ?? (settings.watermarkColorMode === 'as_is'));
+  const [watermarkColorMode, setWatermarkColorMode] = useState<'bw' | 'as_is'>(settings.watermarkColorMode || (settings.watermarkAsIs ? 'as_is' : 'bw'));
   const [savedSignature, setSavedSignature] = useState(settings.signature || '');
   const [isPadEditing, setIsPadEditing] = useState(false);
   const isDrawingRef = useRef(false);
@@ -994,6 +996,8 @@ export const Settings: React.FC = () => {
     pincode,
     logo,
     watermarkLogo,
+    watermarkAsIs,
+    watermarkColorMode,
     savedSignature,
     bankName,
     accountHolderName,
@@ -1040,6 +1044,8 @@ export const Settings: React.FC = () => {
     pincode: settings.pincode || '',
     logo: settings.logo || '',
     watermarkLogo: settings.watermarkLogo || '',
+    watermarkAsIs: settings.watermarkAsIs ?? (settings.watermarkColorMode === 'as_is'),
+    watermarkColorMode: settings.watermarkColorMode || (settings.watermarkAsIs ? 'as_is' : 'bw'),
     savedSignature: settings.signature || '',
     bankName: settings.bankName || '',
     accountHolderName: settings.accountHolderName || '',
@@ -1115,6 +1121,8 @@ export const Settings: React.FC = () => {
       pincode,
       logo,
       watermarkLogo,
+      watermarkAsIs,
+      watermarkColorMode: watermarkAsIs ? 'as_is' : 'bw',
       bankName,
       accountHolderName,
       accountNumber,
@@ -1936,7 +1944,7 @@ export const Settings: React.FC = () => {
                   {watermarkLogo ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                       <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '12px', width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)' }}>
-                        <img src={watermarkLogo} alt="Watermark Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        <img src={watermarkLogo} alt="Watermark Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: watermarkAsIs ? 'none' : 'grayscale(100%) contrast(120%)' }} />
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
@@ -1961,6 +1969,30 @@ export const Settings: React.FC = () => {
                       </label>
                     </div>
                   )}
+
+                  {/* Watermark Color Mode Checkbox Option */}
+                  <div style={{ width: '100%', borderTop: '1px solid var(--border-color)', paddingTop: '16px', marginTop: '10px' }}>
+                    <label style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={watermarkAsIs}
+                        onChange={(e) => {
+                          const checked = e.target.checked;
+                          setWatermarkAsIs(checked);
+                          setWatermarkColorMode(checked ? 'as_is' : 'bw');
+                        }}
+                        style={{ width: '18px', height: '18px', marginTop: '2px', cursor: 'pointer' }}
+                      />
+                      <div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                          Show Watermark Image As Is (Original Color)
+                        </div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                          When checked, watermark on invoices renders in original colors. Uncheck to display in Black & White (Grayscale).
+                        </div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
               </div>
 

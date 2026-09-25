@@ -187,6 +187,8 @@ export const settingsSchema = z.object({
   address: z.string().optional().nullable(),
   logo: z.string().optional().nullable(),
   watermarkLogo: z.string().optional().nullable(),
+  watermarkColorMode: z.enum(['bw', 'as_is']).optional().default('bw'),
+  watermarkAsIs: z.boolean().optional().default(false),
   signature: z.string().optional().nullable(),
   bankName: z.string().optional().nullable(),
   accountHolderName: z.string().optional().nullable(),
