@@ -132,8 +132,10 @@ interface AppContextType {
   openNewPaymentForm: (preset?: { contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' }) => void;
   openEditPaymentForm: (payment: Payment) => void;
   handleSavePayment: (e: React.FormEvent) => void;
+  isSubmittingPayment: boolean;
 
   isOnline: boolean;
+  isInitialLoading: boolean;
   reloadData: () => Promise<void>;
   refreshCollection: (collectionName: string) => Promise<void>;
   synchronize: () => Promise<void>;
@@ -251,6 +253,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   });
 
+  const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [activeTheme, setActiveTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('agribiz_settings');
@@ -415,6 +418,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const socketRef = useRef<Socket | null>(null);
+  const lastFocusRefetchRef = useRef<number>(0);
 
   useEffect(() => {
     const setupSocket = () => {
@@ -499,7 +503,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     const handleFocus = () => {
       if (document.visibilityState === 'visible' && navigator.onLine) {
-        reloadData();
+        const now = Date.now();
+        if (now - lastFocusRefetchRef.current > 60000) {
+          lastFocusRefetchRef.current = now;
+          reloadData();
+        }
       }
     };
     window.addEventListener('focus', handleFocus);
@@ -607,6 +615,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } catch (err) {
       console.error('Failed to load data from REST API:', err);
+    } finally {
+      setIsInitialLoading(false);
     }
   };
 
@@ -876,8 +886,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setIsPaymentFormOpen(true);
   };
 
-  const handleSavePayment = (e: React.FormEvent) => {
+  const [isSubmittingPayment, setIsSubmittingPayment] = useState(false);
+
+  const handleSavePayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmittingPayment) return;
+
     if (!contactId) {
       showToast('Please select a contact to log payment.', 'error');
       return;
@@ -887,43 +901,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
 
-    const contactName =
-      paymentType === 'CustomerReceipt'
-        ? customers.find((c) => c.id === contactId)?.name || 'Unknown Customer'
-        : suppliers.find((s) => s.id === contactId)?.name || 'Unknown Supplier';
+    setIsSubmittingPayment(true);
+    try {
+      const contactName =
+        paymentType === 'CustomerReceipt'
+          ? customers.find((c) => c.id === contactId)?.name || 'Unknown Customer'
+          : suppliers.find((s) => s.id === contactId)?.name || 'Unknown Supplier';
 
-    if (editingPaymentId) {
-      editPayment({
-        id: editingPaymentId,
-        date: paymentDate,
-        type: paymentType,
-        contactId,
-        contactName,
-        amount,
-        paymentMethod,
-        referenceNumber: referenceNumber.trim() || undefined,
-        notes: notes.trim() || undefined,
-      });
-      setEditingPaymentId(null);
-    } else {
-      addPayment({
-        date: paymentDate,
-        type: paymentType,
-        contactId,
-        contactName,
-        amount,
-        paymentMethod,
-        referenceNumber: referenceNumber.trim() || undefined,
-        notes: notes.trim() || undefined,
-      });
+      if (editingPaymentId) {
+        await editPayment({
+          id: editingPaymentId,
+          date: paymentDate,
+          type: paymentType,
+          contactId,
+          contactName,
+          amount,
+          paymentMethod,
+          referenceNumber: referenceNumber.trim() || undefined,
+          notes: notes.trim() || undefined,
+        });
+        setEditingPaymentId(null);
+      } else {
+        await addPayment({
+          date: paymentDate,
+          type: paymentType,
+          contactId,
+          contactName,
+          amount,
+          paymentMethod,
+          referenceNumber: referenceNumber.trim() || undefined,
+          notes: notes.trim() || undefined,
+        });
+      }
+
+      clearAllDirtyForms();
+      setContactId('');
+      setAmount(0);
+      setReferenceNumber('');
+      setNotes('');
+      setIsPaymentFormOpen(false);
+    } catch (err: any) {
+      showToast(err?.message || 'Failed to save payment transaction', 'error');
+    } finally {
+      setIsSubmittingPayment(false);
     }
-
-    clearAllDirtyForms();
-    setContactId('');
-    setAmount(0);
-    setReferenceNumber('');
-    setNotes('');
-    setIsPaymentFormOpen(false);
   };
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -1069,7 +1090,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setProducts((prev) => prev.filter((p) => p.id !== id));
       notifyMutation();
       showToast('Product soft-deleted successfully!');
-      reloadData();
+      refreshCollection('recycleBin');
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete product', 'error');
     }
@@ -1130,7 +1151,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCustomers((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
       showToast('Customer soft-deleted successfully!');
-      reloadData();
+      refreshCollection('recycleBin');
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete customer', 'error');
     }
@@ -1191,7 +1212,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setSuppliers((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
       showToast('Supplier soft-deleted successfully!');
-      reloadData();
+      refreshCollection('recycleBin');
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete supplier', 'error');
     }
@@ -1223,7 +1244,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setInvoices((prev) => [newInvoice, ...prev]);
       notifyMutation();
       showToast('Invoice created successfully!');
-      reloadData();
+      refreshCollection('products');
+      refreshCollection('customers');
+      return newInvoice;
       return newInvoice;
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to create invoice', 'error');
@@ -1814,7 +1837,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         openNewPaymentForm,
         openEditPaymentForm,
         handleSavePayment,
+        isSubmittingPayment,
         isOnline,
+        isInitialLoading,
         reloadData,
         refreshCollection,
         synchronize,
@@ -1849,17 +1874,27 @@ function isDeepEqual(a: any, b: any): boolean {
 
 export const useUnsavedChanges = (formId: string, currentValues: any, initialValues: any, active: boolean = true) => {
   const { setFormDirty } = useApp();
-  
+  const prevDirtyRef = useRef<boolean | null>(null);
+
   useEffect(() => {
     if (!active) {
-      setFormDirty(formId, false);
+      if (prevDirtyRef.current !== false) {
+        prevDirtyRef.current = false;
+        setFormDirty(formId, false);
+      }
       return;
     }
+
     const isDirty = !isDeepEqual(currentValues, initialValues);
-    setFormDirty(formId, isDirty);
-    
+    if (prevDirtyRef.current !== isDirty) {
+      prevDirtyRef.current = isDirty;
+      setFormDirty(formId, isDirty);
+    }
+  }, [formId, currentValues, initialValues, active, setFormDirty]);
+
+  useEffect(() => {
     return () => {
       setFormDirty(formId, false);
     };
-  }, [formId, currentValues, initialValues, active, setFormDirty]);
+  }, [formId, setFormDirty]);
 };

@@ -66,35 +66,44 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
     }
   }, [editSupplierData, isOpen]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
 
-    if (editSupplierData) {
-      const updated: Supplier = {
-        ...editSupplierData,
-        name,
-        phone,
-        email,
-        address,
-        gstin: gstin.toUpperCase(),
-        outstanding,
-      };
-      editSupplier(updated);
-      if (onSaveCallback) onSaveCallback(updated);
-    } else {
-      const saved = await addSupplier({
-        name,
-        phone,
-        email,
-        address,
-        gstin: gstin.toUpperCase() || undefined,
-        outstanding,
-      });
-      if (saved && onSaveCallback) onSaveCallback(saved);
+    setIsSubmitting(true);
+    try {
+      if (editSupplierData) {
+        const updated: Supplier = {
+          ...editSupplierData,
+          name,
+          phone,
+          email,
+          address,
+          gstin: gstin.toUpperCase(),
+          outstanding,
+        };
+        await editSupplier(updated);
+        if (onSaveCallback) onSaveCallback(updated);
+      } else {
+        const saved = await addSupplier({
+          name,
+          phone,
+          email,
+          address,
+          gstin: gstin.toUpperCase() || undefined,
+          outstanding,
+        });
+        if (saved && onSaveCallback) onSaveCallback(saved);
+      }
+      clearAllDirtyForms();
+      onClose();
+    } catch (err) {
+      console.error('Failed to submit supplier:', err);
+    } finally {
+      setIsSubmitting(false);
     }
-    clearAllDirtyForms();
-    onClose();
   };
 
   return (
@@ -195,8 +204,8 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
             <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" style={{ minWidth: '110px' }}>
-              {editSupplierData ? 'Update Supplier' : 'Add Supplier'}
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ minWidth: '110px' }}>
+              {isSubmitting ? 'Saving...' : editSupplierData ? 'Update Supplier' : 'Add Supplier'}
             </button>
           </div>
         </div>

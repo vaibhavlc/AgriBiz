@@ -24,7 +24,6 @@ import {
 import type { Payment } from '../types';
 
 export const Payments: React.FC = () => {
-  console.log('[Component Re-rendered] Payments');
   const {
     payments,
     customers,

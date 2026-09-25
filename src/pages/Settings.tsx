@@ -94,7 +94,6 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
-  console.log('[Component Re-rendered] Settings');
   const { settings, updateSettings, setTheme, resetToDefault, showToast } = useApp();
   const { currentUser, currentCompany } = useAuth();
 

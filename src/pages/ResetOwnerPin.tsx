@@ -78,7 +78,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
       <div style={{
         width: '100%',
         maxWidth: '420px',
-        background: 'var(--surface, #ffffff)',
+        background: 'var(--card-bg, #ffffff)',
         borderRadius: '20px',
         padding: '32px 24px',
         boxShadow: '0 20px 40px rgba(0,0,0,0.08)',

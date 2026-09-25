@@ -43,7 +43,6 @@ interface LocalPurchaseItem {
 }
 
 export const Purchases: React.FC = () => {
-  console.log('[Component Re-rendered] Purchases');
   const {
     settings,
     purchases,
@@ -113,7 +112,7 @@ export const Purchases: React.FC = () => {
   // GST Type Selection
   const [gstType, setGstType] = useState<'IntraState' | 'InterState'>('IntraState');
 
-  const currentPurchaseValues = {
+  const currentPurchaseValues = React.useMemo(() => ({
     selectedSupplierId,
     purchaseDate,
     supplierInvoiceNumber,
@@ -130,7 +129,24 @@ export const Purchases: React.FC = () => {
     amountPaid,
     transactionReference,
     gstType,
-  };
+  }), [
+    selectedSupplierId,
+    purchaseDate,
+    supplierInvoiceNumber,
+    supplierInvoiceDate,
+    purchaseType,
+    dueDate,
+    purchaseStatus,
+    items,
+    transportCharges,
+    loadingCharges,
+    otherCharges,
+    notes,
+    paymentMethod,
+    amountPaid,
+    transactionReference,
+    gstType,
+  ]);
 
   useUnsavedChanges('purchase-form', currentPurchaseValues, initialPurchaseValues, isEnteringPurchase && !!initialPurchaseValues);
 

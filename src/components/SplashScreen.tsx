@@ -1,19 +1,22 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import lottie, { type AnimationItem } from 'lottie-web';
+import splashAnimationData from '../../public/agribiz-splash.json';
+import { SPLASH_LOGO_BASE64 } from './splashLogoBase64';
 
 interface SplashScreenProps {
-  /** Called when splash finishes and app should show */
-  onComplete: () => void;
-  /** Signal that the application is ready (data loaded, routes prepared) */
-  appReady: boolean;
+  /** Called when splash animation finishes and app should show */
+  onComplete?: () => void;
+  /** Signal that the application is ready */
+  appReady?: boolean;
 }
 
-const WEBM_SRC = '/Makes_these_animation_video_fr.webm';
-const LOGO_SRC = '/logo-512.png'; // Fallback PNG logo
+// Toggle flag to easily re-enable Lottie animation in the future if needed
+const ENABLE_LOTTIE_ANIMATION = false;
 
-const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [videoEnded, setVideoEnded] = useState(false);
-  const [videoError, setVideoError] = useState(false);
+const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady = true }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const animRef = useRef<AnimationItem | null>(null);
+  const [animEnded, setAnimEnded] = useState(false);
   const [visible, setVisible] = useState(true);
   const [fading, setFading] = useState(false);
   const hasCompleted = useRef(false);
@@ -21,59 +24,58 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
   const tryComplete = useCallback(() => {
     if (hasCompleted.current) return;
     hasCompleted.current = true;
-    // Start fade-out
     setFading(true);
     setTimeout(() => {
       setVisible(false);
-      onComplete();
-    }, 420); // fade duration
+      if (onComplete) onComplete();
+    }, 550); // Ultra-smooth 550ms fade-out transition
   }, [onComplete]);
 
-  // When BOTH video done AND app ready → complete
+  // Timer for static image splash with CSS animations
   useEffect(() => {
-    if (videoEnded && appReady) {
+    if (!ENABLE_LOTTIE_ANIMATION) {
+      const timer = setTimeout(() => {
+        setAnimEnded(true);
+      }, 1500); // 1.5s total display time
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // When animation / timer completes AND app state is ready
+  useEffect(() => {
+    if (animEnded && appReady) {
       tryComplete();
     }
-  }, [videoEnded, appReady, tryComplete]);
+  }, [animEnded, appReady, tryComplete]);
 
-  // Video ended handler
-  const handleVideoEnd = useCallback(() => {
-    setVideoEnded(true);
-  }, []);
-
-  // If WebM fails, fall back to PNG + timer
-  const handleVideoError = useCallback(() => {
-    setVideoError(true);
-    // Give a minimum 1.8s for PNG splash
-    setTimeout(() => setVideoEnded(true), 1800);
-  }, []);
-
-  // Safety: if WebM never loads within 15s, move on to app
+  // Initialize Lottie Animation (Preserved for future use when ENABLE_LOTTIE_ANIMATION is set to true)
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setVideoEnded(true);
-    }, 15000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (!ENABLE_LOTTIE_ANIMATION) return;
+    if (!containerRef.current) return;
 
-  // Start video as soon as component mounts
-  useEffect(() => {
-    const video = videoRef.current;
-    if (!video) return;
-    video.muted = false; // Play with sound as requested
-    video.playsInline = true;
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-      playPromise.catch((err) => {
-        console.warn("Autoplay with sound was blocked by browser. Attempting muted autoplay...", err);
-        // Fallback to muted playback so animation still runs
-        video.muted = true;
-        video.play().catch(() => {
-          // If both fail, trigger video end so the app initializes
-          setVideoEnded(true);
-        });
-      });
-    }
+    const instance = lottie.loadAnimation({
+      container: containerRef.current,
+      renderer: 'svg',
+      loop: false,
+      autoplay: true,
+      animationData: splashAnimationData,
+      rendererSettings: {
+        progressiveLoad: false,
+        preserveAspectRatio: 'xMidYMid meet',
+        hideOnTransparent: true,
+      },
+    });
+    animRef.current = instance;
+
+    instance.addEventListener('complete', () => {
+      setTimeout(() => {
+        setAnimEnded(true);
+      }, 400);
+    });
+
+    return () => {
+      instance.destroy();
+    };
   }, []);
 
   if (!visible) return null;
@@ -84,13 +86,15 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 99999,
+        zIndex: 9999999, // Super high z-index to completely hide session loading spinners
         display: 'flex',
+        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#000000', // Black background to match the video background
+        backgroundColor: 'var(--bg-primary, #f8fafc)',
         opacity: fading ? 0 : 1,
-        transition: fading ? 'opacity 420ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
+        transform: fading ? 'scale(1.03)' : 'scale(1)',
+        transition: fading ? 'opacity 550ms cubic-bezier(0.4, 0, 0.2, 1), transform 550ms cubic-bezier(0.4, 0, 0.2, 1)' : 'none',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         pointerEvents: fading ? 'none' : 'all',
@@ -98,89 +102,111 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete, appReady }) => 
       }}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {/* Sizing adjustments for larger desktop screens */}
       <style>{`
-        .splash-root {
-          background-color: #000000 !important;
+        @keyframes splashAuraGlow {
+          0%, 100% {
+            transform: scale(0.95);
+            opacity: 0.35;
+          }
+          50% {
+            transform: scale(1.15);
+            opacity: 0.75;
+          }
         }
-        .splash-video {
-          max-width: 280px;
-          max-height: 280px;
-          width: 65vw;
-          height: 65vw;
+
+        @keyframes splashLogoEntrance {
+          0% {
+            opacity: 0;
+            transform: scale(0.82) translateY(20px);
+          }
+          60% {
+            opacity: 1;
+            transform: scale(1.05) translateY(-4px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
         }
-        @media (min-width: 768px) {
-          .splash-video {
-            max-width: 580px !important;
-            max-height: 580px !important;
-            width: 45vw !important;
-            height: 45vw !important;
+
+        @keyframes splashProgressBar {
+          0% {
+            width: 0%;
+          }
+          100% {
+            width: 100%;
           }
         }
       `}</style>
 
+      {/* Background Radial Glow */}
       <div
-        className="splash-root"
         style={{
           position: 'absolute',
-          inset: 0,
+          width: '520px',
+          height: '520px',
+          borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(59, 130, 246, 0.12) 45%, transparent 70%)',
+          animation: 'splashAuraGlow 3s infinite ease-in-out',
+          pointerEvents: 'none',
+        }}
+      />
+
+      {/* Floating Animated Logo - No Rectangular Container Box */}
+      <div
+        style={{
+          position: 'relative',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          backgroundColor: '#000000', // Black background
+          padding: '20px',
+          maxWidth: '90vw',
         }}
       >
-        {!videoError ? (
-          /* ── WebM video splash ── */
-          <video
-            ref={videoRef}
-            src={WEBM_SRC}
-            playsInline
-            autoPlay
-            disablePictureInPicture
-            onEnded={handleVideoEnd}
-            onError={handleVideoError}
-            className="splash-video"
-            style={{
-              objectFit: 'contain',
-              pointerEvents: 'none',
-              display: 'block',
-              outline: 'none',
-              border: 'none',
-              background: 'transparent',
-            }}
-            // Disable all controls & interactions
-            controls={false}
-            controlsList="nodownload nofullscreen noremoteplayback"
-            tabIndex={-1}
-          />
+        {ENABLE_LOTTIE_ANIMATION ? (
+          <div ref={containerRef} style={{ width: '320px', height: '240px' }} />
         ) : (
-          /* ── PNG fallback splash ── */
-          <img
-            src={LOGO_SRC}
-            alt=""
-            draggable={false}
-            style={{
-              width: '160px',
-              height: '160px',
-              objectFit: 'contain',
-              pointerEvents: 'none',
-              animation: 'splashPulse 1.8s ease-in-out',
-              borderRadius: '32px',
-            }}
-          />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            {/* Direct Memory Base64 Logo - 0ms Network Latency */}
+            <img
+              src={SPLASH_LOGO_BASE64}
+              alt="Daiyog Engineering Logo"
+              style={{
+                width: '360px',
+                maxWidth: '85vw',
+                height: 'auto',
+                maxHeight: '260px',
+                objectFit: 'contain',
+                filter: 'drop-shadow(0 10px 25px rgba(0, 0, 0, 0.12)) drop-shadow(0 0 15px rgba(16, 185, 129, 0.25))',
+                animation: 'splashLogoEntrance 0.85s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+              }}
+            />
+
+            {/* Bottom Accent Progress Line */}
+            <div
+              style={{
+                width: '180px',
+                height: '3.5px',
+                borderRadius: '99px',
+                backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                marginTop: '28px',
+                overflow: 'hidden',
+                position: 'relative',
+              }}
+            >
+              <div
+                style={{
+                  height: '100%',
+                  borderRadius: '99px',
+                  background: 'linear-gradient(90deg, #10b981 0%, #3b82f6 100%)',
+                  animation: 'splashProgressBar 1.3s cubic-bezier(0.4, 0, 0.2, 1) forwards',
+                }}
+              />
+            </div>
+          </div>
         )}
       </div>
-
-      <style>{`
-        @keyframes splashPulse {
-          0%   { opacity: 0; transform: scale(0.88); }
-          30%  { opacity: 1; transform: scale(1.04); }
-          55%  { transform: scale(0.97); }
-          75%  { transform: scale(1.01); }
-          100% { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
     </div>
   );
 };

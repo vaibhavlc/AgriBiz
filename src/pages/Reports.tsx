@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 
 export const Reports: React.FC = () => {
-  console.log('[Component Re-rendered] Reports');
   const {
     invoices,
     purchases,

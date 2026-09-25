@@ -37,7 +37,6 @@ interface InvoiceItemLocal {
 }
 
 export const Sales: React.FC = () => {
-  console.log('[Component Re-rendered] Sales');
   const {
     invoices,
     quotations,
@@ -113,7 +112,7 @@ export const Sales: React.FC = () => {
   const [dueDate, setDueDate] = useState('');
   const [notes, setNotes] = useState('');
   const [showSignature, setShowSignature] = useState(true);
-  const currentInvoiceValues = {
+  const currentInvoiceValues = React.useMemo(() => ({
     selectedCustomerId,
     invoiceDate,
     items,
@@ -123,15 +122,15 @@ export const Sales: React.FC = () => {
     dueDate,
     notes,
     showSignature,
-  };
+  }), [selectedCustomerId, invoiceDate, items, amountPaid, paymentMethod, referenceNumber, dueDate, notes, showSignature]);
 
-  const currentQuotationValues = {
+  const currentQuotationValues = React.useMemo(() => ({
     selectedCustomerId,
     invoiceDate,
     validUntil,
     items,
     notes,
-  };
+  }), [selectedCustomerId, invoiceDate, validUntil, items, notes]);
 
   useUnsavedChanges('invoice-form', currentInvoiceValues, initialInvoiceValues, isCreatingInvoice && !!initialInvoiceValues);
   useUnsavedChanges('quotation-form', currentQuotationValues, initialQuotationValues, isCreatingQuotation && !!initialQuotationValues);

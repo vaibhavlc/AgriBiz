@@ -444,7 +444,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                     display: 'flex', alignItems: 'center', gap: '12px',
                     padding: '10px 14px', borderRadius: '12px', textAlign: 'left',
                     border: '1.5px solid var(--border-color,#e2e8f0)',
-                    background: 'var(--surface,#fff)', cursor: 'pointer', width: '100%',
+                    background: 'var(--bg-input, var(--card-bg, #ffffff))', cursor: 'pointer', width: '100%',
                     transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={e => {
@@ -453,7 +453,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                   }}
                   onMouseLeave={e => {
                     (e.currentTarget as HTMLButtonElement).style.borderColor = 'var(--border-color,#e2e8f0)';
-                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--surface,#fff)';
+                    (e.currentTarget as HTMLButtonElement).style.background = 'var(--bg-input, var(--card-bg, #ffffff))';
                   }}>
                   <div style={{
                     width: '38px', height: '38px', borderRadius: '10px',
@@ -572,7 +572,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                     ? cfg.bg
                     : isCurrent
                     ? `${cfg.color}0a`
-                    : 'var(--surface,#fff)',
+                    : 'var(--bg-input, var(--card-bg, #ffffff))',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -607,7 +607,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                   border: isEnter ? 'none' : '1.5px solid var(--border-color,#e2e8f0)',
                   background: isEnter
                     ? (pin.length === 4 ? cfg.color : 'var(--border-color,#e2e8f0)')
-                    : 'var(--surface,#fff)',
+                    : 'var(--bg-input, var(--card-bg, #ffffff))',
                   color: isEnter
                     ? (pin.length === 4 ? '#fff' : 'var(--text-muted,#94a3b8)')
                     : isBack ? '#ef4444' : 'var(--text-primary,#0f172a)',

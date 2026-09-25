@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import SplashScreen from './components/SplashScreen';
 import { AppProvider, useApp } from './context/AppContext';
 import { AuthProvider } from './auth/AuthProvider';
 import { ProtectedRoute } from './auth/ProtectedRoute';
@@ -134,9 +135,14 @@ const AppContent: React.FC = () => {
 };
 
 const App: React.FC = () => {
+  const [showSplash, setShowSplash] = useState(true);
+
   return (
     <AuthProvider>
       <AppProvider>
+        {showSplash && (
+          <SplashScreen onComplete={() => setShowSplash(false)} appReady={true} />
+        )}
         <ProtectedRoute fallback={<AuthApp />}>
           <AppContent />
         </ProtectedRoute>

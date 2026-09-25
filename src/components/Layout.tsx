@@ -80,6 +80,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setNotes,
     editingPaymentId,
     handleSavePayment,
+    isSubmittingPayment,
     customers,
     suppliers,
   } = useApp();
@@ -560,7 +561,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const renderMobileBottomNav = () => {
     return (
-      <div className="mobile-bottom-nav no-print" ref={bottomNavRef}>
+      <div className="mobile-bottom-nav glass-bottom-nav no-print" ref={bottomNavRef}>
         {permittedBottomNavItems.map((item) => {
           const isSelected = currentTab === item.id;
           return (
@@ -569,46 +570,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               type="button"
               onClick={() => handleTabChange(item.id)}
               data-active={isSelected ? "true" : "false"}
-              style={{
-                background: 'none', border: 'none', padding: '6px 0',
-                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                gap: '4px', flex: '0 0 20%', width: '20%', minWidth: '20%', cursor: 'pointer',
-                color: isSelected ? 'var(--primary)' : 'var(--text-secondary)',
-                transition: 'all 0.2s ease', position: 'relative'
-              }}
+              className="bottom-nav-tab-btn"
             >
-              <div style={{
-                transform: isSelected ? 'scale(1.18) translateY(-2px)' : 'none',
-                transition: 'transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-                color: isSelected ? 'var(--primary)' : 'var(--text-muted)',
-                position: 'relative',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
+              <div className={`bottom-nav-icon-wrapper ${isSelected ? 'active' : ''}`}>
+                {isSelected && <div className="bottom-nav-active-pill" />}
                 {item.icon}
                 {item.id === 'dashboard' && notifications.length > 0 && (
-                  <span style={{
-                    position: 'absolute', top: '-2px', right: '-2px',
-                    width: '6px', height: '6px', backgroundColor: 'var(--color-danger, #ef4444)',
-                    borderRadius: '50%', border: '1px solid var(--bg-card)'
-                  }} />
+                  <span className="bottom-nav-notif-dot" />
                 )}
               </div>
-              <span style={{
-                fontSize: '9.5px', fontWeight: isSelected ? 700 : 500,
-                color: isSelected ? 'var(--text-primary)' : 'var(--text-muted)',
-                whiteSpace: 'nowrap'
-              }}>
+              <span className={`bottom-nav-label ${isSelected ? 'active' : ''}`}>
                 {item.label}
               </span>
-              {isSelected && (
-                <span style={{
-                  position: 'absolute', bottom: '0px', width: '16px', height: '3px',
-                  backgroundColor: 'var(--primary)', borderRadius: '2px',
-                  boxShadow: '0 -2px 6px var(--primary)'
-                }} />
-              )}
+              {isSelected && <div className="bottom-nav-active-line" />}
             </button>
           );
         })}
@@ -629,7 +603,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             backgroundColor: 'rgba(15, 23, 42, 0.4)',
             backdropFilter: 'blur(3px)',
             WebkitBackdropFilter: 'blur(3px)',
-            zIndex: 99,
+            zIndex: 1999,
             animation: 'fadeIn 0.25s ease-out'
           }}
         />
@@ -1293,12 +1267,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button type="button" className="btn btn-secondary" onClick={() => requestNavigation(() => setIsPaymentFormOpen(false))} style={{ borderRadius: '8px' }}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" style={{
-              borderRadius: '8px',
-              boxShadow: '0 4px 14px rgba(16,185,129,0.2)',
-              fontWeight: 700,
-            }}>
-              {editingPaymentId ? '✓ Save Changes' : '✓ Log Transaction'}
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={isSubmittingPayment}
+              style={{
+                borderRadius: '8px',
+                boxShadow: '0 4px 14px rgba(16,185,129,0.2)',
+                fontWeight: 700,
+                opacity: isSubmittingPayment ? 0.7 : 1,
+                cursor: isSubmittingPayment ? 'not-allowed' : 'pointer',
+              }}
+            >
+              {isSubmittingPayment ? 'Saving...' : editingPaymentId ? '✓ Save Changes' : '✓ Log Transaction'}
             </button>
           </div>
         </form>

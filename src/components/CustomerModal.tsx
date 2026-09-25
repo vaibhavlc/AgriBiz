@@ -92,37 +92,46 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     }
   }, [editCustomerData, isOpen]);
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
 
-    if (editCustomerData) {
-      editCustomer({
-        ...editCustomerData,
-        name,
-        phone,
-        email,
-        address,
-        state,
-        gstin: gstin.toUpperCase() || undefined,
-        outstanding,
-        allowedStaffActions,
-      });
-    } else {
-      const saved = await addCustomer({
-        name,
-        phone,
-        email,
-        address,
-        state,
-        gstin: gstin.toUpperCase() || undefined,
-        outstanding,
-        allowedStaffActions,
-      });
-      if (saved && onSaveCallback) onSaveCallback(saved);
+    setIsSubmitting(true);
+    try {
+      if (editCustomerData) {
+        await editCustomer({
+          ...editCustomerData,
+          name,
+          phone,
+          email,
+          address,
+          state,
+          gstin: gstin.toUpperCase() || undefined,
+          outstanding,
+          allowedStaffActions,
+        });
+      } else {
+        const saved = await addCustomer({
+          name,
+          phone,
+          email,
+          address,
+          state,
+          gstin: gstin.toUpperCase() || undefined,
+          outstanding,
+          allowedStaffActions,
+        });
+        if (saved && onSaveCallback) onSaveCallback(saved);
+      }
+      clearAllDirtyForms();
+      onClose();
+    } catch (err) {
+      console.error('Failed to submit customer:', err);
+    } finally {
+      setIsSubmitting(false);
     }
-    clearAllDirtyForms();
-    onClose();
   };
 
   return (
@@ -287,8 +296,8 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
               Cancel
             </button>
-            <button type="submit" className="btn btn-primary" style={{ minWidth: '110px' }}>
-              {editCustomerData ? 'Update Customer' : 'Add Customer'}
+            <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ minWidth: '110px' }}>
+              {isSubmitting ? 'Saving...' : editCustomerData ? 'Update Customer' : 'Add Customer'}
             </button>
           </div>
         </div>

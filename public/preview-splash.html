@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AgriBiz Premium Splash Animation Preview</title>
+  <!-- Local Lottie-Web Player (offline compatible) -->
+  <script src="/lottie.min.js"></script>
+  <!-- Tailwind CSS CDN with fallback inline styles -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .bg-checkerboard {
+      background-color: #f8fafc;
+      background-image: 
+        linear-gradient(45deg, #e2e8f0 25%, transparent 25%), 
+        linear-gradient(-45deg, #e2e8f0 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #e2e8f0 75%), 
+        linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
+      background-size: 20px 20px;
+      background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+    }
+    .dark .bg-checkerboard {
+      background-color: #0f172a;
+      background-image: 
+        linear-gradient(45deg, #1e293b 25%, transparent 25%), 
+        linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #1e293b 75%), 
+        linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen flex flex-col">
+
+  <!-- Header -->
+  <header class="border-b border-slate-800 bg-slate-950/80 backdrop-blur px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-white shadow-lg shadow-emerald-900/50">
+        🌱
+      </div>
+      <div>
+        <h1 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+          AgriBiz Premium Lottie Splash Animation
+          <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">60 FPS • 3.0s</span>
+        </h1>
+        <p class="text-xs text-slate-400">Interactive standalone preview & vector verification tool</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-2">
+      <span class="text-xs text-slate-400 font-medium mr-1">Canvas Bg:</span>
+      <button onclick="setBg('checkerboard')" id="btn-bg-checker" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 text-white shadow transition-all">Grid</button>
+      <button onclick="setBg('dark')" id="btn-bg-dark" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all">Dark</button>
+      <button onclick="setBg('light')" id="btn-bg-light" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all">Light</button>
+      <button onclick="setBg('emerald')" id="btn-bg-emerald" class="px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all">App Theme</button>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="flex-1 max-w-6xl w-full mx-auto p-6 flex flex-col gap-6">
+
+    <!-- View Mode Tabs -->
+    <div class="flex items-center justify-between bg-slate-950/40 p-1.5 rounded-xl border border-slate-800">
+      <div class="flex items-center gap-1">
+        <button onclick="setViewMode('animation')" id="tab-animation" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-emerald-400 border border-slate-700 flex items-center gap-2">
+          <span>🎬</span> Lottie Splash Animation
+        </button>
+        <button onclick="setViewMode('comparison')" id="tab-comparison" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center gap-2">
+          <span>🔍</span> Side-by-Side SVG Comparison (100% Fidelity Check)
+        </button>
+      </div>
+
+      <div id="status-badge" class="text-xs font-mono text-emerald-400 bg-emerald-950/50 border border-emerald-800/60 px-3 py-1 rounded-lg flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span id="frame-display">Frame 0 / 180 (0.00s)</span>
+      </div>
+    </div>
+
+    <!-- Animation Player View -->
+    <div id="view-animation" class="flex flex-col gap-4">
+      <div id="player-container-wrapper" class="relative rounded-2xl border border-slate-800 bg-checkerboard p-8 flex items-center justify-center min-h-[480px] shadow-2xl transition-colors duration-300">
+        
+        <!-- Lottie Container -->
+        <div id="lottie-container" class="w-[573px] h-[436px] max-w-full aspect-[573/436] flex items-center justify-center"></div>
+
+      </div>
+
+      <!-- Playback Controls Bar -->
+      <div class="bg-slate-950/80 border border-slate-800 rounded-xl p-4 flex flex-col gap-3 backdrop-blur">
+        
+        <!-- Timeline Slider -->
+        <div class="flex items-center gap-4">
+          <span class="text-xs font-mono text-slate-400 w-12">0.00s</span>
+          <input type="range" id="timeline-slider" min="0" max="180" value="0" step="1" 
+                 class="flex-1 accent-emerald-500 h-2 bg-slate-800 rounded-lg cursor-pointer">
+          <span class="text-xs font-mono text-slate-400 w-12 text-right">3.00s</span>
+        </div>
+
+        <div class="flex items-center justify-between pt-1">
+          <!-- Main Action Buttons -->
+          <div class="flex items-center gap-2">
+            <button id="btn-play-pause" onclick="togglePlayPause()" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs flex items-center gap-2 shadow-lg shadow-emerald-900/40">
+              <span id="play-icon">⏸ Pause</span>
+            </button>
+            <button onclick="restartAnimation()" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium text-xs flex items-center gap-2 border border-slate-700">
+              🔄 Replay
+            </button>
+          </div>
+
+          <!-- Speed Controllers -->
+          <div class="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+            <span class="text-xs text-slate-400 font-medium px-2">Speed:</span>
+            <button onclick="setSpeed(0.5)" id="btn-speed-05" class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-300 hover:bg-slate-700">0.5x</button>
+            <button onclick="setSpeed(1.0)" id="btn-speed-10" class="px-2.5 py-1 text-xs font-mono rounded bg-emerald-600 text-white font-semibold shadow">1.0x</button>
+            <button onclick="setSpeed(1.5)" id="btn-speed-15" class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-300 hover:bg-slate-700">1.5x</button>
+            <button onclick="setSpeed(2.0)" id="btn-speed-20" class="px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-300 hover:bg-slate-700">2.0x</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Side-by-Side SVG Comparison View -->
+    <div id="view-comparison" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6">
+      <!-- Animated Final Frame -->
+      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+            <span>✨</span> Lottie Final Frame (Frame 180 / 3.0s)
+          </h3>
+          <span class="text-xs text-slate-400 font-mono">Rendered JSON</span>
+        </div>
+        <div class="bg-checkerboard p-4 rounded-xl border border-slate-800/80 flex items-center justify-center min-h-[350px]">
+          <div id="lottie-static-preview" class="w-full max-w-[450px] aspect-[573/436]"></div>
+        </div>
+      </div>
+
+      <!-- Original SVG File -->
+      <div class="bg-slate-950/60 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <h3 class="text-sm font-semibold text-emerald-400 flex items-center gap-2">
+            <span>🎯</span> Original SVG Reference Asset
+          </h3>
+          <span class="text-xs text-slate-400 font-mono">public/agribiz-logo.svg</span>
+        </div>
+        <div class="bg-checkerboard p-4 rounded-xl border border-slate-800/80 flex items-center justify-center min-h-[350px]">
+          <img src="/agribiz-logo.svg" alt="Original AgriBiz SVG Logo" class="w-full max-w-[450px] aspect-[573/436] object-contain" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Animation Sequence Breakdown Info Card -->
+    <div class="bg-slate-950/50 border border-slate-800/80 rounded-2xl p-6">
+      <h3 class="text-sm font-bold text-slate-200 mb-4 flex items-center gap-2">
+        <span>⏱️</span> Motion Timeline Sequence Breakdown
+      </h3>
+      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs font-mono text-blue-400 mb-1">0.25s – 0.85s (f15–f51)</div>
+          <div class="text-xs font-semibold text-slate-200 mb-1">🚜 Machinery Entry</div>
+          <div class="text-[11px] text-slate-400">Blue tractor & JCB vector components smoothly translate upward with ease-out curve.</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs font-mono text-emerald-400 mb-1">0.55s – 1.30s (f33–f78)</div>
+          <div class="text-xs font-semibold text-slate-200 mb-1">🌿 Leaf & Plant Growth</div>
+          <div class="text-[11px] text-slate-400">Green agricultural elements grow into place using vector trim-path & scale keyframes.</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs font-mono text-yellow-400 mb-1">0.85s – 1.65s (f51–f99)</div>
+          <div class="text-xs font-semibold text-slate-200 mb-1">☀️ Central Emblem Build</div>
+          <div class="text-[11px] text-slate-400">Central yellow & red agricultural symbol constructs progressively into original form.</div>
+        </div>
+        <div class="bg-slate-900/80 border border-slate-800 p-3.5 rounded-xl">
+          <div class="text-xs font-mono text-red-400 mb-1">1.30s – 3.00s (f78–f180)</div>
+          <div class="text-xs font-semibold text-slate-200 mb-1">🏷️ Brand Text & Hold</div>
+          <div class="text-[11px] text-slate-400">Marathi typography reveals smoothly; settles at 100% scale and holds still.</div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Script logic -->
+  <script>
+    window.anim = null;
+    let animStatic = null;
+    let isPlaying = true;
+    let currentSpeed = 1.0;
+    let currentFrame = 0;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Initialize main Lottie Player
+      window.anim = lottie.loadAnimation({
+        container: document.getElementById('lottie-container'),
+        renderer: 'svg',
+        loop: true,
+        autoplay: true,
+        path: '/agribiz-splash.json'
+      });
+
+      // Initialize static preview for comparison view (fixed at frame 180)
+      animStatic = lottie.loadAnimation({
+        container: document.getElementById('lottie-static-preview'),
+        renderer: 'svg',
+        loop: false,
+        autoplay: false,
+        path: '/agribiz-splash.json'
+      });
+      animStatic.addEventListener('DOMLoaded', () => {
+        animStatic.goToAndStop(179, true);
+      });
+
+      // Track frame updates
+      anim.addEventListener('enterFrame', (e) => {
+        currentFrame = Math.round(e.currentTime);
+        const sec = (currentFrame / 60).toFixed(2);
+        document.getElementById('frame-display').innerText = `Frame ${currentFrame} / 180 (${sec}s)`;
+        document.getElementById('timeline-slider').value = currentFrame;
+      });
+      
+      // Slider input handler
+      const slider = document.getElementById('timeline-slider');
+      slider.addEventListener('input', (e) => {
+        const f = parseInt(e.target.value);
+        anim.goToAndStop(f, true);
+        isPlaying = false;
+        document.getElementById('play-icon').innerText = '▶ Play';
+      });
+    });
+
+    function togglePlayPause() {
+      if (!anim) return;
+      if (isPlaying) {
+        anim.pause();
+        isPlaying = false;
+        document.getElementById('play-icon').innerText = '▶ Play';
+      } else {
+        anim.play();
+        isPlaying = true;
+        document.getElementById('play-icon').innerText = '⏸ Pause';
+      }
+    }
+
+    function restartAnimation() {
+      if (!anim) return;
+      anim.goToAndPlay(0, true);
+      isPlaying = true;
+      document.getElementById('play-icon').innerText = '⏸ Pause';
+    }
+
+    function setSpeed(speed) {
+      if (!anim) return;
+      currentSpeed = speed;
+      anim.setSpeed(speed);
+      
+      [0.5, 1.0, 1.5, 2.0].forEach(s => {
+        const id = 'btn-speed-' + (s*10).toString().padStart(2, '0');
+        const btn = document.getElementById(id);
+        if (btn) {
+          if (s === speed) {
+            btn.className = 'px-2.5 py-1 text-xs font-mono rounded bg-emerald-600 text-white font-semibold shadow';
+          } else {
+            btn.className = 'px-2.5 py-1 text-xs font-mono rounded bg-slate-800 text-slate-300 hover:bg-slate-700';
+          }
+        }
+      });
+    }
+
+    function setBg(type) {
+      const wrapper = document.getElementById('player-container-wrapper');
+      
+      ['checkerboard', 'dark', 'light', 'emerald'].forEach(t => {
+        const btn = document.getElementById('btn-bg-' + (t === 'checkerboard' ? 'checker' : t));
+        if (btn) {
+          if (t === type) {
+            btn.className = 'px-3 py-1.5 text-xs font-medium rounded-lg bg-emerald-600 text-white shadow transition-all';
+          } else {
+            btn.className = 'px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all';
+          }
+        }
+      });
+
+      if (type === 'checkerboard') {
+        wrapper.className = 'relative rounded-2xl border border-slate-800 bg-checkerboard p-8 flex items-center justify-center min-h-[480px] shadow-2xl transition-colors duration-300';
+      } else if (type === 'dark') {
+        wrapper.className = 'relative rounded-2xl border border-slate-800 bg-slate-950 p-8 flex items-center justify-center min-h-[480px] shadow-2xl transition-colors duration-300';
+      } else if (type === 'light') {
+        wrapper.className = 'relative rounded-2xl border border-slate-300 bg-white p-8 flex items-center justify-center min-h-[480px] shadow-2xl transition-colors duration-300';
+      } else if (type === 'emerald') {
+        wrapper.className = 'relative rounded-2xl border border-emerald-800 bg-emerald-950 p-8 flex items-center justify-center min-h-[480px] shadow-2xl transition-colors duration-300';
+      }
+    }
+
+    function setViewMode(mode) {
+      const vAnim = document.getElementById('view-animation');
+      const vComp = document.getElementById('view-comparison');
+      const tabAnim = document.getElementById('tab-animation');
+      const tabComp = document.getElementById('tab-comparison');
+
+      if (mode === 'animation') {
+        vAnim.classList.remove('hidden');
+        vComp.classList.add('hidden');
+        tabAnim.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-emerald-400 border border-slate-700 flex items-center gap-2';
+        tabComp.className = 'px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center gap-2';
+      } else {
+        vAnim.classList.add('hidden');
+        vComp.classList.remove('hidden');
+        tabComp.className = 'px-4 py-2 text-xs font-semibold rounded-lg bg-slate-800 text-emerald-400 border border-slate-700 flex items-center gap-2';
+        tabAnim.className = 'px-4 py-2 text-xs font-semibold rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 flex items-center gap-2';
+        
+        if (animStatic) {
+          animStatic.goToAndStop(179, true);
+        }
+      }
+    }
+  </script>
+
+</body>
+</html>

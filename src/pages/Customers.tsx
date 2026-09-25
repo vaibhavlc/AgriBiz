@@ -28,7 +28,6 @@ import {
 import type { Customer } from '../types';
 
 export const Customers: React.FC = () => {
-  console.log('[Component Re-rendered] Customers');
   const {
     customers,
     invoices,

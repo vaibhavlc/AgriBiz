@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR } from '../utils/dummyData';
 import { ProductModal } from '../components/ProductModal';
@@ -25,7 +25,6 @@ import {
 import type { Product } from '../types';
 
 export const Inventory: React.FC = () => {
-  console.log('[Component Re-rendered] Inventory');
   const {
     products,
     deleteProduct,
@@ -42,9 +41,9 @@ export const Inventory: React.FC = () => {
   } = useApp();
 
   const totalProducts = products.length;
-  const totalStockValue = products.reduce((sum, p) => sum + (p.stock * p.purchasePrice), 0);
-  const lowStockAlerts = products.filter((p) => p.stock > 0 && p.stock <= p.minStock).length;
-  const outOfStockCount = products.filter((p) => p.stock === 0).length;
+  const totalStockValue = useMemo(() => products.reduce((sum, p) => sum + (p.stock * p.purchasePrice), 0), [products]);
+  const lowStockAlerts = useMemo(() => products.filter((p) => p.stock > 0 && p.stock <= p.minStock).length, [products]);
+  const outOfStockCount = useMemo(() => products.filter((p) => p.stock === 0).length, [products]);
 
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [stockStatusFilter, setStockStatusFilter] = useState('All');
@@ -87,24 +86,26 @@ export const Inventory: React.FC = () => {
   };
 
   // --- Filtering & Sorting ---
-  const filteredProducts = products.filter((p) => {
-    const matchesSearch =
-      p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      p.sku.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredProducts = useMemo(() => {
+    return products.filter((p) => {
+      const matchesSearch =
+        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        p.sku.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
+      const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
 
-    let matchesStock = true;
-    if (stockStatusFilter === 'Low Stock') {
-      matchesStock = p.stock <= p.minStock && p.stock > 0;
-    } else if (stockStatusFilter === 'Out of Stock') {
-      matchesStock = p.stock === 0;
-    } else if (stockStatusFilter === 'In Stock') {
-      matchesStock = p.stock > p.minStock;
-    }
+      let matchesStock = true;
+      if (stockStatusFilter === 'Low Stock') {
+        matchesStock = p.stock <= p.minStock && p.stock > 0;
+      } else if (stockStatusFilter === 'Out of Stock') {
+        matchesStock = p.stock === 0;
+      } else if (stockStatusFilter === 'In Stock') {
+        matchesStock = p.stock > p.minStock;
+      }
 
-    return matchesSearch && matchesCategory && matchesStock;
-  });
+      return matchesSearch && matchesCategory && matchesStock;
+    });
+  }, [products, searchQuery, categoryFilter, stockStatusFilter]);
 
   // Categories list
   const categories = ['Machinery', 'Irrigation', 'Implements', 'Equipment', 'Spares'];

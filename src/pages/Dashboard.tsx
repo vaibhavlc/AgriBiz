@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
+import { SkeletonCardList } from '../components/Skeleton';
 import {
   TrendingUp,
   TrendingDown,
@@ -34,7 +35,15 @@ const AnimatedCounter: React.FC<AnimatedCounterProps> = ({ value, isCurrency = f
   if (isPercent) {
     displayValue = `${value.toFixed(1)}%`;
   } else if (isCurrency) {
-    displayValue = formatINR(value);
+    if (Math.abs(value) >= 10000000) {
+      const cr = (Math.round((value / 10000000) * 100) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+      displayValue = `₹${cr} Cr`;
+    } else if (Math.abs(value) >= 100000) {
+      const l = (Math.round((value / 100000) * 100) / 100).toLocaleString('en-IN', { maximumFractionDigits: 2 });
+      displayValue = `₹${l} L`;
+    } else {
+      displayValue = formatINR(value);
+    }
   } else {
     displayValue = value.toLocaleString();
   }
@@ -191,7 +200,6 @@ const ProgressBar = ({
   );
 };
 export const Dashboard: React.FC = () => {
-  console.log('[Component Re-rendered] Dashboard');
   const {
     products,
     customers,
@@ -209,6 +217,7 @@ export const Dashboard: React.FC = () => {
     settings,
     updateSettings,
     openNewPaymentForm,
+    isInitialLoading,
   } = useApp();
 
   // Filters State
@@ -896,7 +905,11 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Tab 1: Financial Health */}
+        {isInitialLoading ? (
+          <SkeletonCardList count={4} />
+        ) : (
+          <>
+            {/* Tab 1: Financial Health */}
         {activeKpiTab === 'financial' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
@@ -1148,6 +1161,8 @@ export const Dashboard: React.FC = () => {
               className={shouldBlink(['transactions', 'logs', 'entries']) ? 'search-blink-highlight' : ''}
             />
           </div>
+        )}
+          </>
         )}
 
       </div>

@@ -98,49 +98,58 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || isSubmitting) return;
 
-    const finalStock = isNaN(stock as number) ? 0 : (stock as number);
-    const finalMinStock = isNaN(minStock as number) ? 0 : (minStock as number);
-    const finalPurchasePrice = isNaN(purchasePrice as number) ? 0 : (purchasePrice as number);
-    const finalSellingPrice = isNaN(sellingPrice as number) ? 0 : (sellingPrice as number);
+    setIsSubmitting(true);
+    try {
+      const finalStock = isNaN(stock as number) ? 0 : (stock as number);
+      const finalMinStock = isNaN(minStock as number) ? 0 : (minStock as number);
+      const finalPurchasePrice = isNaN(purchasePrice as number) ? 0 : (purchasePrice as number);
+      const finalSellingPrice = isNaN(sellingPrice as number) ? 0 : (sellingPrice as number);
 
-    const formattedSku = sku.trim().toUpperCase();
-    const finalSku = formattedSku || `SKU-${category.slice(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
+      const formattedSku = sku.trim().toUpperCase();
+      const finalSku = formattedSku || `SKU-${category.slice(0, 3).toUpperCase()}-${Math.floor(100 + Math.random() * 900)}`;
 
-    if (editProductData) {
-      editProduct({
-        ...editProductData,
-        name,
-        sku: finalSku,
-        category,
-        stock: editProductData.stock, // ALWAYS preserve existing stock on edit
-        minStock: finalMinStock,
-        purchasePrice: finalPurchasePrice,
-        sellingPrice: finalSellingPrice,
-        gstRate,
-        hsn: hsn.trim(),
-      });
-    } else {
-      const newProd = await addProduct({
-        name,
-        sku: finalSku,
-        category,
-        stock: finalStock, // Opening Stock transaction value (defaults to 0)
-        minStock: finalMinStock,
-        purchasePrice: finalPurchasePrice,
-        sellingPrice: finalSellingPrice,
-        gstRate,
-        hsn: hsn.trim(),
-      });
-      if (newProd && onSaveCallback) {
-        onSaveCallback(newProd);
+      if (editProductData) {
+        await editProduct({
+          ...editProductData,
+          name,
+          sku: finalSku,
+          category,
+          stock: editProductData.stock, // ALWAYS preserve existing stock on edit
+          minStock: finalMinStock,
+          purchasePrice: finalPurchasePrice,
+          sellingPrice: finalSellingPrice,
+          gstRate,
+          hsn: hsn.trim(),
+        });
+      } else {
+        const newProd = await addProduct({
+          name,
+          sku: finalSku,
+          category,
+          stock: finalStock, // Opening Stock transaction value (defaults to 0)
+          minStock: finalMinStock,
+          purchasePrice: finalPurchasePrice,
+          sellingPrice: finalSellingPrice,
+          gstRate,
+          hsn: hsn.trim(),
+        });
+        if (newProd && onSaveCallback) {
+          onSaveCallback(newProd);
+        }
       }
+      clearAllDirtyForms();
+      onClose();
+    } catch (err) {
+      console.error('Failed to submit product:', err);
+    } finally {
+      setIsSubmitting(false);
     }
-    clearAllDirtyForms();
-    onClose();
   };
 
   return (
@@ -304,8 +313,8 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <button type="button" className="btn btn-secondary" onClick={handleCloseClick}>
             Cancel
           </button>
-          <button type="submit" className="btn btn-primary">
-            {editProductData ? 'Save Changes' : 'Add Product'}
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : editProductData ? 'Save Changes' : 'Add Product'}
           </button>
         </div>
       </form>

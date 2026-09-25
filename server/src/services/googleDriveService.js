@@ -11,24 +11,20 @@ import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class GoogleDriveService {
   async getOAuth2Client(companyId = null) {
-    let clientId = process.env.GOOGLE_CLIENT_ID;
-    let clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+    let clientId = process.env.GOOGLE_CLIENT_ID || '';
+    let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
 
-    if (!clientId || clientId.includes('agribiz-drive-backup')) {
-      if (companyId) {
-        const config = await GoogleDriveConfig.findOne({ companyId }).select('+customClientSecret');
-        if (config?.customClientId && config?.customClientSecret && !config.customClientId.includes('agribiz-drive-backup')) {
-          clientId = config.customClientId;
-          clientSecret = config.customClientSecret;
-        }
+    if (companyId) {
+      const config = await GoogleDriveConfig.findOne({ companyId }).select('+customClientSecret');
+      if (
+        config?.customClientId &&
+        config?.customClientSecret &&
+        !config.customClientId.includes('agribiz-drive-backup') &&
+        config.customClientId.includes('apps.googleusercontent.com')
+      ) {
+        clientId = config.customClientId;
+        clientSecret = config.customClientSecret;
       }
-    }
-
-    if (!clientId || clientId.includes('agribiz-drive-backup')) {
-      clientId = process.env.GOOGLE_CLIENT_ID || '';
-    }
-    if (!clientSecret || clientSecret.includes('agribiz_drive_secret')) {
-      clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
     }
 
     const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/settings/backup/google/callback';
