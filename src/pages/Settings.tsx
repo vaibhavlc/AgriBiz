@@ -40,6 +40,7 @@ import {
   Flame,
   ChevronDown,
   ChevronUp,
+  Smartphone,
 } from 'lucide-react';
 import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
@@ -94,7 +95,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
-  const { settings, updateSettings, setTheme, resetToDefault, showToast } = useApp();
+  const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
   const { currentUser, currentCompany } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase'>('profile');
@@ -2257,6 +2258,41 @@ export const Settings: React.FC = () => {
                     <Sliders size={18} />
                     <span>Follow System Theme</span>
                   </button>
+                </div>
+              </div>
+
+              {/* Progressive Web App (PWA) Card */}
+              <div className="card animate-fade-in" style={{ marginTop: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Smartphone size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Progressive Web App (PWA) Installation</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Install AgriBiz as a standalone desktop/mobile app with custom app name</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', padding: '14px', borderRadius: '12px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
+                    <div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        Configured PWA App Name
+                      </div>
+                      <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Current display name: <strong>{customPwaName || 'AgriBiz'}</strong>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={openInstallModal}
+                      style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600 }}
+                    >
+                      <Download size={15} />
+                      <span>{isPwaInstalled ? 'Reconfigure / Install App' : 'Install App'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 

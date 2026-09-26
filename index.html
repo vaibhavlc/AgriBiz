@@ -27,10 +27,10 @@
         }
         try {
           if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-              for (let registration of registrations) {
-                registration.unregister();
-              }
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js').catch(function() {
+                // ignore
+              });
             });
           }
         } catch (e) {
@@ -38,7 +38,7 @@
         }
       })();
     </script>
-    <link rel="manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
+    <link rel="manifest" id="app-manifest" href="/manifest.webmanifest" crossorigin="use-credentials" />
     <title>AgriBiz Trader Suite</title>
   </head>
   <body>

@@ -139,6 +139,14 @@ interface AppContextType {
   reloadData: () => Promise<void>;
   refreshCollection: (collectionName: string) => Promise<void>;
   synchronize: () => Promise<void>;
+
+  deferredPrompt: any;
+  isPwaInstalled: boolean;
+  isInstallModalOpen: boolean;
+  customPwaName: string;
+  openInstallModal: () => void;
+  closeInstallModal: () => void;
+  handleInstallPWA: (customName: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -305,6 +313,111 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       window.removeEventListener('offline', handleOffline);
     };
   }, []);
+
+  // PWA Installation & Custom Naming State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isPwaInstalled, setIsPwaInstalled] = useState<boolean>(false);
+  const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+  const [customPwaName, setCustomPwaName] = useState<string>(() => {
+    return localStorage.getItem('agribiz_pwa_custom_name') || 'AgriBiz';
+  });
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    const handleAppInstalled = () => {
+      setIsPwaInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    if (window.matchMedia('(display-mode: standalone)').matches || (navigator as any).standalone) {
+      setIsPwaInstalled(true);
+    }
+
+    // Sync saved custom name with Service Worker and manifest link on mount
+    const savedCustomName = localStorage.getItem('agribiz_pwa_custom_name');
+    if (savedCustomName && savedCustomName.trim()) {
+      const trimmed = savedCustomName.trim();
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SET_PWA_NAME', name: trimmed });
+      }
+      const manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) || (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
+      if (manifestLink) {
+        manifestLink.href = `/manifest.webmanifest?name=${encodeURIComponent(trimmed)}`;
+      }
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
+  }, []);
+
+  const openInstallModal = () => {
+    setIsInstallModalOpen(true);
+  };
+
+  const closeInstallModal = () => {
+    setIsInstallModalOpen(false);
+  };
+
+  const handleInstallPWA = async (customName: string) => {
+    const trimmed = customName.trim() || 'AgriBiz';
+    setCustomPwaName(trimmed);
+    localStorage.setItem('agribiz_pwa_custom_name', trimmed);
+
+    // 1. Post message to active Service Worker so /manifest.webmanifest interceptor responds with dynamic custom name
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+      navigator.serviceWorker.controller.postMessage({
+        type: 'SET_PWA_NAME',
+        name: trimmed
+      });
+    }
+
+    // 2. Dynamically update manifest URL with query parameters & data URI for instant browser detection
+    try {
+      const manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) || (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
+      if (manifestLink) {
+        manifestLink.href = `/manifest.webmanifest?name=${encodeURIComponent(trimmed)}&t=${Date.now()}`;
+      }
+    } catch (e) {
+      console.error('Error updating PWA manifest URL:', e);
+    }
+
+    // 3. Temporarily set document.title to the custom name for desktop Chrome shortcut generator
+    const originalTitle = document.title;
+    try {
+      document.title = trimmed;
+    } catch (e) {}
+
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const choiceResult = await deferredPrompt.userChoice;
+        if (choiceResult && choiceResult.outcome === 'accepted') {
+          showToast(`App "${trimmed}" installation accepted!`, 'success');
+        }
+      } catch (err) {
+        console.error('Prompt error:', err);
+      } finally {
+        setDeferredPrompt(null);
+        try {
+          document.title = originalTitle;
+        } catch (e) {}
+      }
+    } else {
+      showToast(`Dynamic app name updated to "${trimmed}".`, 'info');
+      try {
+        document.title = originalTitle;
+      } catch (e) {}
+    }
+  };
 
   const updateTargetModuleState = (module: string, action: string, recordId: string | null, rawRecord: any) => {
     const recId = recordId || rawRecord?.id || rawRecord?.productId || rawRecord?.customerId || rawRecord?.supplierId || rawRecord?.invoiceId || rawRecord?.purchaseId || rawRecord?.expenseId || rawRecord?.paymentId || rawRecord?.quotationId;
@@ -1843,6 +1956,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         reloadData,
         refreshCollection,
         synchronize,
+        deferredPrompt,
+        isPwaInstalled,
+        isInstallModalOpen,
+        customPwaName,
+        openInstallModal,
+        closeInstallModal,
+        handleInstallPWA,
       }}
     >
       {children}

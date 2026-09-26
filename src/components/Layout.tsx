@@ -36,6 +36,7 @@ import {
   Smartphone,
   Mail,
 } from 'lucide-react';
+import { PWAInstallModal } from './PWAInstallModal';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -1284,6 +1285,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </form>
       </Modal>
+
+      {/* Custom PWA Installation Dialog */}
+      <PWAInstallModal />
     </div>
   );
 };
