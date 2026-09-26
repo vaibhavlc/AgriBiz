@@ -28,17 +28,33 @@ const AuthApp: React.FC = () => {
   const [regStep, setRegStep] = useState<1 | 2 | 3 | undefined>(undefined);
 
   useEffect(() => {
+    const pathname = window.location.pathname;
     const params = new URLSearchParams(window.location.search);
     const stepParam = params.get('step');
-    if (window.location.pathname.startsWith('/reset-owner-pin')) {
+    const viewParam = params.get('view');
+    const typeParam = params.get('type');
+
+    if (pathname.startsWith('/reset-owner-pin') || viewParam === 'reset-owner-pin' || typeParam === 'pin') {
       setAuthView('reset-owner-pin');
+    } else if (pathname.startsWith('/reset-password') || viewParam === 'reset-password' || typeParam === 'password') {
+      setAuthView('forgot');
+    } else if (pathname.startsWith('/verify-email') || viewParam === 'verify' || params.has('verifyToken') || typeParam === 'verify') {
+      setAuthView('verify');
     } else if (stepParam === '3') {
       setRegStep(3);
       setAuthView('register');
-    } else if (params.get('view') === 'register' || params.has('step')) {
+    } else if (viewParam === 'register' || params.has('step')) {
       setAuthView('register');
-    } else if (params.has('token') || params.has('verifyToken') || window.location.pathname.startsWith('/verify-email')) {
-      setAuthView('verify');
+    } else if (viewParam === 'forgot') {
+      setAuthView('forgot');
+    } else if (params.has('token')) {
+      if (pathname.includes('reset-owner-pin') || pathname.includes('pin')) {
+        setAuthView('reset-owner-pin');
+      } else if (pathname.includes('reset-password') || pathname.includes('reset')) {
+        setAuthView('forgot');
+      } else {
+        setAuthView('verify');
+      }
     }
   }, []);
 

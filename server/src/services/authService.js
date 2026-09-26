@@ -9,6 +9,7 @@ import logger from '../config/logger.js';
 import emailService from './emailService.js';
 import PendingVerification from '../models/PendingVerification.js';
 import OwnerPinReset from '../models/OwnerPinReset.js';
+import PasswordReset from '../models/PasswordReset.js';
 
 class AuthService {
   async register({ businessName, ownerName, mobile, email, gstin, city, state, password, pin, isEmailVerified = false }) {
@@ -385,24 +386,98 @@ class AuthService {
     }
   }
 
-  async resetPassword(mobile, newPassword) {
-    const cleanMobile = mobile.replace(/\D/g, '');
-    const user = await userRepository.findByMobile(cleanMobile);
-    
+  async forgotPassword(email) {
+    if (!email || !email.trim()) {
+      const err = new Error('Email address is required.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const cleanEmail = email.trim().toLowerCase();
+    const user = await userRepository.findByEmail(cleanEmail);
+
     if (!user) {
-      const err = new Error('No account registered with this mobile number.');
+      const err = new Error('No registered account found with this email address.');
       err.statusCode = 404;
       throw err;
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    // Delete existing password reset tokens for this email
+    await PasswordReset.deleteMany({ email: cleanEmail });
+
+    // Generate token
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 mins
+
+    await PasswordReset.create({
+      email: cleanEmail,
+      tokenHash,
+      expiresAt,
+    });
+
+    await emailService.sendPasswordResetEmail(cleanEmail, rawToken, user.name);
+
+    return {
+      success: true,
+      message: 'Password reset link has been sent to your registered email address. Please check your inbox.',
+    };
+  }
+
+  async resetPassword({ token, mobile, password }) {
+    let user;
+
+    if (token && token.trim()) {
+      const cleanToken = token.trim();
+      const tokenHash = crypto.createHash('sha256').update(cleanToken).digest('hex');
+      const resetDoc = await PasswordReset.findOne({ tokenHash });
+
+      if (!resetDoc) {
+        const err = new Error('Invalid, expired, or already-used password reset link.');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      if (resetDoc.expiresAt < new Date()) {
+        await PasswordReset.deleteOne({ _id: resetDoc._id });
+        const err = new Error('Password reset link has expired. Please request a new link.');
+        err.statusCode = 400;
+        throw err;
+      }
+
+      user = await userRepository.findByEmail(resetDoc.email);
+      if (!user) {
+        const err = new Error('User account not found.');
+        err.statusCode = 404;
+        throw err;
+      }
+
+      await PasswordReset.deleteOne({ _id: resetDoc._id });
+    } else if (mobile) {
+      const cleanMobile = mobile.replace(/\D/g, '');
+      user = await userRepository.findByMobile(cleanMobile);
+      if (!user) {
+        const err = new Error('No account registered with this mobile number.');
+        err.statusCode = 404;
+        throw err;
+      }
+    } else {
+      const err = new Error('Reset token or mobile number is required.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
     await user.save();
 
     // Revoke all previous refresh tokens for this user
     await refreshTokenRepository.deleteUserTokens(user.userId);
 
-    return true;
+    return {
+      success: true,
+      message: 'Password updated successfully! You can now sign in with your new password.',
+    };
   }
 
   async forgotOwnerPin({ companyId, userId }) {

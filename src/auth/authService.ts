@@ -431,6 +431,29 @@ class AuthService {
     }
   }
 
+  public async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Failed to send password reset email.';
+      return { success: false, message };
+    }
+  }
+
+  public async resetPasswordByToken(token: string, newPassword: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await api.post('/auth/reset-password', {
+        token,
+        password: newPassword,
+      });
+      return { success: true, message: response.data.message };
+    } catch (error: any) {
+      const message = error.response?.data?.message || 'Password reset failed.';
+      return { success: false, message };
+    }
+  }
+
   public async resetPasswordByMobile(mobile: string, newPassword: string): Promise<{ success: boolean; message: string }> {
     try {
       const response = await api.post('/auth/reset-password', {

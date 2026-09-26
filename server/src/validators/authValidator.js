@@ -26,7 +26,12 @@ export const loginSchema = z.object({
   role: z.enum(['Owner', 'Accounts', 'Cashier']).optional(),
 });
 
+export const forgotPasswordSchema = z.object({
+  email: z.string().min(1, 'Email address is required').email('Invalid email address'),
+});
+
 export const resetPasswordSchema = z.object({
-  mobile: z.string().regex(/^\d{10}$/, 'Mobile number must be exactly 10 digits'),
+  token: z.string().optional(),
+  mobile: z.string().optional(),
   password: z.string().min(6, 'New password must be at least 6 characters'),
 });

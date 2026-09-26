@@ -201,15 +201,26 @@ class AuthController {
     }
   }
 
+  async forgotPassword(req, res, next) {
+    try {
+      const { email } = req.body;
+      logger.info('Password recovery requested for email: %s', email);
+      const result = await authService.forgotPassword(email);
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async resetPassword(req, res, next) {
     try {
-      const { mobile, password } = req.body;
-      logger.info('Password reset requested for mobile: %s', mobile);
-      await authService.resetPassword(mobile, password);
+      const { token, mobile, password } = req.body;
+      logger.info('Password reset requested via token/mobile');
+      const result = await authService.resetPassword({ token, mobile, password });
 
       res.status(200).json({
         success: true,
-        message: 'Password reset successfully! You can now log in.'
+        message: result.message || 'Password reset successfully! You can now log in.'
       });
     } catch (error) {
       next(error);

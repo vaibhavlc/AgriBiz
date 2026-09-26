@@ -2,7 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import authController from '../controllers/authController.js';
 import { validate } from '../middlewares/validationMiddleware.js';
-import { registerSchema, loginSchema, resetPasswordSchema, verifyEmailSchema, resendVerificationSchema } from '../validators/authValidator.js';
+import { registerSchema, loginSchema, resetPasswordSchema, verifyEmailSchema, resendVerificationSchema, forgotPasswordSchema } from '../validators/authValidator.js';
 
 const router = express.Router();
 
@@ -22,6 +22,7 @@ router.post('/login', validate(loginSchema), authController.login);
 router.post('/staff-login', authController.staffLogin);
 router.post('/refresh', authController.refresh);
 router.post('/logout', authController.logout);
+router.post('/forgot-password', validate(forgotPasswordSchema), authController.forgotPassword);
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 router.post('/forgot-owner-pin', authController.forgotOwnerPin);
 router.post('/reset-owner-pin', authController.resetOwnerPin);
