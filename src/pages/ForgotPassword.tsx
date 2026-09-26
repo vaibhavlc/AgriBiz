@@ -39,17 +39,21 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
 
     setErrorMsg('');
     setLoading(true);
-    const res = await authService.forgotPassword(cleanMobile);
-    setLoading(false);
-
-    if (res.success) {
-      setSuccessMsg(res.message);
-      if (res.maskedEmail) {
-        setMaskedEmail(res.maskedEmail);
+    try {
+      const res = await authService.forgotPassword(cleanMobile);
+      if (res.success) {
+        setSuccessMsg(res.message);
+        if (res.maskedEmail) {
+          setMaskedEmail(res.maskedEmail);
+        }
+        setStep('sent');
+      } else {
+        setErrorMsg(res.message);
       }
-      setStep('sent');
-    } else {
-      setErrorMsg(res.message);
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Connection error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -73,13 +77,17 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
 
     setErrorMsg('');
     setLoading(true);
-    const res = await authService.resetPasswordByToken(tokenToUse, newPassword);
-    setLoading(false);
-
-    if (res.success) {
-      setStep('success');
-    } else {
-      setErrorMsg(res.message);
+    try {
+      const res = await authService.resetPasswordByToken(tokenToUse, newPassword);
+      if (res.success) {
+        setStep('success');
+      } else {
+        setErrorMsg(res.message);
+      }
+    } catch (err: any) {
+      setErrorMsg(err?.message || 'Connection error. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
