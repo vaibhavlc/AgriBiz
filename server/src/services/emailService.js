@@ -21,14 +21,14 @@ dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 class EmailService {
   reloadEnv() {
-    dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
-    dotenv.config({ path: path.resolve(__dirname, '../../../.env'), override: true });
+    dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+    dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
   }
 
   getResendClient() {
     this.reloadEnv();
     const apiKey = process.env.RESEND_API_KEY;
-    if (apiKey && apiKey.trim()) {
+    if (apiKey && apiKey.trim() && apiKey.trim().startsWith('re_')) {
       return new Resend(apiKey.trim());
     }
     return null;
@@ -40,7 +40,7 @@ class EmailService {
     const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    return Boolean((resendKey && resendKey.trim()) || (host && user && pass));
+    return Boolean((resendKey && resendKey.trim() && resendKey.trim().startsWith('re_')) || (host && user && pass));
   }
 
   async verifySmtpConfig() {
