@@ -87,6 +87,15 @@ class EmailService {
     const transporter = await this.getTransporter();
 
     if (!transporter) {
+      if (process.env.NODE_ENV !== 'production') {
+        logger.warn('[EMAIL SERVICE] SMTP not configured in server/.env. [DEV FALLBACK] Verification link for %s: %s', toEmail, verifyUrl);
+        return {
+          success: true,
+          emailSent: false,
+          devLink: verifyUrl,
+          message: 'SMTP is not configured in server/.env. Verification link logged to server console for local testing.'
+        };
+      }
       logger.error('[EMAIL SERVICE] Unable to send verification email to %s: Real SMTP host/user/pass not configured in server/.env.', toEmail);
       const err = new Error('SMTP server is not configured in server/.env.');
       err.code = 'ESMTPNOTCONFIGURED';
@@ -143,6 +152,15 @@ class EmailService {
     const transporter = await this.getTransporter();
 
     if (!transporter) {
+      if (process.env.NODE_ENV !== 'production') {
+        logger.warn('[EMAIL SERVICE] SMTP not configured in server/.env. [DEV FALLBACK] Owner PIN reset link for %s: %s', toEmail, resetUrl);
+        return {
+          success: true,
+          emailSent: false,
+          devLink: resetUrl,
+          message: 'SMTP is not configured in server/.env. PIN reset link logged to server console for local testing.'
+        };
+      }
       logger.error('[EMAIL SERVICE] Unable to send Owner PIN reset email to %s: Real SMTP host/user/pass not configured.', toEmail);
       const err = new Error('SMTP server is not configured in server/.env.');
       err.code = 'ESMTPNOTCONFIGURED';
@@ -199,6 +217,15 @@ class EmailService {
     const transporter = await this.getTransporter();
 
     if (!transporter) {
+      if (process.env.NODE_ENV !== 'production') {
+        logger.warn('[EMAIL SERVICE] SMTP not configured in server/.env. [DEV FALLBACK] Password reset link for %s: %s', toEmail, resetUrl);
+        return {
+          success: true,
+          emailSent: false,
+          devLink: resetUrl,
+          message: 'SMTP is not configured in server/.env. Password reset link logged to server console for local testing.'
+        };
+      }
       logger.error('[EMAIL SERVICE] Unable to send Password Reset email to %s: Real SMTP host/user/pass not configured.', toEmail);
       const err = new Error('SMTP server is not configured in server/.env.');
       err.code = 'ESMTPNOTCONFIGURED';
