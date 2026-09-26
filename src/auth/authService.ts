@@ -174,6 +174,11 @@ class AuthService {
         // Save company session in tab-isolated sessionStorage so tabs don't overwrite each other
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
+        // Ensure PIN is strictly required: clear any user session & PIN verification flags on business login
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+        sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
+        sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+
         // Save tab-isolated settings & branding for Staff PIN page
         const companySettings = {
           companyId: company.id,

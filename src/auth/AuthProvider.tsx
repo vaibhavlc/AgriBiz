@@ -17,19 +17,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (savedCompany) {
         setCurrentCompany(savedCompany);
       }
-      const savedUser = authService.getCurrentUser();
       const res = await authService.refreshSession();
       if (res.success && res.company) {
         setCurrentCompany(res.company);
       }
-      // Maintain active session on browser refresh or OAuth redirect if valid user exists
-      const validUser = savedUser || (res.success ? res.user : null);
-      if (validUser) {
+
+      // STRICT SECURITY CHECK: User MUST have verified 4-digit PIN in this session
+      const isPinVerified = sessionStorage.getItem('agribiz_staff_pin_verified') === 'true';
+      const savedUser = isPinVerified ? authService.getCurrentUser() : null;
+
+      if (isPinVerified && (savedUser || (res.success && res.user))) {
+        const validUser = savedUser || res.user;
         setCurrentUser(validUser);
         sessionStorage.setItem('agribiz_current_user', JSON.stringify(validUser));
         sessionStorage.setItem('agribiz_staff_pin_verified', 'true');
       } else {
+        // PIN not verified yet: keep currentUser null so PIN entry screen is strictly enforced
         setCurrentUser(null);
+        sessionStorage.removeItem('agribiz_current_user');
+        sessionStorage.removeItem('agribiz_staff_pin_verified');
       }
     } catch (err) {
       console.warn('Session restoration check warning:', err);
@@ -43,7 +49,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const handleSyncAuth = () => {
       const savedCompany = authService.getCurrentCompany();
-      const savedUser = authService.getCurrentUser();
+      const isPinVerified = sessionStorage.getItem('agribiz_staff_pin_verified') === 'true';
+      const savedUser = isPinVerified ? authService.getCurrentUser() : null;
       setCurrentCompany(savedCompany || null);
       setCurrentUser(savedUser || null);
     };
@@ -87,6 +94,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await authService.login(mobile, password, role, rememberMe);
     if (res.success && res.company) {
       setCurrentCompany(res.company);
+      setCurrentUser(null);
+      sessionStorage.removeItem('agribiz_current_user');
+      sessionStorage.removeItem('agribiz_staff_pin_verified');
       const companySettings = {
         ...initialSettings,
         companyId: res.company.id,
