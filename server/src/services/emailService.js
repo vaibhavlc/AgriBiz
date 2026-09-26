@@ -38,6 +38,9 @@ class EmailService {
         secure: port === 465, // true for 465 SSL, false for 587 STARTTLS
         requireTLS: port === 587,
         auth: { user, pass },
+        connectionTimeout: 10000, // 10 seconds connection timeout
+        greetingTimeout: 10000,   // 10 seconds greeting timeout
+        socketTimeout: 15000,     // 15 seconds socket timeout
         tls: {
           rejectUnauthorized: true,
         },

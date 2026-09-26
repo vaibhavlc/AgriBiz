@@ -436,7 +436,13 @@ class AuthService {
       expiresAt,
     });
 
-    await emailService.sendPasswordResetEmail(cleanEmail, rawToken, user.name);
+    try {
+      await emailService.sendPasswordResetEmail(cleanEmail, rawToken, user.name);
+    } catch (emailErr) {
+      const err = new Error(`Failed to deliver password reset email: ${emailErr.message || 'SMTP delivery failed'}`);
+      err.statusCode = 400;
+      throw err;
+    }
 
     return {
       success: true,
