@@ -12,7 +12,13 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 class EmailService {
+  reloadEnv() {
+    dotenv.config({ path: path.resolve(__dirname, '../../.env'), override: true });
+    dotenv.config({ path: path.resolve(__dirname, '../../../.env'), override: true });
+  }
+
   isSmtpConfigured() {
+    this.reloadEnv();
     const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
