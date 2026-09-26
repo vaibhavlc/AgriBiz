@@ -66,24 +66,29 @@ class EmailService {
 
   async createRealTransporter() {
     const rawHost = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = Number(process.env.SMTP_PORT || 587);
+    let port = Number(process.env.SMTP_PORT || 465);
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
+    // For Gmail on cloud hosting (Render/AWS), Port 465 Direct SSL is required because Port 587 STARTTLS is blocked/throttled by cloud firewalls
+    if (rawHost.includes('gmail.com') && (port === 587 || !process.env.SMTP_PORT)) {
+      port = 465;
+    }
+
     if (rawHost && user && pass) {
       const targetHostIp = await this.resolveIpv4Host(rawHost);
+      const isSecure = port === 465;
 
       return nodemailer.createTransport({
         host: targetHostIp,
         port,
         family: 4, // Force IPv4 socket connection to prevent ENETUNREACH on IPv6-less cloud hosts like Render
         lookup: customIpv4Lookup,
-        secure: port === 465, // true for 465 SSL, false for 587 STARTTLS
-        requireTLS: port === 587,
+        secure: isSecure, // true for 465 SSL (Direct TLS), false for 587 STARTTLS
         auth: { user, pass },
-        connectionTimeout: 10000, // 10 seconds connection timeout
-        greetingTimeout: 10000,   // 10 seconds greeting timeout
-        socketTimeout: 15000,     // 15 seconds socket timeout
+        connectionTimeout: 15000, // 15 seconds connection timeout
+        greetingTimeout: 15000,   // 15 seconds greeting timeout
+        socketTimeout: 20000,     // 20 seconds socket timeout
         tls: {
           rejectUnauthorized: true,
           servername: rawHost,
