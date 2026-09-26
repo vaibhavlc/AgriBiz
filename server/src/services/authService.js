@@ -400,8 +400,11 @@ class AuthService {
       throw err;
     }
 
+    logger.info('[PASSWORD RESET] Password reset request received for mobile: +91 %s', cleanMobile);
+
     const user = await userRepository.findByMobile(cleanMobile);
     if (!user) {
+      logger.warn('[PASSWORD RESET] No user account found for mobile: +91 %s', cleanMobile);
       const err = new Error('No account found registered with this mobile number.');
       err.statusCode = 404;
       throw err;
