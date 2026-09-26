@@ -276,7 +276,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
     setSendingEmail(false);
 
     if (res.success) {
-      setVerificationSent(true);
+      if (res.message?.includes('already verified')) {
+        setIsEmailVerified(true);
+        localStorage.setItem('agribiz_verified_email', email.trim().toLowerCase());
+        setStep(3);
+      } else {
+        setVerificationSent(true);
+      }
     } else {
       setErrorMsg(res.message || 'Failed to send verification email.');
     }
