@@ -71,7 +71,7 @@ class EmailService {
     const pass = process.env.SMTP_PASS;
 
     // For Gmail on cloud hosting (Render/AWS), Port 465 Direct SSL is required because Port 587 STARTTLS is blocked/throttled by cloud firewalls
-    if (rawHost.includes('gmail.com') && (port === 587 || !process.env.SMTP_PORT)) {
+    if (rawHost.includes('gmail.com')) {
       port = 465;
     }
 
