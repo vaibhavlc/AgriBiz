@@ -60,11 +60,21 @@ const AuthApp: React.FC = () => {
 
   switch (authView) {
     case 'reset-owner-pin':
-      return <ResetOwnerPin onSwitchToLogin={() => setAuthView('login')} />;
+      return (
+        <ResetOwnerPin
+          onSwitchToLogin={() => {
+            try { window.history.replaceState({}, document.title, '/'); } catch (e) {}
+            setAuthView('login');
+          }}
+        />
+      );
     case 'verify':
       return (
         <VerifyEmail
-          onSwitchToLogin={() => setAuthView('login')}
+          onSwitchToLogin={() => {
+            try { window.history.replaceState({}, document.title, '/'); } catch (e) {}
+            setAuthView('login');
+          }}
           onSwitchToRegisterStep3={() => {
             setRegStep(3);
             setAuthView('register');
@@ -72,9 +82,15 @@ const AuthApp: React.FC = () => {
         />
       );
     case 'register':
-      return <Register onSwitchToLogin={() => setAuthView('login')} initialStep={regStep} />;
+      return <Register onSwitchToLogin={() => {
+        try { window.history.replaceState({}, document.title, '/'); } catch (e) {}
+        setAuthView('login');
+      }} initialStep={regStep} />;
     case 'forgot':
-      return <ForgotPassword onSwitchToLogin={() => setAuthView('login')} />;
+      return <ForgotPassword onSwitchToLogin={() => {
+        try { window.history.replaceState({}, document.title, '/'); } catch (e) {}
+        setAuthView('login');
+      }} />;
     case 'login':
     default:
       return (

@@ -45,6 +45,9 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
       const res = await api.post('/auth/reset-owner-pin', { token, newPin });
       setLoading(false);
       if (res.data.success) {
+        try {
+          window.history.replaceState({}, document.title, '/');
+        } catch (e) {}
         setStatus('success');
         setMessage(res.data.message || 'Owner PIN reset successfully!');
       } else {
@@ -59,6 +62,9 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
   };
 
   const handleBackToLogin = () => {
+    try {
+      window.history.replaceState({}, document.title, '/');
+    } catch (e) {}
     if (onSwitchToLogin) {
       onSwitchToLogin();
     } else {

@@ -57,6 +57,13 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
     }
   };
 
+  const handleBackToLogin = () => {
+    try {
+      window.history.replaceState({}, document.title, '/');
+    } catch (e) {}
+    onSwitchToLogin();
+  };
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     const tokenToUse = urlToken || new URLSearchParams(window.location.search).get('token');
@@ -80,6 +87,9 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
     try {
       const res = await authService.resetPasswordByToken(tokenToUse, newPassword);
       if (res.success) {
+        try {
+          window.history.replaceState({}, document.title, '/');
+        } catch (e) {}
         setStep('success');
       } else {
         setErrorMsg(res.message);
@@ -242,7 +252,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
             type="button"
             className="btn btn-primary"
             style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
-            onClick={onSwitchToLogin}
+            onClick={handleBackToLogin}
           >
             Back to Sign In
           </button>
@@ -326,7 +336,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
             type="button"
             className="btn btn-primary"
             style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
-            onClick={onSwitchToLogin}
+            onClick={handleBackToLogin}
           >
             Back to Sign In
           </button>
@@ -338,7 +348,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
           <button
             type="button"
             style={{ background: 'none', border: 'none', color: 'var(--text-muted, #64748b)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-            onClick={onSwitchToLogin}
+            onClick={handleBackToLogin}
           >
             <ArrowLeft size={14} /> Back to Sign In
           </button>
