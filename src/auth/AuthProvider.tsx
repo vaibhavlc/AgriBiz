@@ -22,12 +22,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentCompany(res.company);
       }
 
-      // STRICT SECURITY CHECK: User MUST have verified 4-digit PIN in this session
       const isPinVerified = sessionStorage.getItem('agribiz_staff_pin_verified') === 'true';
       const savedUser = isPinVerified ? authService.getCurrentUser() : null;
+      const validUser: User | null = isPinVerified ? (savedUser || (res.success && res.user ? res.user : null)) : null;
 
-      if (isPinVerified && (savedUser || (res.success && res.user))) {
-        const validUser = savedUser || res.user;
+      if (validUser) {
         setCurrentUser(validUser);
         sessionStorage.setItem('agribiz_current_user', JSON.stringify(validUser));
         sessionStorage.setItem('agribiz_staff_pin_verified', 'true');
