@@ -433,7 +433,7 @@ class AuthService {
 
   public async forgotPassword(mobile: string): Promise<{ success: boolean; message: string; maskedEmail?: string }> {
     try {
-      const response = await api.post('/auth/forgot-password', { mobile }, { timeout: 15000 });
+      const response = await api.post('/auth/forgot-password', { mobile }, { timeout: 45000 });
       return { success: true, message: response.data.message, maskedEmail: response.data.maskedEmail };
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Failed to send password reset email.';
@@ -446,7 +446,7 @@ class AuthService {
       const response = await api.post('/auth/reset-password', {
         token,
         password: newPassword,
-      }, { timeout: 15000 });
+      }, { timeout: 45000 });
       return { success: true, message: response.data.message };
     } catch (error: any) {
       const message = error.response?.data?.message || error.message || 'Password reset failed.';
