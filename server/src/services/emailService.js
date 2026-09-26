@@ -85,6 +85,7 @@ class EmailService {
 
   async sendEmail({ toEmail, subject, htmlContent, linkUrl }) {
     const resend = this.getResendClient();
+    let resendError = null;
 
     // 1. Primary Cloud Delivery: Resend HTTPS API (Port 443 - Unblocked on Render)
     if (resend) {
@@ -99,14 +100,20 @@ class EmailService {
         });
 
         if (error) {
-          logger.error('[EMAIL SERVICE] Resend API error: %s', error.message || JSON.stringify(error));
-          throw new Error(error.message || 'Resend delivery failed');
+          logger.error('[EMAIL SERVICE] Resend API error for %s: %s', toEmail, error.message || JSON.stringify(error));
+          resendError = new Error(error.message || 'Resend delivery failed');
+        } else {
+          logger.info('[EMAIL SERVICE] Email delivered successfully via Resend HTTPS API to recipient: %s. MessageID: %s', toEmail, data?.id);
+          return { success: true, emailSent: true, messageId: data?.id };
         }
-
-        logger.info('[EMAIL SERVICE] Email delivered successfully via Resend HTTPS API to recipient: %s. MessageID: %s', toEmail, data?.id);
-        return { success: true, emailSent: true, messageId: data?.id };
       } catch (resendErr) {
-        logger.error('[EMAIL SERVICE] Resend delivery failed: %s. Attempting Gmail SMTP fallback...', resendErr.message);
+        logger.error('[EMAIL SERVICE] Resend delivery failed for %s: %s', toEmail, resendErr.message);
+        resendError = resendErr;
+      }
+
+      // If Resend was configured and failed on cloud host, throw exact Resend error immediately instead of hanging 15s on blocked SMTP
+      if (resendError) {
+        throw new Error(`Resend delivery failed: ${resendError.message}`);
       }
     }
 

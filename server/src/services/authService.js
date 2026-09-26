@@ -558,12 +558,19 @@ class AuthService {
     });
 
     // Send email via emailService
-    await emailService.sendOwnerPinResetEmail(
-      user.email,
-      rawToken,
-      user.name || 'Owner',
-      company?.businessName || 'AgriBiz Suite'
-    );
+    try {
+      await emailService.sendOwnerPinResetEmail(
+        user.email,
+        rawToken,
+        user.name || 'Owner',
+        company?.businessName || 'AgriBiz Suite'
+      );
+    } catch (emailErr) {
+      logger.error('Failed to deliver Owner PIN reset email to %s: %s', user.email, emailErr.message);
+      const err = new Error(`Failed to deliver Owner PIN reset email: ${emailErr.message || 'Email delivery failed'}`);
+      err.statusCode = 400;
+      throw err;
+    }
 
     return {
       message: `A secure Owner PIN reset link has been sent to ${user.email}. Please check your inbox.`,
