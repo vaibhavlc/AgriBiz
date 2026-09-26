@@ -29,7 +29,7 @@ class SupplierController {
   async createSupplier(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating supplier for company %s by %s', companyId, creatorName);
       const supplier = await supplierService.createSupplier(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Suppliers', 'CREATE', supplier._id || supplier.supplierId, supplier);
@@ -42,7 +42,7 @@ class SupplierController {
   async updateSupplier(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating supplier %s for company %s by %s', req.params.id, companyId, updaterName);
       const supplier = await supplierService.updateSupplier(req.params.id, companyId, req.body, updaterName);
       if (!supplier) {
@@ -58,7 +58,7 @@ class SupplierController {
   async deleteSupplier(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting supplier %s for company %s by %s', req.params.id, companyId, deleterName);
       await supplierService.deleteSupplier(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Suppliers', 'DELETE', req.params.id);

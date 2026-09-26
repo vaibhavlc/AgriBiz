@@ -117,6 +117,7 @@ class PurchaseService {
       }
 
       // Record to Recycle Bin
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -124,13 +125,13 @@ class PurchaseService {
         name: purchase.purchaseNumber,
         module: 'Purchase',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: purchase,
       };
       await recycleBinRepository.create(recycleBinItemData, session);
 
       // Perform soft delete
-      return purchaseRepository.softDelete(purchaseId, companyId, deletedBy, session);
+      return purchaseRepository.softDelete(purchaseId, companyId, effectiveDeleter, session);
     });
   }
 

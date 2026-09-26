@@ -109,6 +109,7 @@ class PaymentService {
       }
 
       // Write to Recycle Bin
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -116,13 +117,13 @@ class PaymentService {
         name: `Payment: ₹${payment.amount} to ${payment.contactName}`,
         module: 'Payment',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: payment,
       };
       await recycleBinRepository.create(recycleBinItemData, session);
 
       // Perform soft delete
-      return paymentRepository.softDelete(paymentId, companyId, deletedBy, session);
+      return paymentRepository.softDelete(paymentId, companyId, effectiveDeleter, session);
     });
   }
 }

@@ -34,6 +34,7 @@ class ExpenseService {
       const expense = await expenseRepository.findById(expenseId, companyId);
       if (!expense) throw new Error('Expense not found');
 
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -41,12 +42,12 @@ class ExpenseService {
         name: `${expense.category}: ₹${expense.amount}`,
         module: 'Expense',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: expense,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);
-      await expenseRepository.softDelete(expenseId, companyId, deletedBy, session);
+      await expenseRepository.softDelete(expenseId, companyId, effectiveDeleter, session);
       return expense;
     });
   }

@@ -34,6 +34,7 @@ class CustomerService {
       const customer = await customerRepository.findById(customerId, companyId);
       if (!customer) throw new Error('Customer not found');
 
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -41,12 +42,12 @@ class CustomerService {
         name: customer.name,
         module: 'Customer',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: customer,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);
-      await customerRepository.softDelete(customerId, companyId, deletedBy, session);
+      await customerRepository.softDelete(customerId, companyId, effectiveDeleter, session);
       return customer;
     });
   }

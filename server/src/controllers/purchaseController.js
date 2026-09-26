@@ -29,7 +29,7 @@ class PurchaseController {
   async createPurchase(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating purchase for company %s by %s', companyId, creatorName);
       const purchase = await purchaseService.createPurchase(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'CREATE', purchase._id || purchase.purchaseId, purchase);
@@ -42,7 +42,7 @@ class PurchaseController {
   async updatePurchase(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating purchase %s for company %s by %s', req.params.id, companyId, updaterName);
       const purchase = await purchaseService.updatePurchase(req.params.id, companyId, req.body, updaterName);
       if (!purchase) {
@@ -58,7 +58,7 @@ class PurchaseController {
   async deletePurchase(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting purchase %s for company %s by %s', req.params.id, companyId, deleterName);
       await purchaseService.deletePurchase(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'DELETE', req.params.id);

@@ -34,6 +34,7 @@ class SupplierService {
       const supplier = await supplierRepository.findById(supplierId, companyId);
       if (!supplier) throw new Error('Supplier not found');
 
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -41,12 +42,12 @@ class SupplierService {
         name: supplier.name,
         module: 'Supplier',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: supplier,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);
-      await supplierRepository.softDelete(supplierId, companyId, deletedBy, session);
+      await supplierRepository.softDelete(supplierId, companyId, effectiveDeleter, session);
       return supplier;
     });
   }

@@ -40,6 +40,7 @@ class ProductService {
       const product = await productRepository.findById(productId, companyId);
       if (!product) throw new Error('Product not found');
 
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -47,12 +48,12 @@ class ProductService {
         name: product.name,
         module: 'Product',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: product,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);
-      await productRepository.softDelete(productId, companyId, deletedBy, session);
+      await productRepository.softDelete(productId, companyId, effectiveDeleter, session);
       return product;
     });
   }

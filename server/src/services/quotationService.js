@@ -34,6 +34,7 @@ class QuotationService {
       const quotation = await quotationRepository.findById(quotationId, companyId);
       if (!quotation) throw new Error('Quotation not found');
 
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -41,12 +42,12 @@ class QuotationService {
         name: quotation.quotationNumber,
         module: 'Quotation',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: quotation,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);
-      await quotationRepository.softDelete(quotationId, companyId, deletedBy, session);
+      await quotationRepository.softDelete(quotationId, companyId, effectiveDeleter, session);
       return quotation;
     });
   }

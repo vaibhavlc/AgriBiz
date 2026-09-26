@@ -118,6 +118,7 @@ class InvoiceService {
       }
 
       // Record to Recycle Bin
+      const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
@@ -125,13 +126,13 @@ class InvoiceService {
         name: invoice.invoiceNumber,
         module: 'Invoice',
         deletedAt: new Date().toISOString(),
-        deletedBy,
+        deletedBy: effectiveDeleter,
         originalData: invoice,
       };
       await recycleBinRepository.create(recycleBinItemData, session);
 
       // Perform soft delete
-      return invoiceRepository.softDelete(invoiceId, companyId, deletedBy, session);
+      return invoiceRepository.softDelete(invoiceId, companyId, effectiveDeleter, session);
     });
   }
 

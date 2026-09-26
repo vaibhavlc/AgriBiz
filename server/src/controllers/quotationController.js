@@ -29,7 +29,7 @@ class QuotationController {
   async createQuotation(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating quotation for company %s by %s', companyId, creatorName);
       const quotation = await quotationService.createQuotation(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Quotations', 'CREATE', quotation._id || quotation.quotationId, quotation);
@@ -42,7 +42,7 @@ class QuotationController {
   async updateQuotation(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating quotation %s for company %s by %s', req.params.id, companyId, updaterName);
       const quotation = await quotationService.updateQuotation(req.params.id, companyId, req.body, updaterName);
       if (!quotation) {
@@ -58,7 +58,7 @@ class QuotationController {
   async deleteQuotation(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting quotation %s for company %s by %s', req.params.id, companyId, deleterName);
       await quotationService.deleteQuotation(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Quotations', 'DELETE', req.params.id);
