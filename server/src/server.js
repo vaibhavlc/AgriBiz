@@ -7,6 +7,14 @@ import cookieParser from 'cookie-parser';
 import morgan from 'morgan';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'dns';
+
+// Force IPv4 resolution order globally across Node.js to prevent ENETUNREACH on IPv6-less cloud hosts (Render/AWS)
+try {
+  if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+  }
+} catch (e) {}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -2,7 +2,15 @@ import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import dns from 'dns';
 import logger from '../config/logger.js';
+
+// Force IPv4 DNS resolution first to prevent ENETUNREACH errors on cloud platforms (Render/AWS) without IPv6 routes
+try {
+  if (dns.setDefaultResultOrder) {
+    dns.setDefaultResultOrder('ipv4first');
+  }
+} catch (e) {}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -35,6 +43,7 @@ class EmailService {
       return nodemailer.createTransport({
         host,
         port,
+        family: 4, // Force IPv4 socket connection to prevent ENETUNREACH on IPv6-less cloud hosts like Render
         secure: port === 465, // true for 465 SSL, false for 587 STARTTLS
         requireTLS: port === 587,
         auth: { user, pass },
@@ -43,6 +52,7 @@ class EmailService {
         socketTimeout: 15000,     // 15 seconds socket timeout
         tls: {
           rejectUnauthorized: true,
+          servername: host,
         },
       });
     }
