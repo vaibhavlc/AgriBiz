@@ -46,15 +46,35 @@ class EmailService {
     return Boolean(host && user && pass);
   }
 
-  createRealTransporter() {
-    const host = process.env.SMTP_HOST;
+  async resolveIpv4Host(rawHost) {
+    if (!rawHost) return 'smtp.gmail.com';
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(rawHost)) {
+      return rawHost;
+    }
+    try {
+      const address = await new Promise((resolve, reject) => {
+        dns.lookup(rawHost, { family: 4 }, (err, addr) => {
+          if (err || !addr) reject(err);
+          else resolve(addr);
+        });
+      });
+      return address;
+    } catch (e) {
+      return rawHost;
+    }
+  }
+
+  async createRealTransporter() {
+    const rawHost = process.env.SMTP_HOST || 'smtp.gmail.com';
     const port = Number(process.env.SMTP_PORT || 587);
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
-    if (host && user && pass) {
+    if (rawHost && user && pass) {
+      const targetHostIp = await this.resolveIpv4Host(rawHost);
+
       return nodemailer.createTransport({
-        host,
+        host: targetHostIp,
         port,
         family: 4, // Force IPv4 socket connection to prevent ENETUNREACH on IPv6-less cloud hosts like Render
         lookup: customIpv4Lookup,
@@ -66,7 +86,7 @@ class EmailService {
         socketTimeout: 15000,     // 15 seconds socket timeout
         tls: {
           rejectUnauthorized: true,
-          servername: host,
+          servername: rawHost,
         },
       });
     }
@@ -75,7 +95,7 @@ class EmailService {
 
   async getTransporter() {
     if (this.isSmtpConfigured()) {
-      return this.createRealTransporter();
+      return await this.createRealTransporter();
     }
     return null;
   }
@@ -97,7 +117,7 @@ class EmailService {
     logger.info('  - EMAIL_FROM configured: %s', Boolean(from));
 
     if (configured) {
-      const transporter = this.createRealTransporter();
+      const transporter = await this.createRealTransporter();
       try {
         await transporter.verify();
         logger.info('  - SMTP connection: successful (authenticated with %s:%s)', host, port);
