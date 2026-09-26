@@ -36,23 +36,33 @@ class EmailService {
 
   isSmtpConfigured() {
     this.reloadEnv();
+    const brevoKey = process.env.BREVO_API_KEY;
     const resendKey = process.env.RESEND_API_KEY;
     const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    return Boolean((resendKey && resendKey.trim() && resendKey.trim().startsWith('re_')) || (host && user && pass));
+    return Boolean(
+      (brevoKey && brevoKey.trim() && brevoKey.trim().startsWith('xkeysib-')) ||
+      (resendKey && resendKey.trim() && resendKey.trim().startsWith('re_')) ||
+      (host && user && pass)
+    );
   }
 
   async verifySmtpConfig() {
     this.reloadEnv();
+    const brevoKey = process.env.BREVO_API_KEY;
+    if (brevoKey && brevoKey.trim() && brevoKey.trim().startsWith('xkeysib-')) {
+      logger.info('[EMAIL SERVICE] Brevo API key configured. Primary transport: Brevo HTTPS API (Port 443 - Global Delivery).');
+      return true;
+    }
     const resend = this.getResendClient();
     if (resend) {
-      logger.info('[EMAIL SERVICE] Resend API key configured. Primary transport: Resend HTTPS API (Port 443).');
+      logger.info('[EMAIL SERVICE] Resend API key configured. Secondary cloud transport: Resend HTTPS API (Port 443).');
       return true;
     }
     const transporter = await this.createRealTransporter();
     if (transporter) {
-      logger.info('[EMAIL SERVICE] Resend API key not configured. Secondary transport: Gmail SMTP prepared.');
+      logger.info('[EMAIL SERVICE] SMTP user configured. Fallback transport: Gmail SMTP prepared.');
       return true;
     }
     logger.warn('[EMAIL SERVICE] No active email credentials found. Dev mode fallback enabled.');
@@ -83,11 +93,53 @@ class EmailService {
     return null;
   }
 
+  async sendEmailViaBrevo({ toEmail, subject, htmlContent, apiKey }) {
+    const senderEmail = process.env.SMTP_USER || 'vc654810@gmail.com';
+    logger.info('[EMAIL SERVICE] Dispatching email via Brevo HTTPS API (Port 443) to recipient: %s', toEmail);
+    const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+      method: 'POST',
+      headers: {
+        'accept': 'application/json',
+        'api-key': apiKey.trim(),
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({
+        sender: { name: 'AgriBiz Suite', email: senderEmail },
+        to: [{ email: toEmail }],
+        subject: subject,
+        htmlContent: htmlContent
+      })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      const errMsg = data?.message || data?.code || JSON.stringify(data);
+      logger.error('[EMAIL SERVICE] Brevo delivery error for %s: %s', toEmail, errMsg);
+      throw new Error(`Brevo API error: ${errMsg}`);
+    }
+
+    logger.info('[EMAIL SERVICE] Email delivered successfully via Brevo HTTPS API to recipient: %s. MessageID: %s', toEmail, data?.messageId);
+    return { success: true, emailSent: true, messageId: data?.messageId };
+  }
+
   async sendEmail({ toEmail, subject, htmlContent, linkUrl }) {
+    this.reloadEnv();
+    const brevoApiKey = process.env.BREVO_API_KEY;
+
+    // 1. Top Priority Cloud Transport: Brevo HTTPS API (Port 443 - Unblocked on Render, Sends to ANY recipient)
+    if (brevoApiKey && brevoApiKey.trim() && brevoApiKey.trim().startsWith('xkeysib-')) {
+      try {
+        return await this.sendEmailViaBrevo({ toEmail, subject, htmlContent, apiKey: brevoApiKey });
+      } catch (brevoErr) {
+        logger.error('[EMAIL SERVICE] Brevo delivery failed for %s: %s', toEmail, brevoErr.message);
+        throw brevoErr;
+      }
+    }
+
+    // 2. Secondary Cloud Transport: Resend HTTPS API (Port 443 - Unblocked on Render)
     const resend = this.getResendClient();
     let resendError = null;
 
-    // 1. Primary Cloud Delivery: Resend HTTPS API (Port 443 - Unblocked on Render)
     if (resend) {
       const fromAddress = 'AgriBiz Suite <onboarding@resend.dev>';
       logger.info('[EMAIL SERVICE] Dispatching email via Resend HTTPS API (Port 443) to: %s', toEmail);
@@ -111,13 +163,12 @@ class EmailService {
         resendError = resendErr;
       }
 
-      // If Resend was configured and failed on cloud host, throw exact Resend error immediately instead of hanging 15s on blocked SMTP
       if (resendError) {
         throw new Error(`Resend delivery failed: ${resendError.message}`);
       }
     }
 
-    // 2. Secondary / Local Fallback: Gmail SMTP
+    // 3. Secondary / Local Fallback: Gmail SMTP
     const transporter = await this.createRealTransporter();
     if (transporter) {
       const smtpUser = process.env.SMTP_USER;
@@ -133,13 +184,13 @@ class EmailService {
       return { success: true, emailSent: true, messageId: info.messageId };
     }
 
-    // 3. Dev Mode Console Fallback
+    // 4. Dev Mode Console Fallback
     if (process.env.NODE_ENV !== 'production') {
       logger.warn('[EMAIL SERVICE] Email service credentials not configured. [DEV LINK LOGGED]: %s', linkUrl);
       return { success: true, emailSent: false, devLink: linkUrl, message: 'Link logged to server console.' };
     }
 
-    throw new Error('No working email transport service (Resend or SMTP) is configured.');
+    throw new Error('No working email transport service (Brevo, Resend, or SMTP) is configured.');
   }
 
   async sendPasswordResetEmail(toEmail, rawToken, userName = 'User') {
