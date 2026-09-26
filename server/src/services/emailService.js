@@ -1,3 +1,4 @@
+import { Resend } from 'resend';
 import nodemailer from 'nodemailer';
 import dotenv from 'dotenv';
 import path from 'path';
@@ -5,30 +6,16 @@ import { fileURLToPath } from 'url';
 import dns from 'dns';
 import logger from '../config/logger.js';
 
-// Force IPv4 DNS resolution first to prevent ENETUNREACH errors on cloud platforms (Render/AWS) without IPv6 routes
+// Force IPv4 DNS resolution first to prevent ENETUNREACH errors on cloud platforms
 try {
   if (dns.setDefaultResultOrder) {
     dns.setDefaultResultOrder('ipv4first');
   }
 } catch (e) {}
 
-// Custom DNS lookup that strictly forces family = 4 (IPv4) for Nodemailer sockets
-const customIpv4Lookup = (hostname, options, callback) => {
-  if (typeof options === 'function') {
-    callback = options;
-    options = {};
-  }
-  const lookupOptions = typeof options === 'object' && options ? { ...options, family: 4 } : { family: 4 };
-  return dns.lookup(hostname, lookupOptions, (err, address, family) => {
-    if (err) return callback(err, address, family);
-    callback(null, address, 4);
-  });
-};
-
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Ensure .env variables are loaded regardless of current working directory
 dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
@@ -38,298 +25,194 @@ class EmailService {
     dotenv.config({ path: path.resolve(__dirname, '../../../.env'), override: true });
   }
 
+  getResendClient() {
+    this.reloadEnv();
+    const apiKey = process.env.RESEND_API_KEY;
+    if (apiKey && apiKey.trim()) {
+      return new Resend(apiKey.trim());
+    }
+    return null;
+  }
+
   isSmtpConfigured() {
     this.reloadEnv();
+    const resendKey = process.env.RESEND_API_KEY;
     const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    return Boolean(host && user && pass);
-  }
-
-  async resolveIpv4Host(rawHost) {
-    const target = rawHost || 'smtp.gmail.com';
-    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(target)) {
-      return target;
-    }
-    try {
-      const res = await dns.promises.lookup(target, { family: 4 });
-      if (res && res.address) {
-        return res.address;
-      }
-    } catch (e) {
-      logger.warn('[EMAIL SERVICE] IPv4 DNS lookup failed for %s: %s', target, e.message);
-    }
-    return target;
+    return Boolean((resendKey && resendKey.trim()) || (host && user && pass));
   }
 
   async createRealTransporter() {
     this.reloadEnv();
-    const rawHost = process.env.SMTP_HOST || 'smtp.gmail.com';
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
     if (user && pass) {
-      const resolvedAddress = await this.resolveIpv4Host(rawHost);
-
-      logger.info(
-        '[EMAIL SERVICE] Resolved SMTP Target -> Hostname: %s, IPv4 Address: %s, Port: 465, Secure: true',
-        rawHost,
-        resolvedAddress
-      );
-
-      // Use explicit Port 465 Direct SSL with family=4 and pre-resolved IPv4 IP address for Nodemailer Gmail SMTP on Render
       return nodemailer.createTransport({
-        host: resolvedAddress,
+        host: 'smtp.gmail.com',
         port: 465,
         secure: true,
         family: 4,
-        lookup: customIpv4Lookup,
         auth: { user, pass },
-        connectionTimeout: 15000, // 15s connection timeout
-        greetingTimeout: 15000,   // 15s greeting timeout
-        socketTimeout: 20000,     // 20s socket timeout
+        connectionTimeout: 15000,
+        greetingTimeout: 15000,
+        socketTimeout: 20000,
         tls: {
           rejectUnauthorized: true,
-          servername: rawHost,
+          servername: 'smtp.gmail.com',
         },
       });
     }
     return null;
   }
 
-  async getTransporter() {
-    if (this.isSmtpConfigured()) {
-      return await this.createRealTransporter();
-    }
-    return null;
-  }
+  async sendEmail({ toEmail, subject, htmlContent, linkUrl }) {
+    const resend = this.getResendClient();
 
-  async verifySmtpConfig() {
-    const host = process.env.SMTP_HOST || 'smtp.gmail.com';
-    const port = process.env.SMTP_PORT || 465;
-    const user = process.env.SMTP_USER;
-    const pass = process.env.SMTP_PASS;
-    const from = process.env.EMAIL_FROM;
-    const configured = this.isSmtpConfigured();
-
-    logger.info('[EMAIL SERVICE] SMTP Configuration Diagnostic:');
-    logger.info('  - SMTP configured: %s', configured);
-    logger.info('  - SMTP host: %s', host);
-    logger.info('  - SMTP port: %s', port);
-    logger.info('  - SMTP user configured: %s', Boolean(user));
-    logger.info('  - SMTP password configured: %s', Boolean(pass));
-    logger.info('  - EMAIL_FROM configured: %s', Boolean(from));
-
-    if (configured) {
-      const transporter = await this.createRealTransporter();
+    // 1. Primary Cloud Delivery: Resend HTTPS API (Port 443 - Unblocked on Render)
+    if (resend) {
+      const fromAddress = 'AgriBiz Suite <onboarding@resend.dev>';
+      logger.info('[EMAIL SERVICE] Dispatching email via Resend HTTPS API (Port 443) to: %s', toEmail);
       try {
-        await transporter.verify();
-        logger.info('  - SMTP connection: successful (authenticated with %s:%s)', host, port);
-      } catch (vErr) {
-        logger.error('  - SMTP connection FAILED: %s (code: %s, command: %s)', vErr.message, vErr.code || 'N/A', vErr.command || 'N/A');
+        const { data, error } = await resend.emails.send({
+          from: fromAddress,
+          to: [toEmail],
+          subject: subject,
+          html: htmlContent,
+        });
+
+        if (error) {
+          logger.error('[EMAIL SERVICE] Resend API error: %s', error.message || JSON.stringify(error));
+          throw new Error(error.message || 'Resend delivery failed');
+        }
+
+        logger.info('[EMAIL SERVICE] Email delivered successfully via Resend HTTPS API to recipient: %s. MessageID: %s', toEmail, data?.id);
+        return { success: true, emailSent: true, messageId: data?.id };
+      } catch (resendErr) {
+        logger.error('[EMAIL SERVICE] Resend delivery failed: %s. Attempting Gmail SMTP fallback...', resendErr.message);
       }
-    } else {
-      logger.warn('[EMAIL SERVICE] WARNING: SMTP credentials are not configured in environment. Real email delivery will fail.');
     }
 
-    return configured;
+    // 2. Secondary / Local Fallback: Gmail SMTP
+    const transporter = await this.createRealTransporter();
+    if (transporter) {
+      const smtpUser = process.env.SMTP_USER;
+      const fromAddress = process.env.EMAIL_FROM || (smtpUser ? `"AgriBiz Suite" <${smtpUser}>` : '"AgriBiz Suite" <no-reply@agribiz.com>');
+      logger.info('[EMAIL SERVICE] Dispatching email via Gmail SMTP to: %s', toEmail);
+      const info = await transporter.sendMail({
+        from: fromAddress,
+        to: toEmail,
+        subject,
+        html: htmlContent,
+      });
+      logger.info('[EMAIL SERVICE] Email delivered successfully via Gmail SMTP to recipient: %s. MessageID: %s', toEmail, info.messageId);
+      return { success: true, emailSent: true, messageId: info.messageId };
+    }
+
+    // 3. Dev Mode Console Fallback
+    if (process.env.NODE_ENV !== 'production') {
+      logger.warn('[EMAIL SERVICE] Email service credentials not configured. [DEV LINK LOGGED]: %s', linkUrl);
+      return { success: true, emailSent: false, devLink: linkUrl, message: 'Link logged to server console.' };
+    }
+
+    throw new Error('No working email transport service (Resend or SMTP) is configured.');
   }
 
   async sendPasswordResetEmail(toEmail, rawToken, userName = 'User') {
-    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/$/, '');
     const resetUrl = `${clientUrl}/reset-password?token=${rawToken}`;
-    const smtpUser = process.env.SMTP_USER;
-    const fromAddress = process.env.EMAIL_FROM || (smtpUser ? `"AgriBiz Suite" <${smtpUser}>` : '"AgriBiz Suite" <no-reply@agribiz.com>');
-
-    logger.info('[EMAIL SERVICE] Initiating password reset email dispatch to recipient: %s (Host: %s, Port: 465, Secure: true)', toEmail, process.env.SMTP_HOST || 'smtp.gmail.com');
-
-    const transporter = await this.getTransporter();
-
-    if (!transporter) {
-      if (process.env.NODE_ENV !== 'production') {
-        logger.warn('[EMAIL SERVICE] SMTP not configured in environment. [DEV FALLBACK] Password reset link for %s: %s', toEmail, resetUrl);
-        return {
-          success: true,
-          emailSent: false,
-          devLink: resetUrl,
-          message: 'SMTP is not configured in environment. Password reset link logged to server console for local testing.'
-        };
-      }
-      logger.error('[EMAIL SERVICE] Unable to send Password Reset email to %s: Real SMTP host/user/pass not configured.', toEmail);
-      const err = new Error('SMTP server is not configured in environment variables.');
-      err.code = 'ESMTPNOTCONFIGURED';
-      throw err;
-    }
-
-    const mailOptions = {
-      from: fromAddress,
-      to: toEmail,
-      subject: 'Reset Your Password - AgriBiz Suite',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-          <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
-            <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
-            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Account Security & Recovery</p>
-          </div>
-          <h3 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Hello ${userName},</h3>
-          <p style="color: #334155; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-            We received a request to reset the password for your account associated with <strong>${toEmail}</strong>. Click the button below to set a new password:
-          </p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetUrl}" style="background-color: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
-              Reset Password
-            </a>
-          </div>
-          <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
-            This single-use link is valid for <strong>30 minutes</strong>. If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.
-          </p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-          <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
-            If the button above does not work, copy and paste this URL into your web browser:<br />
-            <a href="${resetUrl}" style="color: #10b981; word-break: break-all;">${resetUrl}</a>
-          </p>
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+          <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Account Security & Recovery</p>
         </div>
-      `,
-    };
+        <h3 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Hello ${userName},</h3>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+          We received a request to reset the password for your account associated with <strong>${toEmail}</strong>. Click the button below to set a new password:
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${resetUrl}" style="background-color: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
+            Reset Password
+          </a>
+        </div>
+        <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
+          This single-use link is valid for <strong>30 minutes</strong>. If you did not request a password reset, you can safely ignore this email and your password will remain unchanged.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
+          If the button above does not work, copy and paste this URL into your web browser:<br />
+          <a href="${resetUrl}" style="color: #10b981; word-break: break-all;">${resetUrl}</a>
+        </p>
+      </div>
+    `;
 
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      logger.info('[EMAIL SERVICE] Password reset email successfully delivered to recipient: %s. MessageID: %s', toEmail, info.messageId);
-      return { success: true, emailSent: true, messageId: info.messageId };
-    } catch (sendErr) {
-      logger.error('[EMAIL SERVICE] FAILED to deliver password reset email to recipient: %s. Error: %s (Code: %s, Command: %s)', toEmail, sendErr.message, sendErr.code || 'N/A', sendErr.command || 'N/A');
-      throw sendErr;
-    }
+    return await this.sendEmail({ toEmail, subject: 'Reset Your Password - AgriBiz Suite', htmlContent, linkUrl: resetUrl });
   }
 
   async sendVerificationEmail(toEmail, rawToken, userName = 'Owner') {
-    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/$/, '');
     const verifyUrl = `${clientUrl}/verify-email?token=${rawToken}`;
-    const smtpUser = process.env.SMTP_USER;
-    const fromAddress = process.env.EMAIL_FROM || (smtpUser ? `"AgriBiz Suite" <${smtpUser}>` : '"AgriBiz Suite" <no-reply@agribiz.com>');
-
-    const transporter = await this.getTransporter();
-
-    if (!transporter) {
-      if (process.env.NODE_ENV !== 'production') {
-        logger.warn('[EMAIL SERVICE] SMTP not configured in environment. [DEV FALLBACK] Verification link for %s: %s', toEmail, verifyUrl);
-        return {
-          success: true,
-          emailSent: false,
-          devLink: verifyUrl,
-          message: 'SMTP is not configured in environment. Verification link logged to server console for local testing.'
-        };
-      }
-      logger.error('[EMAIL SERVICE] Unable to send verification email to %s: Real SMTP host/user/pass not configured.', toEmail);
-      const err = new Error('SMTP server is not configured in environment.');
-      err.code = 'ESMTPNOTCONFIGURED';
-      throw err;
-    }
-
-    const mailOptions = {
-      from: fromAddress,
-      to: toEmail,
-      subject: 'Verify Your Email Address - AgriBiz Suite',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-          <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
-            <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
-            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Business Management Platform</p>
-          </div>
-          <h3 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Welcome, ${userName}!</h3>
-          <p style="color: #334155; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-            Thank you for registering your business with AgriBiz Suite. Please verify your email address to complete your account setup and activate your workspace.
-          </p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${verifyUrl}" style="background-color: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
-              Verify Email Address
-            </a>
-          </div>
-          <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
-            This link is single-use and time-limited to 24 hours. If you did not register for an AgriBiz account, you can safely ignore this email.
-          </p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-          <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
-            If the button above does not work, copy and paste this URL into your web browser:<br />
-            <a href="${verifyUrl}" style="color: #10b981; word-break: break-all;">${verifyUrl}</a>
-          </p>
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+          <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Business Management Platform</p>
         </div>
-      `,
-    };
+        <h3 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Welcome, ${userName}!</h3>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+          Thank you for registering your business with AgriBiz Suite. Please verify your email address to complete your account setup and activate your workspace.
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${verifyUrl}" style="background-color: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
+            Verify Email Address
+          </a>
+        </div>
+        <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
+          This link is single-use and time-limited to 24 hours. If you did not register for an AgriBiz account, you can safely ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
+          If the button above does not work, copy and paste this URL into your web browser:<br />
+          <a href="${verifyUrl}" style="color: #10b981; word-break: break-all;">${verifyUrl}</a>
+        </p>
+      </div>
+    `;
 
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      logger.info('[EMAIL SERVICE] Verification email successfully delivered via Gmail SMTP (%s) to recipient %s. MessageID: %s', process.env.SMTP_HOST || 'smtp.gmail.com', toEmail, info.messageId);
-      return { success: true, emailSent: true, messageId: info.messageId };
-    } catch (sendErr) {
-      logger.error('[EMAIL SERVICE] SMTP sendMail failed for recipient %s: %s (code: %s, command: %s)', toEmail, sendErr.message, sendErr.code || 'UNKNOWN', sendErr.command || 'N/A');
-      throw sendErr;
-    }
+    return await this.sendEmail({ toEmail, subject: 'Verify Your Email Address - AgriBiz Suite', htmlContent, linkUrl: verifyUrl });
   }
 
   async sendOwnerPinResetEmail(toEmail, rawToken, ownerName = 'Owner', businessName = 'AgriBiz Suite') {
-    const clientUrl = (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, '');
+    const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/$/, '');
     const resetUrl = `${clientUrl}/reset-owner-pin?token=${rawToken}`;
-    const smtpUser = process.env.SMTP_USER;
-    const fromAddress = process.env.EMAIL_FROM || (smtpUser ? `"AgriBiz Suite" <${smtpUser}>` : '"AgriBiz Suite" <no-reply@agribiz.com>');
-
-    const transporter = await this.getTransporter();
-
-    if (!transporter) {
-      if (process.env.NODE_ENV !== 'production') {
-        logger.warn('[EMAIL SERVICE] SMTP not configured in environment. [DEV FALLBACK] Owner PIN reset link for %s: %s', toEmail, resetUrl);
-        return {
-          success: true,
-          emailSent: false,
-          devLink: resetUrl,
-          message: 'SMTP is not configured in environment. PIN reset link logged to server console for local testing.'
-        };
-      }
-      logger.error('[EMAIL SERVICE] Unable to send Owner PIN reset email to %s: Real SMTP host/user/pass not configured.', toEmail);
-      const err = new Error('SMTP server is not configured in environment.');
-      err.code = 'ESMTPNOTCONFIGURED';
-      throw err;
-    }
-
-    const mailOptions = {
-      from: fromAddress,
-      to: toEmail,
-      subject: `Reset Owner PIN - ${businessName}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
-          <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
-            <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
-            <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Security & Account Management</p>
-          </div>
-          <h3 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Hello ${ownerName},</h3>
-          <p style="color: #334155; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
-            We received a request to reset the Owner PIN for <strong>${businessName}</strong>. Click the button below to set a new 4-digit Owner PIN:
-          </p>
-          <div style="text-align: center; margin: 32px 0;">
-            <a href="${resetUrl}" style="background-color: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
-              Reset Owner PIN
-            </a>
-          </div>
-          <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
-            This single-use link is valid for <strong>30 minutes</strong>. If you did not request a PIN reset, please ignore this email or contact support.
-          </p>
-          <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
-          <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
-            If the button above does not work, copy and paste this URL into your web browser:<br />
-            <a href="${resetUrl}" style="color: #10b981; word-break: break-all;">${resetUrl}</a>
-          </p>
+    const htmlContent = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
+        <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
+          <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
+          <p style="color: #64748b; font-size: 14px; margin-top: 4px;">Security & Account Management</p>
         </div>
-      `,
-    };
+        <h3 style="color: #0f172a; font-size: 18px; margin-bottom: 12px;">Hello ${ownerName},</h3>
+        <p style="color: #334155; font-size: 15px; line-height: 1.6; margin-bottom: 20px;">
+          We received a request to reset the Owner PIN for <strong>${businessName}</strong>. Click the button below to set a new 4-digit Owner PIN:
+        </p>
+        <div style="text-align: center; margin: 32px 0;">
+          <a href="${resetUrl}" style="background-color: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: bold; font-size: 16px; display: inline-block; box-shadow: 0 2px 4px rgba(16,185,129,0.2);">
+            Reset Owner PIN
+          </a>
+        </div>
+        <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin-bottom: 20px;">
+          This single-use link is valid for <strong>30 minutes</strong>. If you did not request a PIN reset, please ignore this email or contact support.
+        </p>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;" />
+        <p style="color: #94a3b8; font-size: 12px; text-align: center; margin: 0;">
+          If the button above does not work, copy and paste this URL into your web browser:<br />
+          <a href="${resetUrl}" style="color: #10b981; word-break: break-all;">${resetUrl}</a>
+        </p>
+      </div>
+    `;
 
-    try {
-      const info = await transporter.sendMail(mailOptions);
-      logger.info('[EMAIL SERVICE] Owner PIN reset email delivered via Gmail SMTP to %s. MessageID: %s', toEmail, info.messageId);
-      return { success: true, emailSent: true, messageId: info.messageId };
-    } catch (sendErr) {
-      logger.error('[EMAIL SERVICE] SMTP sendMail failed for recipient %s: %s (code: %s, command: %s)', toEmail, sendErr.message, sendErr.code || 'UNKNOWN', sendErr.command || 'N/A');
-      throw sendErr;
-    }
+    return await this.sendEmail({ toEmail, subject: `Reset Owner PIN - ${businessName}`, htmlContent, linkUrl: resetUrl });
   }
 }
 
