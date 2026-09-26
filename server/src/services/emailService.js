@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dns from 'dns';
+import axios from 'axios';
 import logger from '../config/logger.js';
 
 // Force IPv4 DNS resolution first to prevent ENETUNREACH errors on cloud platforms (Render/AWS) without IPv6 routes
@@ -43,7 +44,38 @@ class EmailService {
     const host = process.env.SMTP_HOST;
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
-    return Boolean(host && user && pass);
+    const resendKey = process.env.RESEND_API_KEY;
+    return Boolean(resendKey || (host && user && pass));
+  }
+
+  async sendViaResendHttpApi(toEmail, subject, htmlContent) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) return null;
+
+    const from = process.env.EMAIL_FROM || 'AgriBiz Suite <onboarding@resend.dev>';
+    try {
+      const res = await axios.post(
+        'https://api.resend.com/emails',
+        {
+          from,
+          to: [toEmail],
+          subject,
+          html: htmlContent,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 10000,
+        }
+      );
+      logger.info('[EMAIL SERVICE] Email delivered successfully via Resend HTTPS API (Port 443) to %s. ID: %s', toEmail, res.data.id);
+      return { success: true, emailSent: true, messageId: res.data.id };
+    } catch (err) {
+      logger.error('[EMAIL SERVICE] Resend HTTPS API delivery failed for %s: %s', toEmail, err.response?.data?.message || err.message);
+      throw err;
+    }
   }
 
   async resolveIpv4Host(rawHost) {
@@ -276,29 +308,7 @@ class EmailService {
     const smtpUser = process.env.SMTP_USER;
     const fromAddress = process.env.EMAIL_FROM || (smtpUser ? `"AgriBiz Suite" <${smtpUser}>` : '"AgriBiz Suite" <no-reply@agribiz.com>');
 
-    const transporter = await this.getTransporter();
-
-    if (!transporter) {
-      if (process.env.NODE_ENV !== 'production') {
-        logger.warn('[EMAIL SERVICE] SMTP not configured in server/.env. [DEV FALLBACK] Password reset link for %s: %s', toEmail, resetUrl);
-        return {
-          success: true,
-          emailSent: false,
-          devLink: resetUrl,
-          message: 'SMTP is not configured in server/.env. Password reset link logged to server console for local testing.'
-        };
-      }
-      logger.error('[EMAIL SERVICE] Unable to send Password Reset email to %s: Real SMTP host/user/pass not configured.', toEmail);
-      const err = new Error('SMTP server is not configured in server/.env.');
-      err.code = 'ESMTPNOTCONFIGURED';
-      throw err;
-    }
-
-    const mailOptions = {
-      from: fromAddress,
-      to: toEmail,
-      subject: 'Reset Your Password - AgriBiz Suite',
-      html: `
+    const htmlContent = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; border: 1px solid #e2e8f0; border-radius: 12px; background-color: #ffffff;">
           <div style="text-align: center; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #f1f5f9;">
             <h2 style="color: #10b981; margin: 0; font-size: 24px;">🌱 AgriBiz Suite</h2>
@@ -322,7 +332,35 @@ class EmailService {
             <a href="${resetUrl}" style="color: #10b981; word-break: break-all;">${resetUrl}</a>
           </p>
         </div>
-      `,
+      `;
+
+    if (process.env.RESEND_API_KEY) {
+      return await this.sendViaResendHttpApi(toEmail, 'Reset Your Password - AgriBiz Suite', htmlContent);
+    }
+
+    const transporter = await this.getTransporter();
+
+    if (!transporter) {
+      if (process.env.NODE_ENV !== 'production') {
+        logger.warn('[EMAIL SERVICE] SMTP not configured in server/.env. [DEV FALLBACK] Password reset link for %s: %s', toEmail, resetUrl);
+        return {
+          success: true,
+          emailSent: false,
+          devLink: resetUrl,
+          message: 'SMTP is not configured in server/.env. Password reset link logged to server console for local testing.'
+        };
+      }
+      logger.error('[EMAIL SERVICE] Unable to send Password Reset email to %s: Real SMTP host/user/pass not configured.', toEmail);
+      const err = new Error('SMTP server is not configured in server/.env.');
+      err.code = 'ESMTPNOTCONFIGURED';
+      throw err;
+    }
+
+    const mailOptions = {
+      from: fromAddress,
+      to: toEmail,
+      subject: 'Reset Your Password - AgriBiz Suite',
+      html: htmlContent,
     };
 
     try {
