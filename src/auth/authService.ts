@@ -142,16 +142,87 @@ class AuthService {
     }
   }
 
-  // Company session lives strictly in tab-isolated sessionStorage
+  public getRefreshToken(): string | null {
+    if (typeof window === 'undefined') return null;
+    return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+  }
+
   public getCurrentCompany(): Company | null {
     if (typeof window === 'undefined') return null;
-    const rawSession = sessionStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY);
+    const rawSession = sessionStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY) || localStorage.getItem(STORAGE_KEYS.CURRENT_COMPANY);
     if (!rawSession) return null;
     try {
       return JSON.parse(rawSession);
     } catch {
       return null;
     }
+  }
+
+  private saveDeviceSession(company: Company, refreshToken: string): void {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+    localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+    sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+
+    const companySettings = {
+      companyId: company.id,
+      id: company.id,
+      businessName: company.businessName,
+      ownerName: company.ownerName,
+      phone: company.mobile,
+      email: company.email || '',
+      gstin: company.gstin || '',
+      city: company.city || '',
+      state: company.state || '',
+      address: `${company.city || ''}, ${company.state || ''}`.trim(),
+      logo: company.logo || '',
+    };
+    sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+    localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
+    sessionStorage.setItem('agribiz_business_branding', JSON.stringify({
+      businessId: company.id,
+      logoUrl: company.logo || '',
+      businessName: company.businessName,
+    }));
+    localStorage.setItem('agribiz_business_branding', JSON.stringify({
+      businessId: company.id,
+      logoUrl: company.logo || '',
+      businessName: company.businessName,
+    }));
+  }
+
+  public async forgetDevice(): Promise<void> {
+    try {
+      const token = this.getRefreshToken();
+      if (token) {
+        await api.post('/auth/logout', { refreshToken: token });
+      }
+    } catch (e) {
+      // Ignore network errors on logout
+    } finally {
+      this.forgetDeviceLocally();
+    }
+  }
+
+  public forgetDeviceLocally(): void {
+    if (typeof window === 'undefined') return;
+    this.setAccessToken(null);
+    localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
+    localStorage.removeItem('agribiz_settings');
+    localStorage.removeItem('agribiz_business_branding');
+    sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
+    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
+    sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
+    sessionStorage.removeItem(STORAGE_KEYS.SESSION);
+    sessionStorage.removeItem(STORAGE_KEYS.TAB_TOKEN);
+    sessionStorage.removeItem('agribiz_settings');
+    sessionStorage.removeItem('agribiz_business_branding');
+    window.name = '';
+    window.dispatchEvent(new Event('agribiz_auth_change'));
+    window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
   }
 
   // --- Auth Actions ---
@@ -168,45 +239,14 @@ class AuthService {
 
       if (success) {
         this.setAccessToken(accessToken);
-        if (refreshToken) {
-          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        if (refreshToken && company) {
+          this.saveDeviceSession(company, refreshToken);
         }
-        // Save company session in tab-isolated sessionStorage so tabs don't overwrite each other
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
         // Ensure PIN is strictly required: clear any user session & PIN verification flags on business login
         sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
         sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
         sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-
-        // Save tab-isolated settings & branding for Staff PIN page
-        const companySettings = {
-          companyId: company.id,
-          id: company.id,
-          businessName: company.businessName,
-          ownerName: company.ownerName,
-          phone: company.mobile,
-          email: company.email || '',
-          gstin: company.gstin || '',
-          city: company.city || '',
-          state: company.state || '',
-          address: `${company.city || ''}, ${company.state || ''}`.trim(),
-          logo: company.logo || '',
-        };
-        sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
-        sessionStorage.setItem('agribiz_business_branding', JSON.stringify({
-          businessId: company.id,
-          logoUrl: company.logo || '',
-          businessName: company.businessName,
-        }));
-
-        // Clear any stale global localStorage branding/settings to avoid cross-business bleeding
-        try {
-          localStorage.removeItem('agribiz_settings');
-          localStorage.removeItem('agribiz_business_branding');
-          localStorage.removeItem('agribiz_refresh_token');
-          localStorage.removeItem('agribiz_current_company');
-        } catch (e) {}
 
         window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
         return { success: true, message, user, company };
@@ -230,14 +270,12 @@ class AuthService {
 
       if (success) {
         this.setAccessToken(accessToken);
-        if (refreshToken) {
-          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        if (refreshToken && company) {
+          this.saveDeviceSession(company, refreshToken);
         }
-        // Staff session → sessionStorage only (forces PIN on each browser open / tab open)
+        // Staff session → sessionStorage (PIN verified for current browser tab)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
         sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
-        // Refresh company info in tab-isolated sessionStorage
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
 
         const session: AuthSession = {
           currentUserId: user.id,
@@ -292,35 +330,12 @@ class AuthService {
 
       if (success) {
         this.setAccessToken(accessToken);
-        if (refreshToken) {
-          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        if (refreshToken && company) {
+          this.saveDeviceSession(company, refreshToken);
         }
         // Staff/owner session in sessionStorage (forces PIN on restart / new tab)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
         sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
-        // Save company session in tab-isolated sessionStorage
-        sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
-
-        // Save tab-isolated settings & branding for new company
-        const companySettings = {
-          companyId: company.id,
-          id: company.id,
-          businessName: company.businessName,
-          ownerName: company.ownerName,
-          phone: company.mobile,
-          email: company.email || '',
-          gstin: company.gstin || '',
-          city: company.city || '',
-          state: company.state || '',
-          address: `${company.city || ''}, ${company.state || ''}`.trim(),
-          logo: company.logo || '',
-        };
-        sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
-        sessionStorage.setItem('agribiz_business_branding', JSON.stringify({
-          businessId: company.id,
-          logoUrl: company.logo || '',
-          businessName: company.businessName,
-        }));
 
         const session: AuthSession = {
           currentUserId: user.id,
@@ -340,24 +355,9 @@ class AuthService {
     }
   }
 
+  // Normal Logout: clears PIN verification session but keeps device remembered for quick PIN entry
   public async logout(): Promise<void> {
-    try {
-      await api.post('/auth/logout');
-    } catch (e) {
-      // Ignore network errors on logout
-    } finally {
-      this.setAccessToken(null);
-      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
-      sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-      sessionStorage.removeItem(STORAGE_KEYS.TAB_TOKEN);
-      sessionStorage.removeItem('agribiz_settings');
-      sessionStorage.removeItem('agribiz_business_branding');
-      if (typeof window !== 'undefined') window.name = '';
-      window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
-    }
+    this.logoutStaff();
   }
 
   public async deleteBusinessAccount(confirmText: string, passwordOrPin: string): Promise<{ success: boolean; message: string }> {
@@ -379,7 +379,7 @@ class AuthService {
 
   public async purgeAllLocalClientState(): Promise<void> {
     try {
-      this.setAccessToken(null);
+      this.forgetDeviceLocally();
       localStorage.clear();
       sessionStorage.clear();
 
@@ -396,44 +396,52 @@ class AuthService {
     }
   }
 
-  // Only clears the staff session — keeps company session alive so next open goes to Staff Selection
+  // Only clears the staff session — keeps company device session alive so next open goes to Staff Selection + PIN
   public logoutStaff(): void {
     sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
     sessionStorage.removeItem(STORAGE_KEYS.SESSION);
     this.setAccessToken(null);
+    window.dispatchEvent(new Event('agribiz_auth_change'));
+    window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
   }
 
-  public async refreshSession(): Promise<{ success: boolean; company?: Company; user?: User }> {
-    try {
-      const storedRefreshToken = sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
-      if (!storedRefreshToken) return { success: false };
-      const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
-      const { success, accessToken, refreshToken: newRefreshToken, company, user } = response.data;
+  private refreshPromise: Promise<{ success: boolean; company?: Company; user?: User }> | null = null;
 
-      if (success && accessToken) {
-        this.setAccessToken(accessToken);
-        if (newRefreshToken) {
-          sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, newRefreshToken);
-        }
-        if (company) {
-          sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
-        }
-        if (user) {
-          sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
-        }
-        return { success: true, company, user };
-      }
-      return { success: false };
-    } catch (error) {
-      this.setAccessToken(null);
-      sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_COMPANY);
-      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
-      sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
-      sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-      return { success: false };
+  public async refreshSession(): Promise<{ success: boolean; company?: Company; user?: User }> {
+    if (this.refreshPromise) {
+      return this.refreshPromise;
     }
+
+    this.refreshPromise = (async () => {
+      try {
+        const storedRefreshToken = this.getRefreshToken();
+        if (!storedRefreshToken) return { success: false };
+        const response = await api.post('/auth/refresh', { refreshToken: storedRefreshToken });
+        const { success, accessToken, refreshToken: newRefreshToken, company, user } = response.data;
+
+        if (success && accessToken) {
+          this.setAccessToken(accessToken);
+          const tokenToSave = newRefreshToken || storedRefreshToken;
+          if (company) {
+            this.saveDeviceSession(company, tokenToSave);
+          }
+          if (user) {
+            sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+          }
+          return { success: true, company, user };
+        }
+        this.forgetDeviceLocally();
+        return { success: false };
+      } catch (error) {
+        this.forgetDeviceLocally();
+        return { success: false };
+      } finally {
+        this.refreshPromise = null;
+      }
+    })();
+
+    return this.refreshPromise;
   }
 
   public async forgotPassword(mobile: string): Promise<{ success: boolean; message: string; maskedEmail?: string }> {

@@ -39,7 +39,7 @@ class PaymentController {
   async createPayment(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating payment record for company %s by %s', companyId, creatorName);
       const payment = await paymentService.createPayment(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Payments', 'CREATE', payment._id || payment.paymentId, payment);
@@ -52,7 +52,7 @@ class PaymentController {
   async updatePayment(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating payment record %s for company %s by %s', req.params.id, companyId, updaterName);
       const payment = await paymentService.updatePayment(req.params.id, companyId, req.body, updaterName);
       if (!payment) {
@@ -68,7 +68,7 @@ class PaymentController {
   async deletePayment(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting payment record %s for company %s by %s', req.params.id, companyId, deleterName);
       await paymentService.deletePayment(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Payments', 'DELETE', req.params.id);

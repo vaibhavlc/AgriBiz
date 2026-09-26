@@ -161,13 +161,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     await authService.logout();
     setCurrentUser(null);
-    setCurrentCompany(null);
+    const savedCompany = authService.getCurrentCompany();
+    setCurrentCompany(savedCompany || null);
   };
 
   const logoutStaff = () => {
     authService.logoutStaff();
     setCurrentUser(null);
-    // Keep currentCompany alive — so next open skips business login and goes to Staff Selection
+    const savedCompany = authService.getCurrentCompany();
+    setCurrentCompany(savedCompany || null);
+  };
+
+  const forgetDevice = async () => {
+    await authService.forgetDevice();
+    setCurrentUser(null);
+    setCurrentCompany(null);
   };
 
   const hasPermission = (permission: string): boolean => {
@@ -191,6 +199,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerCompany,
         logout,
         logoutStaff,
+        forgetDevice,
         hasPermission,
         refreshUser,
         updateUserPresence,

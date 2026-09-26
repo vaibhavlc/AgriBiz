@@ -96,7 +96,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 export const Settings: React.FC = () => {
   const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
-  const { currentUser, currentCompany } = useAuth();
+  const { currentUser, currentCompany, forgetDevice } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
@@ -2441,6 +2441,53 @@ export const Settings: React.FC = () => {
                       <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                     </select>
                   </div>
+                </div>
+              </div>
+
+              {/* Device Security & Remembered Device */}
+              <div className="card animate-fade-in">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#2563eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Smartphone size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Remembered Device & Security</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage device authentication memory and session revocation</p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                  <div style={{ flex: 1, minWidth: '240px' }}>
+                    <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px' }}>
+                      Device Session Status: <span style={{ color: '#10b981', fontWeight: 800 }}>Remembered</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                      This device is currently recognized. Subsequent logins require only 4-digit PIN authentication. Clicking <strong>Forget This Device</strong> will remove remembered credentials and require full Mobile Number + Password verification on the next login.
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={async () => {
+                      await forgetDevice();
+                      showToast('Device forgotten — mobile & password required next time', 'info');
+                    }}
+                    style={{
+                      borderRadius: '10px',
+                      fontWeight: 700,
+                      fontSize: '13px',
+                      borderColor: 'rgba(239, 68, 68, 0.4)',
+                      color: '#ef4444',
+                      padding: '10px 18px',
+                      cursor: 'pointer',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                    }}
+                  >
+                    <Smartphone size={15} /> Forget This Device
+                  </button>
                 </div>
               </div>
 

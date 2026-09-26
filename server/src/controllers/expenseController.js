@@ -29,7 +29,7 @@ class ExpenseController {
   async createExpense(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating expense for company %s by %s', companyId, creatorName);
       const expense = await expenseService.createExpense(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Expenses', 'CREATE', expense._id || expense.expenseId, expense);
@@ -42,7 +42,7 @@ class ExpenseController {
   async updateExpense(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating expense %s for company %s by %s', req.params.id, companyId, updaterName);
       const expense = await expenseService.updateExpense(req.params.id, companyId, req.body, updaterName);
       if (!expense) {
@@ -58,7 +58,7 @@ class ExpenseController {
   async deleteExpense(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting expense %s for company %s by %s', req.params.id, companyId, deleterName);
       await expenseService.deleteExpense(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Expenses', 'DELETE', req.params.id);

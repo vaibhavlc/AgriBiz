@@ -12,6 +12,7 @@ export interface AuthContextType {
   registerCompany: (companyData: any, ownerPassword: string, ownerPin: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   logoutStaff: () => void;
+  forgetDevice: () => Promise<void>;
   hasPermission: (permission: string) => boolean;
   refreshUser: () => Promise<void>;
   updateUserPresence: (presenceStatus: 'online' | 'busy' | 'away') => Promise<void>;

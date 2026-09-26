@@ -105,55 +105,27 @@ api.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        const storedRefreshToken = sessionStorage.getItem('agribiz_refresh_token');
-        if (!storedRefreshToken) {
-          processQueue(new Error('No refresh token available.'));
-          return Promise.reject(error);
+        const authService = (await import('../auth/authService')).default;
+        const res = await authService.refreshSession();
+
+        if (res.success) {
+          const accessToken = authService.getAccessToken();
+          if (accessToken) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+            originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+            processQueue(null, accessToken);
+            return api(originalRequest);
+          }
         }
 
-        const refreshResponse = await axios.post(
-          `${getBaseURL()}/auth/refresh`,
-          { refreshToken: storedRefreshToken },
-          { withCredentials: true }
-        );
-        const { success, accessToken, refreshToken: newRefreshToken, user, company } = refreshResponse.data;
-
-        if (success && accessToken) {
-          sessionStorage.setItem('agribiz_access_token', accessToken);
-          if (newRefreshToken) {
-            sessionStorage.setItem('agribiz_refresh_token', newRefreshToken);
-          }
-          sessionStorage.setItem('agribiz_current_user', JSON.stringify(user));
-          sessionStorage.setItem('agribiz_current_company', JSON.stringify(company));
-          
-          api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
-          originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-          window.dispatchEvent(new Event('agribiz_auth_change'));
-          
-          processQueue(null, accessToken);
-          return api(originalRequest);
-        } else {
-          sessionStorage.removeItem('agribiz_access_token');
-          sessionStorage.removeItem('agribiz_refresh_token');
-          sessionStorage.removeItem('agribiz_current_user');
-          sessionStorage.removeItem('agribiz_current_company');
-          sessionStorage.removeItem('agribiz_auth_session');
-          
-          processQueue(new Error('Session refresh failed.'));
-          if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
-            window.location.href = '/';
-          }
-          return Promise.reject(error);
+        processQueue(new Error('Session refresh failed.'));
+        if (typeof window !== 'undefined' && window.location.pathname !== '/' && window.location.pathname !== '/login') {
+          window.location.href = '/';
         }
+        return Promise.reject(error);
       } catch (refreshErr) {
-        sessionStorage.removeItem('agribiz_access_token');
-        sessionStorage.removeItem('agribiz_refresh_token');
-        sessionStorage.removeItem('agribiz_current_user');
-        sessionStorage.removeItem('agribiz_current_company');
-        sessionStorage.removeItem('agribiz_auth_session');
-        
         processQueue(refreshErr);
-        if (window.location.pathname !== '/' && window.location.pathname !== '/login') {
+        if (typeof window !== 'undefined' && window.location.pathname !== '/' && window.location.pathname !== '/login') {
           window.location.href = '/';
         }
         return Promise.reject(refreshErr);

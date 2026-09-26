@@ -12,7 +12,7 @@ const recycleBinItemSchema = new mongoose.Schema(
       required: true,
     },
     deletedAt: { type: String, required: true },
-    deletedBy: { type: String, required: true },
+    deletedBy: { type: String, required: true, default: 'System' },
     originalData: { type: mongoose.Schema.Types.Mixed, required: true },
     
     // Sync & Auditing

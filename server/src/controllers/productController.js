@@ -29,7 +29,7 @@ class ProductController {
   async createProduct(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating product for company %s by %s', companyId, creatorName);
       const product = await productService.createProduct(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Products', 'CREATE', product._id || product.productId, product);
@@ -42,7 +42,7 @@ class ProductController {
   async updateProduct(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating product %s for company %s by %s', req.params.id, companyId, updaterName);
       const product = await productService.updateProduct(req.params.id, companyId, req.body, updaterName);
       if (!product) {
@@ -58,7 +58,7 @@ class ProductController {
   async deleteProduct(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting product %s for company %s by %s', req.params.id, companyId, deleterName);
       await productService.deleteProduct(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Products', 'DELETE', req.params.id);

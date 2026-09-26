@@ -23,11 +23,11 @@ const ROLE_CONFIG = {
 };
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwitchToForgot }) => {
-  const { login, staffLogin, currentCompany } = useAuth();
+  const { login, staffLogin, currentCompany, forgetDevice } = useAuth();
 
   const [stage, setStage] = useState<Stage>(() => {
     const savedCompany = authService.getCurrentCompany();
-    const storedRefreshToken = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_refresh_token') : null;
+    const storedRefreshToken = authService.getRefreshToken();
     return (savedCompany || storedRefreshToken) ? 'staff-selection' : 'business-login';
   });
 
@@ -93,13 +93,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   useEffect(() => {
     const checkSession = async () => {
       const savedCompany = authService.getCurrentCompany();
-      const storedRefreshToken = sessionStorage.getItem('agribiz_refresh_token');
+      const storedRefreshToken = authService.getRefreshToken();
       if (savedCompany || storedRefreshToken) {
-        if (storedRefreshToken) {
-          await authService.refreshSession();
+        setLoading(true);
+        const res = await authService.refreshSession();
+        setLoading(false);
+
+        if (res.success && (authService.getCurrentCompany() || res.company)) {
+          await loadStaffList();
+          setStage('staff-selection');
+        } else {
+          // Token expired, revoked, or invalid! Clear local remembered state & require Mobile + Password
+          authService.forgetDeviceLocally();
+          setStage('business-login');
         }
-        await loadStaffList();
-        setStage('staff-selection');
+      } else {
+        setStage('business-login');
       }
     };
     checkSession();
@@ -473,18 +482,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           )}
         </div>
         <button type="button"
-          onClick={() => {
-            authService.logout();
+          onClick={async () => {
+            await forgetDevice();
             setStage('business-login');
             setStaffList([]);
           }}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center',
             width: '100%', background: 'none', border: '1px solid var(--border-color,#e2e8f0)',
-            borderRadius: '10px', padding: '8px', fontSize: '12px', fontWeight: 700,
+            borderRadius: '10px', padding: '9px', fontSize: '12px', fontWeight: 700,
             color: 'var(--text-secondary,#475569)', cursor: 'pointer',
           }}>
-          <ChevronLeft size={14} /> Switch Business Account
+          <ChevronLeft size={14} /> Forget This Device / Switch Account
         </button>
       </div>
     );

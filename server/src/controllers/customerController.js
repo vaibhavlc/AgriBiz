@@ -29,7 +29,7 @@ class CustomerController {
   async createCustomer(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name;
+      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Creating customer for company %s by %s', companyId, creatorName);
       const customer = await customerService.createCustomer(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Customers', 'CREATE', customer._id || customer.customerId, customer);
@@ -42,7 +42,7 @@ class CustomerController {
   async updateCustomer(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name;
+      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Updating customer %s for company %s by %s', req.params.id, companyId, updaterName);
       const customer = await customerService.updateCustomer(req.params.id, companyId, req.body, updaterName);
       if (!customer) {
@@ -58,7 +58,7 @@ class CustomerController {
   async deleteCustomer(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name;
+      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting customer %s for company %s by %s', req.params.id, companyId, deleterName);
       await customerService.deleteCustomer(req.params.id, companyId, deleterName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Customers', 'DELETE', req.params.id);
