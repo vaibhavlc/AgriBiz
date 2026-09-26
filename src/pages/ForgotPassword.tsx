@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { authService } from '../auth/authService';
-import { Mail, ArrowLeft, CheckCircle2, KeyRound, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { Smartphone, Mail, ArrowLeft, CheckCircle2, KeyRound, Lock, AlertCircle, Loader2 } from 'lucide-react';
 
 interface ForgotPasswordProps {
   onSwitchToLogin: () => void;
@@ -21,7 +21,8 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
   }, [propToken]);
 
   const [step, setStep] = useState<'request' | 'sent' | 'reset' | 'success'>('request');
-  const [email, setEmail] = useState('');
+  const [mobile, setMobile] = useState('');
+  const [maskedEmail, setMaskedEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -30,18 +31,22 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
 
   const handleRequestResetLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg('Please enter a valid registered email address.');
+    const cleanMobile = mobile.replace(/\D/g, '');
+    if (!cleanMobile || cleanMobile.length !== 10) {
+      setErrorMsg('Please enter a valid 10-digit registered mobile number.');
       return;
     }
 
     setErrorMsg('');
     setLoading(true);
-    const res = await authService.forgotPassword(email.trim());
+    const res = await authService.forgotPassword(cleanMobile);
     setLoading(false);
 
     if (res.success) {
       setSuccessMsg(res.message);
+      if (res.maskedEmail) {
+        setMaskedEmail(res.maskedEmail);
+      }
       setStep('sent');
     } else {
       setErrorMsg(res.message);
@@ -102,7 +107,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', margin: '4px 0 0 0' }}>
           {step === 'reset'
             ? 'Enter a secure new password for your AgriBiz account'
-            : 'Reset your password via registered email address'}
+            : 'Reset link will be sent to the verified email linked to your mobile'}
         </p>
       </div>
 
@@ -127,12 +132,12 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         </div>
       )}
 
-      {/* Step 1: Request Password Reset Link by Email */}
+      {/* Step 1: Request Password Reset Link by Registered Mobile Number */}
       {step === 'request' && (
         <form onSubmit={handleRequestResetLink}>
           <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Registered Email Address *
+              Registered Mobile Number *
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span
@@ -140,38 +145,47 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
                   position: 'absolute',
                   left: '12px',
                   color: 'var(--text-muted, #94a3b8)',
+                  fontSize: '13px',
+                  fontWeight: 700,
                   display: 'flex',
                   alignItems: 'center',
+                  gap: '4px',
+                  borderRight: '1px solid var(--border-color, #e2e8f0)',
+                  paddingRight: '8px',
                   pointerEvents: 'none',
                 }}
               >
-                <Mail size={16} />
+                <Smartphone size={14} /> +91
               </span>
               <input
-                type="email"
+                type="tel"
                 className="form-control"
-                placeholder="name@business.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                style={{ paddingLeft: '38px', height: '44px', borderRadius: '10px', fontSize: '14px', fontWeight: 500 }}
+                placeholder="10-digit mobile number"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                style={{ paddingLeft: '78px', height: '44px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
+                maxLength={10}
                 required
                 autoFocus
               />
             </div>
+            <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', marginTop: '6px', display: 'block' }}>
+              The password reset link will be sent to the verified email address linked to this account.
+            </span>
           </div>
 
           <button
             type="submit"
             className="btn btn-primary"
-            disabled={loading || !email.trim()}
+            disabled={loading || mobile.replace(/\D/g, '').length !== 10}
             style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
           >
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Loader2 size={16} className="spin-animation" /> Sending Link...
+                <Loader2 size={16} className="spin-animation" /> Finding Account & Sending Link...
               </span>
             ) : (
-              'Send Reset Link'
+              'Send Reset Link to Linked Email'
             )}
           </button>
         </form>
@@ -180,6 +194,22 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
       {/* Step 2: Email Sent Confirmation */}
       {step === 'sent' && (
         <div style={{ textAlign: 'center', animation: 'fadeIn 0.2s ease-out' }}>
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              color: 'var(--primary, #10b981)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 16px auto',
+            }}
+          >
+            <Mail size={24} />
+          </div>
+
           <div
             style={{
               padding: '16px',
@@ -193,18 +223,20 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
               marginBottom: '20px',
             }}
           >
-            {successMsg || `Password reset link has been sent to ${email}. Please check your email inbox.`}
+            {successMsg || `Password reset link has been sent to your registered email address (${maskedEmail || 'linked email'}) for mobile +91 ${mobile}.`}
           </div>
+
           <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', marginBottom: '20px' }}>
-            Did not receive the email? Check your spam folder or try requesting again.
+            Please check your email inbox and click the reset link to create a new password. If you don't see it, check your spam folder.
           </p>
+
           <button
             type="button"
-            className="btn btn-secondary"
-            style={{ width: '100%', height: '42px', borderRadius: '10px', fontWeight: 600, justifyContent: 'center' }}
-            onClick={() => setStep('request')}
+            className="btn btn-primary"
+            style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
+            onClick={onSwitchToLogin}
           >
-            Try Another Email Address
+            Back to Sign In
           </button>
         </div>
       )}
@@ -293,7 +325,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         </div>
       )}
 
-      {step !== 'success' && (
+      {step !== 'success' && step !== 'sent' && (
         <div style={{ textAlign: 'center', marginTop: '24px', paddingTop: '16px', borderTop: '1px solid var(--border-color, #e2e8f0)' }}>
           <button
             type="button"

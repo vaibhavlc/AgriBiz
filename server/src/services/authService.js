@@ -386,21 +386,41 @@ class AuthService {
     }
   }
 
-  async forgotPassword(email) {
-    if (!email || !email.trim()) {
-      const err = new Error('Email address is required.');
+  async forgotPassword(mobile) {
+    if (!mobile || !mobile.trim()) {
+      const err = new Error('Mobile number is required.');
       err.statusCode = 400;
       throw err;
     }
 
-    const cleanEmail = email.trim().toLowerCase();
-    const user = await userRepository.findByEmail(cleanEmail);
+    const cleanMobile = mobile.replace(/\D/g, '');
+    if (cleanMobile.length !== 10) {
+      const err = new Error('Please enter a valid 10-digit registered mobile number.');
+      err.statusCode = 400;
+      throw err;
+    }
 
+    const user = await userRepository.findByMobile(cleanMobile);
     if (!user) {
-      const err = new Error('No registered account found with this email address.');
+      const err = new Error('No account found registered with this mobile number.');
       err.statusCode = 404;
       throw err;
     }
+
+    if (!user.email || !user.email.trim()) {
+      const err = new Error('No registered email address found linked to this account.');
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const cleanEmail = user.email.trim().toLowerCase();
+
+    // Mask email for privacy confirmation (e.g., v***v@domain.com)
+    const [emailPrefix, emailDomain] = cleanEmail.split('@');
+    const maskedPrefix = emailPrefix.length <= 2 
+      ? emailPrefix[0] + '***' 
+      : emailPrefix[0] + '***' + emailPrefix[emailPrefix.length - 1];
+    const maskedEmail = `${maskedPrefix}@${emailDomain}`;
 
     // Delete existing password reset tokens for this email
     await PasswordReset.deleteMany({ email: cleanEmail });
@@ -420,7 +440,9 @@ class AuthService {
 
     return {
       success: true,
-      message: 'Password reset link has been sent to your registered email address. Please check your inbox.',
+      maskedEmail,
+      mobile: cleanMobile,
+      message: `Password reset link has been sent to your registered email address (${maskedEmail}) linked to mobile +91 ${cleanMobile}.`,
     };
   }
 

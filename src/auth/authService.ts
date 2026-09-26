@@ -431,10 +431,10 @@ class AuthService {
     }
   }
 
-  public async forgotPassword(email: string): Promise<{ success: boolean; message: string }> {
+  public async forgotPassword(mobile: string): Promise<{ success: boolean; message: string; maskedEmail?: string }> {
     try {
-      const response = await api.post('/auth/forgot-password', { email });
-      return { success: true, message: response.data.message };
+      const response = await api.post('/auth/forgot-password', { mobile });
+      return { success: true, message: response.data.message, maskedEmail: response.data.maskedEmail };
     } catch (error: any) {
       const message = error.response?.data?.message || 'Failed to send password reset email.';
       return { success: false, message };
