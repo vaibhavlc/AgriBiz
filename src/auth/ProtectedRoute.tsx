@@ -46,7 +46,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallba
     );
   }
 
-  if (!isAuthenticated) {
+  const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const isAuthOverrideRoute = typeof window !== 'undefined' && (
+    window.location.pathname.startsWith('/reset-password') ||
+    window.location.pathname.startsWith('/reset-owner-pin') ||
+    window.location.pathname.startsWith('/verify-email') ||
+    searchParams?.get('view') === 'forgot' ||
+    searchParams?.get('view') === 'reset-password' ||
+    searchParams?.get('view') === 'reset-owner-pin' ||
+    searchParams?.get('view') === 'verify' ||
+    searchParams?.has('token') ||
+    searchParams?.has('verifyToken')
+  );
+
+  if (!isAuthenticated || isAuthOverrideRoute) {
     return <>{fallback}</>;
   }
 
