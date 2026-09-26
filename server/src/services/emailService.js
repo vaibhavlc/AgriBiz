@@ -46,15 +46,40 @@ class EmailService {
     return Boolean(host && user && pass);
   }
 
+  async resolveIpv4Host(rawHost) {
+    const target = rawHost || 'smtp.gmail.com';
+    if (/^(\d{1,3}\.){3}\d{1,3}$/.test(target)) {
+      return target;
+    }
+    try {
+      const res = await dns.promises.lookup(target, { family: 4 });
+      if (res && res.address) {
+        return res.address;
+      }
+    } catch (e) {
+      logger.warn('[EMAIL SERVICE] IPv4 DNS lookup failed for %s: %s', target, e.message);
+    }
+    return target;
+  }
+
   async createRealTransporter() {
     this.reloadEnv();
+    const rawHost = process.env.SMTP_HOST || 'smtp.gmail.com';
     const user = process.env.SMTP_USER;
     const pass = process.env.SMTP_PASS;
 
     if (user && pass) {
-      // Use explicit Port 465 Direct SSL with family=4 for Nodemailer Gmail SMTP on Render
+      const resolvedAddress = await this.resolveIpv4Host(rawHost);
+
+      logger.info(
+        '[EMAIL SERVICE] Resolved SMTP Target -> Hostname: %s, IPv4 Address: %s, Port: 465, Secure: true',
+        rawHost,
+        resolvedAddress
+      );
+
+      // Use explicit Port 465 Direct SSL with family=4 and pre-resolved IPv4 IP address for Nodemailer Gmail SMTP on Render
       return nodemailer.createTransport({
-        host: 'smtp.gmail.com',
+        host: resolvedAddress,
         port: 465,
         secure: true,
         family: 4,
@@ -65,7 +90,7 @@ class EmailService {
         socketTimeout: 20000,     // 20s socket timeout
         tls: {
           rejectUnauthorized: true,
-          servername: 'smtp.gmail.com',
+          servername: rawHost,
         },
       });
     }
