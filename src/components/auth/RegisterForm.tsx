@@ -175,16 +175,35 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
   const [verificationSent, setVerificationSent] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
 
-  // Save form draft to localStorage whenever fields change
+  // Save form draft to localStorage whenever fields change, merging with existing draft to prevent data loss
   React.useEffect(() => {
-    const regDraft = { registrationSessionId, businessName, gstin, email, city, state, ownerName, mobile };
+    const currentDraft = getSavedDraft();
+    const regDraft = {
+      registrationSessionId,
+      businessName: businessName || currentDraft.businessName || '',
+      gstin: gstin || currentDraft.gstin || '',
+      email: email || currentDraft.email || '',
+      city: city || currentDraft.city || 'Pipariya',
+      state: state || currentDraft.state || 'Madhya Pradesh',
+      ownerName: ownerName || currentDraft.ownerName || '',
+      mobile: mobile || currentDraft.mobile || '',
+    };
     localStorage.setItem('agribiz_reg_draft', JSON.stringify(regDraft));
   }, [registrationSessionId, businessName, gstin, email, city, state, ownerName, mobile]);
 
   // Subscribe to registrationSync cross-tab events
   React.useEffect(() => {
     const unsubscribe = registrationSync.subscribe((evt: RegistrationSyncEvent) => {
-      if (evt.registrationSessionId && evt.registrationSessionId !== registrationSessionId) {
+      const activeSessionId = registrationSync.getOrCreateSessionId();
+      const currentDraft = getSavedDraft();
+      const draftEmail = (email || currentDraft.email || '').trim().toLowerCase();
+      const eventEmail = (evt.email || '').trim().toLowerCase();
+
+      const isMatchingSession =
+        (evt.registrationSessionId && (evt.registrationSessionId === registrationSessionId || evt.registrationSessionId === activeSessionId)) ||
+        (draftEmail && eventEmail && draftEmail === eventEmail);
+
+      if (!isMatchingSession) {
         return; // Ignore events from unrelated registration sessions
       }
 
@@ -202,28 +221,35 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
     });
 
     return unsubscribe;
-  }, [registrationSessionId, onSwitchToLogin]);
+  }, [registrationSessionId, email, onSwitchToLogin]);
 
-  // Listen for verification event or storage changes
+  // Listen for verification event or storage changes and auto-advance to step 3 when verified
   React.useEffect(() => {
     const checkVerified = () => {
       const verifiedEmail = localStorage.getItem('agribiz_verified_email');
-      const currentEmail = email.trim().toLowerCase();
+      const curDraft = getSavedDraft();
+      const currentEmail = (email || curDraft.email || '').trim().toLowerCase();
 
       if (verifiedEmail && verifiedEmail.trim()) {
-        if (!email.trim()) {
-          setEmail(verifiedEmail.trim());
-        }
         const vClean = verifiedEmail.trim().toLowerCase();
+        if (!email.trim() && curDraft.email) {
+          setEmail(curDraft.email);
+        }
+        if (!ownerName && curDraft.ownerName) {
+          setOwnerName(curDraft.ownerName);
+        }
+        if (!mobile && curDraft.mobile) {
+          setMobile(curDraft.mobile);
+        }
+        if (!businessName && curDraft.businessName) {
+          setBusinessName(curDraft.businessName);
+        }
+
         if (!currentEmail || currentEmail === vClean) {
           setIsEmailVerified(true);
-        } else {
-          setIsEmailVerified(false);
+          // If verified and on step 1/2, auto-advance to step 3
+          setStep((prevStep) => (prevStep < 3 ? 3 : prevStep));
         }
-      } else if (currentEmail && verifiedEmail && currentEmail === verifiedEmail.trim().toLowerCase()) {
-        setIsEmailVerified(true);
-      } else {
-        setIsEmailVerified(false);
       }
     };
 
@@ -236,7 +262,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
       window.removeEventListener('storage', checkVerified);
       clearInterval(interval);
     };
-  }, [email]);
+  }, [email, ownerName, mobile, businessName]);
 
   const handleSendVerification = async () => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {

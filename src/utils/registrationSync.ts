@@ -86,7 +86,7 @@ class RegistrationSyncService {
 
   public getOrCreateSessionId(): string {
     if (typeof window === 'undefined') return '';
-    let sessionId = sessionStorage.getItem('agribiz_registration_session_id');
+    let sessionId = localStorage.getItem('agribiz_registration_session_id') || sessionStorage.getItem('agribiz_registration_session_id');
     if (!sessionId) {
       const draftRaw = localStorage.getItem('agribiz_reg_draft');
       if (draftRaw) {
@@ -104,12 +104,14 @@ class RegistrationSyncService {
       sessionId = `reg_sess_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
     }
     sessionStorage.setItem('agribiz_registration_session_id', sessionId);
+    localStorage.setItem('agribiz_registration_session_id', sessionId);
     return sessionId;
   }
 
   public clearSession() {
     if (typeof window === 'undefined') return;
     sessionStorage.removeItem('agribiz_registration_session_id');
+    localStorage.removeItem('agribiz_registration_session_id');
     localStorage.removeItem('agribiz_reg_draft');
     localStorage.removeItem('agribiz_verified_email');
     localStorage.removeItem(STORAGE_KEY);

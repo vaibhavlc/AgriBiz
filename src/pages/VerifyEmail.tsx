@@ -90,6 +90,14 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
   }, []);
 
   const handleContinueToStep3 = () => {
+    const currentSid = registrationSync.getOrCreateSessionId();
+    const verifiedEmail = localStorage.getItem('agribiz_verified_email');
+    registrationSync.broadcast({
+      type: 'EMAIL_VERIFIED',
+      registrationSessionId: currentSid,
+      email: verifiedEmail || undefined,
+    });
+
     if (onSwitchToRegisterStep3) {
       onSwitchToRegisterStep3();
     } else {
