@@ -299,7 +299,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
         setErrorMsg('Please enter a valid Email Address.'); return;
       }
       if (!isEmailVerified) {
-        setErrorMsg('Please verify your email before continuing.');
+        if (!verificationSent && !sendingEmail) {
+          handleSendVerification();
+        }
+        setErrorMsg(`Verification email sent to ${email.trim()}. Please check your inbox and click the link to continue.`);
         return;
       }
       setStep(3);
