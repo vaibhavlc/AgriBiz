@@ -436,10 +436,14 @@ class AuthService {
       expiresAt,
     });
 
-    // Dispatch email asynchronously in background so client receives instant <100ms HTTP response
-    emailService.sendPasswordResetEmail(cleanEmail, rawToken, user.name).catch((emailErr) => {
-      logger.error('Background password reset email delivery failed for %s: %s', cleanEmail, emailErr.message);
-    });
+    try {
+      await emailService.sendPasswordResetEmail(cleanEmail, rawToken, user.name);
+    } catch (emailErr) {
+      logger.error('Failed to deliver password reset email to %s: %s', cleanEmail, emailErr.message);
+      const err = new Error(`Failed to deliver password reset email: ${emailErr.message || 'SMTP delivery failed'}`);
+      err.statusCode = 400;
+      throw err;
+    }
 
     return {
       success: true,
