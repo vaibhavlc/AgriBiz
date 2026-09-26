@@ -520,7 +520,7 @@ class AuthService {
     }
 
     const user = await userRepository.findById(userId);
-    if (!user || user.companyId !== companyId) {
+    if (!user || String(user.companyId) !== String(companyId)) {
       const err = new Error('Staff user profile not found.');
       err.statusCode = 404;
       throw err;

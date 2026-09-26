@@ -69,8 +69,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
     try {
       const res = await api.post('/auth/forgot-owner-pin', {
-        companyId: company.id,
-        userId: selectedStaff.id,
+        companyId: company.id || (company as any)._id || (company as any).companyId,
+        userId: selectedStaff.id || (selectedStaff as any)._id || (selectedStaff as any).userId,
       });
       if (res.data.success) {
         setForgotPinSuccessMsg(res.data.message || 'Owner PIN reset link has been sent to your email.');
