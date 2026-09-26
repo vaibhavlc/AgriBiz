@@ -12,6 +12,19 @@ try {
   }
 } catch (e) {}
 
+// Custom DNS lookup that strictly forces family = 4 (IPv4) for Nodemailer sockets
+const customIpv4Lookup = (hostname, options, callback) => {
+  if (typeof options === 'function') {
+    callback = options;
+    options = {};
+  }
+  const lookupOptions = typeof options === 'object' && options ? { ...options, family: 4 } : { family: 4 };
+  return dns.lookup(hostname, lookupOptions, (err, address, family) => {
+    if (err) return callback(err, address, family);
+    callback(null, address, 4);
+  });
+};
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -44,6 +57,7 @@ class EmailService {
         host,
         port,
         family: 4, // Force IPv4 socket connection to prevent ENETUNREACH on IPv6-less cloud hosts like Render
+        lookup: customIpv4Lookup,
         secure: port === 465, // true for 465 SSL, false for 587 STARTTLS
         requireTLS: port === 587,
         auth: { user, pass },
