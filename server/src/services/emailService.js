@@ -43,6 +43,22 @@ class EmailService {
     return Boolean((resendKey && resendKey.trim()) || (host && user && pass));
   }
 
+  async verifySmtpConfig() {
+    this.reloadEnv();
+    const resend = this.getResendClient();
+    if (resend) {
+      logger.info('[EMAIL SERVICE] Resend API key configured. Primary transport: Resend HTTPS API (Port 443).');
+      return true;
+    }
+    const transporter = await this.createRealTransporter();
+    if (transporter) {
+      logger.info('[EMAIL SERVICE] Resend API key not configured. Secondary transport: Gmail SMTP prepared.');
+      return true;
+    }
+    logger.warn('[EMAIL SERVICE] No active email credentials found. Dev mode fallback enabled.');
+    return false;
+  }
+
   async createRealTransporter() {
     this.reloadEnv();
     const user = process.env.SMTP_USER;
