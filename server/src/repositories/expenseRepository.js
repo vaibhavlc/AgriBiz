@@ -2,15 +2,17 @@ import mongoose from 'mongoose';
 import Expense from '../models/Expense.js';
 
 class ExpenseRepository {
+  buildQuery(expenseId, companyId, isDeleted = false) {
+    const $or = [{ expenseId }];
+    if (mongoose.Types.ObjectId.isValid(expenseId)) {
+      $or.push({ _id: expenseId });
+    }
+    return { companyId, isDeleted, $or };
+  }
+
   async findById(expenseId, companyId, session) {
     const opts = session ? { session } : {};
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(expenseId)) {
-      query.$or = [{ expenseId }, { _id: expenseId }];
-    } else {
-      query.expenseId = expenseId;
-    }
-    return Expense.findOne(query, null, opts);
+    return Expense.findOne(this.buildQuery(expenseId, companyId, false), null, opts);
   }
 
   async findAll(companyId) {
@@ -25,25 +27,13 @@ class ExpenseRepository {
 
   async update(expenseId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(expenseId)) {
-      query.$or = [{ expenseId }, { _id: expenseId }];
-    } else {
-      query.expenseId = expenseId;
-    }
-    return Expense.findOneAndUpdate(query, updateData, opts);
+    return Expense.findOneAndUpdate(this.buildQuery(expenseId, companyId, false), updateData, opts);
   }
 
   async softDelete(expenseId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(expenseId)) {
-      query.$or = [{ expenseId }, { _id: expenseId }];
-    } else {
-      query.expenseId = expenseId;
-    }
     return Expense.findOneAndUpdate(
-      query,
+      this.buildQuery(expenseId, companyId, false),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -51,14 +41,8 @@ class ExpenseRepository {
 
   async restore(expenseId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: true };
-    if (mongoose.Types.ObjectId.isValid(expenseId)) {
-      query.$or = [{ expenseId }, { _id: expenseId }];
-    } else {
-      query.expenseId = expenseId;
-    }
     return Expense.findOneAndUpdate(
-      query,
+      this.buildQuery(expenseId, companyId, true),
       { isDeleted: false, deletedAt: null },
       opts
     );

@@ -109,16 +109,17 @@ class PaymentService {
       }
 
       // Write to Recycle Bin
+      const plainPayment = payment.toObject ? payment.toObject() : payment;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: payment.paymentId,
+        originalId: payment.paymentId || payment._id?.toString() || paymentId,
         name: `Payment: ₹${payment.amount} to ${payment.contactName}`,
         module: 'Payment',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: payment,
+        originalData: plainPayment,
       };
       await recycleBinRepository.create(recycleBinItemData, session);
 

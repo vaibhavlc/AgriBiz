@@ -118,16 +118,17 @@ class InvoiceService {
       }
 
       // Record to Recycle Bin
+      const plainInvoice = invoice.toObject ? invoice.toObject() : invoice;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: invoice.invoiceId,
-        name: invoice.invoiceNumber,
+        originalId: invoice.invoiceId || invoice._id?.toString() || invoiceId,
+        name: invoice.invoiceNumber || invoiceId,
         module: 'Invoice',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: invoice,
+        originalData: plainInvoice,
       };
       await recycleBinRepository.create(recycleBinItemData, session);
 

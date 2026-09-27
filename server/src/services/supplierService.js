@@ -34,16 +34,17 @@ class SupplierService {
       const supplier = await supplierRepository.findById(supplierId, companyId);
       if (!supplier) throw new Error('Supplier not found');
 
+      const plainSupplier = supplier.toObject ? supplier.toObject() : supplier;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: supplier.supplierId,
-        name: supplier.name,
+        originalId: supplier.supplierId || supplier._id?.toString() || supplierId,
+        name: supplier.name || supplierId,
         module: 'Supplier',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: supplier,
+        originalData: plainSupplier,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);

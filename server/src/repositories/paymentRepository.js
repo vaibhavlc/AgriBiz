@@ -2,15 +2,17 @@ import mongoose from 'mongoose';
 import Payment from '../models/Payment.js';
 
 class PaymentRepository {
+  buildQuery(paymentId, companyId, isDeleted = false) {
+    const $or = [{ paymentId }];
+    if (mongoose.Types.ObjectId.isValid(paymentId)) {
+      $or.push({ _id: paymentId });
+    }
+    return { companyId, isDeleted, $or };
+  }
+
   async findById(paymentId, companyId, session) {
     const opts = session ? { session } : {};
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(paymentId)) {
-      query.$or = [{ paymentId }, { _id: paymentId }];
-    } else {
-      query.paymentId = paymentId;
-    }
-    return Payment.findOne(query, null, opts);
+    return Payment.findOne(this.buildQuery(paymentId, companyId, false), null, opts);
   }
 
   async findAll(companyId) {
@@ -29,25 +31,13 @@ class PaymentRepository {
 
   async update(paymentId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(paymentId)) {
-      query.$or = [{ paymentId }, { _id: paymentId }];
-    } else {
-      query.paymentId = paymentId;
-    }
-    return Payment.findOneAndUpdate(query, updateData, opts);
+    return Payment.findOneAndUpdate(this.buildQuery(paymentId, companyId, false), updateData, opts);
   }
 
   async softDelete(paymentId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(paymentId)) {
-      query.$or = [{ paymentId }, { _id: paymentId }];
-    } else {
-      query.paymentId = paymentId;
-    }
     return Payment.findOneAndUpdate(
-      query,
+      this.buildQuery(paymentId, companyId, false),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -55,14 +45,8 @@ class PaymentRepository {
 
   async restore(paymentId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: true };
-    if (mongoose.Types.ObjectId.isValid(paymentId)) {
-      query.$or = [{ paymentId }, { _id: paymentId }];
-    } else {
-      query.paymentId = paymentId;
-    }
     return Payment.findOneAndUpdate(
-      query,
+      this.buildQuery(paymentId, companyId, true),
       { isDeleted: false, deletedAt: null },
       opts
     );

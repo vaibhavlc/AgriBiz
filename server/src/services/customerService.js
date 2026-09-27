@@ -34,16 +34,17 @@ class CustomerService {
       const customer = await customerRepository.findById(customerId, companyId);
       if (!customer) throw new Error('Customer not found');
 
+      const plainCustomer = customer.toObject ? customer.toObject() : customer;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: customer.customerId,
-        name: customer.name,
+        originalId: customer.customerId || customer._id?.toString() || customerId,
+        name: customer.name || customerId,
         module: 'Customer',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: customer,
+        originalData: plainCustomer,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);

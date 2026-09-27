@@ -2,15 +2,17 @@ import mongoose from 'mongoose';
 import Customer from '../models/Customer.js';
 
 class CustomerRepository {
+  buildQuery(customerId, companyId, isDeleted = false) {
+    const $or = [{ customerId }, { phone: customerId }];
+    if (mongoose.Types.ObjectId.isValid(customerId)) {
+      $or.push({ _id: customerId });
+    }
+    return { companyId, isDeleted, $or };
+  }
+
   async findById(customerId, companyId, session) {
     const opts = session ? { session } : {};
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(customerId)) {
-      query.$or = [{ customerId }, { _id: customerId }];
-    } else {
-      query.customerId = customerId;
-    }
-    return Customer.findOne(query, null, opts);
+    return Customer.findOne(this.buildQuery(customerId, companyId, false), null, opts);
   }
 
   async findAll(companyId) {
@@ -29,25 +31,13 @@ class CustomerRepository {
 
   async update(customerId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(customerId)) {
-      query.$or = [{ customerId }, { _id: customerId }];
-    } else {
-      query.customerId = customerId;
-    }
-    return Customer.findOneAndUpdate(query, updateData, opts);
+    return Customer.findOneAndUpdate(this.buildQuery(customerId, companyId, false), updateData, opts);
   }
 
   async adjustOutstanding(customerId, companyId, deltaAmount, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(customerId)) {
-      query.$or = [{ customerId }, { _id: customerId }];
-    } else {
-      query.customerId = customerId;
-    }
     return Customer.findOneAndUpdate(
-      query,
+      this.buildQuery(customerId, companyId, false),
       { $inc: { outstanding: deltaAmount } },
       opts
     );
@@ -55,14 +45,8 @@ class CustomerRepository {
 
   async softDelete(customerId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(customerId)) {
-      query.$or = [{ customerId }, { _id: customerId }];
-    } else {
-      query.customerId = customerId;
-    }
     return Customer.findOneAndUpdate(
-      query,
+      this.buildQuery(customerId, companyId, false),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -70,14 +54,8 @@ class CustomerRepository {
 
   async restore(customerId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: true };
-    if (mongoose.Types.ObjectId.isValid(customerId)) {
-      query.$or = [{ customerId }, { _id: customerId }];
-    } else {
-      query.customerId = customerId;
-    }
     return Customer.findOneAndUpdate(
-      query,
+      this.buildQuery(customerId, companyId, true),
       { isDeleted: false, deletedAt: null },
       opts
     );

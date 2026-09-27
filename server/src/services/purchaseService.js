@@ -117,16 +117,17 @@ class PurchaseService {
       }
 
       // Record to Recycle Bin
+      const plainPurchase = purchase.toObject ? purchase.toObject() : purchase;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: purchase.purchaseId,
-        name: purchase.purchaseNumber,
+        originalId: purchase.purchaseId || purchase._id?.toString() || purchaseId,
+        name: purchase.purchaseNumber || purchaseId,
         module: 'Purchase',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: purchase,
+        originalData: plainPurchase,
       };
       await recycleBinRepository.create(recycleBinItemData, session);
 

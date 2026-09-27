@@ -2,15 +2,17 @@ import mongoose from 'mongoose';
 import Purchase from '../models/Purchase.js';
 
 class PurchaseRepository {
+  buildQuery(purchaseId, companyId, isDeleted = false) {
+    const $or = [{ purchaseId }, { purchaseNumber: purchaseId }];
+    if (mongoose.Types.ObjectId.isValid(purchaseId)) {
+      $or.push({ _id: purchaseId });
+    }
+    return { companyId, isDeleted, $or };
+  }
+
   async findById(purchaseId, companyId, session) {
     const opts = session ? { session } : {};
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(purchaseId)) {
-      query.$or = [{ purchaseId }, { _id: purchaseId }];
-    } else {
-      query.purchaseId = purchaseId;
-    }
-    return Purchase.findOne(query, null, opts);
+    return Purchase.findOne(this.buildQuery(purchaseId, companyId, false), null, opts);
   }
 
   async findAll(companyId) {
@@ -29,25 +31,13 @@ class PurchaseRepository {
 
   async update(purchaseId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(purchaseId)) {
-      query.$or = [{ purchaseId }, { _id: purchaseId }];
-    } else {
-      query.purchaseId = purchaseId;
-    }
-    return Purchase.findOneAndUpdate(query, updateData, opts);
+    return Purchase.findOneAndUpdate(this.buildQuery(purchaseId, companyId, false), updateData, opts);
   }
 
   async softDelete(purchaseId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(purchaseId)) {
-      query.$or = [{ purchaseId }, { _id: purchaseId }];
-    } else {
-      query.purchaseId = purchaseId;
-    }
     return Purchase.findOneAndUpdate(
-      query,
+      this.buildQuery(purchaseId, companyId, false),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -55,14 +45,8 @@ class PurchaseRepository {
 
   async restore(purchaseId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: true };
-    if (mongoose.Types.ObjectId.isValid(purchaseId)) {
-      query.$or = [{ purchaseId }, { _id: purchaseId }];
-    } else {
-      query.purchaseId = purchaseId;
-    }
     return Purchase.findOneAndUpdate(
-      query,
+      this.buildQuery(purchaseId, companyId, true),
       { isDeleted: false, deletedAt: null },
       opts
     );

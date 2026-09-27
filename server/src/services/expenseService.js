@@ -34,16 +34,17 @@ class ExpenseService {
       const expense = await expenseRepository.findById(expenseId, companyId);
       if (!expense) throw new Error('Expense not found');
 
+      const plainExpense = expense.toObject ? expense.toObject() : expense;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: expense.expenseId,
+        originalId: expense.expenseId || expense._id?.toString() || expenseId,
         name: `${expense.category}: ₹${expense.amount}`,
         module: 'Expense',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: expense,
+        originalData: plainExpense,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);

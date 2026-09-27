@@ -2,15 +2,17 @@ import mongoose from 'mongoose';
 import Invoice from '../models/Invoice.js';
 
 class InvoiceRepository {
+  buildQuery(invoiceId, companyId, isDeleted = false) {
+    const $or = [{ invoiceId }, { invoiceNumber: invoiceId }];
+    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
+      $or.push({ _id: invoiceId });
+    }
+    return { companyId, isDeleted, $or };
+  }
+
   async findById(invoiceId, companyId, session) {
     const opts = session ? { session } : {};
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
-      query.$or = [{ invoiceId }, { _id: invoiceId }];
-    } else {
-      query.invoiceId = invoiceId;
-    }
-    return Invoice.findOne(query, null, opts);
+    return Invoice.findOne(this.buildQuery(invoiceId, companyId, false), null, opts);
   }
 
   async findAll(companyId) {
@@ -29,25 +31,13 @@ class InvoiceRepository {
 
   async update(invoiceId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
-      query.$or = [{ invoiceId }, { _id: invoiceId }];
-    } else {
-      query.invoiceId = invoiceId;
-    }
-    return Invoice.findOneAndUpdate(query, updateData, opts);
+    return Invoice.findOneAndUpdate(this.buildQuery(invoiceId, companyId, false), updateData, opts);
   }
 
   async softDelete(invoiceId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: false };
-    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
-      query.$or = [{ invoiceId }, { _id: invoiceId }];
-    } else {
-      query.invoiceId = invoiceId;
-    }
     return Invoice.findOneAndUpdate(
-      query,
+      this.buildQuery(invoiceId, companyId, false),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -55,14 +45,8 @@ class InvoiceRepository {
 
   async restore(invoiceId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
-    const query = { companyId, isDeleted: true };
-    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
-      query.$or = [{ invoiceId }, { _id: invoiceId }];
-    } else {
-      query.invoiceId = invoiceId;
-    }
     return Invoice.findOneAndUpdate(
-      query,
+      this.buildQuery(invoiceId, companyId, true),
       { isDeleted: false, deletedAt: null },
       opts
     );

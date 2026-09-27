@@ -34,16 +34,17 @@ class QuotationService {
       const quotation = await quotationRepository.findById(quotationId, companyId);
       if (!quotation) throw new Error('Quotation not found');
 
+      const plainQuotation = quotation.toObject ? quotation.toObject() : quotation;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: quotation.quotationId,
-        name: quotation.quotationNumber,
+        originalId: quotation.quotationId || quotation._id?.toString() || quotationId,
+        name: quotation.quotationNumber || quotationId,
         module: 'Quotation',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: quotation,
+        originalData: plainQuotation,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);

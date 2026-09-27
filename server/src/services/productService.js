@@ -40,16 +40,17 @@ class ProductService {
       const product = await productRepository.findById(productId, companyId);
       if (!product) throw new Error('Product not found');
 
+      const plainProduct = product.toObject ? product.toObject() : product;
       const effectiveDeleter = deletedBy || 'System';
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
         companyId,
-        originalId: product.productId,
-        name: product.name,
+        originalId: product.productId || product._id?.toString() || productId,
+        name: product.name || productId,
         module: 'Product',
         deletedAt: new Date().toISOString(),
         deletedBy: effectiveDeleter,
-        originalData: product,
+        originalData: plainProduct,
       };
 
       await recycleBinRepository.create(recycleBinItemData, session);
