@@ -1076,7 +1076,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 color: 'var(--color-danger)',
                 display: 'flex',
                 alignItems: 'center',
-                justify: 'center',
+                justifyContent: 'center',
                 flexShrink: 0
               }}>
                 <AlertCircle size={24} />
