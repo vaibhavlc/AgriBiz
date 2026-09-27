@@ -698,7 +698,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setExpenses(expensesRes.value.data.expenses.map((e: any) => ({ ...e, id: e.expenseId || e.id })));
       }
       if (recycleBinRes.status === 'fulfilled' && recycleBinRes.value.data?.items) {
-        setRecycleBin(recycleBinRes.value.data.items);
+        setRecycleBin(recycleBinRes.value.data.items.map((r: any) => ({ ...r, id: r.recycleBinItemId || r.id || r._id })));
       }
       if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.settings) {
         const remoteSettings: BusinessSettings = settingsRes.value.data.settings;
@@ -765,7 +765,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (res.data?.expenses) setExpenses(res.data.expenses.map((e: any) => ({ ...e, id: e.expenseId || e.id })));
       } else if (collectionName === 'recycleBin' || collectionName === 'RecycleBin') {
         const res = await api.get(`/recycle-bin?_t=${t}`);
-        if (res.data?.items) setRecycleBin(res.data.items);
+        if (res.data?.items) setRecycleBin(res.data.items.map((r: any) => ({ ...r, id: r.recycleBinItemId || r.id || r._id })));
       } else {
         await reloadData();
       }
@@ -1198,9 +1198,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('No internet connection. Cannot delete product while offline.', 'error');
       return;
     }
+    const cleanId = typeof id === 'object' && id !== null ? ((id as any).productId || (id as any).id || (id as any)._id) : id;
+    if (!cleanId || cleanId === 'undefined') {
+      showToast('Invalid product ID for deletion.', 'error');
+      return;
+    }
     try {
-      await api.delete(`/products/${id}`);
-      setProducts((prev) => prev.filter((p) => p.id !== id));
+      await api.delete(`/products/${cleanId}`);
+      setProducts((prev) => prev.filter((p) => p.id !== cleanId && (p as any).productId !== cleanId));
       notifyMutation();
       showToast('Product soft-deleted successfully!');
       refreshCollection('recycleBin');
@@ -1729,8 +1734,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('No internet connection. Cannot restore item while offline.', 'error');
       return;
     }
+    const cleanId = typeof id === 'object' && id !== null ? ((id as any).recycleBinItemId || (id as any).id || (id as any)._id) : id;
+    if (!cleanId || cleanId === 'undefined') {
+      showToast('Invalid record ID for restore.', 'error');
+      return;
+    }
     try {
-      await api.post(`/recycle-bin/${id}/restore`);
+      await api.post(`/recycle-bin/${cleanId}/restore`);
       notifyMutation();
       showToast('Record restored successfully!');
       reloadData();
@@ -1744,11 +1754,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast('No internet connection. Cannot delete item while offline.', 'error');
       return;
     }
+    const cleanId = typeof id === 'object' && id !== null ? ((id as any).recycleBinItemId || (id as any).id || (id as any)._id) : id;
+    if (!cleanId || cleanId === 'undefined') {
+      showToast('Invalid record ID for permanent deletion.', 'error');
+      return;
+    }
     try {
-      await api.delete(`/recycle-bin/${id}`);
+      await api.delete(`/recycle-bin/${cleanId}`);
       notifyMutation();
       showToast('Record permanently deleted!');
-      setRecycleBin((prev) => prev.filter((r) => r.id !== id));
+      setRecycleBin((prev) => prev.filter((r) => r.id !== cleanId && r.recycleBinItemId !== cleanId && (r as any)._id !== cleanId));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete record permanently', 'error');
     }

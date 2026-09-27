@@ -168,12 +168,19 @@ export const RecycleBin: React.FC = () => {
     }, 800);
   };
 
+  // Helper to extract valid RecycleBin ID
+  const getRecId = (r: RecycleBinItem | any): string => {
+    if (!r) return '';
+    if (typeof r === 'string') return r;
+    return r.recycleBinItemId || r.id || r._id || '';
+  };
+
   // Selection handlers
   const toggleSelectAll = (filteredRecords: RecycleBinItem[]) => {
     if (selectedIds.length === filteredRecords.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredRecords.map(r => r.id));
+      setSelectedIds(filteredRecords.map(r => getRecId(r)));
     }
   };
 
@@ -187,17 +194,17 @@ export const RecycleBin: React.FC = () => {
 
   // State actions
   const handleRestore = (id: string) => {
-    restoreRecord(id);
-    setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    const targetId = getRecId(id);
+    restoreRecord(targetId);
+    setSelectedIds(selectedIds.filter(selectedId => selectedId !== targetId));
     setActionConfirm(null);
-    showToast('Record restored successfully', 'success');
   };
 
   const handlePermanentDelete = (id: string) => {
-    deletePermanently(id);
-    setSelectedIds(selectedIds.filter(selectedId => selectedId !== id));
+    const targetId = getRecId(id);
+    deletePermanently(targetId);
+    setSelectedIds(selectedIds.filter(selectedId => selectedId !== targetId));
     setActionConfirm(null);
-    showToast('Record permanently deleted', 'error');
   };
 
   const handleBulkRestore = () => {
@@ -488,13 +495,14 @@ export const RecycleBin: React.FC = () => {
                 </thead>
                 <tbody>
                   {sortedRecords.map((rec) => {
-                    const isSelected = selectedIds.includes(rec.id);
+                    const recId = getRecId(rec);
+                    const isSelected = selectedIds.includes(recId);
                     return (
-                      <tr key={rec.id} className={isSelected ? 'selected-row' : ''} style={{ backgroundColor: isSelected ? 'var(--bg-app)' : 'transparent' }}>
+                      <tr key={recId} className={isSelected ? 'selected-row' : ''} style={{ backgroundColor: isSelected ? 'var(--bg-app)' : 'transparent' }}>
                         <td className="no-print" style={{ textAlign: 'center' }}>
                           <button
                             type="button"
-                            onClick={() => toggleSelect(rec.id)}
+                            onClick={() => toggleSelect(recId)}
                             style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', color: isSelected ? 'var(--primary)' : 'var(--text-muted)' }}
                           >
                             {isSelected ? <CheckSquare size={16} /> : <Square size={16} />}
@@ -525,7 +533,7 @@ export const RecycleBin: React.FC = () => {
                             <button
                               className="btn btn-secondary btn-icon"
                               style={{ padding: '6px' }}
-                              onClick={() => setActionConfirm({ type: 'restore', targetId: rec.id })}
+                              onClick={() => setActionConfirm({ type: 'restore', targetId: recId })}
                               title="Restore record"
                             >
                               <RotateCcw size={14} />
@@ -533,7 +541,7 @@ export const RecycleBin: React.FC = () => {
                             <button
                               className="btn btn-secondary btn-icon danger"
                               style={{ padding: '6px' }}
-                              onClick={() => setActionConfirm({ type: 'delete', targetId: rec.id })}
+                              onClick={() => setActionConfirm({ type: 'delete', targetId: recId })}
                               title="Delete permanently"
                             >
                               <Trash2 size={14} />
@@ -564,10 +572,11 @@ export const RecycleBin: React.FC = () => {
             </div>
             
             {sortedRecords.map((rec) => {
-              const isSelected = selectedIds.includes(rec.id);
+              const recId = getRecId(rec);
+              const isSelected = selectedIds.includes(recId);
               return (
                 <div 
-                  key={rec.id} 
+                  key={recId} 
                   className={`mobile-list-card ${isSelected ? 'selected-card' : ''}`}
                   style={{ 
                     borderLeft: isSelected ? '4px solid var(--primary)' : '1px solid var(--border-color)',
@@ -578,7 +587,7 @@ export const RecycleBin: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                       <button
                         type="button"
-                        onClick={() => toggleSelect(rec.id)}
+                        onClick={() => toggleSelect(recId)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: '2px', color: isSelected ? 'var(--primary)' : 'var(--text-muted)' }}
                       >
                         {isSelected ? <CheckSquare size={18} /> : <Square size={18} />}
@@ -619,14 +628,14 @@ export const RecycleBin: React.FC = () => {
                     <button
                       className="btn btn-secondary btn-sm"
                       style={{ fontSize: '11px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
-                      onClick={() => setActionConfirm({ type: 'restore', targetId: rec.id })}
+                      onClick={() => setActionConfirm({ type: 'restore', targetId: recId })}
                     >
                       <RotateCcw size={13} /> Restore
                     </button>
                     <button
                       className="btn btn-secondary btn-sm danger"
                       style={{ fontSize: '11px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
-                      onClick={() => setActionConfirm({ type: 'delete', targetId: rec.id })}
+                      onClick={() => setActionConfirm({ type: 'delete', targetId: recId })}
                     >
                       <Trash2 size={13} /> Delete
                     </button>
@@ -700,7 +709,7 @@ export const RecycleBin: React.FC = () => {
               <button 
                 className="btn btn-secondary btn-sm"
                 onClick={() => {
-                  setActionConfirm({ type: 'restore', targetId: selectedRecord.id });
+                  setActionConfirm({ type: 'restore', targetId: getRecId(selectedRecord) });
                   setSelectedRecord(null);
                 }}
                 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}

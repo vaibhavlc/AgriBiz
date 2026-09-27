@@ -712,7 +712,7 @@ export const Inventory: React.FC = () => {
                     onClick={async () => {
                       if (isDeletingProduct) return;
                       setIsDeletingProduct(true);
-                      const id = deletingProduct.id;
+                      const id = (deletingProduct as any).productId || deletingProduct.id || (deletingProduct as any)._id;
                       const name = deletingProduct.name;
                       try {
                         await deleteProduct(id);

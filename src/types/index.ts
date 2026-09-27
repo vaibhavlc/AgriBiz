@@ -226,6 +226,8 @@ export interface Expense {
 
 export interface RecycleBinItem {
   id: string;
+  recycleBinItemId?: string;
+  _id?: string;
   originalId: string;
   name: string;
   module: 'Product' | 'Customer' | 'Supplier' | 'Invoice' | 'Quotation' | 'Purchase' | 'Payment' | 'Expense';
