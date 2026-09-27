@@ -2032,6 +2032,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       const purchaseNo = deletingPurchase.purchaseNumber;
                       try {
                         await deletePurchase(idToDelete);
+                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
                         setDeletingPurchase(null);
                         setViewPurchase(null);
                       } catch (error: any) {
@@ -3516,6 +3517,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       const purchaseNo = deletingPurchase.purchaseNumber;
                       try {
                         await deletePurchase(idToDelete);
+                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
                         setDeletingPurchase(null);
                         setViewPurchase(null);
                       } catch (error: any) {

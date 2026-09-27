@@ -1250,6 +1250,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       const invoiceNo = deletingInvoice.invoiceNumber;
                       try {
                         await deleteInvoice(idToDelete);
+                        showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
                         setDeletingInvoice(null);
                         setViewInvoice(null);
                       } catch (error: any) {
