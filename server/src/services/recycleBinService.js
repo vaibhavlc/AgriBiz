@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import productRepository from '../repositories/productRepository.js';
 import customerRepository from '../repositories/customerRepository.js';
@@ -18,6 +19,17 @@ import Expense from '../models/Expense.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
 
 class RecycleBinService {
+  buildTargetQuery(idField, originalId, companyId) {
+    const cleanId = typeof originalId === 'object' && originalId !== null
+      ? (originalId[idField] || originalId._id?.toString() || String(originalId))
+      : String(originalId || '');
+    const $or = [{ [idField]: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
+    }
+    return { companyId, $or };
+  }
+
   async getRecycleBin(companyId) {
     if (!companyId) return [];
     return recycleBinRepository.findAll(companyId);
@@ -83,21 +95,21 @@ class RecycleBinService {
 
       // Hard delete original record from DB matching either primary ID or Mongo _id STRICTLY scoped to companyId
       if (module === 'Product') {
-        await Product.deleteOne({ companyId, $or: [{ productId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Product.deleteOne(this.buildTargetQuery('productId', originalId, companyId), deleteOpts);
       } else if (module === 'Customer') {
-        await Customer.deleteOne({ companyId, $or: [{ customerId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Customer.deleteOne(this.buildTargetQuery('customerId', originalId, companyId), deleteOpts);
       } else if (module === 'Supplier') {
-        await Supplier.deleteOne({ companyId, $or: [{ supplierId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Supplier.deleteOne(this.buildTargetQuery('supplierId', originalId, companyId), deleteOpts);
       } else if (module === 'Invoice') {
-        await Invoice.deleteOne({ companyId, $or: [{ invoiceId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Invoice.deleteOne(this.buildTargetQuery('invoiceId', originalId, companyId), deleteOpts);
       } else if (module === 'Quotation') {
-        await Quotation.deleteOne({ companyId, $or: [{ quotationId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Quotation.deleteOne(this.buildTargetQuery('quotationId', originalId, companyId), deleteOpts);
       } else if (module === 'Purchase') {
-        await Purchase.deleteOne({ companyId, $or: [{ purchaseId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Purchase.deleteOne(this.buildTargetQuery('purchaseId', originalId, companyId), deleteOpts);
       } else if (module === 'Payment') {
-        await Payment.deleteOne({ companyId, $or: [{ paymentId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Payment.deleteOne(this.buildTargetQuery('paymentId', originalId, companyId), deleteOpts);
       } else if (module === 'Expense') {
-        await Expense.deleteOne({ companyId, $or: [{ expenseId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Expense.deleteOne(this.buildTargetQuery('expenseId', originalId, companyId), deleteOpts);
       }
 
       await recycleBinRepository.delete(recycleBinItemId, companyId, session);
