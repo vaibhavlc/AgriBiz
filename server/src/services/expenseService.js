@@ -1,6 +1,7 @@
 import expenseRepository from '../repositories/expenseRepository.js';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
+import { normalizeRecycleBinData } from '../utils/normalizeRecycleBinData.js';
 
 class ExpenseService {
   async getExpense(expenseId, companyId) {
@@ -60,7 +61,7 @@ class ExpenseService {
         return expense; // Idempotent: already soft deleted
       }
 
-      const plainExpense = expense.toObject ? expense.toObject() : JSON.parse(JSON.stringify(expense));
+      const plainExpense = normalizeRecycleBinData(expense);
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         companyId,

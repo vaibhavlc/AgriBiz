@@ -1,6 +1,7 @@
 import quotationRepository from '../repositories/quotationRepository.js';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
+import { normalizeRecycleBinData } from '../utils/normalizeRecycleBinData.js';
 
 class QuotationService {
   async getQuotation(quotationId, companyId) {
@@ -60,7 +61,7 @@ class QuotationService {
         return quotation; // Idempotent: already soft deleted
       }
 
-      const plainQuotation = quotation.toObject ? quotation.toObject() : JSON.parse(JSON.stringify(quotation));
+      const plainQuotation = normalizeRecycleBinData(quotation);
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         companyId,

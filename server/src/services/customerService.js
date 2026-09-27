@@ -1,6 +1,7 @@
 import customerRepository from '../repositories/customerRepository.js';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
+import { normalizeRecycleBinData } from '../utils/normalizeRecycleBinData.js';
 
 class CustomerService {
   async getCustomer(customerId, companyId) {
@@ -60,7 +61,7 @@ class CustomerService {
         return customer; // Idempotent: already soft deleted
       }
 
-      const plainCustomer = customer.toObject ? customer.toObject() : JSON.parse(JSON.stringify(customer));
+      const plainCustomer = normalizeRecycleBinData(customer);
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         companyId,

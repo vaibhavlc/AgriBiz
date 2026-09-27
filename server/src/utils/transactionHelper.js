@@ -1,9 +1,10 @@
 import mongoose from 'mongoose';
+import logger from '../config/logger.js';
 
 /**
- * Runs a set of database operations inside a transaction session.
- * Automatically falls back to non-transactional execution if transaction
- * fails or if the MongoDB server is a standalone instance without replica sets.
+ * Runs a set of database operations inside a single MongoDB transaction session.
+ * Automatically falls back to non-transactional execution if MongoDB does not
+ * support sessions (standalone mode).
  * 
  * @param {Function} workFn - Function to execute, receives the Mongoose session object.
  * @returns {Promise<any>} The result of workFn.
@@ -12,33 +13,25 @@ export const runInTransaction = async (workFn) => {
   let session = null;
   try {
     session = await mongoose.startSession();
+  } catch (sessionErr) {
+    logger.warn('Mongoose session initialization skipped/unsupported (%s). Executing non-transactionally.', sessionErr.message);
+    return workFn(null);
+  }
+
+  try {
     session.startTransaction();
-    
     const result = await workFn(session);
-    
     await session.commitTransaction();
     return result;
   } catch (err) {
-    if (session) {
+    if (session && session.inTransaction()) {
       try {
         await session.abortTransaction();
       } catch (abortErr) {
-        // Suppress abort errors if session closed
+        logger.warn('Transaction abort notification: %s', abortErr.message);
       }
     }
-
-    // If error is 404 or expected validation/business logic error, rethrow directly
-    if (err.statusCode === 404 || err.message?.includes('not found')) {
-      throw err;
-    }
-    
-    // Fall back to non-transactional execution if transaction fails on Render / standalone / Atlas
-    console.warn('Transaction execution failed (%s). Retrying without transaction session...', err.message);
-    try {
-      return await workFn(null);
-    } catch (fallbackErr) {
-      throw fallbackErr;
-    }
+    throw err;
   } finally {
     if (session) {
       try {

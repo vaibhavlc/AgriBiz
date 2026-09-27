@@ -4,6 +4,7 @@ import supplierRepository from '../repositories/supplierRepository.js';
 import paymentRepository from '../repositories/paymentRepository.js';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
+import { normalizeRecycleBinData } from '../utils/normalizeRecycleBinData.js';
 
 class PurchaseService {
   async getPurchase(purchaseId, companyId) {
@@ -172,7 +173,7 @@ class PurchaseService {
       }
 
       // Atomic Recycle Bin record creation
-      const plainPurchase = purchase.toObject ? purchase.toObject() : JSON.parse(JSON.stringify(purchase));
+      const plainPurchase = normalizeRecycleBinData(purchase);
       const recycleBinItemData = {
         recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
         companyId,
