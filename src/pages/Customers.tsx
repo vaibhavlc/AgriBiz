@@ -44,6 +44,7 @@ export const Customers: React.FC = () => {
     setSalesFormPresetCustomerId,
     settings,
     openNewPaymentForm,
+    showToast,
   } = useApp();
 
   const totalCustomers = customers.length;
@@ -67,9 +68,19 @@ export const Customers: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteCustomer = (id: string, name: string) => {
+  const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
+  const handleDeleteCustomer = async (id: string, name: string) => {
+    if (isDeletingCustomer) return;
     if (confirm(`Are you sure you want to delete customer ${name}? All outstanding balances and history logs will be removed.`)) {
-      deleteCustomer(id);
+      setIsDeletingCustomer(true);
+      try {
+        await deleteCustomer(id);
+        showToast(`Customer ${name} deleted successfully.`, 'info');
+      } catch (err: any) {
+        showToast(`Failed to delete customer: ${err.message || err}`, 'error');
+      } finally {
+        setIsDeletingCustomer(false);
+      }
     }
   };
 

@@ -82,10 +82,12 @@ export const Sales: React.FC = () => {
 
   const [editingInvoiceId, setEditingInvoiceId] = useState<string | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<{ id: string; invoiceNumber: string } | null>(null);
+  const [isDeletingInvoice, setIsDeletingInvoice] = useState(false);
   const [activeMenuInvoiceId, setActiveMenuInvoiceId] = useState<string | null>(null);
 
   const [editingQuotationId, setEditingQuotationId] = useState<string | null>(null);
   const [deletingQuotation, setDeletingQuotation] = useState<{ id: string; quotationNumber: string } | null>(null);
+  const [isDeletingQuotation, setIsDeletingQuotation] = useState(false);
   const [activeMenuQuotationId, setActiveMenuQuotationId] = useState<string | null>(null);
 
   const [initialInvoiceValues, setInitialInvoiceValues] = useState<any>(null);
@@ -1239,13 +1241,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
                 </p>
                 <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingInvoice(null)}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} disabled={isDeletingInvoice} onClick={() => setDeletingInvoice(null)}>
                     Cancel
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    disabled={isDeletingInvoice}
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingInvoice ? 0.7 : 1, cursor: isDeletingInvoice ? 'not-allowed' : 'pointer' }}
                     onClick={async () => {
+                      if (isDeletingInvoice) return;
+                      setIsDeletingInvoice(true);
                       const idToDelete = deletingInvoice.id;
                       const invoiceNo = deletingInvoice.invoiceNumber;
                       try {
@@ -1256,10 +1261,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       } catch (error: any) {
                         console.error("Delete invoice error:", error);
                         showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      } finally {
+                        setIsDeletingInvoice(false);
                       }
                     }}
                   >
-                    Delete
+                    {isDeletingInvoice ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </div>
@@ -1281,20 +1288,30 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
                 </p>
                 <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingQuotation(null)}>
+                  <button className="btn btn-secondary" style={{ flex: 1 }} disabled={isDeletingQuotation} onClick={() => setDeletingQuotation(null)}>
                     Cancel
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
-                    onClick={() => {
-                      deleteQuotation(deletingQuotation.id);
-                      showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
-                      setDeletingQuotation(null);
-                      setViewQuotation(null);
+                    disabled={isDeletingQuotation}
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingQuotation ? 0.7 : 1, cursor: isDeletingQuotation ? 'not-allowed' : 'pointer' }}
+                    onClick={async () => {
+                      if (isDeletingQuotation) return;
+                      setIsDeletingQuotation(true);
+                      try {
+                        await deleteQuotation(deletingQuotation.id);
+                        showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
+                        setDeletingQuotation(null);
+                        setViewQuotation(null);
+                      } catch (error: any) {
+                        console.error("Delete quotation error:", error);
+                        showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      } finally {
+                        setIsDeletingQuotation(false);
+                      }
                     }}
                   >
-                    Delete
+                    {isDeletingQuotation ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </div>

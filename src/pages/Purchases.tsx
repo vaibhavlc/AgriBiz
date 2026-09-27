@@ -77,6 +77,7 @@ export const Purchases: React.FC = () => {
   const [initialPurchaseValues, setInitialPurchaseValues] = useState<any>(null);
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
   const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
+  const [isDeletingPurchase, setIsDeletingPurchase] = useState(false);
 
   const [purchaseBillNumber, setPurchaseBillNumber] = useState('');
   const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -2026,8 +2027,11 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingPurchase ? 0.7 : 1 }}
+                    disabled={isDeletingPurchase}
                     onClick={async () => {
+                      if (isDeletingPurchase || !deletingPurchase) return;
+                      setIsDeletingPurchase(true);
                       const idToDelete = deletingPurchase.id;
                       const purchaseNo = deletingPurchase.purchaseNumber;
                       try {
@@ -2038,10 +2042,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       } catch (error: any) {
                         console.error("Delete purchase error:", error);
                         showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      } finally {
+                        setIsDeletingPurchase(false);
                       }
                     }}
                   >
-                    Delete
+                    {isDeletingPurchase ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </div>
@@ -3511,8 +3517,11 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
+                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingPurchase ? 0.7 : 1 }}
+                    disabled={isDeletingPurchase}
                     onClick={async () => {
+                      if (isDeletingPurchase || !deletingPurchase) return;
+                      setIsDeletingPurchase(true);
                       const idToDelete = deletingPurchase.id;
                       const purchaseNo = deletingPurchase.purchaseNumber;
                       try {
@@ -3523,10 +3532,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       } catch (error: any) {
                         console.error("Delete purchase error:", error);
                         showToast(`Failed to delete: ${error.message || error}`, 'error');
+                      } finally {
+                        setIsDeletingPurchase(false);
                       }
                     }}
                   >
-                    Delete
+                    {isDeletingPurchase ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </div>

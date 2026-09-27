@@ -51,6 +51,7 @@ export const Inventory: React.FC = () => {
   const [viewProductId, setViewProductId] = useState<string | null>(null);
   const [activeMenuProductId, setActiveMenuProductId] = useState<string | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<Product | null>(null);
+  const [isDeletingProduct, setIsDeletingProduct] = useState(false);
 
   // Date filters for Product Ledger Activity
   const [ledgerStartDate, setLedgerStartDate] = useState('');
@@ -703,20 +704,30 @@ export const Inventory: React.FC = () => {
                   Are you sure you want to delete <strong>{deletingProduct.name}</strong>? This action cannot be undone and will remove it from the catalog permanently.
                 </p>
                 <div style={{ display:'flex', gap:'12px', width:'100%' }}>
-                  <button className="btn btn-secondary" style={{ flex:1 }} onClick={() => setDeletingProduct(null)}>Cancel</button>
+                  <button className="btn btn-secondary" style={{ flex:1 }} disabled={isDeletingProduct} onClick={() => setDeletingProduct(null)}>Cancel</button>
                   <button
                     className="btn btn-primary"
-                    style={{ flex:1, background:'linear-gradient(135deg,#dc2626,#991b1b)' }}
-                    onClick={() => {
+                    disabled={isDeletingProduct}
+                    style={{ flex:1, background:'linear-gradient(135deg,#dc2626,#991b1b)', opacity: isDeletingProduct ? 0.7 : 1, cursor: isDeletingProduct ? 'not-allowed' : 'pointer' }}
+                    onClick={async () => {
+                      if (isDeletingProduct) return;
+                      setIsDeletingProduct(true);
                       const id = deletingProduct.id;
                       const name = deletingProduct.name;
-                      setDeletingProduct(null);
-                      deleteProduct(id);
-                      showToast(`"${name}" deleted from catalog.`, 'info');
-                      setViewProductId(null);
+                      try {
+                        await deleteProduct(id);
+                        showToast(`"${name}" deleted from catalog.`, 'info');
+                        setDeletingProduct(null);
+                        setViewProductId(null);
+                      } catch (error: any) {
+                        console.error("Delete product error:", error);
+                        showToast(`Failed to delete product: ${error.message || error}`, 'error');
+                      } finally {
+                        setIsDeletingProduct(false);
+                      }
                     }}
                   >
-                    Delete
+                    {isDeletingProduct ? 'Deleting...' : 'Delete'}
                   </button>
                 </div>
               </div>

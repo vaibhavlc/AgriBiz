@@ -78,15 +78,24 @@ export const Payments: React.FC = () => {
 
 
 
-  const handleDeletePayment = (id: string, name: string, type: string) => {
+  const [isDeletingPayment, setIsDeletingPayment] = useState(false);
+  const handleDeletePayment = async (id: string, name: string, type: string) => {
+    if (isDeletingPayment) return;
     const confirmationMsg =
       type === 'CustomerReceipt'
         ? `Are you sure you want to delete this payment receipt from ${name}? This will INCREASE their outstanding balance.`
         : `Are you sure you want to delete this payment payout to ${name}? This will INCREASE our outstanding balance owed.`;
 
     if (confirm(confirmationMsg)) {
-      deletePayment(id);
-      showToast('Payment record deleted successfully.', 'info');
+      setIsDeletingPayment(true);
+      try {
+        await deletePayment(id);
+        showToast('Payment record deleted successfully.', 'info');
+      } catch (err: any) {
+        showToast(`Failed to delete payment: ${err.message || err}`, 'error');
+      } finally {
+        setIsDeletingPayment(false);
+      }
     }
   };
 

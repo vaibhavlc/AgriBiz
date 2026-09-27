@@ -44,6 +44,7 @@ export const Suppliers: React.FC = () => {
     setPurchaseFormPresetSupplierId,
     settings,
     openNewPaymentForm,
+    showToast,
   } = useApp();
 
   const totalSuppliers = suppliers.length;
@@ -67,9 +68,19 @@ export const Suppliers: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const handleDeleteSupplier = (id: string, name: string) => {
+  const [isDeletingSupplier, setIsDeletingSupplier] = useState(false);
+  const handleDeleteSupplier = async (id: string, name: string) => {
+    if (isDeletingSupplier) return;
     if (confirm(`Are you sure you want to delete supplier ${name}? All billing history and credit ledgers will be deleted.`)) {
-      deleteSupplier(id);
+      setIsDeletingSupplier(true);
+      try {
+        await deleteSupplier(id);
+        showToast(`Supplier ${name} deleted successfully.`, 'info');
+      } catch (err: any) {
+        showToast(`Failed to delete supplier: ${err.message || err}`, 'error');
+      } finally {
+        setIsDeletingSupplier(false);
+      }
     }
   };
 

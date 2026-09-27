@@ -259,10 +259,19 @@ export const Expenses: React.FC = () => {
     showToast(`Expense for ${exp.category} marked as Paid!`);
   };
 
-  const handleDeleteExpense = (id: string, cat: string, amt: number) => {
+  const [isDeletingExpense, setIsDeletingExpense] = useState(false);
+  const handleDeleteExpense = async (id: string, cat: string, amt: number) => {
+    if (isDeletingExpense) return;
     if (confirm(`Are you sure you want to delete the expense of ${formatINR(amt)} for ${cat}?`)) {
-      deleteExpense(id);
-      showToast('Expense record deleted successfully.', 'info');
+      setIsDeletingExpense(true);
+      try {
+        await deleteExpense(id);
+        showToast('Expense record deleted successfully.', 'info');
+      } catch (err: any) {
+        showToast(`Failed to delete expense: ${err.message || err}`, 'error');
+      } finally {
+        setIsDeletingExpense(false);
+      }
     }
   };
 
