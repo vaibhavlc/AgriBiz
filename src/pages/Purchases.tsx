@@ -1278,10 +1278,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       showToast('Please select a supplier to log stock purchase.', 'error');
       return;
     }
-    if (!supplierInvoiceNumber.trim()) {
-      showToast('Please enter the Supplier Invoice / Bill Number.', 'error');
-      return;
-    }
     if (items.length === 0 || !items[0].productId) {
       showToast('Please add at least one product line item to voucher.', 'error');
       return;
@@ -1316,9 +1312,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         : 'Unpaid';
 
     // Structured metadata inside notes to avoid database schema updates
-    const serializedNotes = `Invoice Ref: ${supplierInvoiceNumber.trim()} (Date: ${supplierInvoiceDate})
+    const refText = supplierInvoiceNumber.trim() || 'N/A';
+    const dateText = supplierInvoiceDate || 'N/A';
+    const dueText = dueDate || 'N/A';
+    const serializedNotes = `Invoice Ref: ${refText} (Date: ${dateText})
 Type: ${purchaseType} | Status: ${purchaseStatus}
-${purchaseType === 'Credit' ? `Payment Due Date: ${dueDate}\n` : ''}Charges: Transport ₹${transportCharges}, Loading ₹${loadingCharges}, Other ₹${otherCharges}
+${purchaseType === 'Credit' ? `Payment Due Date: ${dueText}\n` : ''}Charges: Transport ₹${transportCharges}, Loading ₹${loadingCharges}, Other ₹${otherCharges}
 ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attachedFileName ? `Attachment: ${attachedFileName}\n` : ''}Remarks: ${notes}`;
 
     if (editingPurchaseId) {
@@ -1363,7 +1362,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         notes: serializedNotes,
       });
 
-      showToast(`Purchase bill ${supplierInvoiceNumber} saved successfully!`);
+      showToast(`Purchase bill ${supplierInvoiceNumber.trim() || (newPurchase ? newPurchase.purchaseNumber : '')} saved successfully!`);
       clearAllDirtyForms();
       handleResetForm(false);
       if (!keepOpen && newPurchase) {
@@ -2195,24 +2194,22 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
                 <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Supplier Invoice No. *</label>
+                    <label className="form-label">Supplier Invoice No. (Optional)</label>
                     <input
                       type="text"
                       className="form-control"
                       placeholder="e.g. INWARD-9842"
                       value={supplierInvoiceNumber}
                       onChange={(e) => setSupplierInvoiceNumber(e.target.value)}
-                      required
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Supplier Invoice Date *</label>
+                    <label className="form-label">Supplier Invoice Date (Optional)</label>
                     <input
                       type="date"
                       className="form-control"
                       value={supplierInvoiceDate}
                       onChange={(e) => setSupplierInvoiceDate(e.target.value)}
-                      required
                     />
                   </div>
                 </div>
@@ -2264,13 +2261,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 
                 {purchaseType === 'Credit' ? (
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Payment Due Date *</label>
+                    <label className="form-label">Payment Due Date (Optional)</label>
                     <input
                       type="date"
                       className="form-control"
                       value={dueDate}
                       onChange={(e) => setDueDate(e.target.value)}
-                      required
                     />
                   </div>
                 ) : (
