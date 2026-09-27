@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
-import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
 import {
@@ -34,6 +34,7 @@ interface InvoiceItemLocal {
   productId: string;
   quantity: number;
   price: number;
+  totalPrice?: number;
   discount: number;
 }
 
@@ -104,10 +105,11 @@ export const Sales: React.FC = () => {
   const [convertPaymentMethod, setConvertPaymentMethod] = useState('UPI');
 
   // Local state for invoice creator - defaults to 1 pre-filled required row
+  const [pricingMode, setPricingMode] = useState<'selling' | 'total'>('selling');
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
   const [invoiceDate, setInvoiceDate] = useState(getTodayISTDate());
   const [items, setItems] = useState<InvoiceItemLocal[]>([
-    { productId: '', quantity: 1, price: 0, discount: 0 }
+    { productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }
   ]);
   const [amountPaid, setAmountPaid] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState('UPI');
@@ -118,6 +120,7 @@ export const Sales: React.FC = () => {
   const currentInvoiceValues = React.useMemo(() => ({
     selectedCustomerId,
     invoiceDate,
+    pricingMode,
     items,
     amountPaid,
     paymentMethod,
@@ -125,15 +128,16 @@ export const Sales: React.FC = () => {
     dueDate,
     notes,
     showSignature,
-  }), [selectedCustomerId, invoiceDate, items, amountPaid, paymentMethod, referenceNumber, dueDate, notes, showSignature]);
+  }), [selectedCustomerId, invoiceDate, pricingMode, items, amountPaid, paymentMethod, referenceNumber, dueDate, notes, showSignature]);
 
   const currentQuotationValues = React.useMemo(() => ({
     selectedCustomerId,
     invoiceDate,
+    pricingMode,
     validUntil,
     items,
     notes,
-  }), [selectedCustomerId, invoiceDate, validUntil, items, notes]);
+  }), [selectedCustomerId, invoiceDate, pricingMode, validUntil, items, notes]);
 
   useUnsavedChanges('invoice-form', currentInvoiceValues, initialInvoiceValues, isCreatingInvoice && !!initialInvoiceValues);
   useUnsavedChanges('quotation-form', currentQuotationValues, initialQuotationValues, isCreatingQuotation && !!initialQuotationValues);
@@ -165,8 +169,9 @@ export const Sales: React.FC = () => {
       // Clear forms
       setEditingInvoiceId(null);
       setSelectedCustomerId(salesFormPresetCustomerId);
+      setPricingMode('selling');
       setInvoiceDate(getTodayISTDate());
-      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
       setAmountPaid(0);
       setNotes('');
       setShowSignature(true);
@@ -740,25 +745,62 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
   // --- Calculations ---
 
-  const calculateRowTotal = (productId: string, quantity: number, price: number, discountPercent: number) => {
+  const calculateRowTotal = (
+    productId: string,
+    quantity: number,
+    price: number,
+    discountPercent: number,
+    totalPrice?: number,
+    mode: 'selling' | 'total' = pricingMode
+  ) => {
     const product = products.find((p) => p.id === productId);
-    if (!product) return { subtotal: 0, discountAmount: 0, gstAmount: 0, total: 0, gstRate: 0 };
+    if (!product) {
+      return {
+        subtotal: 0,
+        discountAmount: 0,
+        gstAmount: 0,
+        total: 0,
+        gstRate: 0,
+        unitSellingPrice: price || 0,
+        unitTotalPrice: totalPrice || 0,
+      };
+    }
 
-    const rawSubtotal = price * quantity;
+    const gstRate = product.gstRate || 0;
+    let unitSellingPrice = price || 0;
+    let unitTotalPrice = totalPrice;
+
+    if (mode === 'total') {
+      if (unitTotalPrice === undefined || unitTotalPrice === null || isNaN(unitTotalPrice)) {
+        unitTotalPrice = unitSellingPrice * (1 + gstRate / 100);
+      }
+      unitSellingPrice = gstRate > 0 ? unitTotalPrice / (1 + gstRate / 100) : unitTotalPrice;
+    } else {
+      unitSellingPrice = price || 0;
+      unitTotalPrice = unitSellingPrice * (1 + gstRate / 100);
+    }
+
+    const rawSubtotal = unitSellingPrice * quantity;
     const discountAmount = rawSubtotal * (discountPercent / 100);
     const subtotal = rawSubtotal - discountAmount;
-    
-    const gstRate = product.gstRate;
     const gstAmount = subtotal * (gstRate / 100);
     const total = subtotal + gstAmount;
 
-    return { subtotal, discountAmount, gstAmount, total, gstRate };
+    return {
+      subtotal: roundTo2(subtotal),
+      discountAmount: roundTo2(discountAmount),
+      gstAmount: roundTo2(gstAmount),
+      total: roundTo2(total),
+      gstRate,
+      unitSellingPrice: roundTo2(unitSellingPrice),
+      unitTotalPrice: roundTo2(unitTotalPrice),
+    };
   };
 
   const getInvoiceTotals = () => {
     return items.reduce(
       (acc, item) => {
-        const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+        const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount, item.totalPrice, pricingMode);
         acc.subtotal += calcs.subtotal;
         acc.discountTotal += calcs.discountAmount;
         acc.gstTotal += calcs.gstAmount;
@@ -775,30 +817,80 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   // --- Row Management ---
 
   const handleAddItemRow = () => {
-    setItems((prev) => [...prev, { productId: '', quantity: 1, price: 0, discount: 0 }]);
+    setItems((prev) => [...prev, { productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
   };
 
   const handleUpdateItemRow = (index: number, field: keyof InvoiceItemLocal, value: string | number) => {
     setItems((prev) =>
       prev.map((item, idx) => {
         if (idx !== index) return item;
-        const updated = { ...item, [field]: value };
+        const targetProductId = field === 'productId' ? (value as string) : item.productId;
+        const product = products.find((p) => p.id === targetProductId);
+        const gstRate = product ? product.gstRate : 0;
 
-        // Auto-fill price from catalog if product changes
         if (field === 'productId') {
-          const product = products.find((p) => p.id === value);
-          updated.price = product ? product.sellingPrice : 0;
-          updated.discount = 0;
+          const sp = product ? product.sellingPrice : 0;
+          const tp = roundTo2(sp * (1 + gstRate / 100));
+          return {
+            ...item,
+            productId: value as string,
+            price: sp,
+            totalPrice: tp,
+            discount: 0,
+          };
+        } else if (field === 'price') {
+          const sp = Math.max(0, parseFloat(value as string) || 0);
+          const tp = roundTo2(sp * (1 + gstRate / 100));
+          return {
+            ...item,
+            price: sp,
+            totalPrice: tp,
+          };
+        } else if (field === 'totalPrice') {
+          const tp = Math.max(0, parseFloat(value as string) || 0);
+          const sp = gstRate > 0 ? roundTo2(tp / (1 + gstRate / 100)) : tp;
+          return {
+            ...item,
+            totalPrice: tp,
+            price: sp,
+          };
+        } else {
+          return { ...item, [field]: value };
         }
-        return updated;
+      })
+    );
+  };
+
+  const handlePricingModeChange = (newMode: 'selling' | 'total') => {
+    if (newMode === pricingMode) return;
+    setPricingMode(newMode);
+    setItems((prev) =>
+      prev.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const gstRate = product ? product.gstRate : 0;
+
+        if (newMode === 'total') {
+          const tp = item.totalPrice && item.totalPrice > 0
+            ? item.totalPrice
+            : roundTo2(item.price * (1 + gstRate / 100));
+          const sp = gstRate > 0 ? roundTo2(tp / (1 + gstRate / 100)) : tp;
+          return { ...item, totalPrice: tp, price: sp };
+        } else {
+          const sp = item.price && item.price > 0
+            ? item.price
+            : item.totalPrice
+            ? roundTo2(item.totalPrice / (1 + gstRate / 100))
+            : 0;
+          const tp = roundTo2(sp * (1 + gstRate / 100));
+          return { ...item, price: sp, totalPrice: tp };
+        }
       })
     );
   };
 
   const handleRemoveItemRow = (index: number) => {
-    // If only 1 row remains, don't delete but reset it to keep the fields visible
     if (items.length === 1) {
-      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
       showToast('Reset product row instead of deleting to keep inputs visible.', 'info');
       return;
     }
@@ -812,7 +904,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     const defaults = {
       selectedCustomerId: '',
       invoiceDate: todayStr,
-      items: [{ productId: '', quantity: 1, price: 0, discount: 0 }],
+      pricingMode: 'selling',
+      items: [{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }],
       amountPaid: 0,
       paymentMethod: 'UPI',
       referenceNumber: '',
@@ -822,8 +915,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     };
     setEditingInvoiceId(null);
     setSelectedCustomerId('');
+    setPricingMode('selling');
     setInvoiceDate(todayStr);
-    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+    setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
     setAmountPaid(0);
     setPaymentMethod('UPI');
     setReferenceNumber('');
@@ -835,15 +929,23 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleStartEditInvoice = (inv: Invoice) => {
+    setPricingMode('selling');
     const values = {
       selectedCustomerId: inv.customerId,
       invoiceDate: inv.date,
-      items: inv.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount,
-      })),
+      pricingMode: 'selling',
+      items: inv.items.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const gstRate = item.gstRate || (product ? product.gstRate : 0);
+        const tp = roundTo2(item.price * (1 + gstRate / 100));
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: tp,
+          discount: item.discount,
+        };
+      }),
       amountPaid: inv.amountPaid,
       paymentMethod: inv.paymentMethod || 'UPI',
       referenceNumber: inv.referenceNumber || '',
@@ -855,12 +957,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setSelectedCustomerId(inv.customerId);
     setInvoiceDate(inv.date);
     setItems(
-      inv.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount,
-      }))
+      inv.items.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const gstRate = item.gstRate || (product ? product.gstRate : 0);
+        const tp = roundTo2(item.price * (1 + gstRate / 100));
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: tp,
+          discount: item.discount,
+        };
+      })
     );
     setAmountPaid(inv.amountPaid);
     setPaymentMethod(inv.paymentMethod || 'UPI');
@@ -914,12 +1022,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     const invoiceItems = items.map((item) => {
       const product = products.find((p) => p.id === item.productId)!;
-      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount, item.totalPrice, pricingMode);
       return {
         productId: item.productId,
         productName: product.name,
         quantity: item.quantity,
-        price: item.price,
+        price: calcs.unitSellingPrice,
         discount: item.discount,
         gstRate: calcs.gstRate,
         gstAmount: calcs.gstAmount,
@@ -965,7 +1073,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       clearAllDirtyForms();
       setEditingInvoiceId(null);
       setSelectedCustomerId('');
-      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setPricingMode('selling');
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
       setAmountPaid(0);
       setPaymentMethod('UPI');
       setReferenceNumber('');
@@ -997,7 +1106,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       // Reset states and redirect directly to details print view
       clearAllDirtyForms();
       setSelectedCustomerId('');
-      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setPricingMode('selling');
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
       setAmountPaid(0);
       setPaymentMethod('UPI');
       setReferenceNumber('');
@@ -1033,12 +1143,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     const quotationItems = items.map((item) => {
       const product = products.find((p) => p.id === item.productId)!;
-      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount, item.totalPrice, pricingMode);
       return {
         productId: item.productId,
         productName: product.name,
         quantity: item.quantity,
-        price: item.price,
+        price: calcs.unitSellingPrice,
         discount: item.discount,
         gstRate: calcs.gstRate,
         gstAmount: calcs.gstAmount,
@@ -1071,7 +1181,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       clearAllDirtyForms();
       setEditingQuotationId(null);
       setSelectedCustomerId('');
-      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setPricingMode('selling');
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
       setNotes('');
       setViewQuotation(originalQuotation.id, true);
     } else {
@@ -1094,7 +1205,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       // Reset states
       clearAllDirtyForms();
       setSelectedCustomerId('');
-      setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+      setPricingMode('selling');
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
       setNotes('');
       if (newQuotation) {
         setViewQuotation(newQuotation.id, true);
@@ -1111,30 +1223,40 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       selectedCustomerId: '',
       invoiceDate: defaultDate,
       validUntil: defaultValidUntil,
-      items: [{ productId: '', quantity: 1, price: 0, discount: 0 }],
+      pricingMode: 'selling',
+      items: [{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }],
       notes: '',
     };
     setSelectedCustomerId('');
+    setPricingMode('selling');
     setInvoiceDate(defaultDate);
     setValidUntil(defaultValidUntil);
-    setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
+    setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
     setNotes('');
     setInitialQuotationValues(defaults);
     setIsCreatingQuotation(true);
   };
 
   const handleStartEditQuotation = (q: Quotation) => {
+    setPricingMode('selling');
     const values = {
       selectedCustomerId: q.customerId,
       invoiceDate: q.date,
       validUntil: q.validUntil,
+      pricingMode: 'selling',
       notes: q.notes || '',
-      items: q.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount,
-      })),
+      items: q.items.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const gstRate = item.gstRate || (product ? product.gstRate : 0);
+        const tp = roundTo2(item.price * (1 + gstRate / 100));
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: tp,
+          discount: item.discount,
+        };
+      }),
     };
     setEditingQuotationId(q.id);
     setSelectedCustomerId(q.customerId);
@@ -1142,12 +1264,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setValidUntil(q.validUntil);
     setNotes(q.notes || '');
     setItems(
-      q.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: item.discount,
-      }))
+      q.items.map((item) => {
+        const product = products.find((p) => p.id === item.productId);
+        const gstRate = item.gstRate || (product ? product.gstRate : 0);
+        const tp = roundTo2(item.price * (1 + gstRate / 100));
+        return {
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          totalPrice: tp,
+          discount: item.discount,
+        };
+      })
     );
     setInitialQuotationValues(values);
     setIsCreatingQuotation(true);
@@ -2525,19 +2653,41 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
           {/* Section 4: Product Section */}
           <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
-              <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
-                Billed Products
-              </h3>
-              <button
-                type="button"
-                className="btn btn-secondary"
-                onClick={handleAddItemRow}
-                style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-              >
-                <Plus size={14} /> Add Row
-              </button>
+            <div className="billed-products-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+              <div className="billed-products-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flex: 1 }}>
+                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
+                  Billed Products
+                </h3>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={handleAddItemRow}
+                  style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <Plus size={14} /> Add Row
+                </button>
+              </div>
+
+              <div className="price-mode-selector-wrap">
+                <span className="price-mode-label">Price Input:</span>
+                <div className="price-mode-toggle-group">
+                  <button
+                    type="button"
+                    className={`price-mode-btn ${pricingMode === 'selling' ? 'active' : ''}`}
+                    onClick={() => handlePricingModeChange('selling')}
+                  >
+                    Selling Price
+                  </button>
+                  <button
+                    type="button"
+                    className={`price-mode-btn ${pricingMode === 'total' ? 'active' : ''}`}
+                    onClick={() => handlePricingModeChange('total')}
+                  >
+                    Total Price (Incl. GST)
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div className="billed-items-table-wrap">
@@ -2546,10 +2696,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <tr>
                     <th style={{ width: '32px' }}>#</th>
                     <th>Product</th>
-                    <th className="col-center" style={{ width: '80px' }}>Stock</th>
-                    <th className="col-right" style={{ width: '130px' }}>Unit Price (₹)</th>
-                    <th className="col-center" style={{ width: '90px' }}>Qty</th>
-                    <th className="col-center" style={{ width: '90px' }}>Disc %</th>
+                    <th className="col-center" style={{ width: '70px' }}>Stock</th>
+                    <th className="col-right" style={{ width: '125px' }}>Unit SP (₹)</th>
+                    <th className="col-right" style={{ width: '140px' }}>Total Price (Incl. GST)</th>
+                    <th className="col-center" style={{ width: '75px' }}>Qty</th>
+                    <th className="col-center" style={{ width: '75px' }}>Disc %</th>
                     <th className="col-right" style={{ width: '110px' }}>Net Total</th>
                     <th style={{ width: '40px' }}></th>
                   </tr>
@@ -2557,7 +2708,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <tbody>
                   {items.map((item, index) => {
                     const product = products.find((p) => p.id === item.productId);
-                    const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+                    const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount, item.totalPrice, pricingMode);
+                    const isSellingMode = pricingMode === 'selling';
+
                     return (
                       <tr key={index}>
                         {/* # */}
@@ -2590,18 +2743,53 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
                         </td>
 
-                        {/* Unit Price */}
-                        <td className="td-price" data-label="Unit Price (₹)">
+                        {/* Unit Selling Price (SP) */}
+                        <td className="td-price" data-label="Unit SP (₹)">
                           <input
                             type="number"
                             className="form-control"
-                            style={{ textAlign: 'right', width: '100%' }}
+                            style={{
+                              textAlign: 'right',
+                              width: '100%',
+                              backgroundColor: isSellingMode ? 'var(--bg-card)' : 'var(--bg-app)',
+                              color: isSellingMode ? 'var(--text-primary)' : 'var(--text-muted)',
+                              borderColor: isSellingMode ? undefined : 'var(--border-color)',
+                              cursor: isSellingMode ? 'text' : 'not-allowed',
+                              fontWeight: isSellingMode ? 400 : 600,
+                            }}
                             placeholder="0.00"
                             min="0"
                             step="any"
-                            value={item.price || ''}
+                            readOnly={!isSellingMode}
+                            value={calcs.unitSellingPrice || ''}
                             onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)}
-                            required
+                            required={isSellingMode}
+                            title={!isSellingMode ? 'Calculated automatically from Total Price (Incl. GST)' : 'Enter Selling Price (Excl. GST)'}
+                          />
+                        </td>
+
+                        {/* Unit Total Price (Incl. GST) */}
+                        <td className="td-total-price" data-label="Total Price (Incl. GST)">
+                          <input
+                            type="number"
+                            className="form-control"
+                            style={{
+                              textAlign: 'right',
+                              width: '100%',
+                              backgroundColor: !isSellingMode ? 'var(--bg-card)' : 'var(--bg-app)',
+                              color: !isSellingMode ? 'var(--text-primary)' : 'var(--text-muted)',
+                              borderColor: !isSellingMode ? undefined : 'var(--border-color)',
+                              cursor: !isSellingMode ? 'text' : 'not-allowed',
+                              fontWeight: !isSellingMode ? 400 : 600,
+                            }}
+                            placeholder="0.00"
+                            min="0"
+                            step="any"
+                            readOnly={isSellingMode}
+                            value={calcs.unitTotalPrice || ''}
+                            onChange={(e) => handleUpdateItemRow(index, 'totalPrice', parseFloat(e.target.value) || 0)}
+                            required={!isSellingMode}
+                            title={isSellingMode ? 'Calculated automatically from Selling Price' : 'Enter Total Price (Incl. GST)'}
                           />
                         </td>
 
@@ -3105,19 +3293,41 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
             {/* Step 2: Quoted Products */}
             <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
-                <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
-                  Quoted Products
-                </h3>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={handleAddItemRow}
-                  style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
-                >
-                  <Plus size={14} /> Add Row
-                </button>
+              <div className="billed-products-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
+                <div className="billed-products-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flex: 1 }}>
+                  <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
+                    Quoted Products
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={handleAddItemRow}
+                    style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Plus size={14} /> Add Row
+                  </button>
+                </div>
+
+                <div className="price-mode-selector-wrap">
+                  <span className="price-mode-label">Price Input:</span>
+                  <div className="price-mode-toggle-group">
+                    <button
+                      type="button"
+                      className={`price-mode-btn quotation-mode-btn ${pricingMode === 'selling' ? 'active' : ''}`}
+                      onClick={() => handlePricingModeChange('selling')}
+                    >
+                      Selling Price
+                    </button>
+                    <button
+                      type="button"
+                      className={`price-mode-btn quotation-mode-btn ${pricingMode === 'total' ? 'active' : ''}`}
+                      onClick={() => handlePricingModeChange('total')}
+                    >
+                      Total Price (Incl. GST)
+                    </button>
+                  </div>
+                </div>
               </div>
 
               <div className="billed-items-table-wrap">
@@ -3126,10 +3336,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <tr>
                       <th style={{ width: '32px' }}>#</th>
                       <th>Product</th>
-                      <th className="col-center" style={{ width: '80px' }}>GST %</th>
-                      <th className="col-right" style={{ width: '130px' }}>Unit Price (₹)</th>
-                      <th className="col-center" style={{ width: '90px' }}>Qty</th>
-                      <th className="col-center" style={{ width: '90px' }}>Disc %</th>
+                      <th className="col-center" style={{ width: '70px' }}>GST %</th>
+                      <th className="col-right" style={{ width: '125px' }}>Unit SP (₹)</th>
+                      <th className="col-right" style={{ width: '140px' }}>Total Price (Incl. GST)</th>
+                      <th className="col-center" style={{ width: '75px' }}>Qty</th>
+                      <th className="col-center" style={{ width: '75px' }}>Disc %</th>
                       <th className="col-right" style={{ width: '110px' }}>Net Total</th>
                       <th style={{ width: '40px' }}></th>
                     </tr>
@@ -3137,7 +3348,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <tbody>
                     {items.map((item, index) => {
                       const product = products.find((p) => p.id === item.productId);
-                      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
+                      const calcs = calculateRowTotal(item.productId, item.quantity, item.price, item.discount, item.totalPrice, pricingMode);
+                      const isSellingMode = pricingMode === 'selling';
+
                       return (
                         <tr key={index}>
                           {/* # */}
@@ -3168,18 +3381,53 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             </span>
                           </td>
 
-                          {/* Unit Price */}
-                          <td className="td-price" data-label="Unit Price (₹)">
+                          {/* Unit Selling Price (SP) */}
+                          <td className="td-price" data-label="Unit SP (₹)">
                             <input
                               type="number"
                               className="form-control"
-                              style={{ textAlign: 'right', width: '100%' }}
+                              style={{
+                                textAlign: 'right',
+                                width: '100%',
+                                backgroundColor: isSellingMode ? 'var(--bg-card)' : 'var(--bg-app)',
+                                color: isSellingMode ? 'var(--text-primary)' : 'var(--text-muted)',
+                                borderColor: isSellingMode ? undefined : 'var(--border-color)',
+                                cursor: isSellingMode ? 'text' : 'not-allowed',
+                                fontWeight: isSellingMode ? 400 : 600,
+                              }}
                               placeholder="0.00"
                               min="0"
                               step="any"
-                              value={item.price || ''}
+                              readOnly={!isSellingMode}
+                              value={calcs.unitSellingPrice || ''}
                               onChange={(e) => handleUpdateItemRow(index, 'price', parseFloat(e.target.value) || 0)}
-                              required
+                              required={isSellingMode}
+                              title={!isSellingMode ? 'Calculated automatically from Total Price (Incl. GST)' : 'Enter Selling Price (Excl. GST)'}
+                            />
+                          </td>
+
+                          {/* Unit Total Price (Incl. GST) */}
+                          <td className="td-total-price" data-label="Total Price (Incl. GST)">
+                            <input
+                              type="number"
+                              className="form-control"
+                              style={{
+                                textAlign: 'right',
+                                width: '100%',
+                                backgroundColor: !isSellingMode ? 'var(--bg-card)' : 'var(--bg-app)',
+                                color: !isSellingMode ? 'var(--text-primary)' : 'var(--text-muted)',
+                                borderColor: !isSellingMode ? undefined : 'var(--border-color)',
+                                cursor: !isSellingMode ? 'text' : 'not-allowed',
+                                fontWeight: !isSellingMode ? 400 : 600,
+                              }}
+                              placeholder="0.00"
+                              min="0"
+                              step="any"
+                              readOnly={isSellingMode}
+                              value={calcs.unitTotalPrice || ''}
+                              onChange={(e) => handleUpdateItemRow(index, 'totalPrice', parseFloat(e.target.value) || 0)}
+                              required={!isSellingMode}
+                              title={isSellingMode ? 'Calculated automatically from Selling Price' : 'Enter Total Price (Incl. GST)'}
                             />
                           </td>
 

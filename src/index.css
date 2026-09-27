@@ -7093,4 +7093,133 @@ body.dark-theme .skeleton-box {
     opacity: 1;
     transform: scale(1);
   }
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE PRICE INPUT SELECTOR & PRODUCT TABLE CARDS
+   ============================================================ */
+
+.price-mode-selector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.price-mode-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.price-mode-toggle-group {
+  display: inline-flex;
+  background: var(--bg-app);
+  padding: 3px;
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+  gap: 2px;
+}
+
+.price-mode-btn {
+  padding: 6px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 7px;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s ease-in-out;
+  background: transparent;
+  color: var(--text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.price-mode-btn:hover {
+  color: var(--text-primary);
+}
+
+.price-mode-btn.active {
+  background: var(--primary);
+  color: #ffffff !important;
+  box-shadow: 0 1px 4px rgba(16, 185, 129, 0.25);
+}
+
+.quotation-mode-btn.active {
+  background: var(--primary-dark) !important;
+  color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  .billed-products-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .billed-products-header-top {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+
+  .price-mode-selector-wrap {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 4px !important;
+    width: 100% !important;
+    margin-top: 4px;
+  }
+
+  .price-mode-label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    color: var(--text-muted) !important;
+  }
+
+  .price-mode-toggle-group {
+    display: flex !important;
+    width: 100% !important;
+    padding: 4px !important;
+    gap: 4px !important;
+    box-sizing: border-box !important;
+    border-radius: 12px !important;
+  }
+
+  .price-mode-btn {
+    flex: 1 !important;
+    padding: 10px 8px !important;
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    height: 40px !important;
+    border-radius: 8px !important;
+  }
+
+  /* 2-column grid layout for unit price, total price, qty, and discount inputs on mobile card view */
+  .billed-items-table tbody td.td-price,
+  .billed-items-table tbody td.td-total-price,
+  .billed-items-table tbody td.td-qty,
+  .billed-items-table tbody td.td-disc {
+    display: inline-block !important;
+    width: 50% !important;
+    padding: 4px 4px !important;
+    box-sizing: border-box !important;
+    vertical-align: top !important;
+  }
+
+  .billed-items-table tbody td.td-price input,
+  .billed-items-table tbody td.td-total-price input,
+  .billed-items-table tbody td.td-qty input,
+  .billed-items-table tbody td.td-disc input {
+    height: 42px !important;
+    font-size: 13px !important;
+    text-align: center !important;
+    border-radius: 8px !important;
+  }
 }

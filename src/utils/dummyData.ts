@@ -29,6 +29,11 @@ export const formatINR = (amount: number): string => {
   return formatCurrency(amount);
 };
 
+// Precision rounding helper to 2 decimal places
+export const roundTo2 = (num: number): number => {
+  return Math.round((num + Number.EPSILON) * 100) / 100;
+};
+
 // Helper to convert a string to Title Case
 export const toTitleCase = (str: string | undefined | null): string => {
   if (!str) return '';
