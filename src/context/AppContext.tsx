@@ -1769,12 +1769,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  const restoreRecords = (ids: string[]) => {
-    ids.forEach((id) => restoreRecord(id));
+  const restoreRecords = async (ids: string[]) => {
+    for (const id of ids) {
+      await restoreRecord(id);
+    }
   };
 
-  const deleteRecordsPermanently = (ids: string[]) => {
-    ids.forEach((id) => deletePermanently(id));
+  const deleteRecordsPermanently = async (ids: string[]) => {
+    for (const id of ids) {
+      await deletePermanently(id);
+    }
   };
 
   const setTheme = (newTheme: 'light' | 'dark' | 'system') => {
