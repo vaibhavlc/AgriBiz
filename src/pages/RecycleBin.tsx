@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import type { RecycleBinItem } from '../types';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import {
   Trash2,
   RotateCcw,
@@ -8,7 +9,6 @@ import {
   Calendar,
   Eye,
   Info,
-  AlertTriangle,
   RefreshCw,
   X,
   CheckSquare,
@@ -722,70 +722,53 @@ export const RecycleBin: React.FC = () => {
       )}
 
       {/* Confirmation Modal */}
-      {actionConfirm && (
-        <div className="modal-overlay no-print" onClick={() => setActionConfirm(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '420px' }}>
-            <div className="modal-header">
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <AlertTriangle size={18} style={{ color: actionConfirm.type.includes('delete') ? 'var(--color-danger)' : 'var(--primary)' }} />
-                <span>Confirm Action</span>
-              </h3>
-              <button className="btn-icon" onClick={() => setActionConfirm(null)}>
-                <X size={18} />
-              </button>
-            </div>
-            <div className="modal-body" style={{ padding: '20px 24px' }}>
-              <p style={{ fontSize: '14px', margin: 0, color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                {actionConfirm.type === 'restore' && 'Are you sure you want to restore this deleted record to its original directory?'}
-                {actionConfirm.type === 'delete' && 'WARNING: This will permanently delete the record. This action CANNOT be undone and will delete it from history.'}
-                {actionConfirm.type === 'bulk-restore' && `Are you sure you want to restore all ${selectedIds.length} selected records?`}
-                {actionConfirm.type === 'bulk-delete' && `WARNING: This will permanently delete all ${selectedIds.length} selected records. This action CANNOT be undone.`}
-              </p>
-            </div>
-            <div className="modal-footer" style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => setActionConfirm(null)}>Cancel</button>
-              
-              {actionConfirm.type === 'restore' && (
-                <button 
-                  className="btn btn-primary btn-sm"
-                  onClick={() => handleRestore(actionConfirm.targetId!)}
-                >
-                  Confirm Restore
-                </button>
-              )}
-              
-              {actionConfirm.type === 'delete' && (
-                <button 
-                  className="btn btn-primary btn-sm btn-danger"
-                  style={{ backgroundColor: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
-                  onClick={() => handlePermanentDelete(actionConfirm.targetId!)}
-                >
-                  Delete Permanently
-                </button>
-              )}
-
-              {actionConfirm.type === 'bulk-restore' && (
-                <button 
-                  className="btn btn-primary btn-sm"
-                  onClick={handleBulkRestore}
-                >
-                  Restore All Selected
-                </button>
-              )}
-
-              {actionConfirm.type === 'bulk-delete' && (
-                <button 
-                  className="btn btn-primary btn-sm btn-danger"
-                  style={{ backgroundColor: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
-                  onClick={handleBulkPermanentDelete}
-                >
-                  Delete All Selected
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      <DeleteConfirmModal
+        isOpen={!!actionConfirm}
+        onClose={() => setActionConfirm(null)}
+        onConfirm={() => {
+          if (!actionConfirm) return;
+          if (actionConfirm.type === 'restore') {
+            handleRestore(actionConfirm.targetId!);
+          } else if (actionConfirm.type === 'delete') {
+            handlePermanentDelete(actionConfirm.targetId!);
+          } else if (actionConfirm.type === 'bulk-restore') {
+            handleBulkRestore();
+          } else if (actionConfirm.type === 'bulk-delete') {
+            handleBulkPermanentDelete();
+          }
+        }}
+        title={
+          actionConfirm?.type === 'restore'
+            ? 'Restore Record'
+            : actionConfirm?.type === 'bulk-restore'
+            ? 'Restore Selected Records'
+            : actionConfirm?.type === 'bulk-delete'
+            ? 'Delete Selected Records Permanently'
+            : 'Delete Record Permanently'
+        }
+        description={
+          actionConfirm?.type === 'restore' ? (
+            'Are you sure you want to restore this deleted record to its original directory?'
+          ) : actionConfirm?.type === 'delete' ? (
+            'WARNING: This will permanently delete the record. This action CANNOT be undone and will delete it from history.'
+          ) : actionConfirm?.type === 'bulk-restore' ? (
+            `Are you sure you want to restore all ${selectedIds.length} selected records?`
+          ) : actionConfirm?.type === 'bulk-delete' ? (
+            `WARNING: This will permanently delete all ${selectedIds.length} selected records. This action CANNOT be undone.`
+          ) : ''
+        }
+        confirmText={
+          actionConfirm?.type === 'restore'
+            ? 'Restore Record'
+            : actionConfirm?.type === 'bulk-restore'
+            ? 'Restore All Selected'
+            : actionConfirm?.type === 'bulk-delete'
+            ? 'Delete All Selected'
+            : 'Delete Permanently'
+        }
+        variant={actionConfirm?.type.includes('delete') ? 'danger' : 'primary'}
+        icon={actionConfirm?.type.includes('restore') ? <RotateCcw size={24} /> : undefined}
+      />
     </div>
   );
 };

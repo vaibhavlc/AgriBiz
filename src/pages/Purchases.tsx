@@ -5,6 +5,7 @@ import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
@@ -2010,50 +2011,6 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <Trash2 size={16} /> Delete Purchase
           </button>
         </div>
-        {deletingPurchase && (
-          <div className="modal-overlay" style={{ zIndex: 1000 }}>
-            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
-                  <AlertTriangle size={28} />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Purchase Bill</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete purchase bill <strong>{deletingPurchase.purchaseNumber}</strong>? This will deduct the added stock levels and adjust supplier balance.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingPurchase(null)}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingPurchase ? 0.7 : 1 }}
-                    disabled={isDeletingPurchase}
-                    onClick={async () => {
-                      if (isDeletingPurchase || !deletingPurchase) return;
-                      setIsDeletingPurchase(true);
-                      const idToDelete = deletingPurchase.id;
-                      const purchaseNo = deletingPurchase.purchaseNumber;
-                      try {
-                        await deletePurchase(idToDelete);
-                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
-                        setDeletingPurchase(null);
-                        setViewPurchase(null);
-                      } catch (error: any) {
-                        console.error("Delete purchase error:", error);
-                        showToast(`Failed to delete: ${error.message || error}`, 'error');
-                      } finally {
-                        setIsDeletingPurchase(false);
-                      }
-                    }}
-                  >
-                    {isDeletingPurchase ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
@@ -3500,50 +3457,37 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
           </>
         )}
         {renderAttachmentPreviewModal()}
-        {deletingPurchase && (
-          <div className="modal-overlay" style={{ zIndex: 1000 }}>
-            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
-                  <AlertTriangle size={28} />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Purchase Bill</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete purchase bill <strong>{deletingPurchase.purchaseNumber}</strong>? This will deduct the added stock levels and adjust supplier balance.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => setDeletingPurchase(null)}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingPurchase ? 0.7 : 1 }}
-                    disabled={isDeletingPurchase}
-                    onClick={async () => {
-                      if (isDeletingPurchase || !deletingPurchase) return;
-                      setIsDeletingPurchase(true);
-                      const idToDelete = deletingPurchase.id;
-                      const purchaseNo = deletingPurchase.purchaseNumber;
-                      try {
-                        await deletePurchase(idToDelete);
-                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
-                        setDeletingPurchase(null);
-                        setViewPurchase(null);
-                      } catch (error: any) {
-                        console.error("Delete purchase error:", error);
-                        showToast(`Failed to delete: ${error.message || error}`, 'error');
-                      } finally {
-                        setIsDeletingPurchase(false);
-                      }
-                    }}
-                  >
-                    {isDeletingPurchase ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        <DeleteConfirmModal
+          isOpen={!!deletingPurchase}
+          onClose={() => {
+            if (!isDeletingPurchase) setDeletingPurchase(null);
+          }}
+          onConfirm={async () => {
+            if (isDeletingPurchase || !deletingPurchase) return;
+            setIsDeletingPurchase(true);
+            const idToDelete = deletingPurchase.id;
+            const purchaseNo = deletingPurchase.purchaseNumber;
+            try {
+              await deletePurchase(idToDelete);
+              showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
+              setDeletingPurchase(null);
+              setViewPurchase(null);
+            } catch (error: any) {
+              console.error("Delete purchase error:", error);
+              showToast(`Failed to delete: ${error.message || error}`, 'error');
+            } finally {
+              setIsDeletingPurchase(false);
+            }
+          }}
+          title="Delete Purchase Bill"
+          itemName={deletingPurchase?.purchaseNumber ? `Purchase ${deletingPurchase.purchaseNumber}` : undefined}
+          description={deletingPurchase ? (
+            <>
+              Are you sure you want to delete purchase bill <strong>{deletingPurchase.purchaseNumber}</strong>? This will deduct the added stock levels and adjust supplier balance.
+            </>
+          ) : ''}
+          isLoading={isDeletingPurchase}
+        />
       </div>
     </div>
   );

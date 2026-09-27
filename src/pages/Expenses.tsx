@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
@@ -260,18 +261,23 @@ export const Expenses: React.FC = () => {
   };
 
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
-  const handleDeleteExpense = async (id: string, cat: string, amt: number) => {
-    if (isDeletingExpense) return;
-    if (confirm(`Are you sure you want to delete the expense of ${formatINR(amt)} for ${cat}?`)) {
-      setIsDeletingExpense(true);
-      try {
-        await deleteExpense(id);
-        showToast('Expense record deleted successfully.', 'info');
-      } catch (err: any) {
-        showToast(`Failed to delete expense: ${err.message || err}`, 'error');
-      } finally {
-        setIsDeletingExpense(false);
-      }
+  const [deletingExpenseTarget, setDeletingExpenseTarget] = useState<{ id: string; category: string; amount: number } | null>(null);
+
+  const handleDeleteExpense = (id: string, cat: string, amt: number) => {
+    setDeletingExpenseTarget({ id, category: cat, amount: amt });
+  };
+
+  const confirmDeleteExpense = async () => {
+    if (isDeletingExpense || !deletingExpenseTarget) return;
+    setIsDeletingExpense(true);
+    try {
+      await deleteExpense(deletingExpenseTarget.id);
+      showToast('Expense record deleted successfully.', 'info');
+      setDeletingExpenseTarget(null);
+    } catch (err: any) {
+      showToast(`Failed to delete expense: ${err.message || err}`, 'error');
+    } finally {
+      setIsDeletingExpense(false);
     }
   };
 
@@ -1274,6 +1280,21 @@ export const Expenses: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={!!deletingExpenseTarget}
+        onClose={() => {
+          if (!isDeletingExpense) setDeletingExpenseTarget(null);
+        }}
+        onConfirm={confirmDeleteExpense}
+        title="Delete Expense Record"
+        description={deletingExpenseTarget ? (
+          <>
+            Are you sure you want to delete the expense of <strong>{formatINR(deletingExpenseTarget.amount)}</strong> for <strong>{deletingExpenseTarget.category}</strong>?
+          </>
+        ) : ''}
+        isLoading={isDeletingExpense}
+      />
 
       {/* Hidden Print Layout Wrapper (Temporarily displayed for PDF capture) */}
       <div id="expenses-print-area" style={{

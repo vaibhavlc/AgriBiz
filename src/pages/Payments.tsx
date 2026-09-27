@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
 import {
   Plus,
@@ -79,23 +80,23 @@ export const Payments: React.FC = () => {
 
 
   const [isDeletingPayment, setIsDeletingPayment] = useState(false);
-  const handleDeletePayment = async (id: string, name: string, type: string) => {
-    if (isDeletingPayment) return;
-    const confirmationMsg =
-      type === 'CustomerReceipt'
-        ? `Are you sure you want to delete this payment receipt from ${name}? This will INCREASE their outstanding balance.`
-        : `Are you sure you want to delete this payment payout to ${name}? This will INCREASE our outstanding balance owed.`;
+  const [deletingPaymentTarget, setDeletingPaymentTarget] = useState<{ id: string; name: string; type: string } | null>(null);
 
-    if (confirm(confirmationMsg)) {
-      setIsDeletingPayment(true);
-      try {
-        await deletePayment(id);
-        showToast('Payment record deleted successfully.', 'info');
-      } catch (err: any) {
-        showToast(`Failed to delete payment: ${err.message || err}`, 'error');
-      } finally {
-        setIsDeletingPayment(false);
-      }
+  const handleDeletePayment = (id: string, name: string, type: string) => {
+    setDeletingPaymentTarget({ id, name, type });
+  };
+
+  const confirmDeletePayment = async () => {
+    if (isDeletingPayment || !deletingPaymentTarget) return;
+    setIsDeletingPayment(true);
+    try {
+      await deletePayment(deletingPaymentTarget.id);
+      showToast('Payment record deleted successfully.', 'info');
+      setDeletingPaymentTarget(null);
+    } catch (err: any) {
+      showToast(`Failed to delete payment: ${err.message || err}`, 'error');
+    } finally {
+      setIsDeletingPayment(false);
     }
   };
 
@@ -783,6 +784,28 @@ export const Payments: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      <DeleteConfirmModal
+        isOpen={!!deletingPaymentTarget}
+        onClose={() => {
+          if (!isDeletingPayment) setDeletingPaymentTarget(null);
+        }}
+        onConfirm={confirmDeletePayment}
+        title={deletingPaymentTarget?.type === 'CustomerReceipt' ? 'Delete Payment Receipt' : 'Delete Payment Payout'}
+        itemName={deletingPaymentTarget?.name}
+        description={deletingPaymentTarget ? (
+          deletingPaymentTarget.type === 'CustomerReceipt' ? (
+            <>
+              Are you sure you want to delete this payment receipt from <strong>{deletingPaymentTarget.name}</strong>? This will <strong>INCREASE</strong> their outstanding balance.
+            </>
+          ) : (
+            <>
+              Are you sure you want to delete this payment payout to <strong>{deletingPaymentTarget.name}</strong>? This will <strong>INCREASE</strong> our outstanding balance owed.
+            </>
+          )
+        ) : ''}
+        isLoading={isDeletingPayment}
+      />
     </div>
   );
 };

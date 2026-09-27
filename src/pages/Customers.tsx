@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { CustomerModal } from '../components/CustomerModal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
 import {
   Plus,
@@ -69,18 +70,23 @@ export const Customers: React.FC = () => {
   };
 
   const [isDeletingCustomer, setIsDeletingCustomer] = useState(false);
-  const handleDeleteCustomer = async (id: string, name: string) => {
-    if (isDeletingCustomer) return;
-    if (confirm(`Are you sure you want to delete customer ${name}? All outstanding balances and history logs will be removed.`)) {
-      setIsDeletingCustomer(true);
-      try {
-        await deleteCustomer(id);
-        showToast(`Customer ${name} deleted successfully.`, 'info');
-      } catch (err: any) {
-        showToast(`Failed to delete customer: ${err.message || err}`, 'error');
-      } finally {
-        setIsDeletingCustomer(false);
-      }
+  const [deletingCustomerTarget, setDeletingCustomerTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDeleteCustomer = (id: string, name: string) => {
+    setDeletingCustomerTarget({ id, name });
+  };
+
+  const confirmDeleteCustomer = async () => {
+    if (isDeletingCustomer || !deletingCustomerTarget) return;
+    setIsDeletingCustomer(true);
+    try {
+      await deleteCustomer(deletingCustomerTarget.id);
+      showToast(`Customer ${deletingCustomerTarget.name} deleted successfully.`, 'info');
+      setDeletingCustomerTarget(null);
+    } catch (err: any) {
+      showToast(`Failed to delete customer: ${err.message || err}`, 'error');
+    } finally {
+      setIsDeletingCustomer(false);
     }
   };
 
@@ -892,6 +898,22 @@ export const Customers: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         editCustomerData={isEditingCustomer}
+      />
+
+      <DeleteConfirmModal
+        isOpen={!!deletingCustomerTarget}
+        onClose={() => {
+          if (!isDeletingCustomer) setDeletingCustomerTarget(null);
+        }}
+        onConfirm={confirmDeleteCustomer}
+        title="Delete Customer"
+        itemName={deletingCustomerTarget?.name}
+        description={deletingCustomerTarget ? (
+          <>
+            Are you sure you want to delete customer <strong>{deletingCustomerTarget.name}</strong>? All outstanding balances and history logs will be removed.
+          </>
+        ) : ''}
+        isLoading={isDeletingCustomer}
       />
     </div>
   );

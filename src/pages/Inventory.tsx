@@ -1,8 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import { useApp } from '../context/AppContext';
 import { formatINR } from '../utils/dummyData';
 import { ProductModal } from '../components/ProductModal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
 import {
   Plus,
@@ -150,49 +150,38 @@ export const Inventory: React.FC = () => {
   };
 
   const renderDeleteModal = () => {
-    if (!deletingProduct) return null;
-    return createPortal(
-      <div className="modal-overlay" style={{ zIndex: 1000 }}>
-        <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34,1.56,0.64,1)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-            <div style={{ padding: '14px', borderRadius: '50%', background: '#fee2e2', color: '#dc2626' }}>
-              <AlertTriangle size={28} />
-            </div>
-            <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>Delete Product</h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-              Are you sure you want to delete <strong>{deletingProduct.name}</strong>? This action cannot be undone and will remove it from the catalog permanently.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', width: '100%' }}>
-              <button className="btn btn-secondary" style={{ flex: 1 }} disabled={isDeletingProduct} onClick={() => setDeletingProduct(null)}>Cancel</button>
-              <button
-                className="btn btn-primary"
-                disabled={isDeletingProduct}
-                style={{ flex: 1, background: 'linear-gradient(135deg,#dc2626,#991b1b)', opacity: isDeletingProduct ? 0.7 : 1, cursor: isDeletingProduct ? 'not-allowed' : 'pointer' }}
-                onClick={async () => {
-                  if (isDeletingProduct) return;
-                  setIsDeletingProduct(true);
-                  const id = (deletingProduct as any).productId || deletingProduct.id || (deletingProduct as any)._id;
-                  const name = deletingProduct.name;
-                  try {
-                    await deleteProduct(id);
-                    showToast(`"${name}" deleted from catalog.`, 'info');
-                    setDeletingProduct(null);
-                    setViewProductId(null);
-                  } catch (error: any) {
-                    console.error("Delete product error:", error);
-                    showToast(`Failed to delete product: ${error.message || error}`, 'error');
-                  } finally {
-                    setIsDeletingProduct(false);
-                  }
-                }}
-              >
-                {isDeletingProduct ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>,
-      document.body
+    return (
+      <DeleteConfirmModal
+        isOpen={!!deletingProduct}
+        onClose={() => {
+          if (!isDeletingProduct) setDeletingProduct(null);
+        }}
+        onConfirm={async () => {
+          if (isDeletingProduct || !deletingProduct) return;
+          setIsDeletingProduct(true);
+          const id = (deletingProduct as any).productId || deletingProduct.id || (deletingProduct as any)._id;
+          const name = deletingProduct.name;
+          try {
+            await deleteProduct(id);
+            showToast(`"${name}" deleted from catalog.`, 'info');
+            setDeletingProduct(null);
+            setViewProductId(null);
+          } catch (error: any) {
+            console.error("Delete product error:", error);
+            showToast(`Failed to delete product: ${error.message || error}`, 'error');
+          } finally {
+            setIsDeletingProduct(false);
+          }
+        }}
+        title="Delete Product"
+        itemName={deletingProduct?.name}
+        description={deletingProduct ? (
+          <>
+            Are you sure you want to delete <strong>{deletingProduct.name}</strong>? This action cannot be undone and will remove it from the catalog permanently.
+          </>
+        ) : ''}
+        isLoading={isDeletingProduct}
+      />
     );
   };
 

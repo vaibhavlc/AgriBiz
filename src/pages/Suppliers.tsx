@@ -3,6 +3,7 @@ import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import {
   Plus,
   Search,
@@ -69,18 +70,23 @@ export const Suppliers: React.FC = () => {
   };
 
   const [isDeletingSupplier, setIsDeletingSupplier] = useState(false);
-  const handleDeleteSupplier = async (id: string, name: string) => {
-    if (isDeletingSupplier) return;
-    if (confirm(`Are you sure you want to delete supplier ${name}? All billing history and credit ledgers will be deleted.`)) {
-      setIsDeletingSupplier(true);
-      try {
-        await deleteSupplier(id);
-        showToast(`Supplier ${name} deleted successfully.`, 'info');
-      } catch (err: any) {
-        showToast(`Failed to delete supplier: ${err.message || err}`, 'error');
-      } finally {
-        setIsDeletingSupplier(false);
-      }
+  const [deletingSupplierTarget, setDeletingSupplierTarget] = useState<{ id: string; name: string } | null>(null);
+
+  const handleDeleteSupplier = (id: string, name: string) => {
+    setDeletingSupplierTarget({ id, name });
+  };
+
+  const confirmDeleteSupplier = async () => {
+    if (isDeletingSupplier || !deletingSupplierTarget) return;
+    setIsDeletingSupplier(true);
+    try {
+      await deleteSupplier(deletingSupplierTarget.id);
+      showToast(`Supplier ${deletingSupplierTarget.name} deleted successfully.`, 'info');
+      setDeletingSupplierTarget(null);
+    } catch (err: any) {
+      showToast(`Failed to delete supplier: ${err.message || err}`, 'error');
+    } finally {
+      setIsDeletingSupplier(false);
     }
   };
 
@@ -986,6 +992,22 @@ export const Suppliers: React.FC = () => {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         editSupplierData={isEditingSupplier}
+      />
+
+      <DeleteConfirmModal
+        isOpen={!!deletingSupplierTarget}
+        onClose={() => {
+          if (!isDeletingSupplier) setDeletingSupplierTarget(null);
+        }}
+        onConfirm={confirmDeleteSupplier}
+        title="Delete Supplier"
+        itemName={deletingSupplierTarget?.name}
+        description={deletingSupplierTarget ? (
+          <>
+            Are you sure you want to delete supplier <strong>{deletingSupplierTarget.name}</strong>? All billing history and credit ledgers will be deleted.
+          </>
+        ) : ''}
+        isLoading={isDeletingSupplier}
       />
     </div>
   );

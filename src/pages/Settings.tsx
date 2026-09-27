@@ -5,6 +5,7 @@ import api from '../utils/api';
 import { ALL_PAGE_PERMISSIONS, ROLE_PERMISSIONS } from '../auth/permissions';
 import type { UserRole, User } from '../types';
 import { Modal } from '../components/Modal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { authService } from '../auth/authService';
 import {
   Store,
@@ -1444,11 +1445,24 @@ export const Settings: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const [isResetDbModalOpen, setIsResetDbModalOpen] = useState(false);
+  const [isResettingDb, setIsResettingDb] = useState(false);
+
   const handleReset = () => {
-    if (confirm('WARNING: Wiping database will delete all sales invoices, purchases, payments, and custom customer profiles. This resets AgriBiz to original sample data. Proceed?')) {
+    setIsResetDbModalOpen(true);
+  };
+
+  const confirmResetDatabase = () => {
+    setIsResettingDb(true);
+    try {
       resetToDefault();
-      alert('AgriBiz database reset to initial mock states successfully.');
-      window.location.reload();
+      showToast('AgriBiz database reset to initial mock states successfully.', 'info');
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+    } finally {
+      setIsResettingDb(false);
+      setIsResetDbModalOpen(false);
     }
   };
 
@@ -4574,6 +4588,18 @@ export const Settings: React.FC = () => {
           </form>
         </Modal>
       )}
+
+      <DeleteConfirmModal
+        isOpen={isResetDbModalOpen}
+        onClose={() => {
+          if (!isResettingDb) setIsResetDbModalOpen(false);
+        }}
+        onConfirm={confirmResetDatabase}
+        title="Erase & Reset Business Data"
+        description="WARNING: Wiping database will delete all sales invoices, purchases, payments, and custom customer profiles. This resets AgriBiz to original sample data. Proceed?"
+        confirmText="Wipe & Reset Data"
+        isLoading={isResettingDb}
+      />
     </div>
   );
 };

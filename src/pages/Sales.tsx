@@ -4,6 +4,7 @@ import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
+import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
@@ -1229,96 +1230,68 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     return (
       <>
         {/* Delete Invoice modal */}
-        {deletingInvoice && createPortal(
-          <div className="modal-overlay" style={{ zIndex: 1000 }}>
-            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
-                  <AlertTriangle size={28} />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Invoice</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} disabled={isDeletingInvoice} onClick={() => setDeletingInvoice(null)}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    disabled={isDeletingInvoice}
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingInvoice ? 0.7 : 1, cursor: isDeletingInvoice ? 'not-allowed' : 'pointer' }}
-                    onClick={async () => {
-                      if (isDeletingInvoice) return;
-                      setIsDeletingInvoice(true);
-                      const idToDelete = deletingInvoice.id;
-                      const invoiceNo = deletingInvoice.invoiceNumber;
-                      try {
-                        await deleteInvoice(idToDelete);
-                        showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
-                        setDeletingInvoice(null);
-                        setViewInvoice(null);
-                      } catch (error: any) {
-                        console.error("Delete invoice error:", error);
-                        showToast(`Failed to delete: ${error.message || error}`, 'error');
-                      } finally {
-                        setIsDeletingInvoice(false);
-                      }
-                    }}
-                  >
-                    {isDeletingInvoice ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+        <DeleteConfirmModal
+          isOpen={!!deletingInvoice}
+          onClose={() => {
+            if (!isDeletingInvoice) setDeletingInvoice(null);
+          }}
+          onConfirm={async () => {
+            if (isDeletingInvoice || !deletingInvoice) return;
+            setIsDeletingInvoice(true);
+            const idToDelete = deletingInvoice.id;
+            const invoiceNo = deletingInvoice.invoiceNumber;
+            try {
+              await deleteInvoice(idToDelete);
+              showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
+              setDeletingInvoice(null);
+              setViewInvoice(null);
+            } catch (error: any) {
+              console.error("Delete invoice error:", error);
+              showToast(`Failed to delete: ${error.message || error}`, 'error');
+            } finally {
+              setIsDeletingInvoice(false);
+            }
+          }}
+          title="Delete Invoice"
+          itemName={deletingInvoice?.invoiceNumber ? `Invoice ${deletingInvoice.invoiceNumber}` : undefined}
+          description={deletingInvoice ? (
+            <>
+              Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
+            </>
+          ) : ''}
+          isLoading={isDeletingInvoice}
+        />
 
         {/* Delete Quotation modal */}
-        {deletingQuotation && createPortal(
-          <div className="modal-overlay" style={{ zIndex: 1000 }}>
-            <div className="card modal-content" style={{ maxWidth: '400px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px' }}>
-                <div style={{ padding: '12px', borderRadius: '50%', backgroundColor: '#fee2e2', color: 'var(--color-danger)' }}>
-                  <AlertTriangle size={28} />
-                </div>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>Delete Quotation</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                  Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
-                </p>
-                <div style={{ display: 'flex', gap: '12px', width: '100%', marginTop: '12px' }}>
-                  <button className="btn btn-secondary" style={{ flex: 1 }} disabled={isDeletingQuotation} onClick={() => setDeletingQuotation(null)}>
-                    Cancel
-                  </button>
-                  <button
-                    className="btn btn-primary"
-                    disabled={isDeletingQuotation}
-                    style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)', opacity: isDeletingQuotation ? 0.7 : 1, cursor: isDeletingQuotation ? 'not-allowed' : 'pointer' }}
-                    onClick={async () => {
-                      if (isDeletingQuotation) return;
-                      setIsDeletingQuotation(true);
-                      try {
-                        await deleteQuotation(deletingQuotation.id);
-                        showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
-                        setDeletingQuotation(null);
-                        setViewQuotation(null);
-                      } catch (error: any) {
-                        console.error("Delete quotation error:", error);
-                        showToast(`Failed to delete: ${error.message || error}`, 'error');
-                      } finally {
-                        setIsDeletingQuotation(false);
-                      }
-                    }}
-                  >
-                    {isDeletingQuotation ? 'Deleting...' : 'Delete'}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>,
-          document.body
-        )}
+        <DeleteConfirmModal
+          isOpen={!!deletingQuotation}
+          onClose={() => {
+            if (!isDeletingQuotation) setDeletingQuotation(null);
+          }}
+          onConfirm={async () => {
+            if (isDeletingQuotation || !deletingQuotation) return;
+            setIsDeletingQuotation(true);
+            try {
+              await deleteQuotation(deletingQuotation.id);
+              showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
+              setDeletingQuotation(null);
+              setViewQuotation(null);
+            } catch (error: any) {
+              console.error("Delete quotation error:", error);
+              showToast(`Failed to delete: ${error.message || error}`, 'error');
+            } finally {
+              setIsDeletingQuotation(false);
+            }
+          }}
+          title="Delete Quotation"
+          itemName={deletingQuotation?.quotationNumber ? `Quotation ${deletingQuotation.quotationNumber}` : undefined}
+          description={deletingQuotation ? (
+            <>
+              Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
+            </>
+          ) : ''}
+          isLoading={isDeletingQuotation}
+        />
 
         {/* Convert Quotation to Invoice Modal */}
         {isConvertModalOpen && convertQuotationId && createPortal(
