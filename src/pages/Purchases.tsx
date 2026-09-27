@@ -332,7 +332,7 @@ export const Purchases: React.FC = () => {
         const calc = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
         return {
           name,
-          quantity: item.quantity,
+          quantity: Math.max(0, Number(item.quantity) || 0),
           price: item.price,
           total: calc.total
         };
@@ -1307,8 +1307,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       const calc = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
       return {
         productId: item.productId,
-        productName: product.name,
-        quantity: item.quantity,
+        productName: product ? product.name : 'Unknown Product',
+        quantity: Math.max(1, Number(item.quantity) || 1),
         price: item.price,
         gstRate: calc.gstRate,
         gstAmount: calc.gstAmount,
