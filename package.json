@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy:render": "curl -X POST https://api.render.com/deploy/srv-dar0v7flot8c73e22gjg?key=NZ_vV4YWwZE"
   },
   "dependencies": {
     "@playwright/test": "^1.61.1",
