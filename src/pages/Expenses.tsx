@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useApp } from '../context/AppContext';
-import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
@@ -57,7 +57,7 @@ export const Expenses: React.FC = () => {
   const [category, setCategory] = useState('Shop Rent');
   const [customCategory, setCustomCategory] = useState('');
   const [payee, setPayee] = useState('');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(getTodayISTDate());
   const [amount, setAmount] = useState<string>('');
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque'>('UPI');
   const [status, setStatus] = useState<'Paid' | 'Due'>('Paid');
@@ -223,7 +223,7 @@ export const Expenses: React.FC = () => {
     setCategory('Shop Rent');
     setCustomCategory('');
     setPayee('');
-    setDate(new Date().toISOString().split('T')[0]);
+    setDate(getTodayISTDate());
     setAmount('');
     setPaymentMethod('UPI');
     setStatus('Paid');

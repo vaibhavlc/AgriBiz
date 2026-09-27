@@ -52,6 +52,17 @@ export const getUserInitials = (name?: string | null): string => {
   return (firstName[0] + lastName[lastName.length - 1]).toUpperCase();
 };
 
+// Helper to get current day's IST date (YYYY-MM-DD)
+export const getTodayISTDate = (): string => {
+  const now = new Date();
+  const istOffset = 330 * 60 * 1000; // 5 hours 30 minutes
+  const istDate = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+  const year = istDate.getFullYear();
+  const month = String(istDate.getMonth() + 1).padStart(2, '0');
+  const day = String(istDate.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
 // Helper to format dates consistently based on settings
 export const formatDate = (dateStr: string): string => {
   if (!dateStr) return '';

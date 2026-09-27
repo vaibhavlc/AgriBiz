@@ -5,7 +5,7 @@ import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
-import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
 import {
@@ -105,7 +105,7 @@ export const Sales: React.FC = () => {
 
   // Local state for invoice creator - defaults to 1 pre-filled required row
   const [selectedCustomerId, setSelectedCustomerId] = useState('');
-  const [invoiceDate, setInvoiceDate] = useState('2026-07-01');
+  const [invoiceDate, setInvoiceDate] = useState(getTodayISTDate());
   const [items, setItems] = useState<InvoiceItemLocal[]>([
     { productId: '', quantity: 1, price: 0, discount: 0 }
   ]);
@@ -165,7 +165,7 @@ export const Sales: React.FC = () => {
       // Clear forms
       setEditingInvoiceId(null);
       setSelectedCustomerId(salesFormPresetCustomerId);
-      setInvoiceDate(new Date().toISOString().split('T')[0]);
+      setInvoiceDate(getTodayISTDate());
       setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
       setAmountPaid(0);
       setNotes('');
@@ -808,9 +808,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   // --- Save / Edit Invoice Handlers ---
 
   const handleStartNewInvoice = () => {
+    const todayStr = getTodayISTDate();
     const defaults = {
       selectedCustomerId: '',
-      invoiceDate: '2026-07-01',
+      invoiceDate: todayStr,
       items: [{ productId: '', quantity: 1, price: 0, discount: 0 }],
       amountPaid: 0,
       paymentMethod: 'UPI',
@@ -821,7 +822,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     };
     setEditingInvoiceId(null);
     setSelectedCustomerId('');
-    setInvoiceDate('2026-07-01');
+    setInvoiceDate(todayStr);
     setItems([{ productId: '', quantity: 1, price: 0, discount: 0 }]);
     setAmountPaid(0);
     setPaymentMethod('UPI');
@@ -1104,7 +1105,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleStartNewQuotation = () => {
-    const defaultDate = new Date().toISOString().split('T')[0];
+    const defaultDate = getTodayISTDate();
     const defaultValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
     const defaults = {
       selectedCustomerId: '',

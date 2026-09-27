@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
-import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
@@ -81,10 +81,10 @@ export const Purchases: React.FC = () => {
   const [isDeletingPurchase, setIsDeletingPurchase] = useState(false);
 
   const [purchaseBillNumber, setPurchaseBillNumber] = useState('');
-  const [purchaseDate, setPurchaseDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [purchaseDate, setPurchaseDate] = useState(() => getTodayISTDate());
   const [selectedSupplierId, setSelectedSupplierId] = useState('');
   const [supplierInvoiceNumber, setSupplierInvoiceNumber] = useState('');
-  const [supplierInvoiceDate, setSupplierInvoiceDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [supplierInvoiceDate, setSupplierInvoiceDate] = useState(() => getTodayISTDate());
   const [purchaseType, setPurchaseType] = useState<'Cash' | 'Credit'>('Credit');
   const [dueDate, setDueDate] = useState(() => {
     const d = new Date();
@@ -183,7 +183,7 @@ export const Purchases: React.FC = () => {
 
   useEffect(() => {
     if (purchaseFormPresetSupplierId) {
-      const defaultDate = new Date().toISOString().split('T')[0];
+      const defaultDate = getTodayISTDate();
       const defaultDueDate = (() => {
         const d = new Date();
         d.setDate(d.getDate() + 30);
@@ -1075,7 +1075,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleStartNewPurchase = () => {
-    const defaultDate = new Date().toISOString().split('T')[0];
+    const defaultDate = getTodayISTDate();
     const defaultDueDate = (() => {
       const d = new Date();
       d.setDate(d.getDate() + 30);
@@ -1126,7 +1126,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     setEditingPurchaseId(null);
     setSelectedSupplierId('');
     setSupplierInvoiceNumber('');
-    setSupplierInvoiceDate(new Date().toISOString().split('T')[0]);
+    setSupplierInvoiceDate(getTodayISTDate());
     setPurchaseType('Credit');
     setDueDate(() => {
       const d = new Date();

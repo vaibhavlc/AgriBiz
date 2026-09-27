@@ -3,6 +3,7 @@ import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessS
 import {
   initialSettings,
   toTitleCase,
+  getTodayISTDate,
 } from '../utils/dummyData';
 import api, { setApiSocketId, getRawBaseHost } from '../utils/api';
 import authService from '../auth/authService';
@@ -907,7 +908,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isPaymentFormOpen, setIsPaymentFormOpen] = useState(false);
   const [paymentType, setPaymentType] = useState<'CustomerReceipt' | 'SupplierPayment'>('CustomerReceipt');
   const [contactId, setContactId] = useState('');
-  const [paymentDate, setPaymentDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(() => getTodayISTDate());
   const [amount, setAmount] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<'UPI' | 'Cash' | 'Bank Transfer' | 'Cheque'>('UPI');
   const [referenceNumber, setReferenceNumber] = useState('');
@@ -954,7 +955,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const defaults = {
       paymentType: preset ? preset.type : 'CustomerReceipt',
       contactId: preset ? preset.contactId : '',
-      paymentDate: new Date().toISOString().split('T')[0],
+      paymentDate: getTodayISTDate(),
       amount: 0,
       paymentMethod: 'UPI',
       referenceNumber: '',
@@ -968,7 +969,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setPaymentType('CustomerReceipt');
       setContactId('');
     }
-    setPaymentDate(new Date().toISOString().split('T')[0]);
+    setPaymentDate(getTodayISTDate());
     setAmount(0);
     setPaymentMethod('UPI');
     setReferenceNumber('');
