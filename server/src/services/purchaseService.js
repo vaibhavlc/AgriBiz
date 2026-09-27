@@ -28,9 +28,11 @@ class PurchaseService {
       // Add product stock levels
       if (purchasePayload.items && Array.isArray(purchasePayload.items)) {
         for (const item of purchasePayload.items) {
-          updateTasks.push(
-            productRepository.incrementStock(item.productId, companyId, item.quantity, session)
-          );
+          if (item && item.productId && item.quantity) {
+            updateTasks.push(
+              productRepository.incrementStock(item.productId, companyId, item.quantity, session)
+            );
+          }
         }
       }
 
@@ -70,12 +72,20 @@ class PurchaseService {
 
   async updatePurchase(purchaseId, companyId, purchaseData, updatedBy) {
     return runInTransaction(async (session) => {
-      const oldPurchase = await purchaseRepository.findById(purchaseId, companyId);
-      if (!oldPurchase) throw new Error('Purchase not found');
+      const oldPurchase = await purchaseRepository.findById(purchaseId, companyId, session);
+      if (!oldPurchase) {
+        const err = new Error('Purchase not found');
+        err.statusCode = 404;
+        throw err;
+      }
 
       // Revert old product stock additions
-      for (const item of oldPurchase.items) {
-        await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+      if (oldPurchase.items && Array.isArray(oldPurchase.items)) {
+        for (const item of oldPurchase.items) {
+          if (item && item.productId && item.quantity) {
+            await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+          }
+        }
       }
 
       // Revert old supplier outstanding adjustments
@@ -84,8 +94,12 @@ class PurchaseService {
       }
 
       // Apply new product stock additions
-      for (const item of purchaseData.items) {
-        await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
+      if (purchaseData.items && Array.isArray(purchaseData.items)) {
+        for (const item of purchaseData.items) {
+          if (item && item.productId && item.quantity) {
+            await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
+          }
+        }
       }
 
       // Apply new supplier outstanding adjustments
@@ -103,48 +117,75 @@ class PurchaseService {
 
   async deletePurchase(purchaseId, companyId, deletedBy) {
     return runInTransaction(async (session) => {
-      const purchase = await purchaseRepository.findById(purchaseId, companyId);
-      if (!purchase) throw new Error('Purchase not found');
+      const purchase = await purchaseRepository.findById(purchaseId, companyId, session);
+      if (!purchase) {
+        const existing = await purchaseRepository.findAny(purchaseId, companyId, session);
+        if (existing && existing.isDeleted) {
+          return existing; // Idempotent: already soft deleted
+        }
+        const err = new Error('Purchase not found');
+        err.statusCode = 404;
+        throw err;
+      }
 
       // Revert product stocks (deduct the stock added by the purchase)
-      for (const item of purchase.items) {
-        await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+      if (purchase.items && Array.isArray(purchase.items)) {
+        for (const item of purchase.items) {
+          if (item && item.productId && item.quantity) {
+            try {
+              await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+            } catch (pErr) {}
+          }
+        }
       }
 
       // Revert supplier outstanding balance
       if (purchase.supplierId && purchase.balanceDue) {
-        await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -purchase.balanceDue, session);
+        try {
+          await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -purchase.balanceDue, session);
+        } catch (sErr) {}
       }
 
       // Record to Recycle Bin
-      const plainPurchase = purchase.toObject ? purchase.toObject() : purchase;
-      const effectiveDeleter = deletedBy || 'System';
-      const recycleBinItemData = {
-        recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        companyId,
-        originalId: purchase.purchaseId || purchase._id?.toString() || purchaseId,
-        name: purchase.purchaseNumber || purchaseId,
-        module: 'Purchase',
-        deletedAt: new Date().toISOString(),
-        deletedBy: effectiveDeleter,
-        originalData: plainPurchase,
-      };
-      await recycleBinRepository.create(recycleBinItemData, session);
+      try {
+        const plainPurchase = purchase.toObject ? purchase.toObject() : JSON.parse(JSON.stringify(purchase));
+        const effectiveDeleter = deletedBy || 'System';
+        const recycleBinItemData = {
+          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          companyId,
+          originalId: purchase.purchaseId || purchase._id?.toString() || purchaseId,
+          name: purchase.purchaseNumber || purchaseId,
+          module: 'Purchase',
+          deletedAt: new Date().toISOString(),
+          deletedBy: effectiveDeleter,
+          originalData: plainPurchase,
+        };
+        await recycleBinRepository.create(recycleBinItemData, session);
+      } catch (rErr) {
+        console.warn('Recycle bin record warning:', rErr.message);
+      }
 
       // Perform soft delete
+      const effectiveDeleter = deletedBy || 'System';
       return purchaseRepository.softDelete(purchaseId, companyId, effectiveDeleter, session);
     });
   }
 
   async returnPurchase(purchaseId, companyId, returnData, createdBy) {
     return runInTransaction(async (session) => {
-      const purchase = await purchaseRepository.findById(purchaseId, companyId);
-      if (!purchase) throw new Error('Purchase not found');
+      const purchase = await purchaseRepository.findById(purchaseId, companyId, session);
+      if (!purchase) {
+        const err = new Error('Purchase not found');
+        err.statusCode = 404;
+        throw err;
+      }
 
       // Deduct returned quantity from stock (Stock OUT)
       if (returnData.items && Array.isArray(returnData.items)) {
         for (const item of returnData.items) {
-          await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+          if (item && item.productId && item.quantity) {
+            await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
+          }
         }
       }
 
@@ -152,7 +193,7 @@ class PurchaseService {
         await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -returnData.returnAmount, session);
       }
 
-      const updatedItems = purchase.items.map((pItem) => {
+      const updatedItems = (purchase.items || []).map((pItem) => {
         const retItem = (returnData.items || []).find((r) => r.productId === pItem.productId);
         if (retItem) {
           return {

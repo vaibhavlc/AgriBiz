@@ -7,12 +7,21 @@ class PurchaseRepository {
     if (mongoose.Types.ObjectId.isValid(purchaseId)) {
       $or.push({ _id: purchaseId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { companyId, $or };
+    if (isDeleted !== null && isDeleted !== undefined) {
+      query.isDeleted = isDeleted;
+    }
+    return query;
   }
 
   async findById(purchaseId, companyId, session) {
     const opts = session ? { session } : {};
     return Purchase.findOne(this.buildQuery(purchaseId, companyId, false), null, opts);
+  }
+
+  async findAny(purchaseId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Purchase.findOne(this.buildQuery(purchaseId, companyId, null), null, opts);
   }
 
   async findAll(companyId) {

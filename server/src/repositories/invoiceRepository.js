@@ -7,12 +7,21 @@ class InvoiceRepository {
     if (mongoose.Types.ObjectId.isValid(invoiceId)) {
       $or.push({ _id: invoiceId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { companyId, $or };
+    if (isDeleted !== null && isDeleted !== undefined) {
+      query.isDeleted = isDeleted;
+    }
+    return query;
   }
 
   async findById(invoiceId, companyId, session) {
     const opts = session ? { session } : {};
     return Invoice.findOne(this.buildQuery(invoiceId, companyId, false), null, opts);
+  }
+
+  async findAny(invoiceId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Invoice.findOne(this.buildQuery(invoiceId, companyId, null), null, opts);
   }
 
   async findAll(companyId) {
