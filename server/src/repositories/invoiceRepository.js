@@ -1,8 +1,16 @@
+import mongoose from 'mongoose';
 import Invoice from '../models/Invoice.js';
 
 class InvoiceRepository {
-  async findById(invoiceId, companyId) {
-    return Invoice.findOne({ invoiceId, companyId, isDeleted: false });
+  async findById(invoiceId, companyId, session) {
+    const opts = session ? { session } : {};
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
+      query.$or = [{ invoiceId }, { _id: invoiceId }];
+    } else {
+      query.invoiceId = invoiceId;
+    }
+    return Invoice.findOne(query, null, opts);
   }
 
   async findAll(companyId) {
@@ -21,13 +29,25 @@ class InvoiceRepository {
 
   async update(invoiceId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Invoice.findOneAndUpdate({ invoiceId, companyId, isDeleted: false }, updateData, opts);
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
+      query.$or = [{ invoiceId }, { _id: invoiceId }];
+    } else {
+      query.invoiceId = invoiceId;
+    }
+    return Invoice.findOneAndUpdate(query, updateData, opts);
   }
 
   async softDelete(invoiceId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
+      query.$or = [{ invoiceId }, { _id: invoiceId }];
+    } else {
+      query.invoiceId = invoiceId;
+    }
     return Invoice.findOneAndUpdate(
-      { invoiceId, companyId, isDeleted: false },
+      query,
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -35,8 +55,14 @@ class InvoiceRepository {
 
   async restore(invoiceId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: true };
+    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
+      query.$or = [{ invoiceId }, { _id: invoiceId }];
+    } else {
+      query.invoiceId = invoiceId;
+    }
     return Invoice.findOneAndUpdate(
-      { invoiceId, companyId, isDeleted: true },
+      query,
       { isDeleted: false, deletedAt: null },
       opts
     );

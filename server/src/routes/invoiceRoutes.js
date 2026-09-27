@@ -11,7 +11,7 @@ router.use(authenticate);
 router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), invoiceController.getInvoices);
 router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), invoiceController.getInvoice);
 router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(invoiceSchema), invoiceController.createInvoice);
-router.put('/:id', authorizeRoles('Owner', 'Accounts'), validate(invoiceSchema), invoiceController.updateInvoice);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts'), invoiceController.deleteInvoice);
+router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(invoiceSchema), invoiceController.updateInvoice);
+router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), invoiceController.deleteInvoice);
 
 export default router;

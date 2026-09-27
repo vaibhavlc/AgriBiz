@@ -10,8 +10,8 @@ router.use(authenticate);
 
 router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), productController.getProducts);
 router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), productController.getProduct);
-router.post('/', authorizeRoles('Owner', 'Accounts'), validate(productSchema), productController.createProduct);
-router.put('/:id', authorizeRoles('Owner', 'Accounts'), validate(productSchema), productController.updateProduct);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts'), productController.deleteProduct);
+router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(productSchema), productController.createProduct);
+router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(productSchema), productController.updateProduct);
+router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), productController.deleteProduct);
 
 export default router;

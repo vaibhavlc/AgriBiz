@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles('Owner', 'Accounts'), purchaseController.getPurchases);
-router.get('/:id', authorizeRoles('Owner', 'Accounts'), purchaseController.getPurchase);
-router.post('/', authorizeRoles('Owner', 'Accounts'), validate(purchaseSchema), purchaseController.createPurchase);
-router.put('/:id', authorizeRoles('Owner', 'Accounts'), validate(purchaseSchema), purchaseController.updatePurchase);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts'), purchaseController.deletePurchase);
+router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), purchaseController.getPurchases);
+router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), purchaseController.getPurchase);
+router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(purchaseSchema), purchaseController.createPurchase);
+router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(purchaseSchema), purchaseController.updatePurchase);
+router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), purchaseController.deletePurchase);
 
 export default router;

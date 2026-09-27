@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles('Owner', 'Accounts'), expenseController.getExpenses);
-router.get('/:id', authorizeRoles('Owner', 'Accounts'), expenseController.getExpense);
-router.post('/', authorizeRoles('Owner', 'Accounts'), validate(expenseSchema), expenseController.createExpense);
-router.put('/:id', authorizeRoles('Owner', 'Accounts'), validate(expenseSchema), expenseController.updateExpense);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts'), expenseController.deleteExpense);
+router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), expenseController.getExpenses);
+router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), expenseController.getExpense);
+router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(expenseSchema), expenseController.createExpense);
+router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(expenseSchema), expenseController.updateExpense);
+router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), expenseController.deleteExpense);
 
 export default router;

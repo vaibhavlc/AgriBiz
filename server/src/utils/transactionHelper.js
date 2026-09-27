@@ -25,27 +25,31 @@ export const runInTransaction = async (workFn) => {
       } catch (abortErr) {
         // Suppress session abort errors if the transaction was already closed or invalid
       }
-      session.endSession();
     }
     
     // Check if the error is due to transactions not being supported (e.g. standalone instance)
+    const errStr = (err.message || '') + ' ' + (err.name || '') + ' ' + (err.code || '');
     const isStandaloneError = 
       err.code === 20 || // TransactionSystemFailed
       err.code === 263 || // OperationNotSupportedInTransaction
-      err.message?.includes('replica set') || 
-      err.message?.includes('transaction') ||
-      err.message?.includes('Session');
+      /replica set/i.test(errStr) || 
+      /transaction/i.test(errStr) ||
+      /session/i.test(errStr) ||
+      /standalone/i.test(errStr) ||
+      /not supported/i.test(errStr);
       
     if (isStandaloneError) {
       console.warn('MongoDB environment does not support transactions (likely running standalone). Falling back to non-transactional execution.');
       // Execute the work function without any transaction session
-      return workFn(null);
+      return await workFn(null);
     }
     
     throw err;
   } finally {
-    if (session && session.session) {
-      session.endSession();
+    if (session) {
+      try {
+        await session.endSession();
+      } catch (endErr) {}
     }
   }
 };

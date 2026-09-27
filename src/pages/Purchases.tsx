@@ -2027,13 +2027,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   <button
                     className="btn btn-primary"
                     style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
-                    onClick={() => {
+                    onClick={async () => {
                       const idToDelete = deletingPurchase.id;
                       const purchaseNo = deletingPurchase.purchaseNumber;
-                      setDeletingPurchase(null);
                       try {
-                        deletePurchase(idToDelete);
-                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
+                        await deletePurchase(idToDelete);
+                        setDeletingPurchase(null);
                         setViewPurchase(null);
                       } catch (error: any) {
                         console.error("Delete purchase error:", error);
@@ -3512,13 +3511,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   <button
                     className="btn btn-primary"
                     style={{ flex: 1, background: 'linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-dark) 100%)' }}
-                    onClick={() => {
+                    onClick={async () => {
                       const idToDelete = deletingPurchase.id;
                       const purchaseNo = deletingPurchase.purchaseNumber;
-                      setDeletingPurchase(null);
                       try {
-                        deletePurchase(idToDelete);
-                        showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
+                        await deletePurchase(idToDelete);
+                        setDeletingPurchase(null);
                         setViewPurchase(null);
                       } catch (error: any) {
                         console.error("Delete purchase error:", error);

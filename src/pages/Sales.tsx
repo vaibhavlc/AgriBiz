@@ -1248,10 +1248,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     onClick={async () => {
                       const idToDelete = deletingInvoice.id;
                       const invoiceNo = deletingInvoice.invoiceNumber;
-                      setDeletingInvoice(null);
                       try {
-                        deleteInvoice(idToDelete);
-                        showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
+                        await deleteInvoice(idToDelete);
+                        setDeletingInvoice(null);
                         setViewInvoice(null);
                       } catch (error: any) {
                         console.error("Delete invoice error:", error);

@@ -1,9 +1,16 @@
+import mongoose from 'mongoose';
 import Product from '../models/Product.js';
 
 class ProductRepository {
   async findById(productId, companyId, session) {
     const opts = session ? { session } : {};
-    return Product.findOne({ productId, companyId, isDeleted: false }, null, opts);
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      query.$or = [{ productId }, { _id: productId }];
+    } else {
+      query.productId = productId;
+    }
+    return Product.findOne(query, null, opts);
   }
 
   async findAll(companyId) {
@@ -22,13 +29,25 @@ class ProductRepository {
 
   async update(productId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Product.findOneAndUpdate({ productId, companyId, isDeleted: false }, updateData, opts);
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      query.$or = [{ productId }, { _id: productId }];
+    } else {
+      query.productId = productId;
+    }
+    return Product.findOneAndUpdate(query, updateData, opts);
   }
 
   async incrementStock(productId, companyId, deltaQuantity, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      query.$or = [{ productId }, { _id: productId }];
+    } else {
+      query.productId = productId;
+    }
     return Product.findOneAndUpdate(
-      { productId, companyId, isDeleted: false },
+      query,
       { $inc: { stock: deltaQuantity } },
       opts
     );
@@ -36,8 +55,14 @@ class ProductRepository {
 
   async softDelete(productId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      query.$or = [{ productId }, { _id: productId }];
+    } else {
+      query.productId = productId;
+    }
     return Product.findOneAndUpdate(
-      { productId, companyId, isDeleted: false },
+      query,
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -45,8 +70,14 @@ class ProductRepository {
 
   async restore(productId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: true };
+    if (mongoose.Types.ObjectId.isValid(productId)) {
+      query.$or = [{ productId }, { _id: productId }];
+    } else {
+      query.productId = productId;
+    }
     return Product.findOneAndUpdate(
-      { productId, companyId, isDeleted: true },
+      query,
       { isDeleted: false, deletedAt: null },
       opts
     );

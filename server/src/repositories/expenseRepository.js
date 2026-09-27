@@ -1,8 +1,16 @@
+import mongoose from 'mongoose';
 import Expense from '../models/Expense.js';
 
 class ExpenseRepository {
-  async findById(expenseId, companyId) {
-    return Expense.findOne({ expenseId, companyId, isDeleted: false });
+  async findById(expenseId, companyId, session) {
+    const opts = session ? { session } : {};
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(expenseId)) {
+      query.$or = [{ expenseId }, { _id: expenseId }];
+    } else {
+      query.expenseId = expenseId;
+    }
+    return Expense.findOne(query, null, opts);
   }
 
   async findAll(companyId) {
@@ -17,13 +25,25 @@ class ExpenseRepository {
 
   async update(expenseId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Expense.findOneAndUpdate({ expenseId, companyId, isDeleted: false }, updateData, opts);
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(expenseId)) {
+      query.$or = [{ expenseId }, { _id: expenseId }];
+    } else {
+      query.expenseId = expenseId;
+    }
+    return Expense.findOneAndUpdate(query, updateData, opts);
   }
 
   async softDelete(expenseId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(expenseId)) {
+      query.$or = [{ expenseId }, { _id: expenseId }];
+    } else {
+      query.expenseId = expenseId;
+    }
     return Expense.findOneAndUpdate(
-      { expenseId, companyId, isDeleted: false },
+      query,
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -31,8 +51,14 @@ class ExpenseRepository {
 
   async restore(expenseId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: true };
+    if (mongoose.Types.ObjectId.isValid(expenseId)) {
+      query.$or = [{ expenseId }, { _id: expenseId }];
+    } else {
+      query.expenseId = expenseId;
+    }
     return Expense.findOneAndUpdate(
-      { expenseId, companyId, isDeleted: true },
+      query,
       { isDeleted: false, deletedAt: null },
       opts
     );

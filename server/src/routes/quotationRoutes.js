@@ -11,7 +11,7 @@ router.use(authenticate);
 router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), quotationController.getQuotations);
 router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), quotationController.getQuotation);
 router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(quotationSchema), quotationController.createQuotation);
-router.put('/:id', authorizeRoles('Owner', 'Accounts'), validate(quotationSchema), quotationController.updateQuotation);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts'), quotationController.deleteQuotation);
+router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(quotationSchema), quotationController.updateQuotation);
+router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), quotationController.deleteQuotation);
 
 export default router;

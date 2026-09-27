@@ -12,7 +12,7 @@ router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), paymentControlle
 router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), paymentController.getPayment);
 router.get('/contact/:contactId', authorizeRoles('Owner', 'Accounts', 'Cashier'), paymentController.getPaymentsByContact);
 router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(paymentSchema), paymentController.createPayment);
-router.put('/:id', authorizeRoles('Owner', 'Accounts'), validate(paymentSchema), paymentController.updatePayment);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts'), paymentController.deletePayment);
+router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(paymentSchema), paymentController.updatePayment);
+router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), paymentController.deletePayment);
 
 export default router;

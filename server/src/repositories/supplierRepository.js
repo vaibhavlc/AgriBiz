@@ -1,9 +1,16 @@
+import mongoose from 'mongoose';
 import Supplier from '../models/Supplier.js';
 
 class SupplierRepository {
   async findById(supplierId, companyId, session) {
     const opts = session ? { session } : {};
-    return Supplier.findOne({ supplierId, companyId, isDeleted: false }, null, opts);
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(supplierId)) {
+      query.$or = [{ supplierId }, { _id: supplierId }];
+    } else {
+      query.supplierId = supplierId;
+    }
+    return Supplier.findOne(query, null, opts);
   }
 
   async findAll(companyId) {
@@ -22,13 +29,25 @@ class SupplierRepository {
 
   async update(supplierId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Supplier.findOneAndUpdate({ supplierId, companyId, isDeleted: false }, updateData, opts);
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(supplierId)) {
+      query.$or = [{ supplierId }, { _id: supplierId }];
+    } else {
+      query.supplierId = supplierId;
+    }
+    return Supplier.findOneAndUpdate(query, updateData, opts);
   }
 
   async adjustOutstanding(supplierId, companyId, deltaAmount, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(supplierId)) {
+      query.$or = [{ supplierId }, { _id: supplierId }];
+    } else {
+      query.supplierId = supplierId;
+    }
     return Supplier.findOneAndUpdate(
-      { supplierId, companyId, isDeleted: false },
+      query,
       { $inc: { outstanding: deltaAmount } },
       opts
     );
@@ -36,8 +55,14 @@ class SupplierRepository {
 
   async softDelete(supplierId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: false };
+    if (mongoose.Types.ObjectId.isValid(supplierId)) {
+      query.$or = [{ supplierId }, { _id: supplierId }];
+    } else {
+      query.supplierId = supplierId;
+    }
     return Supplier.findOneAndUpdate(
-      { supplierId, companyId, isDeleted: false },
+      query,
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -45,8 +70,14 @@ class SupplierRepository {
 
   async restore(supplierId, companyId, session) {
     const opts = session ? { session, new: true } : { new: true };
+    const query = { companyId, isDeleted: true };
+    if (mongoose.Types.ObjectId.isValid(supplierId)) {
+      query.$or = [{ supplierId }, { _id: supplierId }];
+    } else {
+      query.supplierId = supplierId;
+    }
     return Supplier.findOneAndUpdate(
-      { supplierId, companyId, isDeleted: true },
+      query,
       { isDeleted: false, deletedAt: null },
       opts
     );
