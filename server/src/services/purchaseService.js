@@ -15,6 +15,17 @@ class PurchaseService {
   }
 
   async createPurchase(purchaseData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!createdBy) {
+      const err = new Error('Authenticated user identity is required.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       const purchasePayload = {
         ...purchaseData,
@@ -71,6 +82,11 @@ class PurchaseService {
   }
 
   async updatePurchase(purchaseId, companyId, purchaseData, updatedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required.');
+      err.statusCode = 400;
+      throw err;
+    }
     return runInTransaction(async (session) => {
       const oldPurchase = await purchaseRepository.findById(purchaseId, companyId, session);
       if (!oldPurchase) {
@@ -116,13 +132,21 @@ class PurchaseService {
   }
 
   async deletePurchase(purchaseId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let purchase = await purchaseRepository.findById(purchaseId, companyId, session);
       if (!purchase) {
         purchase = await purchaseRepository.findAny(purchaseId, companyId, session);
-      }
-      if (!purchase) {
-        purchase = await purchaseRepository.findAny(purchaseId, null, session);
       }
       if (!purchase) {
         const err = new Error('Purchase not found');
@@ -133,56 +157,37 @@ class PurchaseService {
         return purchase; // Idempotent: already soft deleted
       }
 
-      // Revert product stocks (deduct the stock added by the purchase)
+      // Revert product stocks (deduct stock added by purchase)
       if (purchase.items && Array.isArray(purchase.items)) {
         for (const item of purchase.items) {
           if (item && item.productId && item.quantity) {
-            try {
-              await productRepository.incrementStock(item.productId, companyId || purchase.companyId, -item.quantity, session);
-            } catch (pErr) {
-              console.warn('Stock revert warning on purchase delete:', pErr.message);
-            }
+            await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
           }
         }
       }
 
       // Revert supplier outstanding balance
       if (purchase.supplierId && purchase.balanceDue) {
-        try {
-          await supplierRepository.adjustOutstanding(purchase.supplierId, companyId || purchase.companyId, -purchase.balanceDue, session);
-        } catch (sErr) {
-          console.warn('Supplier outstanding revert warning on purchase delete:', sErr.message);
-        }
+        await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -purchase.balanceDue, session);
       }
 
-      // Record to Recycle Bin
-      try {
-        const plainPurchase = purchase.toObject ? purchase.toObject() : JSON.parse(JSON.stringify(purchase));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || purchase.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: purchase.purchaseId || purchase._id?.toString() || purchaseId,
-          name: purchase.purchaseNumber || purchaseId,
-          module: 'Purchase',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainPurchase,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning:', rErr.message);
-      }
+      // Atomic Recycle Bin record creation
+      const plainPurchase = purchase.toObject ? purchase.toObject() : JSON.parse(JSON.stringify(purchase));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: purchase.purchaseId || purchase._id?.toString() || purchaseId,
+        name: purchase.purchaseNumber || purchaseId,
+        module: 'Purchase',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainPurchase,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      // Perform soft delete
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await purchaseRepository.softDelete(purchaseId, companyId || purchase.companyId, effectiveDeleter, session);
-      if (!res && purchase._id) {
-        await purchase.constructor.updateOne({ _id: purchase._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await purchaseRepository.findAny(purchaseId, null, session);
-      }
-      return res || purchase;
+      // Perform soft delete strictly scoped to companyId and session
+      const softDeleted = await purchaseRepository.softDelete(purchaseId, companyId, deletedBy, session);
+      return softDeleted || purchase;
     });
   }
 
@@ -195,7 +200,6 @@ class PurchaseService {
         throw err;
       }
 
-      // Deduct returned quantity from stock (Stock OUT)
       if (returnData.items && Array.isArray(returnData.items)) {
         for (const item of returnData.items) {
           if (item && item.productId && item.quantity) {

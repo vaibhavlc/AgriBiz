@@ -12,6 +12,11 @@ class QuotationService {
   }
 
   async createQuotation(quotationData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
     const payload = {
       ...quotationData,
       companyId,
@@ -30,13 +35,21 @@ class QuotationService {
   }
 
   async deleteQuotation(quotationId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let quotation = await quotationRepository.findById(quotationId, companyId, session);
       if (!quotation) {
         quotation = await quotationRepository.findAny(quotationId, companyId, session);
-      }
-      if (!quotation) {
-        quotation = await quotationRepository.findAny(quotationId, null, session);
       }
       if (!quotation) {
         const err = new Error('Quotation not found');
@@ -47,32 +60,21 @@ class QuotationService {
         return quotation; // Idempotent: already soft deleted
       }
 
-      try {
-        const plainQuotation = quotation.toObject ? quotation.toObject() : JSON.parse(JSON.stringify(quotation));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || quotation.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: quotation.quotationId || quotation._id?.toString() || quotationId,
-          name: quotation.quotationNumber || quotationId,
-          module: 'Quotation',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainQuotation,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning on quotation delete:', rErr.message);
-      }
+      const plainQuotation = quotation.toObject ? quotation.toObject() : JSON.parse(JSON.stringify(quotation));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: quotation.quotationId || quotation._id?.toString() || quotationId,
+        name: quotation.quotationNumber || quotationId,
+        module: 'Quotation',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainQuotation,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await quotationRepository.softDelete(quotationId, companyId || quotation.companyId, effectiveDeleter, session);
-      if (!res && quotation._id) {
-        await quotation.constructor.updateOne({ _id: quotation._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await quotationRepository.findAny(quotationId, null, session);
-      }
-      return res || quotation;
+      const softDeleted = await quotationRepository.softDelete(quotationId, companyId, deletedBy, session);
+      return softDeleted || quotation;
     });
   }
 }

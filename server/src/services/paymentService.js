@@ -18,6 +18,11 @@ class PaymentService {
   }
 
   async createPayment(paymentData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
     return runInTransaction(async (session) => {
       const paymentPayload = {
         ...paymentData,
@@ -48,6 +53,11 @@ class PaymentService {
   }
 
   async updatePayment(paymentId, companyId, paymentData, updatedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required.');
+      err.statusCode = 400;
+      throw err;
+    }
     return runInTransaction(async (session) => {
       const oldPayment = await paymentRepository.findById(paymentId, companyId, session) || await paymentRepository.findAny(paymentId, companyId, session);
       if (!oldPayment) throw new Error('Payment record not found');
@@ -89,13 +99,21 @@ class PaymentService {
   }
 
   async deletePayment(paymentId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let payment = await paymentRepository.findById(paymentId, companyId, session);
       if (!payment) {
         payment = await paymentRepository.findAny(paymentId, companyId, session);
-      }
-      if (!payment) {
-        payment = await paymentRepository.findAny(paymentId, null, session);
       }
       if (!payment) {
         const err = new Error('Payment record not found');
@@ -106,57 +124,36 @@ class PaymentService {
         return payment; // Idempotent: already soft deleted
       }
 
-      // Revert payment impact safely
+      // Revert payment impact (restore outstanding balance)
       if (payment.type === 'CustomerReceipt') {
-        try {
-          const customer = await customerRepository.findById(payment.contactId, companyId, session) || await customerRepository.findAny(payment.contactId, companyId, session);
-          if (customer) {
-            const outstanding = customer.outstanding + payment.amount;
-            await customerRepository.update(payment.contactId, companyId, { outstanding }, session);
-          }
-        } catch (cErr) {
-          console.warn('Customer outstanding revert warning on payment delete:', cErr.message);
+        const customer = await customerRepository.findById(payment.contactId, companyId, session) || await customerRepository.findAny(payment.contactId, companyId, session);
+        if (customer) {
+          await customerRepository.adjustOutstanding(payment.contactId, companyId, payment.amount, session);
         }
       } else {
-        try {
-          const supplier = await supplierRepository.findById(payment.contactId, companyId, session) || await supplierRepository.findAny(payment.contactId, companyId, session);
-          if (supplier) {
-            const outstanding = supplier.outstanding + payment.amount;
-            await supplierRepository.update(payment.contactId, companyId, { outstanding }, session);
-          }
-        } catch (sErr) {
-          console.warn('Supplier outstanding revert warning on payment delete:', sErr.message);
+        const supplier = await supplierRepository.findById(payment.contactId, companyId, session) || await supplierRepository.findAny(payment.contactId, companyId, session);
+        if (supplier) {
+          await supplierRepository.adjustOutstanding(payment.contactId, companyId, payment.amount, session);
         }
       }
 
-      // Write to Recycle Bin
-      try {
-        const plainPayment = payment.toObject ? payment.toObject() : JSON.parse(JSON.stringify(payment));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || payment.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: payment.paymentId || payment._id?.toString() || paymentId,
-          name: `Payment: ₹${payment.amount} to ${payment.contactName}`,
-          module: 'Payment',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainPayment,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning on payment delete:', rErr.message);
-      }
+      // Atomic Recycle Bin record creation
+      const plainPayment = payment.toObject ? payment.toObject() : JSON.parse(JSON.stringify(payment));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: payment.paymentId || payment._id?.toString() || paymentId,
+        name: `Payment: ₹${payment.amount} to ${payment.contactName}`,
+        module: 'Payment',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainPayment,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      // Perform soft delete
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await paymentRepository.softDelete(paymentId, companyId || payment.companyId, effectiveDeleter, session);
-      if (!res && payment._id) {
-        await payment.constructor.updateOne({ _id: payment._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await paymentRepository.findAny(paymentId, null, session);
-      }
-      return res || payment;
+      // Perform soft delete strictly scoped to companyId and session
+      const softDeleted = await paymentRepository.softDelete(paymentId, companyId, deletedBy, session);
+      return softDeleted || payment;
     });
   }
 }

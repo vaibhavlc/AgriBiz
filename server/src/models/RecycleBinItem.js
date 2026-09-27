@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const recycleBinItemSchema = new mongoose.Schema(
   {
     recycleBinItemId: { type: String, required: true, unique: true, index: true },
-    companyId: { type: String, required: true, default: 'DEFAULT_COMPANY', index: true },
+    companyId: { type: String, required: true, index: true },
     originalId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     module: {
@@ -12,7 +12,7 @@ const recycleBinItemSchema = new mongoose.Schema(
       required: true,
     },
     deletedAt: { type: String, required: true },
-    deletedBy: { type: String, required: true, default: 'System' },
+    deletedBy: { type: String, required: true },
     originalData: { type: mongoose.Schema.Types.Mixed, required: true },
     
     // Sync & Auditing

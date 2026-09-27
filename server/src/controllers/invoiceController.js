@@ -29,7 +29,7 @@ class InvoiceController {
   async createInvoice(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const creatorName = req.user.name || req.user.role || req.user.userId || 'System';
+      const creatorName = req.user.userId || req.user.email || req.user.name;
       logger.info('Creating invoice for company %s by %s', companyId, creatorName);
       const invoice = await invoiceService.createInvoice(req.body, companyId, creatorName);
       await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'CREATE', invoice._id || invoice.invoiceId, invoice);
@@ -42,7 +42,7 @@ class InvoiceController {
   async updateInvoice(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const updaterName = req.user.name || req.user.role || req.user.userId || 'System';
+      const updaterName = req.user.userId || req.user.email || req.user.name;
       logger.info('Updating invoice %s for company %s by %s', req.params.id, companyId, updaterName);
       const invoice = await invoiceService.updateInvoice(req.params.id, companyId, req.body, updaterName);
       if (!invoice) {
@@ -58,7 +58,10 @@ class InvoiceController {
   async deleteInvoice(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
+      const deleterName = req.user.userId || req.user.email || req.user.name;
+      if (!companyId || !deleterName) {
+        return res.status(400).json({ success: false, message: 'Company ID and user identity are required for deletion.' });
+      }
       logger.info('Deleting invoice %s for company %s by %s', req.params.id, companyId, deleterName);
       await invoiceService.deleteInvoice(req.params.id, companyId, deleterName);
       try {

@@ -12,6 +12,11 @@ class ProductService {
   }
 
   async createProduct(productData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
     const initialStock = Math.max(0, parseInt(productData.openingStock ?? productData.stock ?? 0) || 0);
     const payload = {
       ...productData,
@@ -36,13 +41,21 @@ class ProductService {
   }
 
   async deleteProduct(productId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let product = await productRepository.findById(productId, companyId, session);
       if (!product) {
         product = await productRepository.findAny(productId, companyId, session);
-      }
-      if (!product) {
-        product = await productRepository.findAny(productId, null, session);
       }
       if (!product) {
         const err = new Error('Product not found');
@@ -53,32 +66,21 @@ class ProductService {
         return product; // Idempotent: already soft deleted
       }
 
-      try {
-        const plainProduct = product.toObject ? product.toObject() : JSON.parse(JSON.stringify(product));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || product.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: product.productId || product._id?.toString() || productId,
-          name: product.name || productId,
-          module: 'Product',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainProduct,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning on product delete:', rErr.message);
-      }
+      const plainProduct = product.toObject ? product.toObject() : JSON.parse(JSON.stringify(product));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: product.productId || product._id?.toString() || productId,
+        name: product.name || productId,
+        module: 'Product',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainProduct,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await productRepository.softDelete(productId, companyId || product.companyId, effectiveDeleter, session);
-      if (!res && product._id) {
-        await product.constructor.updateOne({ _id: product._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await productRepository.findAny(productId, null, session);
-      }
-      return res || product;
+      const softDeleted = await productRepository.softDelete(productId, companyId, deletedBy, session);
+      return softDeleted || product;
     });
   }
 }

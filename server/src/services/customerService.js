@@ -12,6 +12,11 @@ class CustomerService {
   }
 
   async createCustomer(customerData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
     const payload = {
       ...customerData,
       companyId,
@@ -30,13 +35,21 @@ class CustomerService {
   }
 
   async deleteCustomer(customerId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let customer = await customerRepository.findById(customerId, companyId, session);
       if (!customer) {
         customer = await customerRepository.findAny(customerId, companyId, session);
-      }
-      if (!customer) {
-        customer = await customerRepository.findAny(customerId, null, session);
       }
       if (!customer) {
         const err = new Error('Customer not found');
@@ -47,32 +60,21 @@ class CustomerService {
         return customer; // Idempotent: already soft deleted
       }
 
-      try {
-        const plainCustomer = customer.toObject ? customer.toObject() : JSON.parse(JSON.stringify(customer));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || customer.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: customer.customerId || customer._id?.toString() || customerId,
-          name: customer.name || customerId,
-          module: 'Customer',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainCustomer,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning on customer delete:', rErr.message);
-      }
+      const plainCustomer = customer.toObject ? customer.toObject() : JSON.parse(JSON.stringify(customer));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: customer.customerId || customer._id?.toString() || customerId,
+        name: customer.name || customerId,
+        module: 'Customer',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainCustomer,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await customerRepository.softDelete(customerId, companyId || customer.companyId, effectiveDeleter, session);
-      if (!res && customer._id) {
-        await customer.constructor.updateOne({ _id: customer._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await customerRepository.findAny(customerId, null, session);
-      }
-      return res || customer;
+      const softDeleted = await customerRepository.softDelete(customerId, companyId, deletedBy, session);
+      return softDeleted || customer;
     });
   }
 }

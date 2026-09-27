@@ -3,6 +3,11 @@ import RecycleBinItem from '../models/RecycleBinItem.js';
 
 class RecycleBinRepository {
   buildQuery(recycleBinItemId, companyId) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof recycleBinItemId === 'object' && recycleBinItemId !== null
       ? (recycleBinItemId.recycleBinItemId || recycleBinItemId._id?.toString() || String(recycleBinItemId))
       : String(recycleBinItemId || '');
@@ -10,13 +15,7 @@ class RecycleBinRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
-    return query;
+    return { companyId, $or };
   }
 
   async findById(recycleBinItemId, companyId, session) {
@@ -25,8 +24,8 @@ class RecycleBinRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }] } : {};
-    return RecycleBinItem.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return RecycleBinItem.find({ companyId }).sort({ createdAt: -1 });
   }
 
   async create(recycleBinItemData, session) {
@@ -41,9 +40,9 @@ class RecycleBinRepository {
   }
 
   async clearAll(companyId, session) {
+    if (!companyId) return { deletedCount: 0 };
     const opts = session ? { session } : {};
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }] } : {};
-    return RecycleBinItem.deleteMany(query, opts);
+    return RecycleBinItem.deleteMany({ companyId }, opts);
   }
 }
 

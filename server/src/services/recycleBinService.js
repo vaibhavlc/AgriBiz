@@ -19,10 +19,17 @@ import { runInTransaction } from '../utils/transactionHelper.js';
 
 class RecycleBinService {
   async getRecycleBin(companyId) {
+    if (!companyId) return [];
     return recycleBinRepository.findAll(companyId);
   }
 
   async restoreRecord(recycleBinItemId, companyId) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for restore.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       const binItem = await recycleBinRepository.findById(recycleBinItemId, companyId, session);
       if (!binItem) {
@@ -57,6 +64,12 @@ class RecycleBinService {
   }
 
   async deletePermanently(recycleBinItemId, companyId) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for permanent deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       const binItem = await recycleBinRepository.findById(recycleBinItemId, companyId, session);
       if (!binItem) {
@@ -68,25 +81,23 @@ class RecycleBinService {
       const { module, originalId } = binItem;
       const deleteOpts = session ? { session } : {};
 
-      // Hard delete original record from DB matching either primary ID or Mongo _id
-      const idOrObjId = [{ productId: originalId }, { customerId: originalId }, { supplierId: originalId }, { invoiceId: originalId }, { quotationId: originalId }, { purchaseId: originalId }, { paymentId: originalId }, { expenseId: originalId }];
-      
+      // Hard delete original record from DB matching either primary ID or Mongo _id STRICTLY scoped to companyId
       if (module === 'Product') {
-        await Product.deleteOne({ $or: [{ productId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Product.deleteOne({ companyId, $or: [{ productId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Customer') {
-        await Customer.deleteOne({ $or: [{ customerId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Customer.deleteOne({ companyId, $or: [{ customerId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Supplier') {
-        await Supplier.deleteOne({ $or: [{ supplierId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Supplier.deleteOne({ companyId, $or: [{ supplierId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Invoice') {
-        await Invoice.deleteOne({ $or: [{ invoiceId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Invoice.deleteOne({ companyId, $or: [{ invoiceId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Quotation') {
-        await Quotation.deleteOne({ $or: [{ quotationId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Quotation.deleteOne({ companyId, $or: [{ quotationId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Purchase') {
-        await Purchase.deleteOne({ $or: [{ purchaseId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Purchase.deleteOne({ companyId, $or: [{ purchaseId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Payment') {
-        await Payment.deleteOne({ $or: [{ paymentId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Payment.deleteOne({ companyId, $or: [{ paymentId: originalId }, { _id: originalId }] }, deleteOpts);
       } else if (module === 'Expense') {
-        await Expense.deleteOne({ $or: [{ expenseId: originalId }, { _id: originalId }] }, deleteOpts);
+        await Expense.deleteOne({ companyId, $or: [{ expenseId: originalId }, { _id: originalId }] }, deleteOpts);
       }
 
       await recycleBinRepository.delete(recycleBinItemId, companyId, session);

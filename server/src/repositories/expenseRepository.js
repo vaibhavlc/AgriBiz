@@ -3,6 +3,11 @@ import Expense from '../models/Expense.js';
 
 class ExpenseRepository {
   buildQuery(expenseId, companyId, isDeleted = false) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof expenseId === 'object' && expenseId !== null
       ? (expenseId.expenseId || expenseId._id?.toString() || String(expenseId))
       : String(expenseId || '');
@@ -10,12 +15,7 @@ class ExpenseRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
+    const query = { companyId, $or };
     if (isDeleted === false) {
       query.isDeleted = { $ne: true };
     } else if (isDeleted === true) {
@@ -35,8 +35,8 @@ class ExpenseRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Expense.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Expense.find({ companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async create(expenseData, session) {
@@ -69,8 +69,8 @@ class ExpenseRepository {
   }
 
   async count(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Expense.countDocuments(query);
+    if (!companyId) return 0;
+    return Expense.countDocuments({ companyId, isDeleted: { $ne: true } });
   }
 }
 

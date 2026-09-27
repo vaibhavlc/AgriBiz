@@ -3,6 +3,11 @@ import Purchase from '../models/Purchase.js';
 
 class PurchaseRepository {
   buildQuery(purchaseId, companyId, isDeleted = false) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof purchaseId === 'object' && purchaseId !== null
       ? (purchaseId.purchaseId || purchaseId._id?.toString() || String(purchaseId))
       : String(purchaseId || '');
@@ -10,12 +15,7 @@ class PurchaseRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
+    const query = { companyId, $or };
     if (isDeleted === false) {
       query.isDeleted = { $ne: true };
     } else if (isDeleted === true) {
@@ -35,8 +35,8 @@ class PurchaseRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Purchase.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Purchase.find({ companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async findByPurchaseNumber(purchaseNumber, companyId) {
@@ -73,8 +73,8 @@ class PurchaseRepository {
   }
 
   async count(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Purchase.countDocuments(query);
+    if (!companyId) return 0;
+    return Purchase.countDocuments({ companyId, isDeleted: { $ne: true } });
   }
 }
 

@@ -15,6 +15,17 @@ class InvoiceService {
   }
 
   async createInvoice(invoiceData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!createdBy) {
+      const err = new Error('Authenticated user identity is required.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       const invoicePayload = {
         ...invoiceData,
@@ -72,6 +83,11 @@ class InvoiceService {
   }
 
   async updateInvoice(invoiceId, companyId, invoiceData, updatedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required.');
+      err.statusCode = 400;
+      throw err;
+    }
     return runInTransaction(async (session) => {
       const oldInvoice = await invoiceRepository.findById(invoiceId, companyId, session);
       if (!oldInvoice) {
@@ -117,13 +133,21 @@ class InvoiceService {
   }
 
   async deleteInvoice(invoiceId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let invoice = await invoiceRepository.findById(invoiceId, companyId, session);
       if (!invoice) {
         invoice = await invoiceRepository.findAny(invoiceId, companyId, session);
-      }
-      if (!invoice) {
-        invoice = await invoiceRepository.findAny(invoiceId, null, session);
       }
       if (!invoice) {
         const err = new Error('Invoice not found');
@@ -138,52 +162,33 @@ class InvoiceService {
       if (invoice.items && Array.isArray(invoice.items)) {
         for (const item of invoice.items) {
           if (item && item.productId && item.quantity) {
-            try {
-              await productRepository.incrementStock(item.productId, companyId || invoice.companyId, item.quantity, session);
-            } catch (pErr) {
-              console.warn('Stock revert warning on invoice delete:', pErr.message);
-            }
+            await productRepository.incrementStock(item.productId, companyId, item.quantity, session);
           }
         }
       }
 
       // Revert customer outstanding balance
       if (invoice.customerId && invoice.balanceDue) {
-        try {
-          await customerRepository.adjustOutstanding(invoice.customerId, companyId || invoice.companyId, -invoice.balanceDue, session);
-        } catch (cErr) {
-          console.warn('Customer outstanding revert warning on invoice delete:', cErr.message);
-        }
+        await customerRepository.adjustOutstanding(invoice.customerId, companyId, -invoice.balanceDue, session);
       }
 
-      // Record to Recycle Bin
-      try {
-        const plainInvoice = invoice.toObject ? invoice.toObject() : JSON.parse(JSON.stringify(invoice));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || invoice.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: invoice.invoiceId || invoice._id?.toString() || invoiceId,
-          name: invoice.invoiceNumber || invoiceId,
-          module: 'Invoice',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainInvoice,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning:', rErr.message);
-      }
+      // Atomic Recycle Bin record creation
+      const plainInvoice = invoice.toObject ? invoice.toObject() : JSON.parse(JSON.stringify(invoice));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: invoice.invoiceId || invoice._id?.toString() || invoiceId,
+        name: invoice.invoiceNumber || invoiceId,
+        module: 'Invoice',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainInvoice,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      // Perform soft delete
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await invoiceRepository.softDelete(invoiceId, companyId || invoice.companyId, effectiveDeleter, session);
-      if (!res && invoice._id) {
-        await invoice.constructor.updateOne({ _id: invoice._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await invoiceRepository.findAny(invoiceId, null, session);
-      }
-      return res || invoice;
+      // Perform soft delete strictly scoped to companyId and session
+      const softDeleted = await invoiceRepository.softDelete(invoiceId, companyId, deletedBy, session);
+      return softDeleted || invoice;
     });
   }
 
@@ -196,7 +201,6 @@ class InvoiceService {
         throw err;
       }
 
-      // Add returned quantity back to product stock (Stock IN)
       if (returnData.items && Array.isArray(returnData.items)) {
         for (const item of returnData.items) {
           if (item && item.productId && item.quantity) {
@@ -205,7 +209,6 @@ class InvoiceService {
         }
       }
 
-      // Adjust customer outstanding balance if applicable
       if (invoice.customerId && returnData.returnAmount) {
         await customerRepository.adjustOutstanding(invoice.customerId, companyId, -returnData.returnAmount, session);
       }

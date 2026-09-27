@@ -12,6 +12,11 @@ class ExpenseService {
   }
 
   async createExpense(expenseData, companyId, createdBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for tenant operations.');
+      err.statusCode = 400;
+      throw err;
+    }
     const payload = {
       ...expenseData,
       companyId,
@@ -30,13 +35,21 @@ class ExpenseService {
   }
 
   async deleteExpense(expenseId, companyId, deletedBy) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+    if (!deletedBy) {
+      const err = new Error('Authenticated user identity is required for deletion.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     return runInTransaction(async (session) => {
       let expense = await expenseRepository.findById(expenseId, companyId, session);
       if (!expense) {
         expense = await expenseRepository.findAny(expenseId, companyId, session);
-      }
-      if (!expense) {
-        expense = await expenseRepository.findAny(expenseId, null, session);
       }
       if (!expense) {
         const err = new Error('Expense not found');
@@ -47,32 +60,21 @@ class ExpenseService {
         return expense; // Idempotent: already soft deleted
       }
 
-      try {
-        const plainExpense = expense.toObject ? expense.toObject() : JSON.parse(JSON.stringify(expense));
-        const effectiveDeleter = deletedBy || 'System';
-        const effectiveCompany = companyId || expense.companyId || 'DEFAULT_COMPANY';
-        const recycleBinItemData = {
-          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId: effectiveCompany,
-          originalId: expense.expenseId || expense._id?.toString() || expenseId,
-          name: `${expense.category}: ₹${expense.amount}`,
-          module: 'Expense',
-          deletedAt: new Date().toISOString(),
-          deletedBy: effectiveDeleter,
-          originalData: plainExpense,
-        };
-        await recycleBinRepository.create(recycleBinItemData, session);
-      } catch (rErr) {
-        console.warn('Recycle bin record warning on expense delete:', rErr.message);
-      }
+      const plainExpense = expense.toObject ? expense.toObject() : JSON.parse(JSON.stringify(expense));
+      const recycleBinItemData = {
+        recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+        companyId,
+        originalId: expense.expenseId || expense._id?.toString() || expenseId,
+        name: `${expense.category}: ₹${expense.amount}`,
+        module: 'Expense',
+        deletedAt: new Date().toISOString(),
+        deletedBy,
+        originalData: plainExpense,
+      };
+      await recycleBinRepository.create(recycleBinItemData, session);
 
-      const effectiveDeleter = deletedBy || 'System';
-      let res = await expenseRepository.softDelete(expenseId, companyId || expense.companyId, effectiveDeleter, session);
-      if (!res && expense._id) {
-        await expense.constructor.updateOne({ _id: expense._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
-        res = await expenseRepository.findAny(expenseId, null, session);
-      }
-      return res || expense;
+      const softDeleted = await expenseRepository.softDelete(expenseId, companyId, deletedBy, session);
+      return softDeleted || expense;
     });
   }
 }

@@ -3,6 +3,11 @@ import Payment from '../models/Payment.js';
 
 class PaymentRepository {
   buildQuery(paymentId, companyId, isDeleted = false) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof paymentId === 'object' && paymentId !== null
       ? (paymentId.paymentId || paymentId._id?.toString() || String(paymentId))
       : String(paymentId || '');
@@ -10,12 +15,7 @@ class PaymentRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
+    const query = { companyId, $or };
     if (isDeleted === false) {
       query.isDeleted = { $ne: true };
     } else if (isDeleted === true) {
@@ -35,13 +35,13 @@ class PaymentRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Payment.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Payment.find({ companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async findByContactId(contactId, companyId) {
-    const query = companyId ? { contactId, $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { contactId, isDeleted: { $ne: true } };
-    return Payment.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Payment.find({ contactId, companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async create(paymentData, session) {
@@ -74,8 +74,8 @@ class PaymentRepository {
   }
 
   async count(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Payment.countDocuments(query);
+    if (!companyId) return 0;
+    return Payment.countDocuments({ companyId, isDeleted: { $ne: true } });
   }
 }
 

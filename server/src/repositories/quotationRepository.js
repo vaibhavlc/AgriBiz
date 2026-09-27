@@ -3,6 +3,11 @@ import Quotation from '../models/Quotation.js';
 
 class QuotationRepository {
   buildQuery(quotationId, companyId, isDeleted = false) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof quotationId === 'object' && quotationId !== null
       ? (quotationId.quotationId || quotationId._id?.toString() || String(quotationId))
       : String(quotationId || '');
@@ -10,12 +15,7 @@ class QuotationRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
+    const query = { companyId, $or };
     if (isDeleted === false) {
       query.isDeleted = { $ne: true };
     } else if (isDeleted === true) {
@@ -35,8 +35,8 @@ class QuotationRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Quotation.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Quotation.find({ companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async findByQuotationNumber(quotationNumber, companyId) {
@@ -73,8 +73,8 @@ class QuotationRepository {
   }
 
   async count(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Quotation.countDocuments(query);
+    if (!companyId) return 0;
+    return Quotation.countDocuments({ companyId, isDeleted: { $ne: true } });
   }
 }
 

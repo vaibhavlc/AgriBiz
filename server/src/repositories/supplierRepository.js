@@ -3,6 +3,11 @@ import Supplier from '../models/Supplier.js';
 
 class SupplierRepository {
   buildQuery(supplierId, companyId, isDeleted = false) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof supplierId === 'object' && supplierId !== null
       ? (supplierId.supplierId || supplierId._id?.toString() || String(supplierId))
       : String(supplierId || '');
@@ -10,12 +15,7 @@ class SupplierRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
+    const query = { companyId, $or };
     if (isDeleted === false) {
       query.isDeleted = { $ne: true };
     } else if (isDeleted === true) {
@@ -35,8 +35,8 @@ class SupplierRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Supplier.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Supplier.find({ companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async findByPhone(phone, companyId) {
@@ -87,8 +87,8 @@ class SupplierRepository {
   }
 
   async count(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Supplier.countDocuments(query);
+    if (!companyId) return 0;
+    return Supplier.countDocuments({ companyId, isDeleted: { $ne: true } });
   }
 }
 

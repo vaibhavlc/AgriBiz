@@ -3,6 +3,11 @@ import Invoice from '../models/Invoice.js';
 
 class InvoiceRepository {
   buildQuery(invoiceId, companyId, isDeleted = false) {
+    if (!companyId) {
+      const err = new Error('Company ID is required for database query.');
+      err.statusCode = 400;
+      throw err;
+    }
     const cleanId = typeof invoiceId === 'object' && invoiceId !== null
       ? (invoiceId.invoiceId || invoiceId._id?.toString() || String(invoiceId))
       : String(invoiceId || '');
@@ -10,12 +15,7 @@ class InvoiceRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { $or };
-    if (companyId) {
-      query.$and = [
-        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
-      ];
-    }
+    const query = { companyId, $or };
     if (isDeleted === false) {
       query.isDeleted = { $ne: true };
     } else if (isDeleted === true) {
@@ -35,8 +35,8 @@ class InvoiceRepository {
   }
 
   async findAll(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Invoice.find(query).sort({ createdAt: -1 });
+    if (!companyId) return [];
+    return Invoice.find({ companyId, isDeleted: { $ne: true } }).sort({ createdAt: -1 });
   }
 
   async findByInvoiceNumber(invoiceNumber, companyId) {
@@ -73,8 +73,8 @@ class InvoiceRepository {
   }
 
   async count(companyId) {
-    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
-    return Invoice.countDocuments(query);
+    if (!companyId) return 0;
+    return Invoice.countDocuments({ companyId, isDeleted: { $ne: true } });
   }
 }
 
