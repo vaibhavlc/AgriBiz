@@ -49,18 +49,18 @@ class PaymentService {
 
   async updatePayment(paymentId, companyId, paymentData, updatedBy) {
     return runInTransaction(async (session) => {
-      const oldPayment = await paymentRepository.findById(paymentId, companyId);
+      const oldPayment = await paymentRepository.findById(paymentId, companyId, session) || await paymentRepository.findAny(paymentId, companyId, session);
       if (!oldPayment) throw new Error('Payment record not found');
 
       // Revert old payment impact
       if (oldPayment.type === 'CustomerReceipt') {
-        const customer = await customerRepository.findById(oldPayment.contactId, companyId);
+        const customer = await customerRepository.findById(oldPayment.contactId, companyId, session);
         if (customer) {
           const outstanding = customer.outstanding + oldPayment.amount;
           await customerRepository.update(oldPayment.contactId, companyId, { outstanding }, session);
         }
       } else {
-        const supplier = await supplierRepository.findById(oldPayment.contactId, companyId);
+        const supplier = await supplierRepository.findById(oldPayment.contactId, companyId, session);
         if (supplier) {
           const outstanding = supplier.outstanding + oldPayment.amount;
           await supplierRepository.update(oldPayment.contactId, companyId, { outstanding }, session);
@@ -69,12 +69,12 @@ class PaymentService {
 
       // Apply new payment impact
       if (paymentData.type === 'CustomerReceipt') {
-        const customer = await customerRepository.findById(paymentData.contactId, companyId);
+        const customer = await customerRepository.findById(paymentData.contactId, companyId, session);
         if (!customer) throw new Error('Customer not found');
         const outstanding = customer.outstanding - paymentData.amount;
         await customerRepository.update(paymentData.contactId, companyId, { outstanding }, session);
       } else {
-        const supplier = await supplierRepository.findById(paymentData.contactId, companyId);
+        const supplier = await supplierRepository.findById(paymentData.contactId, companyId, session);
         if (!supplier) throw new Error('Supplier not found');
         const outstanding = supplier.outstanding - paymentData.amount;
         await supplierRepository.update(paymentData.contactId, companyId, { outstanding }, session);
@@ -90,41 +90,73 @@ class PaymentService {
 
   async deletePayment(paymentId, companyId, deletedBy) {
     return runInTransaction(async (session) => {
-      const payment = await paymentRepository.findById(paymentId, companyId);
-      if (!payment) throw new Error('Payment record not found');
+      let payment = await paymentRepository.findById(paymentId, companyId, session);
+      if (!payment) {
+        payment = await paymentRepository.findAny(paymentId, companyId, session);
+      }
+      if (!payment) {
+        payment = await paymentRepository.findAny(paymentId, null, session);
+      }
+      if (!payment) {
+        const err = new Error('Payment record not found');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (payment.isDeleted) {
+        return payment; // Idempotent: already soft deleted
+      }
 
-      // Revert payment impact
+      // Revert payment impact safely
       if (payment.type === 'CustomerReceipt') {
-        const customer = await customerRepository.findById(payment.contactId, companyId);
-        if (customer) {
-          const outstanding = customer.outstanding + payment.amount;
-          await customerRepository.update(payment.contactId, companyId, { outstanding }, session);
+        try {
+          const customer = await customerRepository.findById(payment.contactId, companyId, session) || await customerRepository.findAny(payment.contactId, companyId, session);
+          if (customer) {
+            const outstanding = customer.outstanding + payment.amount;
+            await customerRepository.update(payment.contactId, companyId, { outstanding }, session);
+          }
+        } catch (cErr) {
+          console.warn('Customer outstanding revert warning on payment delete:', cErr.message);
         }
       } else {
-        const supplier = await supplierRepository.findById(payment.contactId, companyId);
-        if (supplier) {
-          const outstanding = supplier.outstanding + payment.amount;
-          await supplierRepository.update(payment.contactId, companyId, { outstanding }, session);
+        try {
+          const supplier = await supplierRepository.findById(payment.contactId, companyId, session) || await supplierRepository.findAny(payment.contactId, companyId, session);
+          if (supplier) {
+            const outstanding = supplier.outstanding + payment.amount;
+            await supplierRepository.update(payment.contactId, companyId, { outstanding }, session);
+          }
+        } catch (sErr) {
+          console.warn('Supplier outstanding revert warning on payment delete:', sErr.message);
         }
       }
 
       // Write to Recycle Bin
-      const plainPayment = payment.toObject ? payment.toObject() : payment;
-      const effectiveDeleter = deletedBy || 'System';
-      const recycleBinItemData = {
-        recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        companyId,
-        originalId: payment.paymentId || payment._id?.toString() || paymentId,
-        name: `Payment: ₹${payment.amount} to ${payment.contactName}`,
-        module: 'Payment',
-        deletedAt: new Date().toISOString(),
-        deletedBy: effectiveDeleter,
-        originalData: plainPayment,
-      };
-      await recycleBinRepository.create(recycleBinItemData, session);
+      try {
+        const plainPayment = payment.toObject ? payment.toObject() : JSON.parse(JSON.stringify(payment));
+        const effectiveDeleter = deletedBy || 'System';
+        const effectiveCompany = companyId || payment.companyId || 'DEFAULT_COMPANY';
+        const recycleBinItemData = {
+          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          companyId: effectiveCompany,
+          originalId: payment.paymentId || payment._id?.toString() || paymentId,
+          name: `Payment: ₹${payment.amount} to ${payment.contactName}`,
+          module: 'Payment',
+          deletedAt: new Date().toISOString(),
+          deletedBy: effectiveDeleter,
+          originalData: plainPayment,
+        };
+        await recycleBinRepository.create(recycleBinItemData, session);
+      } catch (rErr) {
+        console.warn('Recycle bin record warning on payment delete:', rErr.message);
+      }
 
       // Perform soft delete
-      return paymentRepository.softDelete(paymentId, companyId, effectiveDeleter, session);
+      const effectiveDeleter = deletedBy || 'System';
+      let res = await paymentRepository.softDelete(paymentId, companyId || payment.companyId, effectiveDeleter, session);
+      if (!res && payment._id) {
+        await payment.constructor.updateOne({ _id: payment._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
+        res = await paymentRepository.findAny(paymentId, null, session);
+      }
+      return res || payment;
     });
   }
 }

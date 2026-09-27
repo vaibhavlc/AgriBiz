@@ -37,25 +37,48 @@ class ProductService {
 
   async deleteProduct(productId, companyId, deletedBy) {
     return runInTransaction(async (session) => {
-      const product = await productRepository.findById(productId, companyId);
-      if (!product) throw new Error('Product not found');
+      let product = await productRepository.findById(productId, companyId, session);
+      if (!product) {
+        product = await productRepository.findAny(productId, companyId, session);
+      }
+      if (!product) {
+        product = await productRepository.findAny(productId, null, session);
+      }
+      if (!product) {
+        const err = new Error('Product not found');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (product.isDeleted) {
+        return product; // Idempotent: already soft deleted
+      }
 
-      const plainProduct = product.toObject ? product.toObject() : product;
+      try {
+        const plainProduct = product.toObject ? product.toObject() : JSON.parse(JSON.stringify(product));
+        const effectiveDeleter = deletedBy || 'System';
+        const effectiveCompany = companyId || product.companyId || 'DEFAULT_COMPANY';
+        const recycleBinItemData = {
+          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          companyId: effectiveCompany,
+          originalId: product.productId || product._id?.toString() || productId,
+          name: product.name || productId,
+          module: 'Product',
+          deletedAt: new Date().toISOString(),
+          deletedBy: effectiveDeleter,
+          originalData: plainProduct,
+        };
+        await recycleBinRepository.create(recycleBinItemData, session);
+      } catch (rErr) {
+        console.warn('Recycle bin record warning on product delete:', rErr.message);
+      }
+
       const effectiveDeleter = deletedBy || 'System';
-      const recycleBinItemData = {
-        recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        companyId,
-        originalId: product.productId || product._id?.toString() || productId,
-        name: product.name || productId,
-        module: 'Product',
-        deletedAt: new Date().toISOString(),
-        deletedBy: effectiveDeleter,
-        originalData: plainProduct,
-      };
-
-      await recycleBinRepository.create(recycleBinItemData, session);
-      await productRepository.softDelete(productId, companyId, effectiveDeleter, session);
-      return product;
+      let res = await productRepository.softDelete(productId, companyId || product.companyId, effectiveDeleter, session);
+      if (!res && product._id) {
+        await product.constructor.updateOne({ _id: product._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
+        res = await productRepository.findAny(productId, null, session);
+      }
+      return res || product;
     });
   }
 }

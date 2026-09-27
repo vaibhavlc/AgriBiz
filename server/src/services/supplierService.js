@@ -31,25 +31,48 @@ class SupplierService {
 
   async deleteSupplier(supplierId, companyId, deletedBy) {
     return runInTransaction(async (session) => {
-      const supplier = await supplierRepository.findById(supplierId, companyId);
-      if (!supplier) throw new Error('Supplier not found');
+      let supplier = await supplierRepository.findById(supplierId, companyId, session);
+      if (!supplier) {
+        supplier = await supplierRepository.findAny(supplierId, companyId, session);
+      }
+      if (!supplier) {
+        supplier = await supplierRepository.findAny(supplierId, null, session);
+      }
+      if (!supplier) {
+        const err = new Error('Supplier not found');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (supplier.isDeleted) {
+        return supplier; // Idempotent: already soft deleted
+      }
 
-      const plainSupplier = supplier.toObject ? supplier.toObject() : supplier;
+      try {
+        const plainSupplier = supplier.toObject ? supplier.toObject() : JSON.parse(JSON.stringify(supplier));
+        const effectiveDeleter = deletedBy || 'System';
+        const effectiveCompany = companyId || supplier.companyId || 'DEFAULT_COMPANY';
+        const recycleBinItemData = {
+          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          companyId: effectiveCompany,
+          originalId: supplier.supplierId || supplier._id?.toString() || supplierId,
+          name: supplier.name || supplierId,
+          module: 'Supplier',
+          deletedAt: new Date().toISOString(),
+          deletedBy: effectiveDeleter,
+          originalData: plainSupplier,
+        };
+        await recycleBinRepository.create(recycleBinItemData, session);
+      } catch (rErr) {
+        console.warn('Recycle bin record warning on supplier delete:', rErr.message);
+      }
+
       const effectiveDeleter = deletedBy || 'System';
-      const recycleBinItemData = {
-        recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        companyId,
-        originalId: supplier.supplierId || supplier._id?.toString() || supplierId,
-        name: supplier.name || supplierId,
-        module: 'Supplier',
-        deletedAt: new Date().toISOString(),
-        deletedBy: effectiveDeleter,
-        originalData: plainSupplier,
-      };
-
-      await recycleBinRepository.create(recycleBinItemData, session);
-      await supplierRepository.softDelete(supplierId, companyId, effectiveDeleter, session);
-      return supplier;
+      let res = await supplierRepository.softDelete(supplierId, companyId || supplier.companyId, effectiveDeleter, session);
+      if (!res && supplier._id) {
+        await supplier.constructor.updateOne({ _id: supplier._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
+        res = await supplierRepository.findAny(supplierId, null, session);
+      }
+      return res || supplier;
     });
   }
 }

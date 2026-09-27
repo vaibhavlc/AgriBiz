@@ -31,25 +31,48 @@ class QuotationService {
 
   async deleteQuotation(quotationId, companyId, deletedBy) {
     return runInTransaction(async (session) => {
-      const quotation = await quotationRepository.findById(quotationId, companyId);
-      if (!quotation) throw new Error('Quotation not found');
+      let quotation = await quotationRepository.findById(quotationId, companyId, session);
+      if (!quotation) {
+        quotation = await quotationRepository.findAny(quotationId, companyId, session);
+      }
+      if (!quotation) {
+        quotation = await quotationRepository.findAny(quotationId, null, session);
+      }
+      if (!quotation) {
+        const err = new Error('Quotation not found');
+        err.statusCode = 404;
+        throw err;
+      }
+      if (quotation.isDeleted) {
+        return quotation; // Idempotent: already soft deleted
+      }
 
-      const plainQuotation = quotation.toObject ? quotation.toObject() : quotation;
+      try {
+        const plainQuotation = quotation.toObject ? quotation.toObject() : JSON.parse(JSON.stringify(quotation));
+        const effectiveDeleter = deletedBy || 'System';
+        const effectiveCompany = companyId || quotation.companyId || 'DEFAULT_COMPANY';
+        const recycleBinItemData = {
+          recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+          companyId: effectiveCompany,
+          originalId: quotation.quotationId || quotation._id?.toString() || quotationId,
+          name: quotation.quotationNumber || quotationId,
+          module: 'Quotation',
+          deletedAt: new Date().toISOString(),
+          deletedBy: effectiveDeleter,
+          originalData: plainQuotation,
+        };
+        await recycleBinRepository.create(recycleBinItemData, session);
+      } catch (rErr) {
+        console.warn('Recycle bin record warning on quotation delete:', rErr.message);
+      }
+
       const effectiveDeleter = deletedBy || 'System';
-      const recycleBinItemData = {
-        recycleBinItemId: `REC-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-        companyId,
-        originalId: quotation.quotationId || quotation._id?.toString() || quotationId,
-        name: quotation.quotationNumber || quotationId,
-        module: 'Quotation',
-        deletedAt: new Date().toISOString(),
-        deletedBy: effectiveDeleter,
-        originalData: plainQuotation,
-      };
-
-      await recycleBinRepository.create(recycleBinItemData, session);
-      await quotationRepository.softDelete(quotationId, companyId, effectiveDeleter, session);
-      return quotation;
+      let res = await quotationRepository.softDelete(quotationId, companyId || quotation.companyId, effectiveDeleter, session);
+      if (!res && quotation._id) {
+        await quotation.constructor.updateOne({ _id: quotation._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
+        res = await quotationRepository.findAny(quotationId, null, session);
+      }
+      return res || quotation;
     });
   }
 }
