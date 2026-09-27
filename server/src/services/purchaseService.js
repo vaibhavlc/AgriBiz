@@ -117,15 +117,20 @@ class PurchaseService {
 
   async deletePurchase(purchaseId, companyId, deletedBy) {
     return runInTransaction(async (session) => {
-      const purchase = await purchaseRepository.findById(purchaseId, companyId, session);
+      let purchase = await purchaseRepository.findById(purchaseId, companyId, session);
       if (!purchase) {
-        const existing = await purchaseRepository.findAny(purchaseId, companyId, session);
-        if (existing && existing.isDeleted) {
-          return existing; // Idempotent: already soft deleted
-        }
+        purchase = await purchaseRepository.findAny(purchaseId, companyId, session);
+      }
+      if (!purchase) {
+        purchase = await purchaseRepository.findAny(purchaseId, null, session);
+      }
+      if (!purchase) {
         const err = new Error('Purchase not found');
         err.statusCode = 404;
         throw err;
+      }
+      if (purchase.isDeleted) {
+        return purchase; // Idempotent: already soft deleted
       }
 
       // Revert product stocks (deduct the stock added by the purchase)
@@ -133,8 +138,10 @@ class PurchaseService {
         for (const item of purchase.items) {
           if (item && item.productId && item.quantity) {
             try {
-              await productRepository.incrementStock(item.productId, companyId, -item.quantity, session);
-            } catch (pErr) {}
+              await productRepository.incrementStock(item.productId, companyId || purchase.companyId, -item.quantity, session);
+            } catch (pErr) {
+              console.warn('Stock revert warning on purchase delete:', pErr.message);
+            }
           }
         }
       }
@@ -142,17 +149,20 @@ class PurchaseService {
       // Revert supplier outstanding balance
       if (purchase.supplierId && purchase.balanceDue) {
         try {
-          await supplierRepository.adjustOutstanding(purchase.supplierId, companyId, -purchase.balanceDue, session);
-        } catch (sErr) {}
+          await supplierRepository.adjustOutstanding(purchase.supplierId, companyId || purchase.companyId, -purchase.balanceDue, session);
+        } catch (sErr) {
+          console.warn('Supplier outstanding revert warning on purchase delete:', sErr.message);
+        }
       }
 
       // Record to Recycle Bin
       try {
         const plainPurchase = purchase.toObject ? purchase.toObject() : JSON.parse(JSON.stringify(purchase));
         const effectiveDeleter = deletedBy || 'System';
+        const effectiveCompany = companyId || purchase.companyId || 'DEFAULT_COMPANY';
         const recycleBinItemData = {
           recycleBinItemId: `REC-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
-          companyId,
+          companyId: effectiveCompany,
           originalId: purchase.purchaseId || purchase._id?.toString() || purchaseId,
           name: purchase.purchaseNumber || purchaseId,
           module: 'Purchase',
@@ -167,7 +177,12 @@ class PurchaseService {
 
       // Perform soft delete
       const effectiveDeleter = deletedBy || 'System';
-      return purchaseRepository.softDelete(purchaseId, companyId, effectiveDeleter, session);
+      let res = await purchaseRepository.softDelete(purchaseId, companyId || purchase.companyId, effectiveDeleter, session);
+      if (!res && purchase._id) {
+        await purchase.constructor.updateOne({ _id: purchase._id }, { isDeleted: true, deletedAt: new Date(), updatedBy: effectiveDeleter }, { session });
+        res = await purchaseRepository.findAny(purchaseId, null, session);
+      }
+      return res || purchase;
     });
   }
 

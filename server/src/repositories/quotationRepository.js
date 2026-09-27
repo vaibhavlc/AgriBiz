@@ -3,11 +3,25 @@ import Quotation from '../models/Quotation.js';
 
 class QuotationRepository {
   buildQuery(quotationId, companyId, isDeleted = false) {
-    const $or = [{ quotationId }, { quotationNumber: quotationId }];
-    if (mongoose.Types.ObjectId.isValid(quotationId)) {
-      $or.push({ _id: quotationId });
+    const cleanId = typeof quotationId === 'object' && quotationId !== null
+      ? (quotationId.quotationId || quotationId._id?.toString() || String(quotationId))
+      : String(quotationId || '');
+    const $or = [{ quotationId: cleanId }, { quotationNumber: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { $or };
+    if (companyId) {
+      query.$and = [
+        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
+      ];
+    }
+    if (isDeleted === false) {
+      query.isDeleted = { $ne: true };
+    } else if (isDeleted === true) {
+      query.isDeleted = true;
+    }
+    return query;
   }
 
   async findById(quotationId, companyId, session) {
@@ -15,12 +29,18 @@ class QuotationRepository {
     return Quotation.findOne(this.buildQuery(quotationId, companyId, false), null, opts);
   }
 
+  async findAny(quotationId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Quotation.findOne(this.buildQuery(quotationId, companyId, null), null, opts);
+  }
+
   async findAll(companyId) {
-    return Quotation.find({ companyId, isDeleted: false }).sort({ createdAt: -1 });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Quotation.find(query).sort({ createdAt: -1 });
   }
 
   async findByQuotationNumber(quotationNumber, companyId) {
-    return Quotation.findOne({ quotationNumber, companyId, isDeleted: false });
+    return Quotation.findOne(this.buildQuery(quotationNumber, companyId, false));
   }
 
   async create(quotationData, session) {
@@ -31,13 +51,13 @@ class QuotationRepository {
 
   async update(quotationId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Quotation.findOneAndUpdate(this.buildQuery(quotationId, companyId, false), updateData, opts);
+    return Quotation.findOneAndUpdate(this.buildQuery(quotationId, companyId, null), updateData, opts);
   }
 
   async softDelete(quotationId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Quotation.findOneAndUpdate(
-      this.buildQuery(quotationId, companyId, false),
+      this.buildQuery(quotationId, companyId, null),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -53,7 +73,8 @@ class QuotationRepository {
   }
 
   async count(companyId) {
-    return Quotation.countDocuments({ companyId, isDeleted: false });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Quotation.countDocuments(query);
   }
 }
 

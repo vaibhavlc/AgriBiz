@@ -3,11 +3,25 @@ import Expense from '../models/Expense.js';
 
 class ExpenseRepository {
   buildQuery(expenseId, companyId, isDeleted = false) {
-    const $or = [{ expenseId }];
-    if (mongoose.Types.ObjectId.isValid(expenseId)) {
-      $or.push({ _id: expenseId });
+    const cleanId = typeof expenseId === 'object' && expenseId !== null
+      ? (expenseId.expenseId || expenseId._id?.toString() || String(expenseId))
+      : String(expenseId || '');
+    const $or = [{ expenseId: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { $or };
+    if (companyId) {
+      query.$and = [
+        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
+      ];
+    }
+    if (isDeleted === false) {
+      query.isDeleted = { $ne: true };
+    } else if (isDeleted === true) {
+      query.isDeleted = true;
+    }
+    return query;
   }
 
   async findById(expenseId, companyId, session) {
@@ -15,8 +29,14 @@ class ExpenseRepository {
     return Expense.findOne(this.buildQuery(expenseId, companyId, false), null, opts);
   }
 
+  async findAny(expenseId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Expense.findOne(this.buildQuery(expenseId, companyId, null), null, opts);
+  }
+
   async findAll(companyId) {
-    return Expense.find({ companyId, isDeleted: false }).sort({ createdAt: -1 });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Expense.find(query).sort({ createdAt: -1 });
   }
 
   async create(expenseData, session) {
@@ -27,13 +47,13 @@ class ExpenseRepository {
 
   async update(expenseId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Expense.findOneAndUpdate(this.buildQuery(expenseId, companyId, false), updateData, opts);
+    return Expense.findOneAndUpdate(this.buildQuery(expenseId, companyId, null), updateData, opts);
   }
 
   async softDelete(expenseId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Expense.findOneAndUpdate(
-      this.buildQuery(expenseId, companyId, false),
+      this.buildQuery(expenseId, companyId, null),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -49,7 +69,8 @@ class ExpenseRepository {
   }
 
   async count(companyId) {
-    return Expense.countDocuments({ companyId, isDeleted: false });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Expense.countDocuments(query);
   }
 }
 

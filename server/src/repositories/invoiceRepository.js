@@ -10,9 +10,16 @@ class InvoiceRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { companyId, $or };
-    if (isDeleted !== null && isDeleted !== undefined) {
-      query.isDeleted = isDeleted;
+    const query = { $or };
+    if (companyId) {
+      query.$and = [
+        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
+      ];
+    }
+    if (isDeleted === false) {
+      query.isDeleted = { $ne: true };
+    } else if (isDeleted === true) {
+      query.isDeleted = true;
     }
     return query;
   }
@@ -28,11 +35,12 @@ class InvoiceRepository {
   }
 
   async findAll(companyId) {
-    return Invoice.find({ companyId, isDeleted: false }).sort({ createdAt: -1 });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Invoice.find(query).sort({ createdAt: -1 });
   }
 
   async findByInvoiceNumber(invoiceNumber, companyId) {
-    return Invoice.findOne({ invoiceNumber, companyId, isDeleted: false });
+    return Invoice.findOne(this.buildQuery(invoiceNumber, companyId, false));
   }
 
   async create(invoiceData, session) {
@@ -43,13 +51,13 @@ class InvoiceRepository {
 
   async update(invoiceId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Invoice.findOneAndUpdate(this.buildQuery(invoiceId, companyId, false), updateData, opts);
+    return Invoice.findOneAndUpdate(this.buildQuery(invoiceId, companyId, null), updateData, opts);
   }
 
   async softDelete(invoiceId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Invoice.findOneAndUpdate(
-      this.buildQuery(invoiceId, companyId, false),
+      this.buildQuery(invoiceId, companyId, null),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -65,7 +73,8 @@ class InvoiceRepository {
   }
 
   async count(companyId) {
-    return Invoice.countDocuments({ companyId, isDeleted: false });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Invoice.countDocuments(query);
   }
 }
 

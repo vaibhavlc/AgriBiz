@@ -10,9 +10,16 @@ class ProductRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { companyId, $or };
-    if (isDeleted !== null && isDeleted !== undefined) {
-      query.isDeleted = isDeleted;
+    const query = { $or };
+    if (companyId) {
+      query.$and = [
+        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
+      ];
+    }
+    if (isDeleted === false) {
+      query.isDeleted = { $ne: true };
+    } else if (isDeleted === true) {
+      query.isDeleted = true;
     }
     return query;
   }
@@ -28,11 +35,12 @@ class ProductRepository {
   }
 
   async findAll(companyId) {
-    return Product.find({ companyId, isDeleted: false });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Product.find(query).sort({ createdAt: -1 });
   }
 
   async findBySku(sku, companyId) {
-    return Product.findOne({ sku, companyId, isDeleted: false });
+    return Product.findOne(this.buildQuery(sku, companyId, false));
   }
 
   async create(productData, session) {
@@ -43,7 +51,7 @@ class ProductRepository {
 
   async update(productId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Product.findOneAndUpdate(this.buildQuery(productId, companyId, false), updateData, opts);
+    return Product.findOneAndUpdate(this.buildQuery(productId, companyId, null), updateData, opts);
   }
 
   async incrementStock(productId, companyId, deltaQuantity, session) {
@@ -54,7 +62,7 @@ class ProductRepository {
     const qty = Number(deltaQuantity) || 0;
     const opts = session ? { session, new: true } : { new: true };
     return Product.findOneAndUpdate(
-      this.buildQuery(cleanId, companyId, false),
+      this.buildQuery(cleanId, companyId, null),
       { $inc: { stock: qty } },
       opts
     );
@@ -63,7 +71,7 @@ class ProductRepository {
   async softDelete(productId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Product.findOneAndUpdate(
-      this.buildQuery(productId, companyId, false),
+      this.buildQuery(productId, companyId, null),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -79,7 +87,8 @@ class ProductRepository {
   }
 
   async count(companyId) {
-    return Product.countDocuments({ companyId, isDeleted: false });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Product.countDocuments(query);
   }
 }
 

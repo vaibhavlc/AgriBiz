@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 const recycleBinItemSchema = new mongoose.Schema(
   {
     recycleBinItemId: { type: String, required: true, unique: true, index: true },
-    companyId: { type: String, required: true, index: true },
+    companyId: { type: String, required: true, default: 'DEFAULT_COMPANY', index: true },
     originalId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     module: {

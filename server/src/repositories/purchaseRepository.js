@@ -10,9 +10,16 @@ class PurchaseRepository {
     if (mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
-    const query = { companyId, $or };
-    if (isDeleted !== null && isDeleted !== undefined) {
-      query.isDeleted = isDeleted;
+    const query = { $or };
+    if (companyId) {
+      query.$and = [
+        { $or: [{ companyId }, { companyId: { $exists: false } }, { companyId: null }, { companyId: '' }] }
+      ];
+    }
+    if (isDeleted === false) {
+      query.isDeleted = { $ne: true };
+    } else if (isDeleted === true) {
+      query.isDeleted = true;
     }
     return query;
   }
@@ -28,11 +35,12 @@ class PurchaseRepository {
   }
 
   async findAll(companyId) {
-    return Purchase.find({ companyId, isDeleted: false }).sort({ createdAt: -1 });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Purchase.find(query).sort({ createdAt: -1 });
   }
 
   async findByPurchaseNumber(purchaseNumber, companyId) {
-    return Purchase.findOne({ purchaseNumber, companyId, isDeleted: false });
+    return Purchase.findOne(this.buildQuery(purchaseNumber, companyId, false));
   }
 
   async create(purchaseData, session) {
@@ -43,13 +51,13 @@ class PurchaseRepository {
 
   async update(purchaseId, companyId, updateData, session) {
     const opts = session ? { session, new: true } : { new: true };
-    return Purchase.findOneAndUpdate(this.buildQuery(purchaseId, companyId, false), updateData, opts);
+    return Purchase.findOneAndUpdate(this.buildQuery(purchaseId, companyId, null), updateData, opts);
   }
 
   async softDelete(purchaseId, companyId, updatedBy, session) {
     const opts = session ? { session, new: true } : { new: true };
     return Purchase.findOneAndUpdate(
-      this.buildQuery(purchaseId, companyId, false),
+      this.buildQuery(purchaseId, companyId, null),
       { isDeleted: true, deletedAt: new Date(), updatedBy },
       opts
     );
@@ -65,7 +73,8 @@ class PurchaseRepository {
   }
 
   async count(companyId) {
-    return Purchase.countDocuments({ companyId, isDeleted: false });
+    const query = companyId ? { $or: [{ companyId }, { companyId: { $exists: false } }], isDeleted: { $ne: true } } : { isDeleted: { $ne: true } };
+    return Purchase.countDocuments(query);
   }
 }
 
