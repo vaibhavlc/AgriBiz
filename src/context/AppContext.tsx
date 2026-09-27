@@ -818,6 +818,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (Object.values(dirtyForms).some(Boolean)) {
+        e.preventDefault();
+        e.returnValue = 'You are leaving the form without saving it.';
+        return 'You are leaving the form without saving it.';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [dirtyForms]);
+
   // UI State
   const [currentTab, _setCurrentTab] = useState<string>(() => {
     const rawHash = window.location.hash.slice(1);

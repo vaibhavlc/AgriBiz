@@ -1064,33 +1064,54 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Modal
           isOpen={showUnsavedModal}
           onClose={confirmStay}
-          title="Unsaved Changes"
+          title="You are leaving the form without saving it"
         >
           <div style={{ padding: '8px 4px 4px 4px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', lineHeight: '1.5', margin: 0 }}>
-              You have unsaved changes. If you leave this page now, your changes will be lost.
-            </p>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+              <div style={{
+                width: '44px',
+                height: '44px',
+                borderRadius: '50%',
+                backgroundColor: 'rgba(239, 68, 68, 0.12)',
+                color: 'var(--color-danger)',
+                display: 'flex',
+                alignItems: 'center',
+                justify: 'center',
+                flexShrink: 0
+              }}>
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                  Unsaved Changes Warning
+                </h4>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5', margin: '4px 0 0 0' }}>
+                  You are leaving the form without saving it. Any unsaved changes will be lost if you proceed.
+                </p>
+              </div>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
               <button 
                 type="button" 
                 className="btn btn-secondary" 
                 onClick={confirmStay} 
-                style={{ minWidth: '90px' }}
+                style={{ minWidth: '100px', fontWeight: 600 }}
               >
-                Stay
+                Cancel
               </button>
               <button 
                 type="button" 
                 className="btn btn-danger" 
                 onClick={confirmLeave} 
                 style={{ 
-                  minWidth: '90px', 
+                  minWidth: '160px', 
                   backgroundColor: 'var(--color-danger)', 
                   borderColor: 'var(--color-danger)',
-                  color: '#ffffff'
+                  color: '#ffffff',
+                  fontWeight: 600
                 }}
               >
-                Leave
+                Leave Without Saving
               </button>
             </div>
           </div>

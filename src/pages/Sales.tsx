@@ -70,6 +70,7 @@ export const Sales: React.FC = () => {
     salesFormPresetCustomerId,
     setSalesFormPresetCustomerId,
     clearAllDirtyForms,
+    requestNavigation,
   } = useApp();
 
   const totalSales = invoices.reduce((sum, inv) => sum + inv.grandTotal, 0);
@@ -900,84 +901,88 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   // --- Save / Edit Invoice Handlers ---
 
   const handleStartNewInvoice = () => {
-    const todayStr = getTodayISTDate();
-    const defaults = {
-      selectedCustomerId: '',
-      invoiceDate: todayStr,
-      pricingMode: 'selling',
-      items: [{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }],
-      amountPaid: 0,
-      paymentMethod: 'UPI',
-      referenceNumber: '',
-      dueDate: '',
-      notes: '',
-      showSignature: true,
-    };
-    setEditingInvoiceId(null);
-    setSelectedCustomerId('');
-    setPricingMode('selling');
-    setInvoiceDate(todayStr);
-    setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
-    setAmountPaid(0);
-    setPaymentMethod('UPI');
-    setReferenceNumber('');
-    setDueDate('');
-    setNotes('');
-    setShowSignature(true);
-    setInitialInvoiceValues(defaults);
-    setIsCreatingInvoice(true);
+    requestNavigation(() => {
+      const todayStr = getTodayISTDate();
+      const defaults = {
+        selectedCustomerId: '',
+        invoiceDate: todayStr,
+        pricingMode: 'selling',
+        items: [{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }],
+        amountPaid: 0,
+        paymentMethod: 'UPI',
+        referenceNumber: '',
+        dueDate: '',
+        notes: '',
+        showSignature: true,
+      };
+      setEditingInvoiceId(null);
+      setSelectedCustomerId('');
+      setPricingMode('selling');
+      setInvoiceDate(todayStr);
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
+      setAmountPaid(0);
+      setPaymentMethod('UPI');
+      setReferenceNumber('');
+      setDueDate('');
+      setNotes('');
+      setShowSignature(true);
+      setInitialInvoiceValues(defaults);
+      setIsCreatingInvoice(true, true);
+    });
   };
 
   const handleStartEditInvoice = (inv: Invoice) => {
-    setPricingMode('selling');
-    const values = {
-      selectedCustomerId: inv.customerId,
-      invoiceDate: inv.date,
-      pricingMode: 'selling',
-      items: inv.items.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const gstRate = item.gstRate || (product ? product.gstRate : 0);
-        const tp = roundTo2(item.price * (1 + gstRate / 100));
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          totalPrice: tp,
-          discount: item.discount,
-        };
-      }),
-      amountPaid: inv.amountPaid,
-      paymentMethod: inv.paymentMethod || 'UPI',
-      referenceNumber: inv.referenceNumber || '',
-      dueDate: inv.dueDate || '',
-      notes: inv.notes || '',
-      showSignature: inv.showSignature !== false,
-    };
-    setEditingInvoiceId(inv.id || inv.invoiceNumber);
-    setSelectedCustomerId(inv.customerId);
-    setInvoiceDate(inv.date);
-    setItems(
-      inv.items.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const gstRate = item.gstRate || (product ? product.gstRate : 0);
-        const tp = roundTo2(item.price * (1 + gstRate / 100));
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          totalPrice: tp,
-          discount: item.discount,
-        };
-      })
-    );
-    setAmountPaid(inv.amountPaid);
-    setPaymentMethod(inv.paymentMethod || 'UPI');
-    setReferenceNumber(inv.referenceNumber || '');
-    setDueDate(inv.dueDate || '');
-    setNotes(inv.notes || '');
-    setShowSignature(inv.showSignature !== false);
-    setInitialInvoiceValues(values);
-    setIsCreatingInvoice(true);
+    requestNavigation(() => {
+      setPricingMode('selling');
+      const values = {
+        selectedCustomerId: inv.customerId,
+        invoiceDate: inv.date,
+        pricingMode: 'selling',
+        items: inv.items.map((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          const gstRate = item.gstRate || (product ? product.gstRate : 0);
+          const tp = roundTo2(item.price * (1 + gstRate / 100));
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            totalPrice: tp,
+            discount: item.discount,
+          };
+        }),
+        amountPaid: inv.amountPaid,
+        paymentMethod: inv.paymentMethod || 'UPI',
+        referenceNumber: inv.referenceNumber || '',
+        dueDate: inv.dueDate || '',
+        notes: inv.notes || '',
+        showSignature: inv.showSignature !== false,
+      };
+      setEditingInvoiceId(inv.id || inv.invoiceNumber);
+      setSelectedCustomerId(inv.customerId);
+      setInvoiceDate(inv.date);
+      setItems(
+        inv.items.map((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          const gstRate = item.gstRate || (product ? product.gstRate : 0);
+          const tp = roundTo2(item.price * (1 + gstRate / 100));
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            totalPrice: tp,
+            discount: item.discount,
+          };
+        })
+      );
+      setAmountPaid(inv.amountPaid);
+      setPaymentMethod(inv.paymentMethod || 'UPI');
+      setReferenceNumber(inv.referenceNumber || '');
+      setDueDate(inv.dueDate || '');
+      setNotes(inv.notes || '');
+      setShowSignature(inv.showSignature !== false);
+      setInitialInvoiceValues(values);
+      setIsCreatingInvoice(true, true);
+    });
   };
 
   const handleSaveInvoice = async (e: React.FormEvent) => {
@@ -1217,68 +1222,72 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleStartNewQuotation = () => {
-    const defaultDate = getTodayISTDate();
-    const defaultValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-    const defaults = {
-      selectedCustomerId: '',
-      invoiceDate: defaultDate,
-      validUntil: defaultValidUntil,
-      pricingMode: 'selling',
-      items: [{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }],
-      notes: '',
-    };
-    setSelectedCustomerId('');
-    setPricingMode('selling');
-    setInvoiceDate(defaultDate);
-    setValidUntil(defaultValidUntil);
-    setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
-    setNotes('');
-    setInitialQuotationValues(defaults);
-    setIsCreatingQuotation(true);
+    requestNavigation(() => {
+      const defaultDate = getTodayISTDate();
+      const defaultValidUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const defaults = {
+        selectedCustomerId: '',
+        invoiceDate: defaultDate,
+        validUntil: defaultValidUntil,
+        pricingMode: 'selling',
+        items: [{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }],
+        notes: '',
+      };
+      setSelectedCustomerId('');
+      setPricingMode('selling');
+      setInvoiceDate(defaultDate);
+      setValidUntil(defaultValidUntil);
+      setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
+      setNotes('');
+      setInitialQuotationValues(defaults);
+      setIsCreatingQuotation(true, true);
+    });
   };
 
   const handleStartEditQuotation = (q: Quotation) => {
-    setPricingMode('selling');
-    const values = {
-      selectedCustomerId: q.customerId,
-      invoiceDate: q.date,
-      validUntil: q.validUntil,
-      pricingMode: 'selling',
-      notes: q.notes || '',
-      items: q.items.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const gstRate = item.gstRate || (product ? product.gstRate : 0);
-        const tp = roundTo2(item.price * (1 + gstRate / 100));
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          totalPrice: tp,
-          discount: item.discount,
-        };
-      }),
-    };
-    setEditingQuotationId(q.id);
-    setSelectedCustomerId(q.customerId);
-    setInvoiceDate(q.date);
-    setValidUntil(q.validUntil);
-    setNotes(q.notes || '');
-    setItems(
-      q.items.map((item) => {
-        const product = products.find((p) => p.id === item.productId);
-        const gstRate = item.gstRate || (product ? product.gstRate : 0);
-        const tp = roundTo2(item.price * (1 + gstRate / 100));
-        return {
-          productId: item.productId,
-          quantity: item.quantity,
-          price: item.price,
-          totalPrice: tp,
-          discount: item.discount,
-        };
-      })
-    );
-    setInitialQuotationValues(values);
-    setIsCreatingQuotation(true);
+    requestNavigation(() => {
+      setPricingMode('selling');
+      const values = {
+        selectedCustomerId: q.customerId,
+        invoiceDate: q.date,
+        validUntil: q.validUntil,
+        pricingMode: 'selling',
+        notes: q.notes || '',
+        items: q.items.map((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          const gstRate = item.gstRate || (product ? product.gstRate : 0);
+          const tp = roundTo2(item.price * (1 + gstRate / 100));
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            totalPrice: tp,
+            discount: item.discount,
+          };
+        }),
+      };
+      setEditingQuotationId(q.id);
+      setSelectedCustomerId(q.customerId);
+      setInvoiceDate(q.date);
+      setValidUntil(q.validUntil);
+      setNotes(q.notes || '');
+      setItems(
+        q.items.map((item) => {
+          const product = products.find((p) => p.id === item.productId);
+          const gstRate = item.gstRate || (product ? product.gstRate : 0);
+          const tp = roundTo2(item.price * (1 + gstRate / 100));
+          return {
+            productId: item.productId,
+            quantity: item.quantity,
+            price: item.price,
+            totalPrice: tp,
+            discount: item.discount,
+          };
+        })
+      );
+      setInitialQuotationValues(values);
+      setIsCreatingQuotation(true, true);
+    });
   };
 
   const handleDeleteQuotation = (id: string, quotationNo: string) => {

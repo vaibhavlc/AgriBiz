@@ -37,7 +37,7 @@ import type { PurchaseItem, Product, Purchase } from '../types';
 
 interface LocalPurchaseItem {
   productId: string;
-  quantity: number;
+  quantity: number | string;
   price: number;
   discount: number; // percentage
   gstRate: number;
@@ -64,6 +64,7 @@ export const Purchases: React.FC = () => {
     purchaseFormPresetSupplierId,
     setPurchaseFormPresetSupplierId,
     clearAllDirtyForms,
+    requestNavigation,
   } = useApp();
 
   const totalPurchases = purchases.reduce((sum, p) => sum + p.grandTotal, 0);
@@ -989,14 +990,15 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     return 'Pieces';
   };
 
-  const calculateRowTotal = (productId: string, qty: number, costPrice: number, discountPercent: number) => {
+  const calculateRowTotal = (productId: string, qty: number | string, costPrice: number, discountPercent: number) => {
     const product = products.find((p) => p.id === productId);
     if (!product) return { subtotal: 0, discountAmount: 0, gstAmount: 0, total: 0, gstRate: 0 };
 
-    const baseAmount = costPrice * qty;
-    const discountAmount = baseAmount * (discountPercent / 100);
+    const safeQty = Math.max(0, Number(qty) || 0);
+    const baseAmount = costPrice * safeQty;
+    const discountAmount = baseAmount * ((discountPercent || 0) / 100);
     const subtotal = Math.max(0, baseAmount - discountAmount);
-    const gstRate = product.gstRate;
+    const gstRate = product.gstRate || 0;
     const gstAmount = subtotal * (gstRate / 100);
     const total = subtotal + gstAmount;
 
@@ -1010,7 +1012,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     items.forEach((item) => {
       const calc = calculateRowTotal(item.productId, item.quantity, item.price, item.discount);
-      subtotalTotal += item.price * item.quantity;
+      subtotalTotal += (item.price || 0) * (Number(item.quantity) || 0);
       discountTotal += calc.discountAmount;
       gstTotal += calc.gstAmount;
     });
@@ -1075,76 +1077,86 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleStartNewPurchase = () => {
-    const defaultDate = getTodayISTDate();
-    const defaultDueDate = (() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 30);
-      return d.toISOString().split('T')[0];
-    })();
-    const defaults = {
-      selectedSupplierId: '',
-      purchaseDate: defaultDate,
-      supplierInvoiceNumber: '',
-      supplierInvoiceDate: defaultDate,
-      purchaseType: 'Credit',
-      dueDate: defaultDueDate,
-      purchaseStatus: 'Received',
-      items: [{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }],
-      transportCharges: 0,
-      loadingCharges: 0,
-      otherCharges: 0,
-      notes: '',
-      paymentMethod: 'Bank Transfer',
-      amountPaid: 0,
-      transactionReference: '',
-      gstType: 'IntraState',
-    };
-    
-    setEditingPurchaseId(null);
-    setSelectedSupplierId('');
-    setSupplierInvoiceNumber('');
-    setSupplierInvoiceDate(defaultDate);
-    setPurchaseType('Credit');
-    setDueDate(defaultDueDate);
-    setPurchaseStatus('Received');
-    setItems([{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }]);
-    setTransportCharges(0);
-    setLoadingCharges(0);
-    setOtherCharges(0);
-    setNotes('');
-    setPaymentMethod('Bank Transfer');
-    setAmountPaid(0);
-    setTransactionReference('');
-    setGstType('IntraState');
-    setAttachedFileName('');
-    setAttachedFile(null);
-    setInitialPurchaseValues(defaults);
-    setIsEnteringPurchase(true);
+    requestNavigation(() => {
+      const defaultDate = getTodayISTDate();
+      const defaultDueDate = (() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split('T')[0];
+      })();
+      const defaults = {
+        selectedSupplierId: '',
+        purchaseDate: defaultDate,
+        supplierInvoiceNumber: '',
+        supplierInvoiceDate: defaultDate,
+        purchaseType: 'Credit',
+        dueDate: defaultDueDate,
+        purchaseStatus: 'Received',
+        items: [{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }],
+        transportCharges: 0,
+        loadingCharges: 0,
+        otherCharges: 0,
+        notes: '',
+        paymentMethod: 'Bank Transfer',
+        amountPaid: 0,
+        transactionReference: '',
+        gstType: 'IntraState',
+      };
+      
+      setEditingPurchaseId(null);
+      setSelectedSupplierId('');
+      setSupplierInvoiceNumber('');
+      setSupplierInvoiceDate(defaultDate);
+      setPurchaseType('Credit');
+      setDueDate(defaultDueDate);
+      setPurchaseStatus('Received');
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }]);
+      setTransportCharges(0);
+      setLoadingCharges(0);
+      setOtherCharges(0);
+      setNotes('');
+      setPaymentMethod('Bank Transfer');
+      setAmountPaid(0);
+      setTransactionReference('');
+      setGstType('IntraState');
+      setAttachedFileName('');
+      setAttachedFile(null);
+      setInitialPurchaseValues(defaults);
+      setIsEnteringPurchase(true, true);
+    });
   };
 
   const handleResetForm = (exitEditor = true) => {
-    setEditingPurchaseId(null);
-    setSelectedSupplierId('');
-    setSupplierInvoiceNumber('');
-    setSupplierInvoiceDate(getTodayISTDate());
-    setPurchaseType('Credit');
-    setDueDate(() => {
-      const d = new Date();
-      d.setDate(d.getDate() + 30);
-      return d.toISOString().split('T')[0];
-    });
-    setPurchaseStatus('Received');
-    setItems([{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }]);
-    setTransportCharges(0);
-    setLoadingCharges(0);
-    setOtherCharges(0);
-    setNotes('');
-    setAmountPaid(0);
-    setTransactionReference('');
-    setAttachedFileName('');
-    setAttachedFile(null);
+    const doReset = () => {
+      setEditingPurchaseId(null);
+      setSelectedSupplierId('');
+      setSupplierInvoiceNumber('');
+      setSupplierInvoiceDate(getTodayISTDate());
+      setPurchaseType('Credit');
+      setDueDate(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split('T')[0];
+      });
+      setPurchaseStatus('Received');
+      setItems([{ productId: '', quantity: 1, price: 0, discount: 0, gstRate: 0 }]);
+      setTransportCharges(0);
+      setLoadingCharges(0);
+      setOtherCharges(0);
+      setNotes('');
+      setAmountPaid(0);
+      setTransactionReference('');
+      setAttachedFileName('');
+      setAttachedFile(null);
+      if (exitEditor) {
+        setIsEnteringPurchase(false, true);
+      }
+    };
+
     if (exitEditor) {
-      setIsEnteringPurchase(false, true);
+      requestNavigation(doReset);
+    } else {
+      doReset();
     }
   };
 
@@ -1155,119 +1167,121 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const handleStartEditPurchase = (pur: Purchase) => {
-    setEditingPurchaseId(pur.id);
-    setPurchaseBillNumber(pur.purchaseNumber);
-    setPurchaseDate(pur.date);
-    setSelectedSupplierId(pur.supplierId);
-    
-    // Parse notes
-    let supplierInvoiceNo = '';
-    let supplierInvoiceDt = pur.date;
-    let type: 'Cash' | 'Credit' = 'Credit';
-    let status: 'Received' | 'Ordered' | 'Pending' = 'Received';
-    let dueDt = pur.date;
-    let transport = 0;
-    let loading = 0;
-    let other = 0;
-    let txnRef = '';
-    let attachFileNm = '';
-    let remarks = '';
+    requestNavigation(() => {
+      setEditingPurchaseId(pur.id);
+      setPurchaseBillNumber(pur.purchaseNumber);
+      setPurchaseDate(pur.date);
+      setSelectedSupplierId(pur.supplierId);
+      
+      // Parse notes
+      let supplierInvoiceNo = '';
+      let supplierInvoiceDt = pur.date;
+      let type: 'Cash' | 'Credit' = 'Credit';
+      let status: 'Received' | 'Ordered' | 'Pending' = 'Received';
+      let dueDt = pur.date;
+      let transport = 0;
+      let loading = 0;
+      let other = 0;
+      let txnRef = '';
+      let attachFileNm = '';
+      let remarks = '';
 
-    if (pur.notes) {
-      const invRefMatch = pur.notes.match(/Invoice Ref:\s*(.*?)\s*\(Date:\s*(.*?)\)/);
-      if (invRefMatch) {
-        supplierInvoiceNo = invRefMatch[1];
-        supplierInvoiceDt = invRefMatch[2];
+      if (pur.notes) {
+        const invRefMatch = pur.notes.match(/Invoice Ref:\s*(.*?)\s*\(Date:\s*(.*?)\)/);
+        if (invRefMatch) {
+          supplierInvoiceNo = invRefMatch[1];
+          supplierInvoiceDt = invRefMatch[2];
+        }
+
+        const typeStatusMatch = pur.notes.match(/Type:\s*(.*?)\s*\|\s*Status:\s*(.*?)(?:\r?\n|$)/);
+        if (typeStatusMatch) {
+          type = typeStatusMatch[1] as 'Cash' | 'Credit';
+          status = typeStatusMatch[2] as 'Received' | 'Ordered' | 'Pending';
+        }
+
+        const dueMatch = pur.notes.match(/Payment Due Date:\s*(.*?)(?:\r?\n|$)/);
+        if (dueMatch) {
+          dueDt = dueMatch[1];
+        }
+
+        const chargesMatch = pur.notes.match(/Charges:\s*Transport\s*₹([\d.]+),\s*Loading\s*₹([\d.]+),\s*Other\s*₹([\d.]+)/);
+        if (chargesMatch) {
+          transport = parseFloat(chargesMatch[1]) || 0;
+          loading = parseFloat(chargesMatch[2]) || 0;
+          other = parseFloat(chargesMatch[3]) || 0;
+        }
+
+        const txnMatch = pur.notes.match(/Txn Reference:\s*(.*?)(?:\r?\n|$)/);
+        if (txnMatch) {
+          txnRef = txnMatch[1];
+        }
+
+        const attachMatch = pur.notes.match(/Attachment:\s*(.*?)(?:\r?\n|$)/);
+        if (attachMatch) {
+          attachFileNm = attachMatch[1];
+        }
+
+        const remarksMatch = pur.notes.match(/Remarks:\s*([\s\S]*)/);
+        if (remarksMatch) {
+          remarks = remarksMatch[1];
+        } else {
+          remarks = pur.notes;
+        }
       }
 
-      const typeStatusMatch = pur.notes.match(/Type:\s*(.*?)\s*\|\s*Status:\s*(.*?)(?:\r?\n|$)/);
-      if (typeStatusMatch) {
-        type = typeStatusMatch[1] as 'Cash' | 'Credit';
-        status = typeStatusMatch[2] as 'Received' | 'Ordered' | 'Pending';
+      const values = {
+        selectedSupplierId: pur.supplierId,
+        purchaseDate: pur.date,
+        supplierInvoiceNumber: supplierInvoiceNo,
+        supplierInvoiceDate: supplierInvoiceDt,
+        purchaseType: type,
+        dueDate: dueDt,
+        purchaseStatus: status,
+        items: pur.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          discount: 0,
+          gstRate: item.gstRate,
+        })),
+        transportCharges: transport,
+        loadingCharges: loading,
+        otherCharges: other,
+        notes: remarks,
+        paymentMethod: pur.paymentMethod || 'Bank Transfer',
+        amountPaid: pur.amountPaid,
+        transactionReference: txnRef,
+        gstType: gstType,
+      };
+      setSupplierInvoiceNumber(supplierInvoiceNo);
+      setSupplierInvoiceDate(supplierInvoiceDt);
+      setPurchaseType(type);
+      setPurchaseStatus(status);
+      setDueDate(dueDt);
+      setTransportCharges(transport);
+      setLoadingCharges(loading);
+      setOtherCharges(other);
+      setTransactionReference(txnRef);
+      setAttachedFileName(attachFileNm);
+      setNotes(remarks);
+
+      setItems(
+        pur.items.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+          discount: 0,
+          gstRate: item.gstRate,
+        }))
+      );
+      setAmountPaid(pur.amountPaid);
+      if (pur.paymentMethod) {
+        setPaymentMethod(pur.paymentMethod as any);
       }
-
-      const dueMatch = pur.notes.match(/Payment Due Date:\s*(.*?)(?:\r?\n|$)/);
-      if (dueMatch) {
-        dueDt = dueMatch[1];
-      }
-
-      const chargesMatch = pur.notes.match(/Charges:\s*Transport\s*₹([\d.]+),\s*Loading\s*₹([\d.]+),\s*Other\s*₹([\d.]+)/);
-      if (chargesMatch) {
-        transport = parseFloat(chargesMatch[1]) || 0;
-        loading = parseFloat(chargesMatch[2]) || 0;
-        other = parseFloat(chargesMatch[3]) || 0;
-      }
-
-      const txnMatch = pur.notes.match(/Txn Reference:\s*(.*?)(?:\r?\n|$)/);
-      if (txnMatch) {
-        txnRef = txnMatch[1];
-      }
-
-      const attachMatch = pur.notes.match(/Attachment:\s*(.*?)(?:\r?\n|$)/);
-      if (attachMatch) {
-        attachFileNm = attachMatch[1];
-      }
-
-      const remarksMatch = pur.notes.match(/Remarks:\s*([\s\S]*)/);
-      if (remarksMatch) {
-        remarks = remarksMatch[1];
-      } else {
-        remarks = pur.notes;
-      }
-    }
-
-    const values = {
-      selectedSupplierId: pur.supplierId,
-      purchaseDate: pur.date,
-      supplierInvoiceNumber: supplierInvoiceNo,
-      supplierInvoiceDate: supplierInvoiceDt,
-      purchaseType: type,
-      dueDate: dueDt,
-      purchaseStatus: status,
-      items: pur.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: 0,
-        gstRate: item.gstRate,
-      })),
-      transportCharges: transport,
-      loadingCharges: loading,
-      otherCharges: other,
-      notes: remarks,
-      paymentMethod: pur.paymentMethod || 'Bank Transfer',
-      amountPaid: pur.amountPaid,
-      transactionReference: txnRef,
-      gstType: gstType,
-    };
-    setSupplierInvoiceNumber(supplierInvoiceNo);
-    setSupplierInvoiceDate(supplierInvoiceDt);
-    setPurchaseType(type);
-    setPurchaseStatus(status);
-    setDueDate(dueDt);
-    setTransportCharges(transport);
-    setLoadingCharges(loading);
-    setOtherCharges(other);
-    setTransactionReference(txnRef);
-    setAttachedFileName(attachFileNm);
-    setNotes(remarks);
-
-    setItems(
-      pur.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        price: item.price,
-        discount: 0,
-        gstRate: item.gstRate,
-      }))
-    );
-    setAmountPaid(pur.amountPaid);
-    if (pur.paymentMethod) {
-      setPaymentMethod(pur.paymentMethod as any);
-    }
-    setInitialPurchaseValues(values);
-    setIsEnteringPurchase(true);
-    setViewPurchase(null);
+      setInitialPurchaseValues(values);
+      setIsEnteringPurchase(true, true);
+      setViewPurchase(null);
+    });
   };
 
   const handleSavePurchaseWrapper = async (e: React.FormEvent, keepOpen = false) => {
@@ -2414,9 +2428,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                   type="number"
                                   className="form-control text-center"
                                   style={{ fontSize: '13px', textAlign: 'center', padding: '6px' }}
-                                  min="1"
-                                  value={item.quantity || ''}
-                                  onChange={(e) => handleUpdateItemRow(index, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                                  min="0"
+                                  step="any"
+                                  value={item.quantity === '' || item.quantity === undefined || item.quantity === null ? '' : item.quantity}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    handleUpdateItemRow(index, 'quantity', val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
+                                  }}
                                   required
                                 />
                               </td>
@@ -2529,9 +2547,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                 type="number"
                                 className="form-control"
                                 style={{ textAlign: 'center' }}
-                                min="1"
-                                value={item.quantity || ''}
-                                onChange={(e) => handleUpdateItemRow(index, 'quantity', Math.max(1, parseInt(e.target.value) || 1))}
+                                min="0"
+                                step="any"
+                                value={item.quantity === '' || item.quantity === undefined || item.quantity === null ? '' : item.quantity}
+                                onChange={(e) => {
+                                  const val = e.target.value;
+                                  handleUpdateItemRow(index, 'quantity', val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
+                                }}
                                 required
                               />
                             </div>
