@@ -56,8 +56,10 @@ class UserService {
 
   async deleteUser(userId, companyId) {
     const user = await userRepository.findById(userId);
-    if (!user || user.companyId !== companyId) {
-      throw new Error('User not found');
+    if (!user || (user.companyId && companyId && user.companyId !== companyId)) {
+      const err = new Error('User not found');
+      err.statusCode = 404;
+      throw err;
     }
     return userRepository.delete(userId);
   }
