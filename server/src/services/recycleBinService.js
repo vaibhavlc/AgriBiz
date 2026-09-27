@@ -20,14 +20,23 @@ import { runInTransaction } from '../utils/transactionHelper.js';
 
 class RecycleBinService {
   buildTargetQuery(idField, originalId, companyId) {
-    const cleanId = typeof originalId === 'object' && originalId !== null
-      ? (originalId[idField] || originalId._id?.toString() || String(originalId))
-      : String(originalId || '');
-    const $or = [{ [idField]: cleanId }];
-    if (mongoose.Types.ObjectId.isValid(cleanId)) {
-      $or.push({ _id: cleanId });
+    let cleanId = '';
+    if (typeof originalId === 'object' && originalId !== null) {
+      cleanId = originalId[idField] || originalId.id || originalId._id?.toString() || String(originalId);
+    } else {
+      cleanId = String(originalId || '');
     }
-    return { companyId, $or };
+    if (cleanId === '[object Object]') {
+      cleanId = '';
+    }
+    const $or = [];
+    if (cleanId) {
+      $or.push({ [idField]: cleanId });
+      if (mongoose.Types.ObjectId.isValid(cleanId)) {
+        $or.push({ _id: cleanId });
+      }
+    }
+    return $or.length > 0 ? { companyId, $or } : { companyId };
   }
 
   async getRecycleBin(companyId) {

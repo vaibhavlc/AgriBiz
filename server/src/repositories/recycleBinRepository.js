@@ -8,11 +8,17 @@ class RecycleBinRepository {
       err.statusCode = 400;
       throw err;
     }
-    const cleanId = typeof recycleBinItemId === 'object' && recycleBinItemId !== null
-      ? (recycleBinItemId.recycleBinItemId || recycleBinItemId._id?.toString() || String(recycleBinItemId))
-      : String(recycleBinItemId || '');
+    let cleanId = '';
+    if (typeof recycleBinItemId === 'object' && recycleBinItemId !== null) {
+      cleanId = recycleBinItemId.recycleBinItemId || recycleBinItemId.id || recycleBinItemId._id?.toString() || String(recycleBinItemId);
+    } else {
+      cleanId = String(recycleBinItemId || '');
+    }
+    if (cleanId === '[object Object]') {
+      cleanId = '';
+    }
     const $or = [{ recycleBinItemId: cleanId }];
-    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+    if (cleanId && mongoose.Types.ObjectId.isValid(cleanId)) {
       $or.push({ _id: cleanId });
     }
     return { companyId, $or };
