@@ -3,9 +3,12 @@ import Invoice from '../models/Invoice.js';
 
 class InvoiceRepository {
   buildQuery(invoiceId, companyId, isDeleted = false) {
-    const $or = [{ invoiceId }, { invoiceNumber: invoiceId }];
-    if (mongoose.Types.ObjectId.isValid(invoiceId)) {
-      $or.push({ _id: invoiceId });
+    const cleanId = typeof invoiceId === 'object' && invoiceId !== null
+      ? (invoiceId.invoiceId || invoiceId._id?.toString() || String(invoiceId))
+      : String(invoiceId || '');
+    const $or = [{ invoiceId: cleanId }, { invoiceNumber: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
     const query = { companyId, $or };
     if (isDeleted !== null && isDeleted !== undefined) {

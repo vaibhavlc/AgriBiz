@@ -61,9 +61,14 @@ class InvoiceController {
       const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting invoice %s for company %s by %s', req.params.id, companyId, deleterName);
       await invoiceService.deleteInvoice(req.params.id, companyId, deleterName);
-      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'DELETE', req.params.id);
+      try {
+        await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'DELETE', req.params.id);
+      } catch (tErr) {
+        logger.warn('touchCompanyData notice on invoice delete: %s', tErr.message);
+      }
       res.status(200).json({ success: true, message: 'Invoice soft-deleted successfully' });
     } catch (error) {
+      logger.error('deleteInvoice error for %s: %s\n%s', req.params.id, error.message, error.stack);
       next(error);
     }
   }

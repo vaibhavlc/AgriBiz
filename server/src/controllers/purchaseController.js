@@ -61,9 +61,14 @@ class PurchaseController {
       const deleterName = req.user.name || req.user.role || req.user.userId || 'System';
       logger.info('Deleting purchase %s for company %s by %s', req.params.id, companyId, deleterName);
       await purchaseService.deletePurchase(req.params.id, companyId, deleterName);
-      await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'DELETE', req.params.id);
+      try {
+        await touchCompanyData(companyId, req.headers['x-socket-id'], 'Purchases', 'DELETE', req.params.id);
+      } catch (tErr) {
+        logger.warn('touchCompanyData notice on purchase delete: %s', tErr.message);
+      }
       res.status(200).json({ success: true, message: 'Purchase soft-deleted successfully' });
     } catch (error) {
+      logger.error('deletePurchase error for %s: %s\n%s', req.params.id, error.message, error.stack);
       next(error);
     }
   }

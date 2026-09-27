@@ -3,16 +3,28 @@ import Customer from '../models/Customer.js';
 
 class CustomerRepository {
   buildQuery(customerId, companyId, isDeleted = false) {
-    const $or = [{ customerId }, { phone: customerId }];
-    if (mongoose.Types.ObjectId.isValid(customerId)) {
-      $or.push({ _id: customerId });
+    const cleanId = typeof customerId === 'object' && customerId !== null
+      ? (customerId.customerId || customerId._id?.toString() || String(customerId))
+      : String(customerId || '');
+    const $or = [{ customerId: cleanId }, { phone: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { companyId, $or };
+    if (isDeleted !== null && isDeleted !== undefined) {
+      query.isDeleted = isDeleted;
+    }
+    return query;
   }
 
   async findById(customerId, companyId, session) {
     const opts = session ? { session } : {};
     return Customer.findOne(this.buildQuery(customerId, companyId, false), null, opts);
+  }
+
+  async findAny(customerId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Customer.findOne(this.buildQuery(customerId, companyId, null), null, opts);
   }
 
   async findAll(companyId) {
@@ -35,10 +47,15 @@ class CustomerRepository {
   }
 
   async adjustOutstanding(customerId, companyId, deltaAmount, session) {
+    const cleanId = typeof customerId === 'object' && customerId !== null
+      ? (customerId.customerId || customerId._id?.toString() || String(customerId))
+      : String(customerId || '');
+    if (!cleanId) return null;
+    const amt = Number(deltaAmount) || 0;
     const opts = session ? { session, new: true } : { new: true };
     return Customer.findOneAndUpdate(
-      this.buildQuery(customerId, companyId, false),
-      { $inc: { outstanding: deltaAmount } },
+      this.buildQuery(cleanId, companyId, false),
+      { $inc: { outstanding: amt } },
       opts
     );
   }

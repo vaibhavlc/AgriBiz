@@ -3,16 +3,28 @@ import Supplier from '../models/Supplier.js';
 
 class SupplierRepository {
   buildQuery(supplierId, companyId, isDeleted = false) {
-    const $or = [{ supplierId }, { phone: supplierId }];
-    if (mongoose.Types.ObjectId.isValid(supplierId)) {
-      $or.push({ _id: supplierId });
+    const cleanId = typeof supplierId === 'object' && supplierId !== null
+      ? (supplierId.supplierId || supplierId._id?.toString() || String(supplierId))
+      : String(supplierId || '');
+    const $or = [{ supplierId: cleanId }, { phone: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { companyId, $or };
+    if (isDeleted !== null && isDeleted !== undefined) {
+      query.isDeleted = isDeleted;
+    }
+    return query;
   }
 
   async findById(supplierId, companyId, session) {
     const opts = session ? { session } : {};
     return Supplier.findOne(this.buildQuery(supplierId, companyId, false), null, opts);
+  }
+
+  async findAny(supplierId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Supplier.findOne(this.buildQuery(supplierId, companyId, null), null, opts);
   }
 
   async findAll(companyId) {
@@ -35,10 +47,15 @@ class SupplierRepository {
   }
 
   async adjustOutstanding(supplierId, companyId, deltaAmount, session) {
+    const cleanId = typeof supplierId === 'object' && supplierId !== null
+      ? (supplierId.supplierId || supplierId._id?.toString() || String(supplierId))
+      : String(supplierId || '');
+    if (!cleanId) return null;
+    const amt = Number(deltaAmount) || 0;
     const opts = session ? { session, new: true } : { new: true };
     return Supplier.findOneAndUpdate(
-      this.buildQuery(supplierId, companyId, false),
-      { $inc: { outstanding: deltaAmount } },
+      this.buildQuery(cleanId, companyId, false),
+      { $inc: { outstanding: amt } },
       opts
     );
   }

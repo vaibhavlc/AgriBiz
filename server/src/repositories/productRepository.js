@@ -3,16 +3,28 @@ import Product from '../models/Product.js';
 
 class ProductRepository {
   buildQuery(productId, companyId, isDeleted = false) {
-    const $or = [{ productId }, { sku: productId }];
-    if (mongoose.Types.ObjectId.isValid(productId)) {
-      $or.push({ _id: productId });
+    const cleanId = typeof productId === 'object' && productId !== null
+      ? (productId.productId || productId._id?.toString() || String(productId))
+      : String(productId || '');
+    const $or = [{ productId: cleanId }, { sku: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
-    return { companyId, isDeleted, $or };
+    const query = { companyId, $or };
+    if (isDeleted !== null && isDeleted !== undefined) {
+      query.isDeleted = isDeleted;
+    }
+    return query;
   }
 
   async findById(productId, companyId, session) {
     const opts = session ? { session } : {};
     return Product.findOne(this.buildQuery(productId, companyId, false), null, opts);
+  }
+
+  async findAny(productId, companyId, session) {
+    const opts = session ? { session } : {};
+    return Product.findOne(this.buildQuery(productId, companyId, null), null, opts);
   }
 
   async findAll(companyId) {
@@ -35,10 +47,15 @@ class ProductRepository {
   }
 
   async incrementStock(productId, companyId, deltaQuantity, session) {
+    const cleanId = typeof productId === 'object' && productId !== null
+      ? (productId.productId || productId._id?.toString() || String(productId))
+      : String(productId || '');
+    if (!cleanId) return null;
+    const qty = Number(deltaQuantity) || 0;
     const opts = session ? { session, new: true } : { new: true };
     return Product.findOneAndUpdate(
-      this.buildQuery(productId, companyId, false),
-      { $inc: { stock: deltaQuantity } },
+      this.buildQuery(cleanId, companyId, false),
+      { $inc: { stock: qty } },
       opts
     );
   }

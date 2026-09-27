@@ -3,9 +3,12 @@ import Purchase from '../models/Purchase.js';
 
 class PurchaseRepository {
   buildQuery(purchaseId, companyId, isDeleted = false) {
-    const $or = [{ purchaseId }, { purchaseNumber: purchaseId }];
-    if (mongoose.Types.ObjectId.isValid(purchaseId)) {
-      $or.push({ _id: purchaseId });
+    const cleanId = typeof purchaseId === 'object' && purchaseId !== null
+      ? (purchaseId.purchaseId || purchaseId._id?.toString() || String(purchaseId))
+      : String(purchaseId || '');
+    const $or = [{ purchaseId: cleanId }, { purchaseNumber: cleanId }];
+    if (mongoose.Types.ObjectId.isValid(cleanId)) {
+      $or.push({ _id: cleanId });
     }
     const query = { companyId, $or };
     if (isDeleted !== null && isDeleted !== undefined) {
