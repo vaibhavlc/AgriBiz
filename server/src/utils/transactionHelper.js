@@ -31,6 +31,17 @@ export const runInTransaction = async (workFn) => {
         logger.warn('Transaction abort notification: %s', abortErr.message);
       }
     }
+
+    const isTransactionUnsupported =
+      err.code === 20 ||
+      err.code === 263 ||
+      /transaction|replica set|mongos|session/i.test(err.message || '');
+
+    if (isTransactionUnsupported) {
+      logger.warn('MongoDB transaction failed due to unsupported standalone/session error (%s). Executing non-transactionally.', err.message);
+      return workFn(null);
+    }
+
     throw err;
   } finally {
     if (session) {

@@ -57,6 +57,19 @@ class PurchaseService {
 
       // Create Payment log if purchase was paid instantly
       if (purchasePayload.amountPaid > 0 && purchasePayload.supplierId) {
+        const validPaymentMethods = ['UPI', 'Cash', 'Bank Transfer', 'Cheque'];
+        let pm = 'Bank Transfer';
+        if (purchasePayload.paymentMethod) {
+          if (validPaymentMethods.includes(purchasePayload.paymentMethod)) {
+            pm = purchasePayload.paymentMethod;
+          } else if (/cash/i.test(purchasePayload.paymentMethod)) {
+            pm = 'Cash';
+          } else if (/upi|qr|gpay|phonepe/i.test(purchasePayload.paymentMethod)) {
+            pm = 'UPI';
+          } else if (/cheque/i.test(purchasePayload.paymentMethod)) {
+            pm = 'Cheque';
+          }
+        }
         const paymentPayload = {
           paymentId: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           companyId,
@@ -65,7 +78,7 @@ class PurchaseService {
           contactId: purchasePayload.supplierId,
           contactName: purchasePayload.supplierName,
           amount: purchasePayload.amountPaid,
-          paymentMethod: purchasePayload.paymentMethod || 'Bank Transfer',
+          paymentMethod: pm,
           notes: `Against bill ${purchasePayload.purchaseNumber}`,
           createdBy,
           updatedBy: createdBy,

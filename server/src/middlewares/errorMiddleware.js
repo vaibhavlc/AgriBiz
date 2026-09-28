@@ -43,12 +43,10 @@ export const errorHandler = (err, req, res, next) => {
       req.method, req.path, statusCode, err.name || 'Error', err.message);
   }
 
-  // Send safe client response
+  // Send client response
   res.status(statusCode).json({
     success: false,
-    message: statusCode >= 500 && process.env.NODE_ENV === 'production' 
-      ? 'An internal server error occurred. Please try again later.' 
-      : message,
+    message: message || 'An internal server error occurred.',
     ...(process.env.NODE_ENV === 'development' ? { stack: err.stack, details: logDetails } : {}),
   });
 };
