@@ -109,7 +109,7 @@ export const Purchases: React.FC = () => {
 
   // Outflow & Payments details
   const [paymentMethod, setPaymentMethod] = useState<'Cash' | 'UPI' | 'Bank Transfer' | 'Cheque'>('Bank Transfer');
-  const [amountPaid, setAmountPaid] = useState(0);
+  const [amountPaid, setAmountPaid] = useState<number | string>(0);
   const [transactionReference, setTransactionReference] = useState('');
 
   // GST Type Selection
@@ -1350,7 +1350,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         amountPaid: Number(amountPaid) || 0,
         balanceDue: totals.balanceDue,
         paymentStatus,
-        paymentMethod: amountPaid > 0 ? paymentMethod : '',
+        paymentMethod: (Number(amountPaid) || 0) > 0 ? paymentMethod : '',
         notes: serializedNotes,
       });
 
@@ -1372,7 +1372,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         amountPaid: Number(amountPaid) || 0,
         balanceDue: totals.balanceDue,
         paymentStatus,
-        paymentMethod: amountPaid > 0 ? paymentMethod : '',
+        paymentMethod: (Number(amountPaid) || 0) > 0 ? paymentMethod : '',
         notes: serializedNotes,
       });
 
@@ -2724,8 +2724,30 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     placeholder="₹ 0.00"
                     min="0"
                     max={totals.grandTotal}
-                    value={amountPaid === 0 ? 0 : (amountPaid || '')}
-                    onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    value={amountPaid === 0 ? '0' : (amountPaid ?? '')}
+                    onFocus={(e) => {
+                      if (amountPaid === 0 || amountPaid === '0') {
+                        setAmountPaid('');
+                      } else {
+                        e.target.select();
+                      }
+                    }}
+                    onBlur={() => {
+                      if (amountPaid === '' || amountPaid === null || amountPaid === undefined) {
+                        setAmountPaid(0);
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setAmountPaid('');
+                      } else {
+                        const parsed = parseFloat(val);
+                        if (!isNaN(parsed)) {
+                          setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parsed)));
+                        }
+                      }
+                    }}
                     required
                   />
                 </div>

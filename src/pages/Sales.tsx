@@ -112,7 +112,7 @@ export const Sales: React.FC = () => {
   const [items, setItems] = useState<InvoiceItemLocal[]>([
     { productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }
   ]);
-  const [amountPaid, setAmountPaid] = useState(0);
+  const [amountPaid, setAmountPaid] = useState<number | string>(0);
   const [paymentMethod, setPaymentMethod] = useState('UPI');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -813,7 +813,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   };
 
   const totals = getInvoiceTotals();
-  const balanceDue = Math.max(0, totals.grandTotal - amountPaid);
+  const balanceDue = Math.max(0, totals.grandTotal - (Number(amountPaid) || 0));
 
   // --- Row Management ---
 
@@ -1042,9 +1042,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     });
 
     const paymentStatus =
-      amountPaid >= totals.grandTotal
+      (Number(amountPaid) || 0) >= totals.grandTotal
         ? 'Paid'
-        : amountPaid > 0
+        : (Number(amountPaid) || 0) > 0
         ? 'Partial'
         : 'Unpaid';
 
@@ -1062,11 +1062,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         discountTotal: totals.discountTotal,
         gstTotal: totals.gstTotal,
         grandTotal: totals.grandTotal,
-        amountPaid,
+        amountPaid: Number(amountPaid) || 0,
         balanceDue,
         paymentStatus,
-        paymentMethod: amountPaid > 0 ? paymentMethod : '',
-        referenceNumber: (amountPaid > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
+        paymentMethod: (Number(amountPaid) || 0) > 0 ? paymentMethod : '',
+        referenceNumber: ((Number(amountPaid) || 0) > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
         dueDate: (balanceDue > 0 && dueDate) ? dueDate : undefined,
         notes: notes.trim() || undefined,
         showSignature,
@@ -1096,11 +1096,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         discountTotal: totals.discountTotal,
         gstTotal: totals.gstTotal,
         grandTotal: totals.grandTotal,
-        amountPaid,
+        amountPaid: Number(amountPaid) || 0,
         balanceDue,
         paymentStatus,
-        paymentMethod: amountPaid > 0 ? paymentMethod : '',
-        referenceNumber: (amountPaid > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
+        paymentMethod: (Number(amountPaid) || 0) > 0 ? paymentMethod : '',
+        referenceNumber: ((Number(amountPaid) || 0) > 0 && referenceNumber.trim()) ? referenceNumber.trim() : undefined,
         dueDate: (balanceDue > 0 && dueDate) ? dueDate : undefined,
         notes: notes.trim() || undefined,
         showSignature,
@@ -2876,13 +2876,35 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     placeholder="0.00"
                     min="0"
                     max={totals.grandTotal}
-                    value={amountPaid === 0 ? 0 : (amountPaid || '')}
-                    onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))}
+                    value={amountPaid === 0 ? '0' : (amountPaid ?? '')}
+                    onFocus={(e) => {
+                      if (amountPaid === 0 || amountPaid === '0') {
+                        setAmountPaid('');
+                      } else {
+                        e.target.select();
+                      }
+                    }}
+                    onBlur={() => {
+                      if (amountPaid === '' || amountPaid === null || amountPaid === undefined) {
+                        setAmountPaid(0);
+                      }
+                    }}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === '') {
+                        setAmountPaid('');
+                      } else {
+                        const parsed = parseFloat(val);
+                        if (!isNaN(parsed)) {
+                          setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parsed)));
+                        }
+                      }
+                    }}
                     style={{ height: '42px', fontSize: '13px' }}
                   />
                 </div>
 
-                {amountPaid > 0 && (
+                {(Number(amountPaid) || 0) > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Payment Method *</label>
                     <select
@@ -2899,7 +2921,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 )}
 
-                {amountPaid > 0 && paymentMethod !== 'Cash' && (
+                {(Number(amountPaid) || 0) > 0 && paymentMethod !== 'Cash' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
                       {paymentMethod === 'Cheque' ? 'Cheque No.' : paymentMethod === 'UPI' ? 'Transaction / UTR No.' : 'Transfer Reference No.'}
@@ -2915,7 +2937,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 )}
 
-                {amountPaid > 0 && amountPaid < totals.grandTotal && (
+                {(Number(amountPaid) || 0) > 0 && (Number(amountPaid) || 0) < totals.grandTotal && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
                       Due Date <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '11px' }}>(Expected date to clear balance)</span>
@@ -3018,10 +3040,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <span style={{ color: 'var(--primary-dark)' }}>{formatINR(totals.grandTotal)}</span>
               </div>
 
-              {amountPaid > 0 && (
+              {(Number(amountPaid) || 0) > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>Collected</span>
-                  <span style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>{formatINR(amountPaid)}</span>
+                  <span style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>{formatINR(Number(amountPaid) || 0)}</span>
                 </div>
               )}
 
@@ -3045,29 +3067,29 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 borderRadius: '8px',
                 fontSize: '12px',
                 fontWeight: 700,
-                background: amountPaid === 0 
+                background: (Number(amountPaid) || 0) === 0 
                   ? 'rgba(239, 68, 68, 0.08)' 
-                  : amountPaid < totals.grandTotal 
+                  : (Number(amountPaid) || 0) < totals.grandTotal 
                     ? 'rgba(245, 158, 11, 0.08)' 
                     : 'rgba(16, 185, 129, 0.08)',
-                color: amountPaid === 0 
+                color: (Number(amountPaid) || 0) === 0 
                   ? 'var(--color-danger)' 
-                  : amountPaid < totals.grandTotal 
+                  : (Number(amountPaid) || 0) < totals.grandTotal 
                     ? '#b45309' 
                     : 'var(--color-success-dark)',
                 border: `1px solid ${
-                  amountPaid === 0 
+                  (Number(amountPaid) || 0) === 0 
                     ? 'rgba(239, 68, 68, 0.2)' 
-                    : amountPaid < totals.grandTotal 
+                    : (Number(amountPaid) || 0) < totals.grandTotal 
                       ? 'rgba(245, 158, 11, 0.2)' 
                       : 'rgba(16, 185, 129, 0.2)'
                 }`
               }}>
                 <span>Payment Status</span>
                 <span>
-                  {amountPaid === 0 
+                  {(Number(amountPaid) || 0) === 0 
                     ? 'Pending' 
-                    : amountPaid < totals.grandTotal 
+                    : (Number(amountPaid) || 0) < totals.grandTotal 
                       ? 'Partially Paid' 
                       : 'Fully Paid'}
                 </span>
