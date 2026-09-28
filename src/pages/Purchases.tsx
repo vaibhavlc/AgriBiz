@@ -123,7 +123,7 @@ export const Purchases: React.FC = () => {
     purchaseType,
     dueDate,
     purchaseStatus,
-    items,
+    items: JSON.parse(JSON.stringify(items)),
     transportCharges,
     loadingCharges,
     otherCharges,
@@ -155,11 +155,11 @@ export const Purchases: React.FC = () => {
 
   useEffect(() => {
     if (isEnteringPurchase && !initialPurchaseValues) {
-      setInitialPurchaseValues(currentPurchaseValues);
+      setInitialPurchaseValues(JSON.parse(JSON.stringify(currentPurchaseValues)));
     } else if (!isEnteringPurchase && initialPurchaseValues) {
       setInitialPurchaseValues(null);
     }
-  }, [isEnteringPurchase, initialPurchaseValues, currentPurchaseValues]);
+  }, [isEnteringPurchase, !!initialPurchaseValues]);
 
   // Attachments
   const [attachedFileName, setAttachedFileName] = useState('');

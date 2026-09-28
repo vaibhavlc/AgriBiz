@@ -122,7 +122,7 @@ export const Sales: React.FC = () => {
     selectedCustomerId,
     invoiceDate,
     pricingMode,
-    items,
+    items: JSON.parse(JSON.stringify(items)),
     amountPaid,
     paymentMethod,
     referenceNumber,
@@ -136,7 +136,7 @@ export const Sales: React.FC = () => {
     invoiceDate,
     pricingMode,
     validUntil,
-    items,
+    items: JSON.parse(JSON.stringify(items)),
     notes,
   }), [selectedCustomerId, invoiceDate, pricingMode, validUntil, items, notes]);
 
@@ -145,19 +145,19 @@ export const Sales: React.FC = () => {
 
   useEffect(() => {
     if (isCreatingInvoice && !initialInvoiceValues) {
-      setInitialInvoiceValues(currentInvoiceValues);
+      setInitialInvoiceValues(JSON.parse(JSON.stringify(currentInvoiceValues)));
     } else if (!isCreatingInvoice && initialInvoiceValues) {
       setInitialInvoiceValues(null);
     }
-  }, [isCreatingInvoice, initialInvoiceValues, currentInvoiceValues]);
+  }, [isCreatingInvoice, !!initialInvoiceValues]);
 
   useEffect(() => {
     if (isCreatingQuotation && !initialQuotationValues) {
-      setInitialQuotationValues(currentQuotationValues);
+      setInitialQuotationValues(JSON.parse(JSON.stringify(currentQuotationValues)));
     } else if (!isCreatingQuotation && initialQuotationValues) {
       setInitialQuotationValues(null);
     }
-  }, [isCreatingQuotation, initialQuotationValues, currentQuotationValues]);
+  }, [isCreatingQuotation, !!initialQuotationValues]);
 
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
