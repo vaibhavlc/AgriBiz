@@ -2876,7 +2876,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     placeholder="0.00"
                     min="0"
                     max={totals.grandTotal}
-                    value={amountPaid || ''}
+                    value={amountPaid === 0 ? 0 : (amountPaid || '')}
                     onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))}
                     style={{ height: '42px', fontSize: '13px' }}
                   />

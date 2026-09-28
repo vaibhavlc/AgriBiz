@@ -2724,7 +2724,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     placeholder="₹ 0.00"
                     min="0"
                     max={totals.grandTotal}
-                    value={amountPaid || ''}
+                    value={amountPaid === 0 ? 0 : (amountPaid || '')}
                     onChange={(e) => setAmountPaid(Math.min(totals.grandTotal, Math.max(0, parseFloat(e.target.value) || 0)))}
                     required
                   />
@@ -2739,8 +2739,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Clearance Status:</span>
-                    <span className={`badge ${totals.balanceDue === 0 ? 'badge-success' : amountPaid > 0 ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                      {totals.balanceDue === 0 ? 'FULLY PAID' : amountPaid > 0 ? 'PARTIAL' : 'UNPAID'}
+                    <span className={`badge ${totals.balanceDue === 0 ? 'badge-success' : (Number(amountPaid) || 0) > 0 ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
+                      {totals.balanceDue === 0 ? 'FULLY PAID' : (Number(amountPaid) || 0) > 0 ? 'PARTIAL' : 'UNPAID'}
                     </span>
                   </div>
                 </div>
@@ -2863,7 +2863,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-app)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>Paid Amount</span>
-                  <span style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>{formatINR(amountPaid)}</span>
+                  <span style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>{formatINR(Number(amountPaid) || 0)}</span>
                 </div>
               </div>
 
