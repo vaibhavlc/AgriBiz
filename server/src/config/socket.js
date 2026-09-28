@@ -11,11 +11,12 @@ export const initSocket = (httpServer) => {
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       credentials: true,
     },
-    transports: ['websocket', 'polling'],
+    transports: ['polling', 'websocket'],
+    allowEIO3: true,
     perMessageDeflate: false,
     httpCompression: false,
-    pingInterval: 10000,
-    pingTimeout: 5000,
+    pingInterval: 25000,
+    pingTimeout: 20000,
   });
 
   io.use((socket, next) => {

@@ -558,10 +558,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         auth: (cb: (data: object) => void) => {
           cb({ token: sessionStorage.getItem('agribiz_access_token') });
         },
-        transports: ['websocket', 'polling'],
+        transports: ['polling', 'websocket'],
         reconnection: true,
         reconnectionAttempts: Infinity,
-        timeout: 10000,
+        reconnectionDelay: 1000,
+        reconnectionDelayMax: 5000,
+        timeout: 20000,
       });
 
       socketRef.current = socket;
