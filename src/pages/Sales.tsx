@@ -143,6 +143,22 @@ export const Sales: React.FC = () => {
   useUnsavedChanges('invoice-form', currentInvoiceValues, initialInvoiceValues, isCreatingInvoice && !!initialInvoiceValues);
   useUnsavedChanges('quotation-form', currentQuotationValues, initialQuotationValues, isCreatingQuotation && !!initialQuotationValues);
 
+  useEffect(() => {
+    if (isCreatingInvoice && !initialInvoiceValues) {
+      setInitialInvoiceValues(currentInvoiceValues);
+    } else if (!isCreatingInvoice && initialInvoiceValues) {
+      setInitialInvoiceValues(null);
+    }
+  }, [isCreatingInvoice, initialInvoiceValues, currentInvoiceValues]);
+
+  useEffect(() => {
+    if (isCreatingQuotation && !initialQuotationValues) {
+      setInitialQuotationValues(currentQuotationValues);
+    } else if (!isCreatingQuotation && initialQuotationValues) {
+      setInitialQuotationValues(null);
+    }
+  }, [isCreatingQuotation, initialQuotationValues, currentQuotationValues]);
+
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
 
@@ -3659,9 +3675,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         <button
           type="button"
           onClick={() => {
-            setSalesActiveTab('invoices');
-            setStatusFilter('All');
-            setCurrentPage(1);
+            requestNavigation(() => {
+              setSalesActiveTab('invoices');
+              setStatusFilter('All');
+              setCurrentPage(1);
+            });
           }}
           style={{
             padding: '10px 20px',
@@ -3683,9 +3701,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         <button
           type="button"
           onClick={() => {
-            setSalesActiveTab('quotations');
-            setStatusFilter('All');
-            setCurrentPage(1);
+            requestNavigation(() => {
+              setSalesActiveTab('quotations');
+              setStatusFilter('All');
+              setCurrentPage(1);
+            });
           }}
           style={{
             padding: '10px 20px',

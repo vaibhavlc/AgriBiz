@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react';
-import { useApp } from '../context/AppContext';
+import React, { useState, useMemo, useEffect } from 'react';
+import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
@@ -36,6 +36,7 @@ export const Expenses: React.FC = () => {
     setSearchQuery,
     showToast,
     settings,
+    requestNavigation,
   } = useApp();
 
   console.log(`[${ts}] [CLIENT_UI_RENDER] Expenses Component rendered. Total Expenses Count: ${expenses.length} | Expense IDs: [${expenses.map(e => e.id).join(', ')}]`);
@@ -64,6 +65,31 @@ export const Expenses: React.FC = () => {
   const [dueDate, setDueDate] = useState('');
   const [referenceNumber, setReferenceNumber] = useState('');
   const [notes, setNotes] = useState('');
+
+  const currentExpenseValues = useMemo(() => ({
+    category,
+    customCategory,
+    payee,
+    date,
+    amount,
+    paymentMethod,
+    status,
+    dueDate,
+    referenceNumber,
+    notes,
+  }), [category, customCategory, payee, date, amount, paymentMethod, status, dueDate, referenceNumber, notes]);
+
+  const [initialExpenseValues, setInitialExpenseValues] = useState<any>(null);
+
+  useUnsavedChanges('expense-form', currentExpenseValues, initialExpenseValues, isFormOpen && !!initialExpenseValues);
+
+  useEffect(() => {
+    if (isFormOpen && !initialExpenseValues) {
+      setInitialExpenseValues(currentExpenseValues);
+    } else if (!isFormOpen && initialExpenseValues) {
+      setInitialExpenseValues(null);
+    }
+  }, [isFormOpen, initialExpenseValues, currentExpenseValues]);
 
   // Categories list
   const categoriesList = [
@@ -1124,8 +1150,10 @@ export const Expenses: React.FC = () => {
       <Modal
         isOpen={isFormOpen}
         onClose={() => {
-          setIsFormOpen(false);
-          setEditingExpenseId(null);
+          requestNavigation(() => {
+            setIsFormOpen(false);
+            setEditingExpenseId(null);
+          });
         }}
         title={editingExpenseId ? "Edit Expense Entry" : "Record New Expense Entry"}
       >
@@ -1268,8 +1296,10 @@ export const Expenses: React.FC = () => {
               type="button"
               className="btn btn-secondary"
               onClick={() => {
-                setIsFormOpen(false);
-                setEditingExpenseId(null);
+                requestNavigation(() => {
+                  setIsFormOpen(false);
+                  setEditingExpenseId(null);
+                });
               }}
             >
               Cancel

@@ -153,6 +153,14 @@ export const Purchases: React.FC = () => {
 
   useUnsavedChanges('purchase-form', currentPurchaseValues, initialPurchaseValues, isEnteringPurchase && !!initialPurchaseValues);
 
+  useEffect(() => {
+    if (isEnteringPurchase && !initialPurchaseValues) {
+      setInitialPurchaseValues(currentPurchaseValues);
+    } else if (!isEnteringPurchase && initialPurchaseValues) {
+      setInitialPurchaseValues(null);
+    }
+  }, [isEnteringPurchase, initialPurchaseValues, currentPurchaseValues]);
+
   // Attachments
   const [attachedFileName, setAttachedFileName] = useState('');
   const [attachedFile, setAttachedFile] = useState<File | null>(null);
