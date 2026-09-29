@@ -39,6 +39,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   // Staff selection
   const [staffList, setStaffList] = useState<(UserType & { id: string })[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<(UserType & { id: string }) | null>(null);
+  const [isStaffLoading, setIsStaffLoading] = useState<boolean>(() => {
+    const savedCompany = authService.getCurrentCompany();
+    const storedRefreshToken = authService.getRefreshToken();
+    return Boolean(savedCompany || storedRefreshToken);
+  });
 
   // PIN entry
   const [pin, setPin] = useState('');
@@ -85,8 +90,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   };
 
   const loadStaffList = useCallback(async () => {
-    const staff = await authService.getActiveStaff();
-    setStaffList(staff as (UserType & { id: string })[]);
+    setIsStaffLoading(true);
+    try {
+      const staff = await authService.getActiveStaff();
+      setStaffList(staff as (UserType & { id: string })[]);
+    } catch (err) {
+      console.error('Failed to load staff profiles:', err);
+    } finally {
+      setIsStaffLoading(false);
+    }
   }, []);
 
   // On mount: if company session exists, skip business login and go directly to Staff Selection
@@ -96,6 +108,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
       const storedRefreshToken = authService.getRefreshToken();
       if (savedCompany || storedRefreshToken) {
         setLoading(true);
+        setIsStaffLoading(true);
         const res = await authService.refreshSession();
         setLoading(false);
 
@@ -103,11 +116,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           await loadStaffList();
           setStage('staff-selection');
         } else {
-          // Token expired, revoked, or invalid! Clear local remembered state & require Mobile + Password
+          setIsStaffLoading(false);
           authService.forgetDeviceLocally();
           setStage('business-login');
         }
       } else {
+        setIsStaffLoading(false);
         setStage('business-login');
       }
     };
@@ -124,8 +138,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     const res = await login(mobile, password, 'Owner', true);
     setLoading(false);
     if (res.success) {
-      await loadStaffList();
       setStage('staff-selection');
+      setIsStaffLoading(true);
+      await loadStaffList();
     } else {
       setErrorMsg(res.message);
     }
@@ -343,6 +358,23 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     </div>
   ) : null;
 
+  const StaffCardSkeleton = () => (
+    <div style={{
+      display: 'flex', alignItems: 'center', gap: '12px',
+      padding: '10px 14px', borderRadius: '12px', textAlign: 'left',
+      border: '1.5px solid var(--border-color,#e2e8f0)',
+      background: 'var(--bg-input, var(--card-bg, #ffffff))',
+      width: '100%', boxSizing: 'border-box', minHeight: '61px',
+    }}>
+      <div className="skeleton-box" style={{ width: '38px', height: '38px', borderRadius: '10px', flexShrink: 0 }} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div className="skeleton-box" style={{ width: '55%', height: '14px', borderRadius: '4px' }} />
+        <div className="skeleton-box" style={{ width: '32%', height: '11px', borderRadius: '4px' }} />
+      </div>
+      <div className="skeleton-box" style={{ width: '15px', height: '15px', borderRadius: '4px', flexShrink: 0, opacity: 0.4 }} />
+    </div>
+  );
+
   // ══════════════════════════════════════════════════════════════════════
   // STAGE 1 – Business Login
   // ══════════════════════════════════════════════════════════════════════
@@ -438,7 +470,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         </div>
         <ErrorBanner />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
-          {staffList.length === 0 ? (
+          {isStaffLoading ? (
+            <>
+              <StaffCardSkeleton />
+              <StaffCardSkeleton />
+            </>
+          ) : staffList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted,#94a3b8)', fontSize: '12px' }}>
               No active staff found. Please reconnect and try again.
             </div>
@@ -486,6 +523,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             await forgetDevice();
             setStage('business-login');
             setStaffList([]);
+            setIsStaffLoading(false);
           }}
           style={{
             display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center',
