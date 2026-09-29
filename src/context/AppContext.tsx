@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem } from '../types';
 import {
   initialSettings,
@@ -784,41 +784,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Unsaved Changes Protection State & Logic
   const [dirtyForms, setDirtyForms] = useState<Record<string, boolean>>({});
   const [showUnsavedModal, setShowUnsavedModal] = useState(false);
-  const pendingCallbacksRef = useRef<(() => void)[]>([]);
+  const showUnsavedModalRef = useRef(false);
+  const pendingCallbackRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    showUnsavedModalRef.current = showUnsavedModal;
+  }, [showUnsavedModal]);
 
   const isFormDirty = Object.values(dirtyForms).some(Boolean);
 
-  const setFormDirty = (formId: string, isDirty: boolean) => {
+  const setFormDirty = useCallback((formId: string, isDirty: boolean) => {
     setDirtyForms((prev) => {
       if (prev[formId] === isDirty) return prev;
       return { ...prev, [formId]: isDirty };
     });
-  };
+  }, []);
 
-  const clearAllDirtyForms = () => {
+  const clearAllDirtyForms = useCallback(() => {
     setDirtyForms({});
-  };
+  }, []);
 
   const confirmStay = () => {
     setShowUnsavedModal(false);
-    pendingCallbacksRef.current = [];
+    pendingCallbackRef.current = null;
   };
 
   const confirmLeave = () => {
+    const cb = pendingCallbackRef.current;
+    pendingCallbackRef.current = null;
     setDirtyForms({});
     setShowUnsavedModal(false);
-    pendingCallbacksRef.current.forEach((cb) => cb());
-    pendingCallbacksRef.current = [];
+    if (cb) {
+      cb();
+    }
   };
 
-  const requestNavigation = (callback: () => void) => {
+  const requestNavigation = useCallback((callback: () => void) => {
     if (Object.values(dirtyForms).some(Boolean)) {
-      pendingCallbacksRef.current.push(callback);
-      setShowUnsavedModal(true);
+      if (!showUnsavedModalRef.current) {
+        pendingCallbackRef.current = callback;
+        setShowUnsavedModal(true);
+      }
     } else {
       callback();
     }
-  };
+  }, [dirtyForms]);
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -1109,8 +1119,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (targetTab === currentTab) return;
 
       if (Object.values(dirtyForms).some(Boolean)) {
-        pendingCallbacksRef.current = [
-          () => {
+        if (!showUnsavedModalRef.current) {
+          pendingCallbackRef.current = () => {
             window.history.replaceState({ tab: targetTab }, '', '#' + targetTab);
             _setCurrentTab(targetTab);
             _setViewInvoice(null);
@@ -1122,9 +1132,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             _setIsCreatingQuotation(false);
             _setIsEnteringPurchase(false);
             setSearchQuery('');
-          }
-        ];
-        setShowUnsavedModal(true);
+          };
+          setShowUnsavedModal(true);
+        }
         window.history.pushState({ tab: currentTab }, '', '#' + currentTab);
       } else {
         _setCurrentTab(targetTab);
@@ -2016,11 +2026,14 @@ export const useApp = () => {
 
 function isDeepEqual(a: any, b: any): boolean {
   if (a === b) return true;
+  if ((a === null || a === undefined) && (b === null || b === undefined)) return true;
   if (a && b && typeof a === 'object' && typeof b === 'object') {
     if (Array.isArray(a) !== Array.isArray(b)) return false;
-    const keys = Object.keys(a);
-    if (keys.length !== Object.keys(b).length) return false;
-    for (const key of keys) {
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+      if (!Object.prototype.hasOwnProperty.call(b, key)) return false;
       if (!isDeepEqual(a[key], b[key])) return false;
     }
     return true;
