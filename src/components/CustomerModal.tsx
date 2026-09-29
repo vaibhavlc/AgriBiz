@@ -18,14 +18,6 @@ interface CustomerModalProps {
   editCustomerData?: Customer | null;
 }
 
-const CUSTOMER_STAFF_PERMISSIONS = [
-  { id: 'sales', label: 'Sales Invoices & Billing', description: 'Allow staff to generate sales bills for this customer' },
-  { id: 'receipts', label: 'Payment Receipts', description: 'Allow staff to record cash/UPI/bank receipts' },
-  { id: 'ledger', label: 'View Account Ledger', description: 'Allow staff to view ledger history & statement' },
-  { id: 'edit', label: 'Edit Customer Details', description: 'Allow staff to update phone, GSTIN, and address' },
-  { id: 'delete', label: 'Delete Account', description: 'Allow staff to remove or delete this customer' },
-];
-
 export const CustomerModal: React.FC<CustomerModalProps> = ({
   isOpen,
   onClose,
@@ -40,7 +32,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   const [gstin, setGstin] = useState('');
   const [state, setState] = useState('Madhya Pradesh');
   const [outstanding, setOutstanding] = useState(0);
-  const [allowedStaffActions, setAllowedStaffActions] = useState<string[]>(['sales', 'receipts', 'ledger', 'edit']);
 
   const currentValues = {
     name,
@@ -50,7 +41,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     state,
     gstin,
     outstanding,
-    allowedStaffActions,
   };
 
   const initialValues = {
@@ -61,7 +51,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     state: editCustomerData?.state || 'Madhya Pradesh',
     gstin: editCustomerData?.gstin || '',
     outstanding: editCustomerData?.outstanding || 0,
-    allowedStaffActions: editCustomerData?.allowedStaffActions || ['sales', 'receipts', 'ledger', 'edit'],
   };
 
   useUnsavedChanges('customer-modal-form', currentValues, initialValues, isOpen);
@@ -79,7 +68,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setGstin(editCustomerData.gstin || '');
       setState(editCustomerData.state || 'Madhya Pradesh');
       setOutstanding(editCustomerData.outstanding);
-      setAllowedStaffActions(editCustomerData.allowedStaffActions || ['sales', 'receipts', 'ledger', 'edit']);
     } else {
       setName('');
       setPhone('');
@@ -88,7 +76,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
       setGstin('');
       setState('Madhya Pradesh');
       setOutstanding(0);
-      setAllowedStaffActions(['sales', 'receipts', 'ledger', 'edit']);
     }
   }, [editCustomerData, isOpen]);
 
@@ -110,7 +97,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           state,
           gstin: gstin.toUpperCase() || undefined,
           outstanding,
-          allowedStaffActions,
         });
       } else {
         const saved = await addCustomer({
@@ -121,7 +107,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           state,
           gstin: gstin.toUpperCase() || undefined,
           outstanding,
-          allowedStaffActions,
         });
         if (saved && onSaveCallback) onSaveCallback(saved);
       }
@@ -243,53 +228,6 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               />
             </div>
           )}
-
-          {/* Staff Page & Action Permissions for this Customer */}
-          <div style={{ padding: '12px', borderRadius: '10px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)', width: '100%', boxSizing: 'border-box', marginTop: '4px' }}>
-            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              🛡️ Staff Access & Page Permissions
-            </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
-              Select which customer sub-pages and features staff members are allowed to access for this account:
-            </p>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-              {CUSTOMER_STAFF_PERMISSIONS.map((perm) => {
-                const isChecked = allowedStaffActions.includes(perm.id);
-                return (
-                  <label
-                    key={perm.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '6px 10px',
-                      borderRadius: '6px',
-                      backgroundColor: isChecked ? 'rgba(16, 185, 129, 0.08)' : 'var(--card-bg)',
-                      border: isChecked ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-color)',
-                      cursor: 'pointer',
-                      fontSize: '12px',
-                      fontWeight: isChecked ? 700 : 500
-                    }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setAllowedStaffActions((prev) => [...prev, perm.id]);
-                        } else {
-                          setAllowedStaffActions((prev) => prev.filter((p) => p !== perm.id));
-                        }
-                      }}
-                      style={{ accentColor: 'var(--primary)', width: '15px', height: '15px', cursor: 'pointer' }}
-                    />
-                    <span>{perm.label}</span>
-                  </label>
-                );
-              })}
-            </div>
-          </div>
 
           {/* Footer Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>

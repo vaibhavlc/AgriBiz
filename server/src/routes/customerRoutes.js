@@ -1,6 +1,6 @@
 import express from 'express';
 import customerController from '../controllers/customerController.js';
-import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
+import { authenticate, authorizePermission } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validationMiddleware.js';
 import { customerSchema } from '../validators/domainValidator.js';
 
@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), customerController.getCustomers);
-router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), customerController.getCustomer);
-router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(customerSchema), customerController.createCustomer);
-router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(customerSchema), customerController.updateCustomer);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), customerController.deleteCustomer);
+router.get('/', authorizePermission('customers'), customerController.getCustomers);
+router.get('/:id', authorizePermission('customers'), customerController.getCustomer);
+router.post('/', authorizePermission('customers'), validate(customerSchema), customerController.createCustomer);
+router.put('/:id', authorizePermission('customers'), validate(customerSchema), customerController.updateCustomer);
+router.delete('/:id', authorizePermission('customers'), customerController.deleteCustomer);
 
 export default router;

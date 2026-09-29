@@ -1,6 +1,6 @@
 import express from 'express';
 import expenseController from '../controllers/expenseController.js';
-import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
+import { authenticate, authorizePermission } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validationMiddleware.js';
 import { expenseSchema } from '../validators/domainValidator.js';
 
@@ -8,10 +8,10 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), expenseController.getExpenses);
-router.get('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), expenseController.getExpense);
-router.post('/', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(expenseSchema), expenseController.createExpense);
-router.put('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), validate(expenseSchema), expenseController.updateExpense);
-router.delete('/:id', authorizeRoles('Owner', 'Accounts', 'Cashier'), expenseController.deleteExpense);
+router.get('/', authorizePermission('expenses'), expenseController.getExpenses);
+router.get('/:id', authorizePermission('expenses'), expenseController.getExpense);
+router.post('/', authorizePermission('expenses'), validate(expenseSchema), expenseController.createExpense);
+router.put('/:id', authorizePermission('expenses'), validate(expenseSchema), expenseController.updateExpense);
+router.delete('/:id', authorizePermission('expenses'), expenseController.deleteExpense);
 
 export default router;

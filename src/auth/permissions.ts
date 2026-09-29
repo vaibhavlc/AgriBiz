@@ -49,15 +49,17 @@ export const hasPermission = (
   if (!role) return false;
   if (role === 'Owner') return true;
 
+  const normalizedPerm = permission === 'recycle_bin' ? 'recycle' : permission;
+
   // Custom user permissions override
   if (customPermissions && Array.isArray(customPermissions) && customPermissions.length > 0) {
     if (customPermissions.includes('*')) return true;
-    return customPermissions.includes(permission);
+    return customPermissions.includes(normalizedPerm) || customPermissions.includes(permission);
   }
 
   // Fallback to default role permissions
   const allowed = ROLE_PERMISSIONS[role];
   if (!allowed) return false;
   if (allowed.includes('*')) return true;
-  return allowed.includes(permission);
+  return allowed.includes(normalizedPerm) || allowed.includes(permission);
 };

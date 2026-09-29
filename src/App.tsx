@@ -108,6 +108,26 @@ const AuthApp: React.FC = () => {
   }
 };
 
+const getFirstPermittedTab = (hasPermission: (perm: string) => boolean): string => {
+  const tabs = [
+    'dashboard',
+    'sales',
+    'purchases',
+    'inventory',
+    'customers',
+    'suppliers',
+    'payments',
+    'expenses',
+    'reports',
+    'recycle_bin',
+    'settings',
+  ];
+  for (const tab of tabs) {
+    if (hasPermission(tab)) return tab;
+  }
+  return 'dashboard';
+};
+
 const AppContent: React.FC = () => {
   const { currentTab, setCurrentTab } = useApp();
   const { hasPermission } = useAuth();
@@ -123,19 +143,17 @@ const AppContent: React.FC = () => {
   // If user lacks permission for currentTab, automatically redirect to first permitted tab
   useEffect(() => {
     if (!hasPermission(currentTab)) {
-      if (hasPermission('dashboard')) setCurrentTab('dashboard');
-      else if (hasPermission('sales')) setCurrentTab('sales');
-      else if (hasPermission('purchases')) setCurrentTab('purchases');
-      else setCurrentTab('inventory');
+      const fallbackTab = getFirstPermittedTab(hasPermission);
+      if (fallbackTab !== currentTab) {
+        setCurrentTab(fallbackTab);
+      }
     }
   }, [currentTab, hasPermission, setCurrentTab]);
 
   const renderActivePage = () => {
-    if (!hasPermission(currentTab)) {
-      return <Dashboard />;
-    }
+    const activeTabToRender = hasPermission(currentTab) ? currentTab : getFirstPermittedTab(hasPermission);
 
-    switch (currentTab) {
+    switch (activeTabToRender) {
       case 'dashboard':
         return <Dashboard />;
       case 'sales':

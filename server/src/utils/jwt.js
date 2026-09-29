@@ -3,7 +3,13 @@ import crypto from 'crypto';
 
 export const generateAccessToken = (user) => {
   return jwt.sign(
-    { userId: user.userId, companyId: user.companyId, role: user.role, name: user.name || user.role || 'User' },
+    {
+      userId: user.userId,
+      companyId: user.companyId,
+      role: user.role,
+      name: user.name || user.role || 'User',
+      customPermissions: user.customPermissions || [],
+    },
     process.env.JWT_SECRET || 'agribiz_access_token_secret_key_12345',
     { expiresIn: '15m' }
   );

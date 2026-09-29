@@ -1,12 +1,12 @@
 import express from 'express';
 import userController from '../controllers/userController.js';
-import { authenticate, authorizeRoles } from '../middlewares/authMiddleware.js';
+import { authenticate, authorizeRoles, authorizePermission } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizeRoles('Owner', 'Accounts'), userController.getCompanyUsers);
+router.get('/', authorizePermission('settings'), userController.getCompanyUsers);
 router.put('/presence', userController.updatePresence);
 router.put('/pin', userController.updateMyPin);                             // own PIN (any role)
 router.put('/:id/pin', authorizeRoles('Owner'), userController.resetStaffPin);  // staff PIN (Owner only)

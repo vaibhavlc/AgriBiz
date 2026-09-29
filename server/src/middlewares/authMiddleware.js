@@ -30,6 +30,53 @@ export const authenticate = (req, res, next) => {
   }
 };
 
+const ROLE_PERMISSIONS = {
+  Owner: ['*'],
+  Accounts: ['dashboard', 'purchases', 'inventory', 'customers', 'suppliers', 'payments', 'expenses', 'reports'],
+  Cashier: ['dashboard', 'sales', 'inventory', 'payments', 'customers'],
+};
+
+export const hasUserPermission = (user, permission) => {
+  if (!user || !user.role) return false;
+  if (user.role === 'Owner') return true;
+
+  const normalizedPerm = permission === 'recycle_bin' ? 'recycle' : permission;
+
+  if (user.customPermissions && Array.isArray(user.customPermissions) && user.customPermissions.length > 0) {
+    if (user.customPermissions.includes('*')) return true;
+    return user.customPermissions.includes(normalizedPerm) || user.customPermissions.includes(permission);
+  }
+
+  const allowed = ROLE_PERMISSIONS[user.role];
+  if (!allowed) return false;
+  if (allowed.includes('*')) return true;
+  return allowed.includes(normalizedPerm) || allowed.includes(permission);
+};
+
+export const authorizePermission = (permission) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({ success: false, message: 'Unauthorized. Authorization token required.' });
+    }
+
+    if (!hasUserPermission(req.user, permission)) {
+      logger.warn(
+        'Authorization failed: User %s (%s) with custom permissions [%s] attempted unauthorized access to %s',
+        req.user.userId,
+        req.user.role,
+        (req.user.customPermissions || []).join(', '),
+        permission
+      );
+      return res.status(403).json({
+        success: false,
+        message: `Forbidden: You do not have permission to perform this action (${permission}).`,
+      });
+    }
+
+    next();
+  };
+};
+
 export const authorizeRoles = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
