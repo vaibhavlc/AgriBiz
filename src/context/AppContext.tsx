@@ -801,8 +801,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const isNowDirty = Object.values(next).some(Boolean);
       if (!wasDirty && isNowDirty) {
         try {
-          const currentHash = window.location.hash.slice(1) || 'dashboard';
-          window.history.pushState({ tab: currentHash, formGuard: true }, '', '#' + currentHash);
+          const currentHash = window.location.hash || ('#' + (currentViewStateRef.current?.tab || 'dashboard'));
+          const dirtyState = { ...currentViewStateRef.current, formGuard: true };
+          window.history.pushState(dirtyState, '', currentHash);
         } catch (e) {}
       }
       return next;
@@ -853,7 +854,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, [dirtyForms]);
 
-  // UI State
+  // UI State & View History Interface
   const [currentTab, _setCurrentTab] = useState<string>(() => {
     const rawHash = window.location.hash.slice(1);
     if (!rawHash) return 'dashboard';
@@ -872,69 +873,219 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isEditingCustomer, _setIsEditingCustomer] = useState<Customer | null>(null);
   const [isEditingSupplier, _setIsEditingSupplier] = useState<Supplier | null>(null);
 
-  const setCurrentTab = (tab: string, force = false) => force ? (_setCurrentTab(tab), window.history.pushState({ tab }, '', '#' + tab)) : requestNavigation(() => { window.history.pushState({ tab }, '', '#' + tab); _setCurrentTab(tab); });
+  const getCurrentViewState = useCallback(() => {
+    return {
+      tab: currentTab,
+      invoiceId: currentInvoiceId,
+      quotationId: currentQuotationId,
+      purchaseId: currentPurchaseId,
+      customerId: currentCustomerId,
+      supplierId: currentSupplierId,
+      isCreatingInvoice,
+      isCreatingQuotation,
+      isEnteringPurchase,
+      isEditingProductId: isEditingProduct?.id || null,
+      isEditingCustomerId: isEditingCustomer?.id || null,
+      isEditingSupplierId: isEditingSupplier?.id || null,
+    };
+  }, [
+    currentTab,
+    currentInvoiceId,
+    currentQuotationId,
+    currentPurchaseId,
+    currentCustomerId,
+    currentSupplierId,
+    isCreatingInvoice,
+    isCreatingQuotation,
+    isEnteringPurchase,
+    isEditingProduct,
+    isEditingCustomer,
+    isEditingSupplier,
+  ]);
+
+  const currentViewStateRef = useRef<any>({});
+  useEffect(() => {
+    currentViewStateRef.current = getCurrentViewState();
+  }, [getCurrentViewState]);
+
+  const applyViewState = useCallback((state: any) => {
+    if (!state) return;
+    const tab = state.tab || 'dashboard';
+    _setCurrentTab(tab);
+    _setViewInvoice(state.invoiceId || null);
+    _setViewQuotation(state.quotationId || null);
+    _setViewPurchase(state.purchaseId || null);
+    _setViewCustomer(state.customerId || null);
+    _setViewSupplier(state.supplierId || null);
+    _setIsCreatingInvoice(!!state.isCreatingInvoice);
+    _setIsCreatingQuotation(!!state.isCreatingQuotation);
+    _setIsEnteringPurchase(!!state.isEnteringPurchase);
+
+    if (state.isEditingProductId) {
+      setProducts((prev) => {
+        const p = prev.find((item) => item.id === state.isEditingProductId) || null;
+        _setIsEditingProduct(p);
+        return prev;
+      });
+    } else {
+      _setIsEditingProduct(null);
+    }
+
+    if (state.isEditingCustomerId) {
+      setCustomers((prev) => {
+        const c = prev.find((item) => item.id === state.isEditingCustomerId) || null;
+        _setIsEditingCustomer(c);
+        return prev;
+      });
+    } else {
+      _setIsEditingCustomer(null);
+    }
+
+    if (state.isEditingSupplierId) {
+      setSuppliers((prev) => {
+        const s = prev.find((item) => item.id === state.isEditingSupplierId) || null;
+        _setIsEditingSupplier(s);
+        return prev;
+      });
+    } else {
+      _setIsEditingSupplier(null);
+    }
+
+    setIsPaymentFormOpen(!!state.isPaymentFormOpen);
+    setSearchQuery('');
+  }, []);
+
+  const setCurrentTab = (tab: string, force = false) => {
+    const action = () => {
+      _setCurrentTab(tab);
+      _setViewInvoice(null);
+      _setViewQuotation(null);
+      _setViewPurchase(null);
+      _setViewCustomer(null);
+      _setViewSupplier(null);
+      _setIsCreatingInvoice(false);
+      _setIsCreatingQuotation(false);
+      _setIsEnteringPurchase(false);
+      _setIsEditingProduct(null);
+      _setIsEditingCustomer(null);
+      _setIsEditingSupplier(null);
+      window.history.pushState({ tab }, '', '#' + tab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
   const setViewInvoice = (id: string | null, force = false) => {
-    if (force) {
-      clearAllDirtyForms();
+    const action = () => {
       if (id !== null) {
         _setIsCreatingInvoice(false);
         _setIsCreatingQuotation(false);
       }
       _setViewInvoice(id);
-    } else {
-      requestNavigation(() => {
-        if (id !== null) {
-          _setIsCreatingInvoice(false);
-          _setIsCreatingQuotation(false);
-        }
-        _setViewInvoice(id);
-      });
-    }
+      window.history.pushState({ tab: currentTab, invoiceId: id }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
   };
 
   const setViewQuotation = (id: string | null, force = false) => {
-    if (force) {
-      clearAllDirtyForms();
+    const action = () => {
       if (id !== null) {
         _setIsCreatingQuotation(false);
         _setIsCreatingInvoice(false);
       }
       _setViewQuotation(id);
-    } else {
-      requestNavigation(() => {
-        if (id !== null) {
-          _setIsCreatingQuotation(false);
-          _setIsCreatingInvoice(false);
-        }
-        _setViewQuotation(id);
-      });
-    }
+      window.history.pushState({ tab: currentTab, quotationId: id }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
   };
 
   const setViewPurchase = (id: string | null, force = false) => {
-    if (force) {
-      clearAllDirtyForms();
+    const action = () => {
       if (id !== null) {
         _setIsEnteringPurchase(false);
       }
       _setViewPurchase(id);
-    } else {
-      requestNavigation(() => {
-        if (id !== null) {
-          _setIsEnteringPurchase(false);
-        }
-        _setViewPurchase(id);
-      });
-    }
+      window.history.pushState({ tab: currentTab, purchaseId: id }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
   };
-  const setViewCustomer = (id: string | null, force = false) => force ? (clearAllDirtyForms(), _setViewCustomer(id)) : requestNavigation(() => _setViewCustomer(id));
-  const setViewSupplier = (id: string | null, force = false) => force ? (clearAllDirtyForms(), _setViewSupplier(id)) : requestNavigation(() => _setViewSupplier(id));
-  const setIsCreatingInvoice = (val: boolean, force = false) => force ? (clearAllDirtyForms(), _setIsCreatingInvoice(val)) : requestNavigation(() => _setIsCreatingInvoice(val));
-  const setIsCreatingQuotation = (val: boolean, force = false) => force ? (clearAllDirtyForms(), _setIsCreatingQuotation(val)) : requestNavigation(() => _setIsCreatingQuotation(val));
-  const setIsEnteringPurchase = (val: boolean, force = false) => force ? (clearAllDirtyForms(), _setIsEnteringPurchase(val)) : requestNavigation(() => _setIsEnteringPurchase(val));
-  const setIsEditingProduct = (product: Product | null, force = false) => force ? (clearAllDirtyForms(), _setIsEditingProduct(product)) : requestNavigation(() => _setIsEditingProduct(product));
-  const setIsEditingCustomer = (customer: Customer | null, force = false) => force ? (clearAllDirtyForms(), _setIsEditingCustomer(customer)) : requestNavigation(() => _setIsEditingCustomer(customer));
-  const setIsEditingSupplier = (supplier: Supplier | null, force = false) => force ? (clearAllDirtyForms(), _setIsEditingSupplier(supplier)) : requestNavigation(() => _setIsEditingSupplier(supplier));
+
+  const setViewCustomer = (id: string | null, force = false) => {
+    const action = () => {
+      _setViewCustomer(id);
+      window.history.pushState({ tab: currentTab, customerId: id }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setViewSupplier = (id: string | null, force = false) => {
+    const action = () => {
+      _setViewSupplier(id);
+      window.history.pushState({ tab: currentTab, supplierId: id }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setIsCreatingInvoice = (val: boolean, force = false) => {
+    const action = () => {
+      if (val) {
+        _setViewInvoice(null);
+        _setViewQuotation(null);
+        _setIsCreatingQuotation(false);
+      }
+      _setIsCreatingInvoice(val);
+      window.history.pushState({ tab: currentTab, isCreatingInvoice: val }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setIsCreatingQuotation = (val: boolean, force = false) => {
+    const action = () => {
+      if (val) {
+        _setViewQuotation(null);
+        _setViewInvoice(null);
+        _setIsCreatingInvoice(false);
+      }
+      _setIsCreatingQuotation(val);
+      window.history.pushState({ tab: currentTab, isCreatingQuotation: val }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setIsEnteringPurchase = (val: boolean, force = false) => {
+    const action = () => {
+      if (val) {
+        _setViewPurchase(null);
+      }
+      _setIsEnteringPurchase(val);
+      window.history.pushState({ tab: currentTab, isEnteringPurchase: val }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setIsEditingProduct = (product: Product | null, force = false) => {
+    const action = () => {
+      _setIsEditingProduct(product);
+      window.history.pushState({ tab: currentTab, isEditingProductId: product?.id || null }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setIsEditingCustomer = (customer: Customer | null, force = false) => {
+    const action = () => {
+      _setIsEditingCustomer(customer);
+      window.history.pushState({ tab: currentTab, isEditingCustomerId: customer?.id || null }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
+  const setIsEditingSupplier = (supplier: Supplier | null, force = false) => {
+    const action = () => {
+      _setIsEditingSupplier(supplier);
+      window.history.pushState({ tab: currentTab, isEditingSupplierId: supplier?.id || null }, '', '#' + currentTab);
+    };
+    force ? (clearAllDirtyForms(), action()) : requestNavigation(action);
+  };
+
   const [salesActiveTab, setSalesActiveTab] = useState<'invoices' | 'quotations'>('invoices');
   const [paymentFormPreset, setPaymentFormPreset] = useState<{ contactId: string; type: 'CustomerReceipt' | 'SupplierPayment' } | null>(null);
   const [salesFormPresetCustomerId, setSalesFormPresetCustomerId] = useState<string | null>(null);
@@ -1100,7 +1251,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const navigateTab = (tab: string) => {
     requestNavigation(() => {
-      window.history.pushState({ tab }, '', '#' + tab);
       _setCurrentTab(tab);
       _setViewInvoice(null);
       _setViewQuotation(null);
@@ -1110,7 +1260,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       _setIsCreatingInvoice(false);
       _setIsCreatingQuotation(false);
       _setIsEnteringPurchase(false);
+      _setIsEditingProduct(null);
+      _setIsEditingCustomer(null);
+      _setIsEditingSupplier(null);
       setSearchQuery('');
+      window.history.pushState({ tab }, '', '#' + tab);
     });
   };
 
@@ -1125,50 +1279,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
       const isDirty = Object.values(dirtyForms).some(Boolean);
+      const targetState = event.state || { tab: window.location.hash.slice(1) || 'dashboard' };
 
       if (isDirty) {
-        const rawTarget = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
-        const targetTab = (rawTarget === currentTab && !event.state?.formGuard) ? 'dashboard' : rawTarget;
-
         if (!showUnsavedModalRef.current) {
           pendingCallbackRef.current = () => {
-            window.history.replaceState({ tab: targetTab }, '', '#' + targetTab);
-            _setCurrentTab(targetTab);
-            _setViewInvoice(null);
-            _setViewQuotation(null);
-            _setViewPurchase(null);
-            _setViewCustomer(null);
-            _setViewSupplier(null);
-            _setIsCreatingInvoice(false);
-            _setIsCreatingQuotation(false);
-            _setIsEnteringPurchase(false);
-            setSearchQuery('');
+            applyViewState(targetState);
+            window.history.replaceState(targetState, '', window.location.hash || ('#' + (targetState.tab || 'dashboard')));
           };
           setShowUnsavedModal(true);
         }
         try {
-          window.history.pushState({ tab: currentTab, formGuard: true }, '', '#' + currentTab);
+          const activeState = { ...currentViewStateRef.current, formGuard: true };
+          window.history.pushState(activeState, '', window.location.hash || ('#' + (activeState.tab || 'dashboard')));
         } catch (e) {}
         return;
       }
 
       // Clean form navigation
-      const targetTab = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
-      _setCurrentTab(targetTab);
-      _setViewInvoice(null);
-      _setViewQuotation(null);
-      _setViewPurchase(null);
-      _setViewCustomer(null);
-      _setViewSupplier(null);
-      _setIsCreatingInvoice(false);
-      _setIsCreatingQuotation(false);
-      _setIsEnteringPurchase(false);
-      setSearchQuery('');
+      applyViewState(targetState);
     };
 
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
-  }, [currentTab, dirtyForms]);
+  }, [dirtyForms, applyViewState]);
 
   // Intercept tab closing or browser refresh
   useEffect(() => {
