@@ -796,7 +796,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const setFormDirty = useCallback((formId: string, isDirty: boolean) => {
     setDirtyForms((prev) => {
       if (prev[formId] === isDirty) return prev;
-      return { ...prev, [formId]: isDirty };
+      const next = { ...prev, [formId]: isDirty };
+      const wasDirty = Object.values(prev).some(Boolean);
+      const isNowDirty = Object.values(next).some(Boolean);
+      if (!wasDirty && isNowDirty) {
+        try {
+          const currentHash = window.location.hash.slice(1) || 'dashboard';
+          window.history.pushState({ tab: currentHash, formGuard: true }, '', '#' + currentHash);
+        } catch (e) {}
+      }
+      return next;
     });
   }, []);
 
@@ -1112,13 +1121,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.history.replaceState({ tab: initialTab }, '', '#' + initialTab);
   }, []);
 
-  // Intercept browser back/forward (popstate)
+  // Intercept browser back/forward (popstate) including mobile edge-swipe gestures
   useEffect(() => {
     const handlePopState = (event: PopStateEvent) => {
-      const targetTab = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
-      if (targetTab === currentTab) return;
+      const isDirty = Object.values(dirtyForms).some(Boolean);
 
-      if (Object.values(dirtyForms).some(Boolean)) {
+      if (isDirty) {
+        const rawTarget = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
+        const targetTab = (rawTarget === currentTab && !event.state?.formGuard) ? 'dashboard' : rawTarget;
+
         if (!showUnsavedModalRef.current) {
           pendingCallbackRef.current = () => {
             window.history.replaceState({ tab: targetTab }, '', '#' + targetTab);
@@ -1135,19 +1146,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           };
           setShowUnsavedModal(true);
         }
-        window.history.pushState({ tab: currentTab }, '', '#' + currentTab);
-      } else {
-        _setCurrentTab(targetTab);
-        _setViewInvoice(null);
-        _setViewQuotation(null);
-        _setViewPurchase(null);
-        _setViewCustomer(null);
-        _setViewSupplier(null);
-        _setIsCreatingInvoice(false);
-        _setIsCreatingQuotation(false);
-        _setIsEnteringPurchase(false);
-        setSearchQuery('');
+        try {
+          window.history.pushState({ tab: currentTab, formGuard: true }, '', '#' + currentTab);
+        } catch (e) {}
+        return;
       }
+
+      // Clean form navigation
+      const targetTab = event.state?.tab || window.location.hash.slice(1) || 'dashboard';
+      _setCurrentTab(targetTab);
+      _setViewInvoice(null);
+      _setViewQuotation(null);
+      _setViewPurchase(null);
+      _setViewCustomer(null);
+      _setViewSupplier(null);
+      _setIsCreatingInvoice(false);
+      _setIsCreatingQuotation(false);
+      _setIsEnteringPurchase(false);
+      setSearchQuery('');
     };
 
     window.addEventListener('popstate', handlePopState);
