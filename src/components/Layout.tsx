@@ -264,16 +264,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   // Center the active mobile bottom nav tab item when currentTab changes without scrolling window vertically
   useEffect(() => {
     window.scrollTo(0, 0);
-    if (bottomNavRef.current) {
-      const activeBtn = bottomNavRef.current.querySelector('[data-active="true"]') as HTMLElement;
-      if (activeBtn) {
-        const container = bottomNavRef.current;
-        const containerRect = container.getBoundingClientRect();
-        const childRect = activeBtn.getBoundingClientRect();
-        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
-        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+    const rafId = requestAnimationFrame(() => {
+      if (bottomNavRef.current) {
+        const activeBtn = bottomNavRef.current.querySelector('[data-active="true"]') as HTMLElement;
+        if (activeBtn) {
+          const container = bottomNavRef.current;
+          const containerRect = container.getBoundingClientRect();
+          const childRect = activeBtn.getBoundingClientRect();
+          const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+          container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+        }
       }
-    }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [currentTab]);
 
   const [notifications, setNotifications] = useState([

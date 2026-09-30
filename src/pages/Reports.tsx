@@ -75,16 +75,19 @@ export const Reports: React.FC = () => {
 
   // Center active report tab item when activeReport changes without scrolling window vertically
   useEffect(() => {
-    if (reportTabsRef.current) {
-      const activeTabElement = reportTabsRef.current.querySelector('[data-active="true"]') as HTMLElement;
-      if (activeTabElement) {
-        const container = reportTabsRef.current;
-        const containerRect = container.getBoundingClientRect();
-        const childRect = activeTabElement.getBoundingClientRect();
-        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
-        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+    const rafId = requestAnimationFrame(() => {
+      if (reportTabsRef.current) {
+        const activeTabElement = reportTabsRef.current.querySelector('[data-active="true"]') as HTMLElement;
+        if (activeTabElement) {
+          const container = reportTabsRef.current;
+          const containerRect = container.getBoundingClientRect();
+          const childRect = activeTabElement.getBoundingClientRect();
+          const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+          container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+        }
       }
-    }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [activeReport]);
 
   const filterByDate = (dateStr: string) => {

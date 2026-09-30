@@ -288,38 +288,47 @@ export const Dashboard: React.FC = () => {
 
   // Center active KPI tab in header scroll container without scrolling window vertically
   useEffect(() => {
-    const activeBtn = document.getElementById(`kpi-tab-button-${activeKpiTab}`);
-    const container = activeBtn?.parentElement;
-    if (activeBtn && container) {
-      const containerRect = container.getBoundingClientRect();
-      const childRect = activeBtn.getBoundingClientRect();
-      const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
-      container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
-    }
+    const rafId = requestAnimationFrame(() => {
+      const activeBtn = document.getElementById(`kpi-tab-button-${activeKpiTab}`);
+      const container = activeBtn?.parentElement;
+      if (activeBtn && container) {
+        const containerRect = container.getBoundingClientRect();
+        const childRect = activeBtn.getBoundingClientRect();
+        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [activeKpiTab]);
 
   // Center active Analysis tab in header scroll container without scrolling window vertically
   useEffect(() => {
-    const activeBtn = document.getElementById(`analysis-tab-button-${activeAnalysisTab}`);
-    const container = activeBtn?.parentElement;
-    if (activeBtn && container) {
-      const containerRect = container.getBoundingClientRect();
-      const childRect = activeBtn.getBoundingClientRect();
-      const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
-      container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
-    }
+    const rafId = requestAnimationFrame(() => {
+      const activeBtn = document.getElementById(`analysis-tab-button-${activeAnalysisTab}`);
+      const container = activeBtn?.parentElement;
+      if (activeBtn && container) {
+        const containerRect = container.getBoundingClientRect();
+        const childRect = activeBtn.getBoundingClientRect();
+        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [activeAnalysisTab]);
 
   // Center active duration pill in horizontal scroll container without scrolling window vertically
   useEffect(() => {
-    const activeBtn = document.getElementById(`duration-pill-button-${filterType}`);
-    const container = activeBtn?.parentElement;
-    if (activeBtn && container) {
-      const containerRect = container.getBoundingClientRect();
-      const childRect = activeBtn.getBoundingClientRect();
-      const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
-      container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
-    }
+    const rafId = requestAnimationFrame(() => {
+      const activeBtn = document.getElementById(`duration-pill-button-${filterType}`);
+      const container = activeBtn?.parentElement;
+      if (activeBtn && container) {
+        const containerRect = container.getBoundingClientRect();
+        const childRect = activeBtn.getBoundingClientRect();
+        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [filterType]);
 
   // Simulated Reload

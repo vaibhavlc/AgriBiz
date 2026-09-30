@@ -598,16 +598,19 @@ export const Settings: React.FC = () => {
 
   // Center active settings tab item when activeTab changes without scrolling window vertically
   useEffect(() => {
-    if (settingsTabsRef.current) {
-      const activeTabElement = settingsTabsRef.current.querySelector('[data-active="true"]') as HTMLElement;
-      if (activeTabElement) {
-        const container = settingsTabsRef.current;
-        const containerRect = container.getBoundingClientRect();
-        const childRect = activeTabElement.getBoundingClientRect();
-        const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
-        container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+    const rafId = requestAnimationFrame(() => {
+      if (settingsTabsRef.current) {
+        const activeTabElement = settingsTabsRef.current.querySelector('[data-active="true"]') as HTMLElement;
+        if (activeTabElement) {
+          const container = settingsTabsRef.current;
+          const containerRect = container.getBoundingClientRect();
+          const childRect = activeTabElement.getBoundingClientRect();
+          const scrollOffset = childRect.left - containerRect.left - (containerRect.width / 2) + (childRect.width / 2);
+          container.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+        }
       }
-    }
+    });
+    return () => cancelAnimationFrame(rafId);
   }, [activeTab]);
 
   const [usersList, setUsersList] = useState<User[]>([]);

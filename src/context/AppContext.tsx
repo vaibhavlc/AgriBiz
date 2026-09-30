@@ -617,19 +617,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         const { module, action, recordId, record } = event;
 
-        if (record || (action === 'DELETE' && recordId)) {
-          updateTargetModuleState(module, action, recordId, record);
-          const T4 = performance.now();
-          console.log(`[PERF] T3 -> T4 (Socket event -> React state update): ${(T4 - T3).toFixed(2)} ms`);
+        setTimeout(() => {
+          if (!isSubscribed) return;
+          if (record || (action === 'DELETE' && recordId)) {
+            updateTargetModuleState(module, action, recordId, record);
+            const T4 = performance.now();
+            console.log(`[PERF] T3 -> T4 (Socket event -> React state update): ${(T4 - T3).toFixed(2)} ms`);
 
-          queueMicrotask(() => {
-            const T5 = performance.now();
-            console.log(`[PERF] T4 -> T5 (React state update -> Visible UI render): ${(T5 - T4).toFixed(2)} ms`);
-            console.log(`[PERF] TOTAL Application Processing Latency (T3 -> T5): ${(T5 - T3).toFixed(2)} ms`);
-          });
-        } else {
-          reloadData();
-        }
+            queueMicrotask(() => {
+              const T5 = performance.now();
+              console.log(`[PERF] T4 -> T5 (React state update -> Visible UI render): ${(T5 - T4).toFixed(2)} ms`);
+              console.log(`[PERF] TOTAL Application Processing Latency (T3 -> T5): ${(T5 - T3).toFixed(2)} ms`);
+            });
+          } else {
+            reloadData();
+          }
+        }, 0);
       });
     };
 
