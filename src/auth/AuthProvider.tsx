@@ -112,8 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
       try {
-        localStorage.removeItem('agribiz_settings');
-        localStorage.removeItem('agribiz_business_branding');
+        localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
       } catch (e) {}
     }
     return { success: res.success, message: res.message, company: res.company };
@@ -151,8 +150,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
       sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
       try {
-        localStorage.removeItem('agribiz_settings');
-        localStorage.removeItem('agribiz_business_branding');
+        localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
       } catch (e) {}
     }
     return { success: res.success, message: res.message };

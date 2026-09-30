@@ -265,7 +265,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isInitialLoading, setIsInitialLoading] = useState(true);
   const [activeTheme, setActiveTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('agribiz_settings');
+      const currentUser = authService.getCurrentUser();
+      const userTheme = (currentUser?.id && localStorage.getItem(`agribiz_user_theme_${currentUser.id}`))
+        || localStorage.getItem('agribiz_user_theme');
+
+      if (userTheme === 'dark') return 'dark';
+      if (userTheme === 'light') return 'light';
+      if (userTheme === 'system') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      const saved = sessionStorage.getItem('agribiz_settings') || localStorage.getItem('agribiz_settings');
       if (saved) {
         try {
           const parsed = JSON.parse(saved);
@@ -279,9 +289,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   useEffect(() => {
-    if (settings.theme === 'dark') {
+    const currentUser = authService.getCurrentUser();
+    const userTheme = (currentUser?.id && localStorage.getItem(`agribiz_user_theme_${currentUser.id}`))
+      || localStorage.getItem('agribiz_user_theme');
+
+    const effectiveTheme = userTheme || settings.theme;
+
+    if (effectiveTheme === 'dark') {
       setActiveTheme('dark');
-    } else if (settings.theme === 'light') {
+    } else if (effectiveTheme === 'light') {
       setActiveTheme('light');
     } else {
       const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -1996,6 +2012,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setActiveTheme(isDark ? 'dark' : 'light');
 
+    try {
+      localStorage.setItem('agribiz_user_theme', newTheme);
+      const currentUser = authService.getCurrentUser();
+      if (currentUser?.id) {
+        localStorage.setItem(`agribiz_user_theme_${currentUser.id}`, newTheme);
+      }
+    } catch (e) {}
+
     const updated = {
       ...settings,
       theme: newTheme,
@@ -2004,11 +2028,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     try {
       sessionStorage.setItem('agribiz_settings', JSON.stringify(updated));
+      localStorage.setItem('agribiz_settings', JSON.stringify(updated));
     } catch (e) {}
-
-    if (navigator.onLine) {
-      api.put('/settings', updated).catch(() => {});
-    }
   };
 
   const updateSettings = async (updatedSettings: BusinessSettings) => {

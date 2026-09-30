@@ -8,10 +8,11 @@
     <script>
       (function() {
         try {
-          const localSettings = localStorage.getItem('agribiz_settings');
-          let theme = 'system';
-          if (localSettings) {
-            theme = JSON.parse(localSettings).theme || 'system';
+          const userTheme = localStorage.getItem('agribiz_user_theme');
+          const savedSettings = sessionStorage.getItem('agribiz_settings') || localStorage.getItem('agribiz_settings');
+          let theme = userTheme || 'system';
+          if (!userTheme && savedSettings) {
+            theme = JSON.parse(savedSettings).theme || 'system';
           }
           let active = 'light';
           if (theme === 'system') {
@@ -22,6 +23,13 @@
           const themeColor = active === 'dark' ? '#0b0f19' : '#f8fafc';
           const metaTag = document.querySelector('meta[name="theme-color"]');
           if (metaTag) metaTag.setAttribute('content', themeColor);
+          if (active === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+            document.documentElement.classList.add('dark-theme');
+          } else {
+            document.documentElement.setAttribute('data-theme', 'light');
+            document.documentElement.classList.remove('dark-theme');
+          }
         } catch (e) {
           // ignore
         }
