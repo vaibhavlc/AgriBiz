@@ -137,37 +137,24 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   }, []);
 
   // Detect if amount text touches or hides behind icon
-  useLayoutEffect(() => {
+  useEffect(() => {
     const card = cardRef.current;
     const iconWrap = iconWrapRef.current;
     const text = textRef.current;
     if (!card || !iconWrap || !text) return;
 
-    const W_card = card.getBoundingClientRect().width;
-    const W_icon = iconWrap.getBoundingClientRect().width;
+    const W_card = card.offsetWidth || 0;
+    const W_icon = iconWrap.offsetWidth || 0;
 
     if (W_card === 0 || W_icon === 0) return;
 
-    const cardStyle = window.getComputedStyle(card);
-    const paddingLeft = parseFloat(cardStyle.paddingLeft) || 16;
-    const paddingRight = parseFloat(cardStyle.paddingRight) || 16;
-    const gap = parseFloat(cardStyle.gap) || 12;
+    const W_avail = Math.max(0, W_card - 44 - W_icon);
+    const textWidth = text.offsetWidth || 0;
+    const overflowing = textWidth > 0 && W_avail > 0 && textWidth > W_avail;
 
-    const W_avail = W_card - paddingLeft - paddingRight - W_icon - gap;
-    
-    if (Math.abs((availableWidth || 0) - W_avail) > 1) {
-      setAvailableWidth(W_avail);
-    }
-
-    const textWidth = text.getBoundingClientRect().width;
-    if (textWidth > 0 && W_avail > 0) {
-      if (textWidth > W_avail) {
-        if (!isOverflowing) {
-          setIsOverflowing(true);
-        }
-      }
-    }
-  }, [value, availableWidth, isOverflowing]);
+    setAvailableWidth((prev) => (prev === null || Math.abs(prev - W_avail) > 2 ? W_avail : prev));
+    setIsOverflowing((prev) => (prev !== overflowing ? overflowing : prev));
+  }, [value]);
 
   const handleIconClick = (e: React.MouseEvent) => {
     e.stopPropagation();

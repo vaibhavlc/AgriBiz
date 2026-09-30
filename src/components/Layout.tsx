@@ -332,8 +332,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Scroll page to top synchronously on page / view transitions to avoid layout flash or scroll jumping
-  useLayoutEffect(() => {
+  // Scroll page to top on page / view transitions
+  useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [
     currentTab,
