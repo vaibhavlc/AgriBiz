@@ -4,6 +4,8 @@ export const getRawBaseHost = (): string => {
   const envSocket = import.meta.env.VITE_SOCKET_URL;
   if (envSocket && envSocket.trim()) {
     let url = envSocket.trim();
+    if (url.startsWith('wss://')) url = 'https://' + url.slice(6);
+    else if (url.startsWith('ws://')) url = 'http://' + url.slice(5);
     if (url.endsWith('/')) url = url.slice(0, -1);
     if (url.endsWith('/api/v1')) url = url.slice(0, -7);
     return url;
@@ -11,6 +13,8 @@ export const getRawBaseHost = (): string => {
   const envApi = import.meta.env.VITE_API_URL;
   if (envApi && envApi.trim()) {
     let url = envApi.trim();
+    if (url.startsWith('wss://')) url = 'https://' + url.slice(6);
+    else if (url.startsWith('ws://')) url = 'http://' + url.slice(5);
     if (url.endsWith('/')) url = url.slice(0, -1);
     if (url.endsWith('/api/v1')) url = url.slice(0, -7);
     return url;

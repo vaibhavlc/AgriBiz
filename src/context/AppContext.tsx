@@ -535,15 +535,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const lastFocusRefetchRef = useRef<number>(0);
 
   useEffect(() => {
+    let isSubscribed = true;
+
     const setupSocket = () => {
       if (socketRef.current) {
+        socketRef.current.removeAllListeners();
         socketRef.current.disconnect();
         socketRef.current = null;
         setApiSocketId(null);
       }
 
       const token = sessionStorage.getItem('agribiz_access_token');
-      if (!token) return;
+      if (!token || !isSubscribed) return;
 
       const getSocketURL = () => {
         const host = getRawBaseHost();
@@ -559,6 +562,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           cb({ token: sessionStorage.getItem('agribiz_access_token') });
         },
         transports: ['polling', 'websocket'],
+        upgrade: true,
         reconnection: true,
         reconnectionAttempts: Infinity,
         reconnectionDelay: 1000,
@@ -569,24 +573,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       socketRef.current = socket;
 
       socket.on('connect', () => {
+        if (!isSubscribed) return;
         console.log(`[SOCKET] Connected: ${socket.id}`);
         setApiSocketId(socket.id || null);
         reloadData();
       });
 
       socket.on('disconnect', (reason) => {
+        if (!isSubscribed) return;
         console.log(`[SOCKET] Disconnected: ${socket.id} | Reason: ${reason}`);
         setApiSocketId(null);
       });
 
-      socket.on('connect_error', (err) => {
+      socket.on('connect_error', async (err) => {
+        if (!isSubscribed) return;
         console.warn('[SOCKET] Connection error:', err.message);
-        if (err.message?.includes('Authentication') || err.message?.includes('token')) {
-          api.get('/settings').catch(() => {});
+        if (err.message?.includes('Authentication') || err.message?.includes('token') || err.message?.includes('jwt')) {
+          try {
+            const authRes = await authService.refreshSession();
+            if (authRes.success && isSubscribed) {
+              const newToken = authService.getAccessToken();
+              if (newToken && socketRef.current) {
+                console.log('[SOCKET] Token refreshed after connect_error, reconnecting...');
+                socketRef.current.auth = { token: newToken };
+                socketRef.current.connect();
+              }
+            }
+          } catch (refreshErr) {
+            console.error('[SOCKET] Token refresh failed on connect_error:', refreshErr);
+          }
         }
       });
 
       socket.on('data_change', (event: any) => {
+        if (!isSubscribed) return;
         const T3 = performance.now();
         console.log('[REMOTE SOCKET] data_change received:', event);
 
@@ -630,7 +650,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     document.addEventListener('visibilitychange', handleFocus);
 
     return () => {
+      isSubscribed = false;
       if (socketRef.current) {
+        socketRef.current.removeAllListeners();
         socketRef.current.disconnect();
         socketRef.current = null;
         setApiSocketId(null);

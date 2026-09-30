@@ -5,13 +5,37 @@ import logger from './logger.js';
 let io = null;
 
 export const initSocket = (httpServer) => {
+  const getOrigins = () => {
+    const envOrigins = [process.env.CLIENT_URL, process.env.CORS_ORIGIN]
+      .filter(Boolean)
+      .flatMap(url => url.split(',').map(u => u.trim()));
+
+    return [
+      'http://localhost:5173',
+      'http://localhost:3000',
+      'http://localhost:4173',
+      'http://127.0.0.1:5173',
+      'http://127.0.0.1:3000',
+      ...envOrigins
+    ].filter(Boolean);
+  };
+
   io = new Server(httpServer, {
     cors: {
-      origin: true,
-      methods: ['GET', 'POST', 'PUT', 'DELETE'],
+      origin: (origin, callback) => {
+        if (!origin) return callback(null, true);
+        const allowed = getOrigins();
+        if (allowed.includes(origin) || process.env.NODE_ENV !== 'production') {
+          return callback(null, true);
+        }
+        return callback(null, true);
+      },
+      methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       credentials: true,
+      allowedHeaders: ['Content-Type', 'Authorization', 'X-Socket-Id'],
     },
     transports: ['polling', 'websocket'],
+    allowUpgrades: true,
     allowEIO3: true,
     perMessageDeflate: false,
     httpCompression: false,
@@ -21,7 +45,10 @@ export const initSocket = (httpServer) => {
 
   io.use((socket, next) => {
     try {
-      const token = socket.handshake.auth?.token || socket.handshake.query?.token;
+      let token = socket.handshake.auth?.token || socket.handshake.query?.token || socket.handshake.headers?.authorization;
+      if (typeof token === 'string' && token.startsWith('Bearer ')) {
+        token = token.slice(7).trim();
+      }
       if (!token) {
         logger.warn('[SOCKET] Authentication failed: Missing token');
         return next(new Error('Authentication error: Missing token'));
@@ -32,7 +59,7 @@ export const initSocket = (httpServer) => {
       next();
     } catch (err) {
       logger.warn('[SOCKET] Authentication failed: %s', err.message);
-      next(new Error('Authentication error: Invalid token'));
+      return next(new Error('Authentication error: Invalid token'));
     }
   });
 
