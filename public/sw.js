@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agribiz-v3';
+const CACHE_NAME = 'agribiz-v4';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
