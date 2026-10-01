@@ -92,14 +92,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   const loadStaffList = useCallback(async () => {
     setIsStaffLoading(true);
     try {
-      const staff = await authService.getActiveStaff();
-      setStaffList(staff as (UserType & { id: string })[]);
+      const company = currentCompany || authService.getCurrentCompany();
+      const companyId = company?.id;
+      const staff = await authService.getActiveStaff(companyId);
+      const scopedStaff = companyId
+        ? (staff as (UserType & { id: string })[]).filter((u) => u.companyId === companyId)
+        : (staff as (UserType & { id: string })[]);
+      setStaffList(scopedStaff);
     } catch (err) {
       console.error('Failed to load staff profiles:', err);
     } finally {
       setIsStaffLoading(false);
     }
-  }, []);
+  }, [currentCompany]);
 
   // On mount: if company session exists, skip business login and go directly to Staff Selection
   useEffect(() => {

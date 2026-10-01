@@ -26,7 +26,26 @@ const mapUserToClient = (user) => {
 class UserController {
   async getCompanyUsers(req, res, next) {
     try {
-      const companyId = req.user.companyId;
+      const companyId = req.user?.companyId;
+      if (!companyId) {
+        logger.warn('getCompanyUsers called without valid companyId in auth token');
+        return res.status(401).json({ success: false, message: 'Authentication required. Missing company context.' });
+      }
+
+      // Enforce strict tenant isolation: client cannot query another company's staff
+      const requestedCompanyId = req.query.companyId;
+      if (requestedCompanyId && requestedCompanyId !== companyId) {
+        logger.warn(
+          'Tenant isolation security violation: user company %s requested staff for company %s',
+          companyId,
+          requestedCompanyId
+        );
+        return res.status(403).json({
+          success: false,
+          message: 'Access denied: Cannot view or switch staff from another business.',
+        });
+      }
+
       const users = await userService.getCompanyUsers(companyId);
       const clientUsers = users.map(mapUserToClient);
       res.status(200).json({ success: true, users: clientUsers });

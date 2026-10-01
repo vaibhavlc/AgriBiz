@@ -295,16 +295,28 @@ class AuthService {
     }
   }
 
-  public async getActiveStaff(): Promise<User[]> {
+  public async getActiveStaff(companyId?: string): Promise<User[]> {
+    const currentCompany = this.getCurrentCompany();
+    const targetCompanyId = companyId || currentCompany?.id;
+
     try {
-      const res = await api.get('/users');
+      const url = targetCompanyId ? `/users?companyId=${encodeURIComponent(targetCompanyId)}` : '/users';
+      const res = await api.get(url);
       if (res.data && res.data.success && Array.isArray(res.data.users)) {
-        return res.data.users.filter((u: User) => u.status === 'Active');
+        return res.data.users.filter((u: User) => {
+          const isActive = u.status === 'Active';
+          const isSameCompany = !targetCompanyId || u.companyId === targetCompanyId;
+          return isActive && isSameCompany;
+        });
       }
     } catch (err) {
       console.warn('Failed to fetch staff list from server:', err);
     }
-    return this.getUsers().filter(u => u.status === 'Active');
+
+    if (targetCompanyId) {
+      return this.getCompanyUsers(targetCompanyId).filter((u) => u.status === 'Active');
+    }
+    return [];
   }
 
   public async registerCompany(
