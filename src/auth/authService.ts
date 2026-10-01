@@ -431,10 +431,8 @@ class AuthService {
           }
           return { success: true, company, user };
         }
-        this.forgetDeviceLocally();
         return { success: false };
       } catch (error) {
-        this.forgetDeviceLocally();
         return { success: false };
       } finally {
         this.refreshPromise = null;

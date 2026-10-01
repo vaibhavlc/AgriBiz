@@ -109,15 +109,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
       if (savedCompany || storedRefreshToken) {
         setLoading(true);
         setIsStaffLoading(true);
-        const res = await authService.refreshSession();
-        setLoading(false);
+        try {
+          await authService.refreshSession();
+        } catch (err) {
+          console.warn('Session refresh warning during checkSession:', err);
+        } finally {
+          setLoading(false);
+        }
 
-        if (res.success && (authService.getCurrentCompany() || res.company)) {
+        const company = authService.getCurrentCompany() || savedCompany;
+        if (company) {
           await loadStaffList();
           setStage('staff-selection');
         } else {
           setIsStaffLoading(false);
-          authService.forgetDeviceLocally();
           setStage('business-login');
         }
       } else {

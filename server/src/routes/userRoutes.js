@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.get('/', authorizePermission('settings'), userController.getCompanyUsers);
+router.get('/', userController.getCompanyUsers);
 router.put('/presence', userController.updatePresence);
 router.put('/pin', userController.updateMyPin);                             // own PIN (any role)
 router.put('/:id/pin', authorizeRoles('Owner'), userController.resetStaffPin);  // staff PIN (Owner only)
