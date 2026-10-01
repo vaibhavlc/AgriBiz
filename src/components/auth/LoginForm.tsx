@@ -39,6 +39,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   // Staff selection
   const [staffList, setStaffList] = useState<(UserType & { id: string })[]>([]);
   const [selectedStaff, setSelectedStaff] = useState<(UserType & { id: string }) | null>(null);
+  const [staffFetchError, setStaffFetchError] = useState<string | null>(null);
   const [isStaffLoading, setIsStaffLoading] = useState<boolean>(() => {
     const savedCompany = authService.getCurrentCompany();
     const storedRefreshToken = authService.getRefreshToken();
@@ -91,16 +92,33 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
   const loadStaffList = useCallback(async (targetCompanyId?: string) => {
     setIsStaffLoading(true);
+    setStaffFetchError(null);
     try {
       const company = currentCompany || authService.getCurrentCompany();
       const companyId = targetCompanyId || company?.id;
-      const staff = await authService.getActiveStaff(companyId);
-      const scopedStaff = companyId
-        ? (staff as (UserType & { id: string })[]).filter((u) => u.companyId === companyId)
-        : (staff as (UserType & { id: string })[]);
-      setStaffList(scopedStaff);
-    } catch (err) {
+
+      // Ensure access token is ready before requesting staff
+      let token = authService.getAccessToken();
+      if (!token && authService.getRefreshToken()) {
+        await authService.refreshSession();
+        token = authService.getAccessToken();
+      }
+
+      const res = await authService.getActiveStaff(companyId);
+      if (res.success) {
+        const scopedStaff = companyId
+          ? (res.users as (UserType & { id: string })[]).filter((u) => u.companyId === companyId)
+          : (res.users as (UserType & { id: string })[]);
+        setStaffList(scopedStaff);
+        setStaffFetchError(null);
+      } else {
+        setStaffFetchError(res.message || 'Failed to fetch staff profiles. Please try again.');
+        setStaffList([]);
+      }
+    } catch (err: any) {
       console.error('Failed to load staff profiles:', err);
+      setStaffFetchError('Failed to load staff profiles. Please reconnect and try again.');
+      setStaffList([]);
     } finally {
       setIsStaffLoading(false);
     }
@@ -510,6 +528,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               <StaffCardSkeleton />
               <StaffCardSkeleton />
             </>
+          ) : staffFetchError ? (
+            <div style={{ textAlign: 'center', padding: '16px', color: '#ef4444', fontSize: '12px' }}>
+              <p style={{ margin: '0 0 10px 0', fontWeight: 600 }}>{staffFetchError}</p>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                style={{ borderRadius: '8px', height: '32px', fontSize: '12px' }}
+                onClick={() => loadStaffList()}
+              >
+                Retry Loading Staff
+              </button>
+            </div>
           ) : staffList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted,#94a3b8)', fontSize: '12px' }}>
               No active staff found. Please reconnect and try again.

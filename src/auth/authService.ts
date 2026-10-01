@@ -334,7 +334,7 @@ class AuthService {
     }
   }
 
-  public async getActiveStaff(companyId?: string): Promise<User[]> {
+  public async getActiveStaff(companyId?: string): Promise<{ success: boolean; users: User[]; message?: string }> {
     const currentCompany = this.getCurrentCompany();
     const targetCompanyId = companyId || currentCompany?.id;
 
@@ -342,20 +342,33 @@ class AuthService {
       const url = targetCompanyId ? `/users?companyId=${encodeURIComponent(targetCompanyId)}` : '/users';
       const res = await api.get(url);
       if (res.data && res.data.success && Array.isArray(res.data.users)) {
-        return res.data.users.filter((u: User) => {
+        const users = res.data.users.filter((u: User) => {
           const isActive = u.status === 'Active';
           const isSameCompany = !targetCompanyId || u.companyId === targetCompanyId;
           return isActive && isSameCompany;
         });
+        return { success: true, users };
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn('Failed to fetch staff list from server:', err);
+      if (targetCompanyId) {
+        const localUsers = this.getCompanyUsers(targetCompanyId).filter((u) => u.status === 'Active');
+        if (localUsers.length > 0) {
+          return { success: true, users: localUsers };
+        }
+      }
+      return {
+        success: false,
+        users: [],
+        message: err.response?.data?.message || err.message || 'Failed to fetch staff list from server',
+      };
     }
 
     if (targetCompanyId) {
-      return this.getCompanyUsers(targetCompanyId).filter((u) => u.status === 'Active');
+      const localUsers = this.getCompanyUsers(targetCompanyId).filter((u) => u.status === 'Active');
+      return { success: true, users: localUsers };
     }
-    return [];
+    return { success: true, users: [] };
   }
 
   public async registerCompany(
@@ -447,12 +460,11 @@ class AuthService {
     }
   }
 
-  // Only clears the staff session — keeps company device session alive so next open goes to Staff Selection + PIN
+  // Only clears the staff session — keeps company device session & access token alive so next open goes to Staff Selection + PIN
   public logoutStaff(): void {
     sessionStorage.removeItem(STORAGE_KEYS.CURRENT_USER);
     sessionStorage.removeItem(STORAGE_KEYS.STAFF_PIN_VERIFIED);
     sessionStorage.removeItem(STORAGE_KEYS.SESSION);
-    this.setAccessToken(null);
     window.dispatchEvent(new Event('agribiz_auth_change'));
     window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
   }

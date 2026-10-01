@@ -27,4 +27,5 @@ server/.env
 *.sln
 *.sw?
 scratch
+test-results
 
