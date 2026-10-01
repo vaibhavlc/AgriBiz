@@ -120,7 +120,7 @@ class BackupController {
   async getGoogleAuthUrl(req, res, next) {
     try {
       const companyId = req.user.companyId;
-      const url = await googleDriveService.getAuthUrl(companyId);
+      const url = await googleDriveService.getAuthUrl(companyId, req);
       res.status(200).json({ success: true, configured: true, url });
     } catch (error) {
       res.status(200).json({
@@ -132,6 +132,25 @@ class BackupController {
   }
 
   async handleGoogleCallback(req, res, next) {
+    const getClientUrl = () => {
+      const rawUrl = process.env.CLIENT_URL || process.env.CORS_ORIGIN;
+      if (rawUrl) {
+        return rawUrl.split(',')[0].trim().replace(/\/+$/, '');
+      }
+      if (req.headers && req.headers.origin) {
+        return req.headers.origin.replace(/\/+$/, '');
+      }
+      if (req.headers && req.headers.referer) {
+        try {
+          const parsed = new URL(req.headers.referer);
+          return parsed.origin.replace(/\/+$/, '');
+        } catch (e) {}
+      }
+      return 'http://localhost:5173';
+    };
+
+    const clientUrl = getClientUrl();
+
     try {
       const { code, state } = req.query;
       const companyId = state || (req.user ? req.user.companyId : null);
@@ -142,11 +161,11 @@ class BackupController {
 
       await googleDriveService.handleOAuthCallback(code, companyId);
 
-      // Redirect back to Settings UI page
-      res.redirect(`http://localhost:5173/#settings?gdrive=connected`);
+      // Redirect back to Settings UI page on host frontend
+      res.redirect(`${clientUrl}/#settings?gdrive=connected`);
     } catch (error) {
       logger.error('Google OAuth callback error: %s', error.message);
-      res.redirect(`http://localhost:5173/#settings?gdrive=error&msg=${encodeURIComponent(error.message)}`);
+      res.redirect(`${clientUrl}/#settings?gdrive=error&msg=${encodeURIComponent(error.message)}`);
     }
   }
 

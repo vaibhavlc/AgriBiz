@@ -10,7 +10,7 @@ import logger from '../config/logger.js';
 import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class GoogleDriveService {
-  async getOAuth2Client(companyId = null) {
+  async getOAuth2Client(companyId = null, req = null) {
     let clientId = process.env.GOOGLE_CLIENT_ID || '';
     let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
 
@@ -27,7 +27,18 @@ class GoogleDriveService {
       }
     }
 
-    const redirectUri = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:5000/api/v1/settings/backup/google/callback';
+    let redirectUri = process.env.GOOGLE_REDIRECT_URI;
+    if (!redirectUri) {
+      if (process.env.RENDER_EXTERNAL_URL) {
+        redirectUri = `${process.env.RENDER_EXTERNAL_URL.replace(/\/+$/, '')}/api/v1/settings/backup/google/callback`;
+      } else if (req && req.get && req.get('host')) {
+        const protocol = req.protocol || (req.secure ? 'https' : 'http');
+        redirectUri = `${protocol}://${req.get('host')}/api/v1/settings/backup/google/callback`;
+      } else {
+        redirectUri = 'http://localhost:5000/api/v1/settings/backup/google/callback';
+      }
+    }
+
     return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
   }
 
@@ -71,8 +82,8 @@ class GoogleDriveService {
   /**
    * Generates Google OAuth Auth URL for connecting Drive.
    */
-  async getAuthUrl(companyId) {
-    const oauth2Client = await this.getOAuth2Client(companyId);
+  async getAuthUrl(companyId, req = null) {
+    const oauth2Client = await this.getOAuth2Client(companyId, req);
 
     const scopes = [
       'https://www.googleapis.com/auth/drive.file',
@@ -314,8 +325,16 @@ class GoogleDriveService {
       }
 
       let errorMessage = error.message;
-      if (errorMessage.includes('invalid_client') || errorMessage.includes('dummy_client_id')) {
-        errorMessage = 'Google Drive OAuth credentials are not configured in server/.env (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET). Please configure Google OAuth credentials or use Local Manual Export to download backup directly to your device.';
+      const isTokenError = errorMessage.includes('invalid_grant') || 
+                           errorMessage.includes('Token has been expired or revoked') ||
+                           errorMessage.includes('invalid_credentials') ||
+                           errorMessage.includes('unauthorized_client');
+
+      if (isTokenError) {
+        await GoogleDriveConfig.updateOne({ companyId }, { $set: { status: 'DISCONNECTED' } });
+        errorMessage = 'Your Google Drive authorization has expired or been revoked. Please click "Connect Google Drive" to re-authorize.';
+      } else if (errorMessage.includes('invalid_client') || errorMessage.includes('dummy_client_id')) {
+        errorMessage = 'Google Drive OAuth credentials are not configured in backend environment variables (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET). Please configure Google OAuth credentials in your server environment.';
       }
 
       logger.error('FAILED %s backup pipeline for company %s: %s', backupType, companyId, errorMessage);
@@ -519,25 +538,6 @@ class GoogleDriveService {
     );
 
     driveStream.data.pipe(res);
-  }
-
-  /**
-   * Returns Backup History list and distinguishes Last Successful Backup vs Latest Attempt.
-   */
-  async getHistory(companyId) {
-    const [history, lastSuccessful, latestAttempt, driveStatus] = await Promise.all([
-      BackupHistory.find({ companyId }).sort({ createdAt: -1 }).limit(20).lean(),
-      BackupHistory.findOne({ companyId, status: 'SUCCESS' }).sort({ createdAt: -1 }).lean(),
-      BackupHistory.findOne({ companyId }).sort({ createdAt: -1 }).lean(),
-      this.getStatus(companyId),
-    ]);
-
-    return {
-      driveStatus,
-      lastSuccessfulBackup: lastSuccessful,
-      latestAttempt: latestAttempt,
-      historyList: history,
-    };
   }
 }
 
