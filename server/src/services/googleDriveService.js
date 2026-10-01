@@ -50,12 +50,19 @@ class GoogleDriveService {
       throw new Error('Client ID and Client Secret are required.');
     }
 
+    const cleanClientId = clientId.trim();
+    const cleanClientSecret = clientSecret.trim();
+
+    if (!cleanClientId.includes('apps.googleusercontent.com') || cleanClientId.includes('agribiz-drive-backup')) {
+      throw new Error('Invalid Google Client ID format. A valid Google Client ID must end with .apps.googleusercontent.com');
+    }
+
     await GoogleDriveConfig.findOneAndUpdate(
       { companyId },
       {
         $set: {
-          customClientId: clientId.trim(),
-          customClientSecret: clientSecret.trim(),
+          customClientId: cleanClientId,
+          customClientSecret: cleanClientSecret,
         },
       },
       { upsert: true, new: true }
@@ -73,7 +80,7 @@ class GoogleDriveService {
     const customConfigured = !!(config?.customClientId && !config.customClientId.includes('agribiz-drive-backup'));
 
     return {
-      configured: true,
+      configured: envConfigured || customConfigured,
       clientId: config?.customClientId || process.env.GOOGLE_CLIENT_ID || '',
       source: customConfigured ? 'custom' : 'env',
     };
@@ -84,6 +91,14 @@ class GoogleDriveService {
    */
   async getAuthUrl(companyId, req = null) {
     const oauth2Client = await this.getOAuth2Client(companyId, req);
+
+    if (
+      !oauth2Client._clientId ||
+      oauth2Client._clientId.includes('agribiz-drive-backup') ||
+      !oauth2Client._clientId.includes('apps.googleusercontent.com')
+    ) {
+      throw new Error('Google OAuth credentials (Client ID & Secret) are not configured or invalid. Please configure your Google Client ID and Secret in Settings or backend environment variables.');
+    }
 
     const scopes = [
       'https://www.googleapis.com/auth/drive.file',

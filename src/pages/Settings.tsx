@@ -384,11 +384,21 @@ export const Settings: React.FC = () => {
       if (res.data.success && res.data.url) {
         window.location.href = res.data.url;
       } else {
-        if (showToast) showToast('Failed to generate Google auth link.', 'error');
+        const msg = res.data.message || '';
+        if (msg.includes('configured') || msg.includes('Client ID') || msg.includes('credentials')) {
+          setShowOAuthSetupModal(true);
+        } else {
+          if (showToast) showToast(msg || 'Failed to generate Google auth link.', 'error');
+        }
       }
     } catch (err: any) {
       setIsConnectingDrive(false);
-      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to generate Google auth link.', 'error');
+      const msg = err.response?.data?.message || err.message || '';
+      if (msg.includes('configured') || msg.includes('Client ID') || msg.includes('credentials')) {
+        setShowOAuthSetupModal(true);
+      } else {
+        if (showToast) showToast(msg || 'Failed to generate Google auth link.', 'error');
+      }
     }
   };
 
@@ -3052,7 +3062,7 @@ export const Settings: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                           <button
                             type="button"
                             className="btn btn-primary"
@@ -3061,6 +3071,14 @@ export const Settings: React.FC = () => {
                             style={{ fontWeight: 700, fontSize: '13px', padding: '8px 16px' }}
                           >
                             {isConnectingDrive ? <RefreshCw size={14} className="spin" /> : <HardDrive size={14} />} Connect Google Drive
+                          </button>
+                          <button
+                            type="button"
+                            className="btn btn-secondary"
+                            onClick={() => setShowOAuthSetupModal(true)}
+                            style={{ fontWeight: 600, fontSize: '12px', padding: '8px 12px' }}
+                          >
+                            <Sliders size={13} /> Configure API Keys
                           </button>
                         </div>
                       )}
