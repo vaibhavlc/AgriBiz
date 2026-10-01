@@ -289,7 +289,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
     if (!logoUrl && company) {
       try {
-        const savedSettings = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_settings') : null;
+        const savedSettings = typeof window !== 'undefined'
+          ? (sessionStorage.getItem('agribiz_settings') || localStorage.getItem('agribiz_settings'))
+          : null;
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings);
           if ((parsed.companyId === company.id || parsed.id === company.id) && parsed.logo && typeof parsed.logo === 'string' && parsed.logo.trim()) {
@@ -301,7 +303,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
     if (!logoUrl && company) {
       try {
-        const cachedBranding = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_business_branding') : null;
+        const cachedBranding = typeof window !== 'undefined'
+          ? (sessionStorage.getItem('agribiz_business_branding') || localStorage.getItem('agribiz_business_branding'))
+          : null;
         if (cachedBranding) {
           const parsed = JSON.parse(cachedBranding);
           if (parsed.businessId === company.id && parsed.logoUrl && typeof parsed.logoUrl === 'string' && parsed.logoUrl.trim()) {
@@ -314,7 +318,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     let businessName = company?.businessName;
     if (!businessName && company) {
       try {
-        const savedSettings = typeof window !== 'undefined' ? sessionStorage.getItem('agribiz_settings') : null;
+        const savedSettings = typeof window !== 'undefined'
+          ? (sessionStorage.getItem('agribiz_settings') || localStorage.getItem('agribiz_settings'))
+          : null;
         if (savedSettings) {
           const parsed = JSON.parse(savedSettings);
           if ((parsed.companyId === company.id || parsed.id === company.id) && parsed.businessName) {

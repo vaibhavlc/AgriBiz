@@ -47,6 +47,7 @@ class AuthController {
           gstin: company.gstin,
           city: company.city,
           state: company.state,
+          logo: company.logo || '',
           plan: company.plan,
           subscriptionStatus: company.subscriptionStatus,
         }
@@ -91,6 +92,7 @@ class AuthController {
           gstin: company.gstin,
           city: company.city,
           state: company.state,
+          logo: company.logo || '',
           plan: company.plan,
           subscriptionStatus: company.subscriptionStatus,
         }
@@ -135,6 +137,7 @@ class AuthController {
            gstin: company.gstin,
            city: company.city,
            state: company.state,
+           logo: company.logo || '',
            plan: company.plan,
            subscriptionStatus: company.subscriptionStatus,
          }
@@ -183,6 +186,7 @@ class AuthController {
           gstin: company.gstin,
           city: company.city,
           state: company.state,
+          logo: company.logo || '',
           plan: company.plan,
           subscriptionStatus: company.subscriptionStatus,
         }
