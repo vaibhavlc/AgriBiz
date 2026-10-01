@@ -24,6 +24,17 @@ class SettingsService {
   }
 
   async updateSettings(companyId, settingsData) {
+    if (settingsData && settingsData.logo !== undefined) {
+      try {
+        const Company = (await import('../models/Company.js')).default;
+        await Company.findOneAndUpdate(
+          { $or: [{ companyId }, { _id: companyId }] },
+          { logo: settingsData.logo }
+        );
+      } catch (e) {
+        console.warn('Failed to update company logo on Company model:', e);
+      }
+    }
     return settingsRepository.upsert(companyId, settingsData);
   }
 }

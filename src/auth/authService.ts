@@ -163,35 +163,71 @@ class AuthService {
 
   private saveDeviceSession(company: Company, refreshToken: string): void {
     if (typeof window === 'undefined') return;
+
+    // Preserve existing uploaded logo if company.logo is temporarily empty in refresh payload
+    let resolvedLogo: string = company.logo || '';
+    if (!resolvedLogo) {
+      const existingCompany = this.getCurrentCompany();
+      if (existingCompany && (existingCompany.id === company.id || (existingCompany as any)._id === company.id) && existingCompany.logo) {
+        resolvedLogo = existingCompany.logo;
+      }
+    }
+
+    if (!resolvedLogo) {
+      try {
+        const rawSettings = localStorage.getItem('agribiz_settings') || sessionStorage.getItem('agribiz_settings');
+        if (rawSettings) {
+          const parsed = JSON.parse(rawSettings);
+          if ((parsed.companyId === company.id || parsed.id === company.id) && parsed.logo) {
+            resolvedLogo = parsed.logo;
+          }
+        }
+      } catch (e) {}
+    }
+
+    if (!resolvedLogo) {
+      try {
+        const rawBranding = localStorage.getItem('agribiz_business_branding') || sessionStorage.getItem('agribiz_business_branding');
+        if (rawBranding) {
+          const parsed = JSON.parse(rawBranding);
+          if (parsed.businessId === company.id && parsed.logoUrl) {
+            resolvedLogo = parsed.logoUrl;
+          }
+        }
+      } catch (e) {}
+    }
+
+    const companyWithLogo = { ...company, logo: resolvedLogo };
+
     localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
     sessionStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
-    localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
-    sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(company));
+    localStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(companyWithLogo));
+    sessionStorage.setItem(STORAGE_KEYS.CURRENT_COMPANY, JSON.stringify(companyWithLogo));
 
     const companySettings = {
-      companyId: company.id,
-      id: company.id,
-      businessName: company.businessName,
-      ownerName: company.ownerName,
-      phone: company.mobile,
-      email: company.email || '',
-      gstin: company.gstin || '',
-      city: company.city || '',
-      state: company.state || '',
-      address: `${company.city || ''}, ${company.state || ''}`.trim(),
-      logo: company.logo || '',
+      companyId: companyWithLogo.id,
+      id: companyWithLogo.id,
+      businessName: companyWithLogo.businessName,
+      ownerName: companyWithLogo.ownerName,
+      phone: companyWithLogo.mobile,
+      email: companyWithLogo.email || '',
+      gstin: companyWithLogo.gstin || '',
+      city: companyWithLogo.city || '',
+      state: companyWithLogo.state || '',
+      address: `${companyWithLogo.city || ''}, ${companyWithLogo.state || ''}`.trim(),
+      logo: companyWithLogo.logo || '',
     };
     sessionStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
     localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
     sessionStorage.setItem('agribiz_business_branding', JSON.stringify({
-      businessId: company.id,
-      logoUrl: company.logo || '',
-      businessName: company.businessName,
+      businessId: companyWithLogo.id,
+      logoUrl: companyWithLogo.logo || '',
+      businessName: companyWithLogo.businessName,
     }));
     localStorage.setItem('agribiz_business_branding', JSON.stringify({
-      businessId: company.id,
-      logoUrl: company.logo || '',
-      businessName: company.businessName,
+      businessId: companyWithLogo.id,
+      logoUrl: companyWithLogo.logo || '',
+      businessName: companyWithLogo.businessName,
     }));
   }
 
