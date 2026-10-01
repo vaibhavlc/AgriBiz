@@ -315,6 +315,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
       } catch (e) {}
     }
 
+    if (!logoUrl && company) {
+      try {
+        const rawCurrentCompany = typeof window !== 'undefined'
+          ? (sessionStorage.getItem('agribiz_current_company') || localStorage.getItem('agribiz_current_company'))
+          : null;
+        if (rawCurrentCompany) {
+          const parsed = JSON.parse(rawCurrentCompany);
+          if ((parsed.id === company.id || parsed.companyId === company.id) && parsed.logo && typeof parsed.logo === 'string' && parsed.logo.trim()) {
+            logoUrl = parsed.logo.trim();
+          }
+        }
+      } catch (e) {}
+    }
+
     let businessName = company?.businessName;
     if (!businessName && company) {
       try {

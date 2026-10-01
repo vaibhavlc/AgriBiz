@@ -262,6 +262,16 @@ class AuthService {
       throw err;
     }
 
+    if (!company.logo) {
+      try {
+        const Settings = (await import('../models/Settings.js')).default;
+        const settingsDoc = await Settings.findOne({ companyId: user.companyId }).select('logo');
+        if (settingsDoc && settingsDoc.logo) {
+          company.logo = settingsDoc.logo;
+        }
+      } catch (e) {}
+    }
+
     // Update lastLogin timestamp
     user.lastLogin = new Date();
     await user.save();
@@ -318,6 +328,16 @@ class AuthService {
       throw err;
     }
 
+    if (!company.logo) {
+      try {
+        const Settings = (await import('../models/Settings.js')).default;
+        const settingsDoc = await Settings.findOne({ companyId }).select('logo');
+        if (settingsDoc && settingsDoc.logo) {
+          company.logo = settingsDoc.logo;
+        }
+      } catch (e) {}
+    }
+
     // Update lastLogin timestamp
     user.lastLogin = new Date();
     await user.save();
@@ -372,6 +392,16 @@ class AuthService {
       const err = new Error('Company is inactive or not found.');
       err.statusCode = 401;
       throw err;
+    }
+
+    if (!company.logo) {
+      try {
+        const Settings = (await import('../models/Settings.js')).default;
+        const settingsDoc = await Settings.findOne({ companyId: user.companyId }).select('logo');
+        if (settingsDoc && settingsDoc.logo) {
+          company.logo = settingsDoc.logo;
+        }
+      } catch (e) {}
     }
 
     // Generate new access token
