@@ -104,6 +104,9 @@ class AuthService {
 
   public setAccessToken(token: string | null): void {
     if (typeof window === 'undefined') return;
+    const oldToken = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+    if (oldToken === token) return;
+
     if (token) {
       sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
     } else {

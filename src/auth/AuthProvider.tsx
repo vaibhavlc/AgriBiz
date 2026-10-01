@@ -50,8 +50,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const savedCompany = authService.getCurrentCompany();
       const isPinVerified = sessionStorage.getItem('agribiz_staff_pin_verified') === 'true';
       const savedUser = isPinVerified ? authService.getCurrentUser() : null;
-      setCurrentCompany(savedCompany || null);
-      setCurrentUser(savedUser || null);
+
+      setCurrentCompany(prev => {
+        if (!savedCompany && !prev) return null;
+        if (savedCompany && prev && savedCompany.id === prev.id) return prev;
+        return savedCompany || null;
+      });
+
+      setCurrentUser(prev => {
+        if (!savedUser && !prev) return null;
+        if (savedUser && prev && savedUser.id === prev.id) return prev;
+        return savedUser || null;
+      });
     };
 
     window.addEventListener('agribiz_tab_auth_change', handleSyncAuth);

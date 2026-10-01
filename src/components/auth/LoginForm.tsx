@@ -89,11 +89,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     }
   };
 
-  const loadStaffList = useCallback(async () => {
+  const loadStaffList = useCallback(async (targetCompanyId?: string) => {
     setIsStaffLoading(true);
     try {
       const company = currentCompany || authService.getCurrentCompany();
-      const companyId = company?.id;
+      const companyId = targetCompanyId || company?.id;
       const staff = await authService.getActiveStaff(companyId);
       const scopedStaff = companyId
         ? (staff as (UserType & { id: string })[]).filter((u) => u.companyId === companyId)
@@ -104,10 +104,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     } finally {
       setIsStaffLoading(false);
     }
-  }, [currentCompany]);
+  }, [currentCompany?.id]);
+
+  const hasCheckedSession = React.useRef(false);
 
   // On mount: if company session exists, skip business login and go directly to Staff Selection
   useEffect(() => {
+    if (hasCheckedSession.current) return;
+    hasCheckedSession.current = true;
+
     const checkSession = async () => {
       const savedCompany = authService.getCurrentCompany();
       const storedRefreshToken = authService.getRefreshToken();
@@ -124,7 +129,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
         const company = authService.getCurrentCompany() || savedCompany;
         if (company) {
-          await loadStaffList();
+          await loadStaffList(company.id);
           setStage('staff-selection');
         } else {
           setIsStaffLoading(false);
