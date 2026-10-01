@@ -110,11 +110,15 @@ app.use(
   })
 );
 
-// Rate Limiting (prevent brute force / DDoS in production; skipped during development/testing)
+// Rate Limiting (prevent brute force / DDoS in production; skipped during development/testing/localhost)
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: process.env.NODE_ENV === 'production' ? 2000 : 50000,
-  skip: () => process.env.NODE_ENV !== 'production',
+  max: process.env.NODE_ENV === 'production' ? 10000 : 100000,
+  skip: (req) => {
+    if (process.env.NODE_ENV !== 'production') return true;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    return ip === '127.0.0.1' || ip === '::1' || ip === '::ffff:127.0.0.1' || ip.includes('localhost');
+  },
   standardHeaders: true,
   legacyHeaders: false,
   message: {
