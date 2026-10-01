@@ -72,6 +72,18 @@ class GoogleDriveService {
   }
 
   /**
+   * Resets custom OAuth credentials for company back to environment variables.
+   */
+  async resetCredentials(companyId) {
+    await GoogleDriveConfig.updateOne(
+      { companyId },
+      { $unset: { customClientId: '', customClientSecret: '' } }
+    );
+    logger.info('Reset custom OAuth credentials for company %s', companyId);
+    return { success: true, message: 'Custom Google OAuth credentials cleared.' };
+  }
+
+  /**
    * Gets credential configuration status for company.
    */
   async getCredentialsStatus(companyId) {

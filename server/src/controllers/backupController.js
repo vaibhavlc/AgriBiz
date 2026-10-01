@@ -117,6 +117,19 @@ class BackupController {
     }
   }
 
+  async resetOAuthCredentials(req, res, next) {
+    try {
+      const companyId = req.user.companyId;
+      const result = await googleDriveService.resetCredentials(companyId);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to reset Google OAuth credentials.',
+      });
+    }
+  }
+
   async getGoogleAuthUrl(req, res, next) {
     try {
       const companyId = req.user.companyId;

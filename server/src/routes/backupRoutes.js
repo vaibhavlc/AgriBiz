@@ -18,6 +18,7 @@ router.get('/last', authorizeRoles('Owner'), backupController.getLastBackupInfo)
 // Phase 2 & Phase 3: Google Drive & Automatic Backup Routes (Owner only)
 router.get('/google/credentials', authorizeRoles('Owner'), backupController.getOAuthCredentials);
 router.post('/google/credentials', authorizeRoles('Owner'), backupController.saveOAuthCredentials);
+router.delete('/google/credentials', authorizeRoles('Owner'), backupController.resetOAuthCredentials);
 router.get('/google/auth-url', authorizeRoles('Owner'), backupController.getGoogleAuthUrl);
 router.get('/google/status', authorizeRoles('Owner'), backupController.getGoogleDriveStatus);
 router.post('/google/disconnect', authorizeRoles('Owner'), backupController.disconnectGoogleDrive);

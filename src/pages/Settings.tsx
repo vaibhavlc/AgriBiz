@@ -430,6 +430,27 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleResetOAuthCredentials = async () => {
+    setIsSavingOAuthCredentials(true);
+    setOauthErrorMsg('');
+    try {
+      const res = await api.delete('/settings/backup/google/credentials');
+      setIsSavingOAuthCredentials(false);
+      if (res.data.success) {
+        setShowOAuthSetupModal(false);
+        setOauthClientId('');
+        setOauthClientSecret('');
+        if (showToast) showToast('Custom credentials cleared. Retrying connection...', 'info');
+        handleConnectGoogleDrive();
+      } else {
+        setOauthErrorMsg(res.data.message || 'Failed to reset credentials.');
+      }
+    } catch (err: any) {
+      setIsSavingOAuthCredentials(false);
+      setOauthErrorMsg(err.response?.data?.message || err.message || 'Failed to reset credentials.');
+    }
+  };
+
   const handleDisconnectGoogleDrive = async () => {
     setIsDisconnectingDrive(true);
     try {
@@ -4588,7 +4609,17 @@ export const Settings: React.FC = () => {
               💡 <strong>Quick Alternative:</strong> You don't need Google credentials to create backups! Click <strong>"Export Data Backup"</strong> on the Backup tab to instantly download a complete JSON backup file to your computer.
             </div>
 
-            <div style={{ display: 'flex', gap: '10px', marginTop: '8px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                onClick={handleResetOAuthCredentials}
+                disabled={isSavingOAuthCredentials}
+                title="Clear saved database keys and use Render environment variables"
+                style={{ borderRadius: '10px', height: '44px', fontWeight: 600, fontSize: '12px' }}
+              >
+                Clear Stored Keys
+              </button>
               <button
                 type="button"
                 className="btn btn-secondary"
@@ -4603,7 +4634,7 @@ export const Settings: React.FC = () => {
                 disabled={isSavingOAuthCredentials || !oauthClientId.trim() || !oauthClientSecret.trim()}
                 style={{ flex: 1, borderRadius: '10px', height: '44px', fontWeight: 800, justifyContent: 'center' }}
               >
-                {isSavingOAuthCredentials ? 'Saving Credentials...' : 'Save & Connect Google Drive'}
+                {isSavingOAuthCredentials ? 'Saving Credentials...' : 'Save & Connect'}
               </button>
             </div>
           </form>
