@@ -11,8 +11,8 @@ import { touchCompanyData } from '../utils/updateCompanyTimestamp.js';
 
 class GoogleDriveService {
   async getOAuth2Client(companyId = null, req = null) {
-    let clientId = process.env.GOOGLE_CLIENT_ID || '';
-    let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
+    let clientId = (process.env.GOOGLE_CLIENT_ID || '').trim().replace(/^["']|["']$/g, '');
+    let clientSecret = (process.env.GOOGLE_CLIENT_SECRET || '').trim().replace(/^["']|["']$/g, '');
 
     const isEnvValid = clientId &&
                        !clientId.includes('agribiz-drive-backup') &&
@@ -27,8 +27,8 @@ class GoogleDriveService {
         !config.customClientId.includes('agribiz-drive-backup') &&
         config.customClientId.includes('apps.googleusercontent.com')
       ) {
-        clientId = config.customClientId;
-        clientSecret = config.customClientSecret;
+        clientId = config.customClientId.trim().replace(/^["']|["']$/g, '');
+        clientSecret = config.customClientSecret.trim().replace(/^["']|["']$/g, '');
       }
     }
 
