@@ -14,7 +14,12 @@ class GoogleDriveService {
     let clientId = process.env.GOOGLE_CLIENT_ID || '';
     let clientSecret = process.env.GOOGLE_CLIENT_SECRET || '';
 
-    if (companyId) {
+    const isEnvValid = clientId &&
+                       !clientId.includes('agribiz-drive-backup') &&
+                       clientId.includes('apps.googleusercontent.com');
+
+    // Use custom company database credentials only if central server env is not configured
+    if (companyId && !isEnvValid) {
       const config = await GoogleDriveConfig.findOne({ companyId }).select('+customClientSecret');
       if (
         config?.customClientId &&
