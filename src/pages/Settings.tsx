@@ -3333,6 +3333,35 @@ export const Settings: React.FC = () => {
                               Includes: Customers, Suppliers, Products, Invoices, Quotations, Purchases, Expenses, Payments, and Recycle Bin items. Excludes passwords/tokens.
                             </div>
                           )}
+
+                          {/* Recent Manual Export & Restore Summaries */}
+                          {(lastBackupMeta || lastRestoreMeta) && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px' }}>
+                              {lastBackupMeta && (
+                                <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
+                                    <Clock size={12} style={{ color: 'var(--primary)' }} />
+                                    <span>Last Manual Export</span>
+                                  </div>
+                                  <div style={{ color: 'var(--text-secondary)' }}>
+                                    {new Date(lastBackupMeta.createdAt).toLocaleString()}
+                                  </div>
+                                </div>
+                              )}
+
+                              {lastRestoreMeta && (
+                                <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px' }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#10b981', marginBottom: '2px' }}>
+                                    <FileCheck size={12} />
+                                    <span>Last Restored</span>
+                                  </div>
+                                  <div style={{ color: 'var(--text-secondary)' }}>
+                                    {new Date(lastRestoreMeta.restoredAt).toLocaleString()}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         <button
