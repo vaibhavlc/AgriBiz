@@ -330,7 +330,7 @@ export const Payments: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder="Search contact or reference..."
+                placeholder={t('payments.searchPlaceholder', 'Search contact, voucher ID, reference...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ width: '100%' }}
@@ -351,7 +351,7 @@ export const Payments: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                <option value="All">All Methods</option>
+                <option value="All">{t('payments.allMethods', 'All Transfer Methods')}</option>
                 <option value="UPI">UPI</option>
                 <option value="Cash">Cash</option>
                 <option value="Bank Transfer">Bank Transfer</option>

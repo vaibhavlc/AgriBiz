@@ -975,7 +975,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     }}
                   >
                     <LogOut size={15} />
-                    <span>Sign Out / Lock Session</span>
+                    <span>{t('auth.logout', 'Sign Out / Lock Session')}</span>
                   </button>
 
                   {/* Forget This Device Button */}

@@ -1453,7 +1453,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         {isConvertModalOpen && convertQuotationId && createPortal(
           <div className="modal-overlay" style={{ zIndex: 1000 }}>
             <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>{t('sales.convertInvoice', 'Convert to Invoice')}</h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
                 Create a sales invoice from this quotation. Please confirm payment collection details.
               </p>
@@ -1470,16 +1470,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
                 {convertAmountPaid > 0 && (
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Payment Method</label>
+                    <label className="form-label">{t('common.method', 'Payment Method')}</label>
                     <select 
                       className="form-control" 
                       value={convertPaymentMethod} 
                       onChange={(e) => setConvertPaymentMethod(e.target.value)}
                     >
-                      <option value="UPI">UPI / GPay / PhonePe</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Cheque">Cheque</option>
+                      <option value="UPI">{t('paymentMethods.upi', 'UPI / GPay / PhonePe')}</option>
+                      <option value="Cash">{t('paymentMethods.cash', 'Cash')}</option>
+                      <option value="Bank Transfer">{t('paymentMethods.bankTransfer', 'Bank Transfer')}</option>
+                      <option value="Cheque">{t('paymentMethods.cheque', 'Cheque')}</option>
                     </select>
                   </div>
                 )}
@@ -1546,10 +1546,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <ArrowLeft size={16} /> {t('common.back', 'Back')}<span className="desktop-only-text"> {t('sales.invoicesTab', 'to Invoices')}</span>
             </button>
             <div className="template-selector-group">
-              <span className="template-label">Print Template:</span>
+              <span className="template-label">{t('sales.printTemplate', 'Print Template')}:</span>
               <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">Standard A5 Bill Book</option>
-                <option value="Thermal">Thermal 3-Inch roll POS</option>
+                <option value="A5">{t('sales.templateA5', 'Standard A5 Bill Book')}</option>
+                <option value="Thermal">{t('sales.templateThermal', 'Thermal 3-Inch roll POS')}</option>
               </select>
             </div>
           </div>
@@ -1967,10 +1967,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Quotations</span>
             </button>
             <div className="template-selector-group">
-              <span className="template-label">Print Template:</span>
+              <span className="template-label">{t('sales.printTemplate', 'Print Template')}:</span>
               <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">Standard A5 Bill Book</option>
-                <option value="Thermal">Thermal 3-Inch roll POS</option>
+                <option value="A5">{t('sales.templateA5', 'Standard A5 Bill Book')}</option>
+                <option value="Thermal">{t('sales.templateThermal', 'Thermal 3-Inch roll POS')}</option>
               </select>
             </div>
           </div>
@@ -2931,10 +2931,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       onChange={(e) => { setPaymentMethod(e.target.value); setReferenceNumber(''); }}
                       style={{ height: '42px', fontSize: '13px' }}
                     >
-                      <option value="UPI">UPI / GPay / PhonePe</option>
-                      <option value="Cash">Cash</option>
+                      <option value="UPI">{t('paymentMethods.upi', 'UPI / GPay / PhonePe')}</option>
+                      <option value="Cash">{t('paymentMethods.cash', 'Cash')}</option>
                       <option value="Bank Transfer">Bank Transfer (IMPS/NEFT)</option>
-                      <option value="Cheque">Cheque</option>
+                      <option value="Cheque">{t('paymentMethods.cheque', 'Cheque')}</option>
                     </select>
                   </div>
                 )}

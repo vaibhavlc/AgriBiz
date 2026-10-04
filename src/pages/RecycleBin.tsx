@@ -333,14 +333,14 @@ export const RecycleBin: React.FC = () => {
                 value={moduleFilter} 
                 onChange={(e) => setModuleFilter(e.target.value)}
               >
-                <option value="All">All Modules</option>
-                <option value="Customer">Customers</option>
-                <option value="Supplier">Suppliers</option>
-                <option value="Product">Products</option>
-                <option value="Invoice">Invoices</option>
+                <option value="All">{t('recycleBin.allModules', 'All Modules')}</option>
+                <option value="Customer">{t('recycleBin.customersOnly', 'Customers')}</option>
+                <option value="Supplier">{t('recycleBin.suppliersOnly', 'Suppliers')}</option>
+                <option value="Product">{t('recycleBin.productsOnly', 'Products')}</option>
+                <option value="Invoice">{t('recycleBin.invoicesOnly', 'Invoices & Sales')}</option>
                 <option value="Quotation">Quotations</option>
-                <option value="Purchase">Purchases</option>
-                <option value="Expense">Expenses</option>
+                <option value="Purchase">{t('recycleBin.purchasesOnly', 'Purchases')}</option>
+                <option value="Expense">{t('recycleBin.expensesOnly', 'Expenses')}</option>
                 <option value="Payment">Payments</option>
               </select>
             </div>

@@ -148,7 +148,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Contact Row: Phone & Email */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone Number *</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.phone', 'Phone Number')} *</label>
               <input
                 type="tel"
                 className="form-control"
@@ -160,7 +160,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Email ID</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.email', 'Email ID')}</label>
               <input
                 type="email"
                 className="form-control"
@@ -175,7 +175,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Tax/Location Row: GSTIN & State */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>GST Number (GSTIN)</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.gstin', 'GST Number (GSTIN)')}</label>
               <input
                 type="text"
                 className="form-control"
@@ -187,7 +187,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Billing State *</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.state', 'Billing State')} *</label>
               <select
                 className="form-control"
                 value={state}
@@ -195,7 +195,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 required
                 style={{ width: '100%', boxSizing: 'border-box' }}
               >
-                <option value="">-- Choose State --</option>
+                <option value="">{t('customers.selectState', '-- Choose State --')}</option>
                 {INDIAN_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -205,7 +205,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
           {/* Address */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Village / Billing Address</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.address', 'Village / Billing Address')}</label>
             <textarea
               className="form-control"
               placeholder="e.g. Ward No. 4, Pipariya Village, MP"
@@ -219,11 +219,11 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Opening Outstanding */}
           {!editCustomerData && (
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Opening Outstanding Balance (₹)</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.openingBalance', 'Opening Outstanding Balance (₹)')}</label>
               <input
                 type="number"
                 className="form-control"
-                placeholder="e.g. 5000 (Use negative for advance credit)"
+                placeholder="e.g. 5000"
                 value={outstanding || ''}
                 onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
                 style={{ width: '100%', boxSizing: 'border-box' }}

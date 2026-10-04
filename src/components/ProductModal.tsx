@@ -176,7 +176,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="form-row-three">
           <div className="form-group">
-            <label className="form-label">SKU / Item Code</label>
+            <label className="form-label">{t('inventory.sku', 'SKU / Code')}</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
@@ -197,7 +197,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">HSN / SAC Code</label>
+            <label className="form-label">{t('inventory.hsnCode', 'HSN / SAC Code')}</label>
             <input
               type="text"
               className="form-control"
@@ -207,7 +207,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Category *</label>
+            <label className="form-label">{t('inventory.category', 'Category')} *</label>
             <select
               className="form-control"
               value={category}
@@ -225,7 +225,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         <div className="form-row-three">
           <div className="form-group">
             <label className="form-label">
-              {editProductData ? 'Current Stock (Read-Only)' : 'Opening Stock (Initial Stock IN)'}
+              {editProductData ? t('inventory.currentStock', 'Current Stock (Read-Only)') : t('inventory.openingStock', 'Opening Stock (Initial Stock IN)')}
             </label>
             <input
               type="number"
@@ -251,7 +251,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             )}
           </div>
           <div className="form-group">
-            <label className="form-label">Low Stock limit *</label>
+            <label className="form-label">{t('inventory.minStockLevel', 'Min Stock Alert Level')} *</label>
             <input
               type="number"
               className="form-control"
@@ -265,7 +265,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             />
           </div>
           <div className="form-group">
-            <label className="form-label">GST Bracket (%) *</label>
+            <label className="form-label">{t('inventory.taxRate', 'GST Rate (%)')} *</label>
             <select
               className="form-control"
               value={gstRate}
@@ -282,7 +282,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Purchase Price (₹) *</label>
+            <label className="form-label">{t('inventory.purchasePrice', 'Purchase Price (₹)')} *</label>
             <input
               type="number"
               className="form-control"
@@ -296,7 +296,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Selling Price (₹) *</label>
+            <label className="form-label">{t('inventory.sellingPrice', 'Selling Price (₹)')} *</label>
             <input
               type="number"
               className="form-control"

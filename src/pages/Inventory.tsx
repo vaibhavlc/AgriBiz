@@ -862,7 +862,7 @@ export const Inventory: React.FC = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="All">All Categories</option>
+              <option value="All">{t('inventory.allCategories', 'All Categories')}</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -877,7 +877,7 @@ export const Inventory: React.FC = () => {
           </div>
 
           <button className="btn btn-primary" onClick={handleAddNewClick}>
-            <Plus size={16} /> Add Product
+            <Plus size={16} /> {t('inventory.addProduct', 'Add Product')}
           </button>
         </div>
       </div>

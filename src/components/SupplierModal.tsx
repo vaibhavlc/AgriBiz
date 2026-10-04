@@ -135,7 +135,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
           {/* Contact Details Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone/Contact Number *</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('suppliers.phone', 'Phone Number')} *</label>
               <input
                 type="tel"
                 className="form-control"
@@ -147,7 +147,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Email ID</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('suppliers.email', 'Email ID')}</label>
               <input
                 type="email"
                 className="form-control"
@@ -161,7 +161,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
 
           {/* GSTIN */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>GST Number (GSTIN)</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('suppliers.gstin', 'GST Number (GSTIN)')}</label>
             <input
               type="text"
               className="form-control"
@@ -175,7 +175,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
 
           {/* Address */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Office Address</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('suppliers.address', 'Office Address')}</label>
             <textarea
               className="form-control"
               placeholder="e.g. Phase VII, Focal Point, Ludhiana, Punjab"
@@ -189,11 +189,11 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
           {/* Opening Outstanding */}
           {!editSupplierData && (
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Opening Outstanding Balance (₹)</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('suppliers.openingBalance', 'Opening Outstanding Balance (₹)')}</label>
               <input
                 type="number"
                 className="form-control"
-                placeholder="e.g. 15000 (Amount we owe this supplier)"
+                placeholder="e.g. 15000"
                 value={outstanding || ''}
                 onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
                 style={{ width: '100%', boxSizing: 'border-box' }}

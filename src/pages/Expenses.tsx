@@ -636,7 +636,7 @@ export const Expenses: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder="Search notes, reference, ID..."
+                placeholder={t('expenses.searchPlaceholder', 'Search notes, reference ID...')}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -656,7 +656,7 @@ export const Expenses: React.FC = () => {
               }}
               style={{ minWidth: '150px', flex: '1 1 120px' }}
             >
-              <option value="All">All Categories</option>
+              <option value="All">{t('expenses.allCategories', 'All Categories')}</option>
               {categoriesList.filter(c => c !== 'Other').map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -672,7 +672,7 @@ export const Expenses: React.FC = () => {
               }}
               className="filter-select method-select"
             >
-              <option value="All">All Methods</option>
+              <option value="All">{t('expenses.allMethods', 'All Payment Methods')}</option>
               <option value="UPI">UPI</option>
               <option value="Cash">Cash</option>
               <option value="Bank Transfer">Bank Transfer</option>
@@ -689,9 +689,9 @@ export const Expenses: React.FC = () => {
               }}
               className="filter-select status-select"
             >
-              <option value="All">All Statuses</option>
-              <option value="Paid">Paid</option>
-              <option value="Due">Due</option>
+              <option value="All">{t('expenses.allStatuses', 'All Statuses')}</option>
+              <option value="Paid">{t('expenses.paid', 'Paid')}</option>
+              <option value="Due">{t('expenses.due', 'Pending / Due')}</option>
             </select>
 
             {/* Date Selector */}

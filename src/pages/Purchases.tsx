@@ -405,10 +405,10 @@ export const Purchases: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', fontWeight: 'bold' }}>
-                  <th style={{ textAlign: 'left', padding: '4px' }}>Item description</th>
-                  <th style={{ textAlign: 'center', padding: '4px', width: '50px' }}>Qty</th>
-                  <th style={{ textAlign: 'right', padding: '4px', width: '80px' }}>Rate (₹)</th>
-                  <th style={{ textAlign: 'right', padding: '4px', width: '90px' }}>Total (₹)</th>
+                  <th style={{ textAlign: 'left', padding: '4px' }}>{t('common.description', 'Item description')}</th>
+                  <th style={{ textAlign: 'center', padding: '4px', width: '50px' }}>{t('common.quantity', 'Qty')}</th>
+                  <th style={{ textAlign: 'right', padding: '4px', width: '80px' }}>{t('common.rate', 'Rate (₹)')}</th>
+                  <th style={{ textAlign: 'right', padding: '4px', width: '90px' }}>{t('common.total', 'Total (₹)')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,19 +425,19 @@ export const Purchases: React.FC = () => {
 
             <div style={{ marginTop: 'auto', borderTop: '2px solid #cbd5e1', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', alignSelf: 'flex-end', width: '220px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Goods Value:</span>
+                <span>{t('common.subtotal', 'Goods Value')}:</span>
                 <span>{formatINR(modalSubtotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Discounts:</span>
+                <span>{t('common.discount', 'Discounts')}:</span>
                 <span>-{formatINR(modalDiscount)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>GST Taxes:</span>
+                <span>{t('common.tax', 'GST Taxes')}:</span>
                 <span>{formatINR(modalGstTotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px solid #e2e8f0', paddingTop: '4px', fontSize: '12px' }}>
-                <span>Total Bill:</span>
+                <span>{t('common.total', 'Total Bill')}:</span>
                 <span>{formatINR(modalGrandTotal)}</span>
               </div>
             </div>
