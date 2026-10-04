@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
@@ -26,6 +27,7 @@ import {
 import type { Expense } from '../types';
 
 export const Expenses: React.FC = () => {
+  const { t } = useTranslation();
   const ts = new Date().toISOString();
   const {
     expenses,
@@ -710,13 +712,13 @@ export const Expenses: React.FC = () => {
           {/* Group 2: Actions */}
           <div className="expense-filter-actions">
             <button className="btn btn-secondary btn-export" onClick={handleExportCSV} title="Export current sheet as CSV">
-              <Download size={16} /> Export CSV
+              <Download size={16} /> {t('common.export', 'Export CSV')}
             </button>
             <button className="btn btn-secondary btn-pdf" onClick={handleDownloadPDF} title="Download current report as PDF">
-              <FileText size={16} /> Save PDF
+              <FileText size={16} /> {t('common.pdf', 'Save PDF')}
             </button>
             <button className="btn btn-primary btn-log-expense" onClick={() => setIsFormOpen(true)}>
-              <Plus size={16} /> Log Expense
+              <Plus size={16} /> {t('expenses.addExpense', 'Log Expense')}
             </button>
           </div>
         </div>

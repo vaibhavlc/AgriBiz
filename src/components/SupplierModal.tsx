@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Supplier } from '../types';
@@ -16,6 +17,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
   onSaveCallback,
   editSupplierData = null,
 }) => {
+  const { t } = useTranslation();
   const { addSupplier, editSupplier, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -110,14 +112,14 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseClick}
-      title={editSupplierData ? 'Edit Supplier Info' : 'Add New Supplier'}
+      title={editSupplierData ? t('suppliers.editSupplier', 'Edit Supplier') : t('suppliers.addSupplier', 'Add New Supplier')}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           
           {/* Supplier Name */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Supplier Company/Name *</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('suppliers.supplierName', 'Supplier Name')} *</label>
             <input
               type="text"
               className="form-control"
@@ -202,10 +204,10 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
           {/* Footer Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
             <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ minWidth: '110px' }}>
-              {isSubmitting ? 'Saving...' : editSupplierData ? 'Update Supplier' : 'Add Supplier'}
+              {isSubmitting ? t('common.saving', 'Saving...') : editSupplierData ? t('common.edit', 'Update Supplier') : t('suppliers.addSupplier', 'Add Supplier')}
             </button>
           </div>
         </div>

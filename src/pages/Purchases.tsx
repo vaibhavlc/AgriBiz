@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -44,6 +45,7 @@ interface LocalPurchaseItem {
 }
 
 export const Purchases: React.FC = () => {
+  const { t } = useTranslation();
   const {
     settings,
     purchases,
@@ -2087,14 +2089,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 height: '42px',
               }}
             >
-              <ArrowLeft size={16} /> Exit Editor
+              <ArrowLeft size={16} /> {t('common.back', 'Exit Editor')}
             </button>
             <div>
               <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                {editingPurchaseId ? 'Edit Entry' : 'New Entry'}
+                {editingPurchaseId ? t('common.edit', 'Edit Entry') : t('common.new', 'New Entry')}
               </span>
               <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
-                {editingPurchaseId ? 'Edit Inward Purchase Bill' : 'Log Inward Purchase Entry'}
+                {editingPurchaseId ? t('purchases.editPurchase', 'Edit Inward Purchase Bill') : t('purchases.newPurchase', 'Log Inward Purchase Entry')}
               </h1>
             </div>
           </div>

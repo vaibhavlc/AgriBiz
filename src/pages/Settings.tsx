@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import api from '../utils/api';
@@ -96,6 +97,8 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
+  const { t, i18n } = useTranslation();
+  console.log('Current language:', i18n.language);
   const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
   const { currentUser, currentCompany, forgetDevice } = useAuth();
 
@@ -2575,7 +2578,7 @@ export const Settings: React.FC = () => {
                   <div className="card staff-header-card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
                     <div>
                       <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        Staff & Roles Management
+                        {t('settings.staffManagement', 'Staff & Roles Management')}
                       </h3>
                       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
                         Control team access permissions, role assignments, and account security
@@ -2586,10 +2589,10 @@ export const Settings: React.FC = () => {
                       {/* Metric Badges */}
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
-                          Total: {usersList.length}
+                          {t('common.total', 'Total')}: {usersList.length}
                         </span>
                         <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)' }}>
-                          Active: {usersList.filter((u) => u.status === 'Active').length}
+                          {t('common.active', 'Active')}: {usersList.filter((u) => u.status === 'Active').length}
                         </span>
                       </div>
 
@@ -2609,7 +2612,7 @@ export const Settings: React.FC = () => {
                         }}
                         style={{ borderRadius: '10px', padding: '9px 18px', fontWeight: 700, boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
                       >
-                        <UserPlus size={16} /> Add Staff Member
+                        <UserPlus size={16} /> {t('settings.addStaff', 'Add Staff Member')}
                       </button>
                     </div>
                   </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Product } from '../types';
@@ -19,6 +20,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   editProductData = null,
   onSaveCallback,
 }) => {
+  const { t } = useTranslation();
   const { addProduct, editProduct, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
@@ -156,11 +158,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseClick}
-      title={editProductData ? 'Edit Product Master Details' : 'Add New Agricultural Product'}
+      title={editProductData ? t('inventory.editProduct', 'Edit Product') : t('inventory.addProduct', 'Add New Product')}
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">Product Name *</label>
+          <label className="form-label">{t('inventory.productName', 'Product Name')} *</label>
           <input
             type="text"
             className="form-control"
@@ -311,10 +313,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
           <button type="button" className="btn btn-secondary" onClick={handleCloseClick}>
-            Cancel
+            {t('common.cancel', 'Cancel')}
           </button>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : editProductData ? 'Save Changes' : 'Add Product'}
+            {isSubmitting ? t('common.saving', 'Saving...') : editProductData ? t('common.save', 'Save Changes') : t('inventory.addProduct', 'Add Product')}
           </button>
         </div>
       </form>

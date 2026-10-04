@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -200,6 +201,7 @@ const ProgressBar = ({
   );
 };
 export const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const {
     products,
     customers,
@@ -758,10 +760,10 @@ export const Dashboard: React.FC = () => {
             )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <h2 className="dashboard-title-text" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-                {settings.businessName || 'Business Intelligence Dashboard'}
+                {settings.businessName || t('dashboard.title', 'Business Overview')}
               </h2>
               <p className="dashboard-welcome-text" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
-                Welcome back, {settings.ownerName || 'Partner'}
+                {t('dashboard.subtitle', 'Real-time summary of your store\'s performance')}
               </p>
             </div>
           </div>
@@ -769,7 +771,7 @@ export const Dashboard: React.FC = () => {
           <button 
             className="btn btn-secondary btn-icon"
             onClick={triggerRefresh}
-            title="Recalculate metrics"
+            title={t('common.refresh', 'Recalculate metrics')}
             disabled={isRefreshing}
             style={{ 
               flexShrink: 0, 
@@ -792,15 +794,15 @@ export const Dashboard: React.FC = () => {
         {/* Modern Segmented Pill Tabs */}
         <div className="pill-filter-bar">
           {[
-            { value: 'All', label: 'All Time' },
-            { value: 'today', label: 'Today' },
-            { value: 'yesterday', label: 'Yesterday' },
-            { value: 'week', label: 'This Week' },
-            { value: 'month', label: 'This Month' },
-            { value: 'last_month', label: 'Last Month' },
-            { value: 'quarter', label: 'This Quarter' },
-            { value: 'year', label: 'This Year' },
-            { value: 'custom', label: 'Custom Date' },
+            { value: 'All', label: t('common.all', 'All Time') },
+            { value: 'today', label: t('reports.today', 'Today') },
+            { value: 'yesterday', label: t('reports.today', 'Yesterday') },
+            { value: 'week', label: t('reports.thisWeek', 'This Week') },
+            { value: 'month', label: t('reports.thisMonth', 'This Month') },
+            { value: 'last_month', label: t('reports.thisMonth', 'Last Month') },
+            { value: 'quarter', label: t('reports.thisQuarter', 'This Quarter') },
+            { value: 'year', label: t('reports.thisYear', 'This Year') },
+            { value: 'custom', label: t('reports.customRange', 'Custom Date') },
           ].map((opt) => (
             <button
               key={opt.value}
@@ -1178,63 +1180,63 @@ export const Dashboard: React.FC = () => {
 
       {/* Quick Actions Panel */}
       <div className="card" style={{ padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Quick Actions Console</h3>
+        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{t('dashboard.quickActions', 'Quick Actions Console')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
           <button 
             className="btn btn-primary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => { setCurrentTab('sales'); setIsCreatingInvoice(true); }}
           >
-            <PlusCircle size={15} /> New Invoice
+            <PlusCircle size={15} /> {t('sales.newInvoice', 'New Invoice')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => { setCurrentTab('purchases'); setIsEnteringPurchase(true); }}
           >
-            <PlusCircle size={15} /> Add Purchase
+            <PlusCircle size={15} /> {t('purchases.newPurchase', 'Add Purchase')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('inventory')}
           >
-            <Package size={15} /> Add Product
+            <Package size={15} /> {t('inventory.addProduct', 'Add Product')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('customers')}
           >
-            <Users size={15} /> Add Customer
+            <Users size={15} /> {t('customers.addCustomer', 'Add Customer')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('suppliers')}
           >
-            <Truck size={15} /> Add Supplier
+            <Truck size={15} /> {t('suppliers.addSupplier', 'Add Supplier')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('expenses')}
           >
-            <FileText size={15} /> Record Expense
+            <FileText size={15} /> {t('expenses.addExpense', 'Record Expense')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => openNewPaymentForm()}
           >
-            <ArrowRightLeft size={15} /> Record Payment
+            <ArrowRightLeft size={15} /> {t('payments.addPayment', 'Record Payment')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('reports')}
           >
-            <TrendingUp size={15} /> View Reports
+            <TrendingUp size={15} /> {t('reports.title', 'View Reports')}
           </button>
         </div>
       </div>

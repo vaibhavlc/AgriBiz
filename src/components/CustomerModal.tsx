@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Customer } from '../types';
@@ -24,6 +25,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   onSaveCallback,
   editCustomerData = null,
 }) => {
+  const { t } = useTranslation();
   const { addCustomer, editCustomer, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -123,14 +125,14 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseClick}
-      title={editCustomerData ? 'Edit Customer Info' : 'Add New Customer'}
+      title={editCustomerData ? t('customers.editCustomer', 'Edit Customer') : t('customers.addCustomer', 'Add New Customer')}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           
           {/* Full Name */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Customer Full Name *</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.customerName', 'Customer Name')} *</label>
             <input
               type="text"
               className="form-control"
@@ -232,10 +234,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Footer Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
             <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ minWidth: '110px' }}>
-              {isSubmitting ? 'Saving...' : editCustomerData ? 'Update Customer' : 'Add Customer'}
+              {isSubmitting ? t('common.saving', 'Saving...') : editCustomerData ? t('common.edit', 'Update Customer') : t('customers.addCustomer', 'Add Customer')}
             </button>
           </div>
         </div>

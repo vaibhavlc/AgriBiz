@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -29,6 +30,7 @@ import {
 import type { Supplier } from '../types';
 
 export const Suppliers: React.FC = () => {
+  const { t } = useTranslation();
   const {
     suppliers,
     purchases,
@@ -171,14 +173,14 @@ export const Suppliers: React.FC = () => {
         {/* ── Top Navigation Bar ── */}
         <div className="cust-profile-topbar no-print">
           <button className="btn btn-secondary" onClick={() => setViewSupplier(null)}>
-            <ArrowLeft size={16} /> <span className="cust-back-label">Back</span>
+            <ArrowLeft size={16} /> <span className="cust-back-label">{t('common.back', 'Back')}</span>
           </button>
           <div className="cust-profile-topbar-actions">
             <button className="btn btn-secondary" onClick={() => handleEditClick(selectedSupplier)}>
-              <Edit2 size={15} /> <span>Edit</span>
+              <Edit2 size={15} /> <span>{t('common.edit', 'Edit')}</span>
             </button>
             <button className="btn btn-primary" onClick={() => window.print()}>
-              <FileText size={15} /> <span>Print</span>
+              <FileText size={15} /> <span>{t('common.print', 'Print')}</span>
             </button>
           </div>
         </div>

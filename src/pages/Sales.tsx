@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
@@ -39,6 +40,7 @@ interface InvoiceItemLocal {
 }
 
 export const Sales: React.FC = () => {
+  const { t } = useTranslation();
   const {
     invoices,
     quotations,
@@ -1541,7 +1543,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         <div className="invoice-detail-nav-panel no-print">
           <div className="invoice-detail-top-row">
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewInvoice(null)}>
-              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Invoices</span>
+              <ArrowLeft size={16} /> {t('common.back', 'Back')}<span className="desktop-only-text"> {t('sales.invoicesTab', 'to Invoices')}</span>
             </button>
             <div className="template-selector-group">
               <span className="template-label">Print Template:</span>

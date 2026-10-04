@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
@@ -25,6 +26,7 @@ import {
 import type { Payment } from '../types';
 
 export const Payments: React.FC = () => {
+  const { t } = useTranslation();
   const {
     payments,
     customers,
@@ -401,14 +403,14 @@ export const Payments: React.FC = () => {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="text-nowrap">Receipt Date</th>
+                      <th className="text-nowrap">{t('common.date', 'Receipt Date')}</th>
                       <th className="text-nowrap">ID Code</th>
-                      <th>{activeTab === 'CustomerReceipt' ? 'Customer' : 'Supplier'} Name</th>
-                      <th className="text-nowrap">Amount Paid (₹)</th>
-                      <th className="text-nowrap">Payment Method</th>
-                      <th className="text-nowrap">Reference / Document No</th>
-                      <th>Remarks / Notes</th>
-                      <th className="text-nowrap" style={{ textAlign: 'center' }}>Actions</th>
+                      <th>{activeTab === 'CustomerReceipt' ? t('sales.customer', 'Customer') : t('purchases.supplier', 'Supplier')} Name</th>
+                      <th className="text-nowrap">{t('common.amount', 'Amount Paid (₹)')}</th>
+                      <th className="text-nowrap">{t('sales.paymentMethod', 'Payment Method')}</th>
+                      <th className="text-nowrap">{t('payments.referenceNumber', 'Reference / Document No')}</th>
+                      <th>{t('sales.notes', 'Remarks / Notes')}</th>
+                      <th className="text-nowrap" style={{ textAlign: 'center' }}>{t('common.actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody>

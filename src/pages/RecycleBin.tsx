@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import type { RecycleBinItem } from '../types';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const RecycleBin: React.FC = () => {
+  const { t } = useTranslation();
   const {
     recycleBin,
     restoreRecord,
@@ -314,7 +316,7 @@ export const RecycleBin: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={t('common.search', 'Search...')}
                 value={searchQuery}
                 style={{ width: '100%' }}
                 onChange={(e) => setSearchQuery(e.target.value)}

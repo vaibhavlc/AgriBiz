@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import authService from '../../auth/authService';
 import registrationSync, { type RegistrationSyncEvent } from '../../utils/registrationSync';
@@ -116,6 +117,7 @@ interface RegisterFormProps {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, initialStep }) => {
+  const { t } = useTranslation();
   const { registerCompany } = useAuth();
   
   // Get or create temporary registration session ID for cross-tab matching
@@ -738,7 +740,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
             <button type="submit" className="btn btn-primary" disabled={loading}
               style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center',
                 boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
-              {loading ? 'Registering...' : '🚀 Complete & Launch Suite'}
+              {loading ? t('common.loading', 'Registering...') : t('auth.registerButton', '🚀 Complete & Launch Suite')}
             </button>
           </div>
         </form>
@@ -749,7 +751,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
         <button type="button"
           style={{ background: 'none', border: 'none', color: 'var(--text-secondary,#475569)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           onClick={onSwitchToLogin}>
-          Already have an account? <strong style={{ color: 'var(--primary,#10b981)' }}>Sign In</strong>
+          {t('auth.alreadyHaveAccount', 'Already have an account?')} <strong style={{ color: 'var(--primary,#10b981)' }}>{t('nav.logout', 'Sign In').replace('Log Out', 'Sign In')}</strong>
         </button>
       </div>
     </div>

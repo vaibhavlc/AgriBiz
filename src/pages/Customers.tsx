@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { CustomerModal } from '../components/CustomerModal';
@@ -29,6 +30,7 @@ import {
 import type { Customer } from '../types';
 
 export const Customers: React.FC = () => {
+  const { t } = useTranslation();
   const {
     customers,
     invoices,
@@ -171,14 +173,14 @@ export const Customers: React.FC = () => {
         {/* Top Nav Bar */}
         <div className="cust-profile-topbar no-print">
           <button className="btn btn-secondary" onClick={() => setViewCustomer(null)}>
-            <ArrowLeft size={16} /> <span>Back</span>
+            <ArrowLeft size={16} /> <span>{t('common.back', 'Back')}</span>
           </button>
           <div className="cust-profile-topbar-actions">
             <button className="btn btn-secondary" onClick={() => handleEditClick(selectedCustomer)}>
-              <Edit2 size={15} /> <span>Edit</span>
+              <Edit2 size={15} /> <span>{t('common.edit', 'Edit')}</span>
             </button>
             <button className="btn btn-primary" onClick={() => window.print()}>
-              <FileText size={15} /> <span>Print</span>
+              <FileText size={15} /> <span>{t('common.print', 'Print')}</span>
             </button>
           </div>
         </div>

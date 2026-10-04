@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 
 export const Reports: React.FC = () => {
+  const { t } = useTranslation();
   const {
     invoices,
     purchases,
@@ -2051,28 +2053,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Sales Invoices Count"
+                label={t('reports.salesCount', 'Sales Invoices Count')}
                 value={filteredInvoices.length}
                 subtext="Tax bills generated"
                 icon={<BookOpen size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Total Taxable Sales"
+                label={t('reports.taxableSales', 'Total Taxable Sales')}
                 value={formatINR(totalSalesBase)}
                 subtext="Excludes GST tax"
                 icon={<DollarSign size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Total GST Collected"
+                label={t('reports.taxCollected', 'Total GST Collected')}
                 value={formatINR(totalSalesTax)}
                 subtext="GST tax liability"
                 icon={<Percent size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Total Invoice Value"
+                label={t('sales.grandTotal', 'Total Invoice Value')}
                 value={formatINR(totalSalesVal)}
                 subtext="Inclusive of GST"
                 icon={<TrendingUp size={20} />}

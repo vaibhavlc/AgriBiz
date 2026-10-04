@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import { Modal } from './Modal';
@@ -112,10 +113,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
+  const { t, i18n } = useTranslation();
   const mainWrapperRef = useRef<HTMLDivElement>(null);
   const bottomNavRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>('en');
+  const selectedLanguage = i18n.language || 'en';
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const LANGUAGES = [
@@ -123,6 +125,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     { code: 'mr', label: 'Marathi', nativeLabel: 'मराठी' },
     { code: 'hi', label: 'Hindi', nativeLabel: 'हिंदी' },
   ];
+
+  const handleLanguageChange = (code: string) => {
+    i18n.changeLanguage(code);
+    setIsLangDropdownOpen(false);
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -361,64 +368,64 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const getPageTitle = () => {
     switch (currentTab) {
       case 'dashboard':
-        return 'Business Overview';
+        return t('dashboard.title', 'Business Overview');
       case 'sales':
-        return 'Sales Invoices';
+        return t('nav.sales', 'Sales Invoices');
       case 'purchases':
-        return 'Supplier Purchases';
+        return t('nav.purchases', 'Purchases Ledger');
       case 'inventory':
-        return 'Inventory Stock';
+        return t('nav.inventory', 'Inventory Stock');
       case 'customers':
-        return 'Customer Directory';
+        return t('nav.customers', 'Customer Directory');
       case 'suppliers':
-        return 'Supplier Directory';
+        return t('nav.suppliers', 'Supplier Directory');
       case 'payments':
-        return 'Payments Ledger';
+        return t('nav.payments', 'Payments Book');
       case 'reports':
-        return 'Business Reports';
+        return t('nav.reports', 'Business Reports');
       case 'settings':
-        return 'Application Settings';
+        return t('nav.settings', 'Store Settings');
       case 'expenses':
-        return 'Expense Manager';
+        return t('nav.expenses', 'Expenses Book');
       case 'recycle_bin':
-        return 'Recycle Bin';
+        return t('nav.recycleBin', 'Recycle Bin');
       default:
         return settings.businessName || 'AgriBiz';
     }
   };
 
   const operationsItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)' },
-    { id: 'sales', label: 'Sales Invoices', icon: <FileSpreadsheet size={18} />, color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.15)' },
-    { id: 'purchases', label: 'Purchases Ledger', icon: <ShoppingBag size={18} />, color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)' },
-    { id: 'inventory', label: 'Inventory Stock', icon: <Package size={18} />, color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.15)' },
-    { id: 'expenses', label: 'Expenses Book', icon: <TrendingDown size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
+    { id: 'dashboard', label: t('nav.dashboard', 'Dashboard'), icon: <LayoutDashboard size={18} />, color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)' },
+    { id: 'sales', label: t('nav.sales', 'Sales Invoices'), icon: <FileSpreadsheet size={18} />, color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.15)' },
+    { id: 'purchases', label: t('nav.purchases', 'Purchases Ledger'), icon: <ShoppingBag size={18} />, color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)' },
+    { id: 'inventory', label: t('nav.inventory', 'Inventory Stock'), icon: <Package size={18} />, color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.15)' },
+    { id: 'expenses', label: t('nav.expenses', 'Expenses Book'), icon: <TrendingDown size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
   ];
 
   const directoriesItems = [
-    { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={18} />, color: '#0d9488', glow: 'rgba(13, 148, 136, 0.15)' },
-    { id: 'customers', label: 'Customers List', icon: <Users size={18} />, color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)' },
-    { id: 'suppliers', label: 'Suppliers List', icon: <Truck size={18} />, color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)' },
+    { id: 'payments', label: t('nav.payments', 'Payments Book'), icon: <IndianRupee size={18} />, color: '#0d9488', glow: 'rgba(13, 148, 136, 0.15)' },
+    { id: 'customers', label: t('nav.customers', 'Customers List'), icon: <Users size={18} />, color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)' },
+    { id: 'suppliers', label: t('nav.suppliers', 'Suppliers List'), icon: <Truck size={18} />, color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)' },
   ];
 
   const adminItems = [
-    { id: 'reports', label: 'Business Reports', icon: <TrendingUp size={18} />, color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)' },
-    { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
-    { id: 'settings', label: 'Store Settings', icon: <SettingsIcon size={18} />, color: '#64748b', glow: 'rgba(100, 116, 139, 0.15)' },
+    { id: 'reports', label: t('nav.reports', 'Business Reports'), icon: <TrendingUp size={18} />, color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)' },
+    { id: 'recycle_bin', label: t('nav.recycleBin', 'Recycle Bin'), icon: <Trash2 size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
+    { id: 'settings', label: t('nav.settings', 'Store Settings'), icon: <SettingsIcon size={18} />, color: '#64748b', glow: 'rgba(100, 116, 139, 0.15)' },
   ];
 
   const bottomNavItems = [
-    { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={18} /> },
-    { id: 'sales', label: 'Sales', icon: <FileSpreadsheet size={18} /> },
-    { id: 'purchases', label: 'Purchases', icon: <ShoppingBag size={18} /> },
-    { id: 'inventory', label: 'Inventory', icon: <Package size={18} /> },
-    { id: 'expenses', label: 'Expenses', icon: <TrendingDown size={18} /> },
-    { id: 'payments', label: 'Payments', icon: <IndianRupee size={18} /> },
-    { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
-    { id: 'suppliers', label: 'Suppliers', icon: <Truck size={18} /> },
-    { id: 'reports', label: 'Reports', icon: <TrendingUp size={18} /> },
-    { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
+    { id: 'dashboard', label: t('nav.dashboard', 'Home'), icon: <LayoutDashboard size={18} /> },
+    { id: 'sales', label: t('nav.sales', 'Sales'), icon: <FileSpreadsheet size={18} /> },
+    { id: 'purchases', label: t('nav.purchases', 'Purchases'), icon: <ShoppingBag size={18} /> },
+    { id: 'inventory', label: t('nav.inventory', 'Inventory'), icon: <Package size={18} /> },
+    { id: 'expenses', label: t('nav.expenses', 'Expenses'), icon: <TrendingDown size={18} /> },
+    { id: 'payments', label: t('nav.payments', 'Payments'), icon: <IndianRupee size={18} /> },
+    { id: 'customers', label: t('nav.customers', 'Customers'), icon: <Users size={18} /> },
+    { id: 'suppliers', label: t('nav.suppliers', 'Suppliers'), icon: <Truck size={18} /> },
+    { id: 'reports', label: t('nav.reports', 'Reports'), icon: <TrendingUp size={18} /> },
+    { id: 'recycle_bin', label: t('nav.recycleBin', 'Recycle Bin'), icon: <Trash2 size={18} /> },
+    { id: 'settings', label: t('nav.settings', 'Settings'), icon: <SettingsIcon size={18} /> },
   ];
 
   const permittedBottomNavItems = bottomNavItems.filter((item) => hasPermission(item.id));
@@ -658,9 +665,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         {/* ── Navigation Menu ── */}
         <nav className="prem-nav-menu" aria-label="Main navigation">
-          {renderNavGroup('Operations', operationsItems)}
-          {renderNavGroup('Directories', directoriesItems)}
-          {renderNavGroup('Admin', adminItems)}
+          {renderNavGroup(t('nav.operations', 'Operations'), operationsItems)}
+          {renderNavGroup(t('nav.directories', 'Directories'), directoriesItems)}
+          {renderNavGroup(t('nav.admin', 'Admin'), adminItems)}
         </nav>
 
         {/* ── Tooltip portal for collapsed mode ── */}
@@ -727,7 +734,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   ref={searchInputRef}
                   type="text"
                   className="search-input"
-                  placeholder={`Search...`}
+                  placeholder={t('common.search', 'Search...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -756,13 +763,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {activeTheme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
-            {/* Language Selector (Farma Style - Non-functional) */}
+            {/* Language Selector */}
             <div className="lang-selector-wrapper">
               <button
                 type="button"
                 className={`lang-selector-btn${isLangDropdownOpen ? ' active' : ''}`}
                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                title="Select Language"
+                title={t('settings.language', 'Select Language')}
               >
                 <Globe size={18} className="lang-selector-globe" style={{ margin: 0 }} />
               </button>
@@ -773,10 +780,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       key={lang.code}
                       type="button"
                       className={`lang-dropdown-item${lang.code === selectedLanguage ? ' active' : ''}`}
-                      onClick={() => {
-                        setSelectedLanguage(lang.code as 'en' | 'mr' | 'hi');
-                        setIsLangDropdownOpen(false);
-                      }}
+                      onClick={() => handleLanguageChange(lang.code)}
                     >
                       <span className="lang-indicator-dot" />
                       <span style={{ fontFamily: lang.code !== 'en' ? "'Noto Sans Devanagari', sans-serif" : 'inherit' }}>

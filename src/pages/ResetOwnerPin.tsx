@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -7,6 +8,7 @@ interface ResetOwnerPinProps {
 }
 
 export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin }) => {
+  const { t } = useTranslation();
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -268,10 +270,10 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
               {loading ? (
                 <>
                   <Loader2 size={18} className="spin-animation" />
-                  Updating PIN...
+                  {t('common.saving', 'Updating PIN...')}
                 </>
               ) : (
-                'Save New Owner PIN'
+                t('auth.resetPin', 'Save New Owner PIN')
               )}
             </button>
           </form>
@@ -293,7 +295,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
               gap: '4px',
             }}
           >
-            <ArrowLeft size={14} /> Back to Sign In
+            <ArrowLeft size={14} /> {t('common.back', 'Back to Sign In')}
           </button>
         </div>
       </div>
