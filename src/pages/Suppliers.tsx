@@ -27,8 +27,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { Supplier } from '../types';
+import { useTranslation } from 'react-i18next';
 
 export const Suppliers: React.FC = () => {
+  const { t } = useTranslation();
   const {
     suppliers,
     purchases,
@@ -233,7 +235,7 @@ export const Suppliers: React.FC = () => {
             }}
           >
             <div>
-              <div className="cust-outstanding-label">Balance We Owe</div>
+              <div className="cust-outstanding-label">{t('suppliers.balanceWeOwe', 'Balance We Owe')}</div>
               <div className="cust-outstanding-sub">
                 {selectedSupplier.outstanding > 0
                   ? 'Pending payment to supplier'
@@ -256,13 +258,13 @@ export const Suppliers: React.FC = () => {
                 setCurrentTab('purchases');
               }}
             >
-              <FileText size={15} /> Create Purchase Bill
+              <FileText size={15} /> {t('suppliers.createPurchase', 'Create Purchase Bill')}
             </button>
             <button
               className="btn btn-secondary cust-action-btn"
               onClick={() => openNewPaymentForm({ contactId: selectedSupplier.id, type: 'SupplierPayment' })}
             >
-              <ArrowUpRight size={15} /> Record Payout
+              <ArrowUpRight size={15} /> {t('suppliers.recordPayment', 'Record Payment')}
             </button>
           </div>
         </div>
@@ -270,28 +272,28 @@ export const Suppliers: React.FC = () => {
         {/* ── Stats Row ── */}
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
           <KpiCard
-            label="Total Purchased"
+            label={t('suppliers.totalPurchased', 'Total Purchased')}
             value={formatINR(totalPurchased)}
             subtext={`${totalBillCount} bill${totalBillCount !== 1 ? 's' : ''}`}
             icon={<FileText size={20} />}
             variant="info"
           />
           <KpiCard
-            label="Total Paid"
+            label={t('suppliers.totalPaid', 'Total Paid')}
             value={formatINR(totalPaid)}
             subtext={`${totalPaymentCount} payment${totalPaymentCount !== 1 ? 's' : ''}`}
             icon={<CreditCard size={20} />}
             variant="success"
           />
           <KpiCard
-            label="Balance Owed"
+            label={t('suppliers.balanceWeOwe', 'Balance We Owe')}
             value={formatINR(selectedSupplier.outstanding)}
-            subtext={selectedSupplier.outstanding > 0 ? 'Pending' : selectedSupplier.outstanding < 0 ? 'Overpaid' : 'Settled'}
+            subtext={selectedSupplier.outstanding > 0 ? t('common.pending', 'Pending') : selectedSupplier.outstanding < 0 ? t('common.advance', 'Advance') : t('common.settled', 'Settled')}
             icon={<Scale size={20} />}
             variant={selectedSupplier.outstanding > 0 ? "danger" : "success"}
           />
           <KpiCard
-            label="Last Transaction"
+            label={t('suppliers.lastTransaction', 'Last Transaction')}
             value={lastTxDate ? formatDate(lastTxDate) : '—'}
             subtext={`${ledgerEntries.length} entries total`}
             icon={<Activity size={20} />}
@@ -301,13 +303,13 @@ export const Suppliers: React.FC = () => {
 
         {/* ── Ledger Table (Desktop) / Cards (Mobile) ── */}
         <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '16px' }}>Supplier Account Ledger</h3>
+          <h3 className="card-title" style={{ marginBottom: '16px' }}>{t('suppliers.ledgerAccount', 'Supplier Account Ledger')}</h3>
 
           {ledgerWithBalance.length === 0 ? (
             <div className="empty-state" style={{ padding: '40px 20px' }}>
               <FileText size={40} className="empty-state-icon" />
-              <h4 className="empty-state-title">No Transactions Yet</h4>
-              <p className="empty-state-desc">No ledger entries found for this supplier.</p>
+              <h4 className="empty-state-title">{t('suppliers.noTransactions', 'No Transactions Yet')}</h4>
+              <p className="empty-state-desc">{t('suppliers.noTransactionsDesc', 'No ledger entries found for this supplier.')}</p>
             </div>
           ) : (
             <>
@@ -317,13 +319,13 @@ export const Suppliers: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Doc No</th>
-                        <th>Description</th>
-                        <th>Debit (+)</th>
-                        <th>Credit (-)</th>
-                        <th>Balance (₹)</th>
-                        <th className="no-print" style={{ textAlign: 'center' }}>View</th>
+                        <th>{t('common.date', 'Date')}</th>
+                        <th>{t('common.docNo', 'Doc No')}</th>
+                        <th>{t('common.description', 'Description')}</th>
+                        <th>{t('common.debit', 'Debit (+)')}</th>
+                        <th>{t('common.credit', 'Credit (-)')}</th>
+                        <th>{t('common.balance', 'Balance (₹)')}</th>
+                        <th className="no-print" style={{ textAlign: 'center' }}>{t('common.view', 'View')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -343,11 +345,11 @@ export const Suppliers: React.FC = () => {
                           </td>
                           <td className="no-print" style={{ textAlign: 'center' }}>
                             {entry.type === 'Purchase' ? (
-                              <button className="btn-icon" onClick={() => { setViewPurchase(entry.refId); setCurrentTab('purchases'); }} title="View Bill">
+                              <button className="btn-icon" onClick={() => { setViewPurchase(entry.refId); setCurrentTab('purchases'); }} title={t('suppliers.viewPurchase', 'View Purchase')}>
                                 <Eye size={14} />
                               </button>
                             ) : (
-                              <button className="btn-icon" onClick={() => setCurrentTab('payments')} title="View Payment">
+                              <button className="btn-icon" onClick={() => setCurrentTab('payments')} title={t('suppliers.viewPayment', 'View Payment')}>
                                 <ArrowUpRight size={14} />
                               </button>
                             )}
@@ -421,7 +423,7 @@ export const Suppliers: React.FC = () => {
                          <div>
                            {isPurchase ? (
                              <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => { setViewPurchase(entry.refId); setCurrentTab('purchases'); }}>
-                               <Eye size={12} /> View Bill
+                               <Eye size={12} /> {t('suppliers.viewPurchase', 'View Purchase')}
                              </button>
                            ) : (
                              <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => setCurrentTab('payments')}>

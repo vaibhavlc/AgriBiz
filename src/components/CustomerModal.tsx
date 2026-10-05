@@ -19,6 +19,7 @@ interface CustomerModalProps {
 }
 
 export const CustomerModal: React.FC<CustomerModalProps> = ({
+
   isOpen,
   onClose,
   onSaveCallback,

@@ -11,6 +11,7 @@ interface SupplierModalProps {
 }
 
 export const SupplierModal: React.FC<SupplierModalProps> = ({
+
   isOpen,
   onClose,
   onSaveCallback,

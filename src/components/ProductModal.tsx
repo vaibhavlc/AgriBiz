@@ -14,6 +14,7 @@ const CATEGORIES = ['Machinery', 'Irrigation', 'Implements', 'Equipment', 'Spare
 const GST_RATES = [0, 5, 12, 18, 28];
 
 export const ProductModal: React.FC<ProductModalProps> = ({
+
   isOpen,
   onClose,
   editProductData = null,

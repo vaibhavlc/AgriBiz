@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -200,6 +201,7 @@ const ProgressBar = ({
   );
 };
 export const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const {
     products,
     customers,
@@ -932,7 +934,7 @@ export const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              label="Taxable Sales Revenue"
+              label={t('dashboard.taxableRevenue', 'Taxable Sales Revenue')}
               value={<AnimatedCounter value={stats.totalSalesBase} isCurrency />}
               subtext="Excluding collected GST"
               icon={<TrendingUp size={20} />}

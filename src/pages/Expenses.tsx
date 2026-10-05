@@ -24,8 +24,10 @@ import {
   Receipt,
 } from 'lucide-react';
 import type { Expense } from '../types';
+import { useTranslation } from 'react-i18next';
 
 export const Expenses: React.FC = () => {
+  const { t } = useTranslation();
   const ts = new Date().toISOString();
   const {
     expenses,
@@ -716,7 +718,7 @@ export const Expenses: React.FC = () => {
               <FileText size={16} /> Save PDF
             </button>
             <button className="btn btn-primary btn-log-expense" onClick={() => setIsFormOpen(true)}>
-              <Plus size={16} /> Log Expense
+              <Plus size={16} /> {t('expenses.logExpense', 'Log Expense Entry')}
             </button>
           </div>
         </div>
