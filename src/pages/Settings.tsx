@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import api from '../utils/api';
@@ -97,7 +96,6 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
-  const { t } = useTranslation();
   const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
   const { currentUser, currentCompany, forgetDevice } = useAuth();
 
@@ -1580,14 +1578,14 @@ export const Settings: React.FC = () => {
                     <Briefcase size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settingsSection.profile.title', 'Business Information')}</h3>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Information</h3>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage firm names, PAN/GST registration, and contacts</p>
                   </div>
                 </div>
 
                 <div className="form-grid-2" style={{ marginTop: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">{t('settingsSection.profile.businessName', 'Firm / Business Name *')}</label>
+                    <label className="form-label">Firm / Business Name *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1597,7 +1595,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('settingsSection.profile.ownerName', 'Owner Name *')}</label>
+                    <label className="form-label">Owner Name *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1610,7 +1608,7 @@ export const Settings: React.FC = () => {
 
                 <div className="form-grid-3">
                   <div className="form-group">
-                    <label className="form-label">{t('settingsSection.profile.gstin', 'GST Number (GSTIN) *')}</label>
+                    <label className="form-label">GST Number (GSTIN) *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1621,7 +1619,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('settingsSection.profile.pan', 'PAN Number *')}</label>
+                    <label className="form-label">PAN Number *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1632,7 +1630,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">{t('settingsSection.profile.businessType', 'Business Type')}</label>
+                    <label className="form-label">Business Type</label>
                     <input
                       type="text"
                       placeholder="e.g. Proprietorship, Partnership"

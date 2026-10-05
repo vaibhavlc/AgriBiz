@@ -37,14 +37,12 @@ import {
   Mail,
 } from 'lucide-react';
 import { PWAInstallModal } from './PWAInstallModal';
-import { useTranslation } from 'react-i18next';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { t, i18n } = useTranslation();
   const {
     currentTab,
     settings,
@@ -777,7 +775,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       className={`lang-dropdown-item${lang.code === selectedLanguage ? ' active' : ''}`}
                       onClick={() => {
                         setSelectedLanguage(lang.code as 'en' | 'mr' | 'hi');
-                        i18n.changeLanguage(lang.code);
                         setIsLangDropdownOpen(false);
                       }}
                     >
@@ -974,7 +971,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     }}
                   >
                     <LogOut size={15} />
-                    <span>{t('auth.logout', 'Sign Out / Lock Session')}</span>
+                    <span>Sign Out / Lock Session</span>
                   </button>
 
                   {/* Forget This Device Button */}

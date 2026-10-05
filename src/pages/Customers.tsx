@@ -27,10 +27,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { Customer } from '../types';
-import { useTranslation } from 'react-i18next';
 
 export const Customers: React.FC = () => {
-  const { t } = useTranslation();
   const {
     customers,
     invoices,
@@ -232,9 +230,9 @@ export const Customers: React.FC = () => {
             }}
           >
             <div>
-              <div className="cust-outstanding-label">{t('common.outstanding', 'Outstanding Balance')}</div>
+              <div className="cust-outstanding-label">Outstanding Balance</div>
               <div className="cust-outstanding-sub">
-                {selectedCustomer.outstanding > 0 ? t('customers.amountOwesYou', 'Amount customer owes you') : selectedCustomer.outstanding < 0 ? t('customers.advanceCredit', 'Advance credit balance') : t('customers.accountSettled', 'Account fully settled')}
+                {selectedCustomer.outstanding > 0 ? 'Amount customer owes you' : selectedCustomer.outstanding < 0 ? 'Advance credit balance' : 'Account fully settled'}
               </div>
             </div>
             <div className="cust-outstanding-amount" style={{ color: selectedCustomer.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>
@@ -247,13 +245,13 @@ export const Customers: React.FC = () => {
               className="btn btn-primary cust-action-btn"
               onClick={() => { setSalesFormPresetCustomerId(selectedCustomer.id); setCurrentTab('sales'); }}
             >
-              <FileText size={15} /> {t('customers.createInvoice', 'Create Invoice')}
+              <FileText size={15} /> Create Invoice
             </button>
             <button
               className="btn btn-secondary cust-action-btn"
               onClick={() => openNewPaymentForm({ contactId: selectedCustomer.id, type: 'CustomerReceipt' })}
             >
-              <ArrowDownLeft size={15} /> {t('customers.recordReceipt', 'Record Receipt')}
+              <ArrowDownLeft size={15} /> Record Receipt
             </button>
           </div>
         </div>
@@ -261,7 +259,7 @@ export const Customers: React.FC = () => {
         {/* Stats Row */}
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
           <KpiCard
-            label={t('customers.totalInvoiced', 'Total Invoiced')}
+            label="Total Invoiced"
             value={formatINR(totalInvoiced)}
             subtext={`${totalInvoiceCount} invoice${totalInvoiceCount !== 1 ? 's' : ''}`}
             icon={<FileText size={20} />}
@@ -269,7 +267,7 @@ export const Customers: React.FC = () => {
           />
           
           <KpiCard
-            label={t('customers.totalReceived', 'Total Received')}
+            label="Total Received"
             value={formatINR(totalReceived)}
             subtext={`${totalPaymentCount} payment${totalPaymentCount !== 1 ? 's' : ''}`}
             icon={<CreditCard size={20} />}
@@ -277,15 +275,15 @@ export const Customers: React.FC = () => {
           />
 
           <KpiCard
-            label={t('customers.balanceDue', 'Balance Due')}
+            label="Balance Due"
             value={formatINR(selectedCustomer.outstanding)}
-            subtext={selectedCustomer.outstanding > 0 ? t('common.pending', 'Pending') : selectedCustomer.outstanding < 0 ? t('common.advance', 'Advance') : t('common.settled', 'Settled')}
+            subtext={selectedCustomer.outstanding > 0 ? 'Pending' : selectedCustomer.outstanding < 0 ? 'Advance' : 'Settled'}
             icon={<Scale size={20} />}
             variant={selectedCustomer.outstanding > 0 ? 'warning' : selectedCustomer.outstanding < 0 ? 'success' : 'info'}
           />
 
           <KpiCard
-            label={t('customers.lastTransaction', 'Last Transaction')}
+            label="Last Transaction"
             value={lastTxDate ? formatDate(lastTxDate) : '—'}
             subtext={`${ledgerEntries.length} entries total`}
             icon={<Activity size={20} />}
@@ -295,13 +293,13 @@ export const Customers: React.FC = () => {
 
         {/* Ledger */}
         <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '16px' }}>{t('customers.ledgerAccount', 'Customer Ledger Account')}</h3>
+          <h3 className="card-title" style={{ marginBottom: '16px' }}>Customer Ledger Account</h3>
 
           {ledgerWithBalance.length === 0 ? (
             <div className="empty-state" style={{ padding: '40px 20px' }}>
               <FileText size={40} className="empty-state-icon" />
-              <h4 className="empty-state-title">{t('customers.noTransactions', 'No Transactions Yet')}</h4>
-              <p className="empty-state-desc">{t('customers.noTransactionsDesc', 'No ledger entries found for this customer.')}</p>
+              <h4 className="empty-state-title">No Transactions Yet</h4>
+              <p className="empty-state-desc">No ledger entries found for this customer.</p>
             </div>
           ) : (
             <>
@@ -311,13 +309,13 @@ export const Customers: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>{t('common.date', 'Date')}</th>
-                        <th>{t('common.docNo', 'Doc No')}</th>
-                        <th>{t('common.description', 'Description')}</th>
-                        <th>{t('common.debit', 'Debit (+)')}</th>
-                        <th>{t('common.credit', 'Credit (-)')}</th>
-                        <th>{t('common.balance', 'Balance (₹)')}</th>
-                        <th className="no-print" style={{ textAlign: 'center' }}>{t('common.view', 'View')}</th>
+                        <th>Date</th>
+                        <th>Doc No</th>
+                        <th>Description</th>
+                        <th>Debit (+)</th>
+                        <th>Credit (-)</th>
+                        <th>Balance (₹)</th>
+                        <th className="no-print" style={{ textAlign: 'center' }}>View</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -337,11 +335,11 @@ export const Customers: React.FC = () => {
                           </td>
                           <td className="no-print" style={{ textAlign: 'center' }}>
                             {entry.type === 'Invoice' ? (
-                              <button className="btn-icon" onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }} title={t('customers.viewInvoice', 'View Invoice')}>
+                              <button className="btn-icon" onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }} title="View Invoice">
                                 <Eye size={14} />
                               </button>
                             ) : (
-                              <button className="btn-icon" onClick={() => setCurrentTab('payments')} title={t('customers.viewReceipt', 'View Receipt')}>
+                              <button className="btn-icon" onClick={() => setCurrentTab('payments')} title="View Payment">
                                 <ArrowDownLeft size={14} />
                               </button>
                             )}
@@ -415,11 +413,11 @@ export const Customers: React.FC = () => {
                         <div>
                           {isInvoice ? (
                             <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }}>
-                              <Eye size={12} /> {t('customers.viewInvoice', 'View Invoice')}
+                              <Eye size={12} /> View Invoice
                             </button>
                           ) : (
                             <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => setCurrentTab('payments')}>
-                              <ArrowDownLeft size={12} /> {t('customers.viewReceipt', 'View Receipt')}
+                              <ArrowDownLeft size={12} /> View Receipt
                             </button>
                           )}
                         </div>

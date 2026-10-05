@@ -24,10 +24,8 @@ import {
   Calendar,
 } from 'lucide-react';
 import type { Product } from '../types';
-import { useTranslation } from 'react-i18next';
 
 export const Inventory: React.FC = () => {
-  const { t } = useTranslation();
   const {
     products,
     deleteProduct,
@@ -747,7 +745,7 @@ export const Inventory: React.FC = () => {
       {/* Inventory KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label={t('inventory.totalItems', 'Total Products')}
+          label="Total Products"
           value={`${totalProducts} Items`}
           subtext="Unique catalog skus"
           icon={<Package size={20} />}
@@ -761,14 +759,14 @@ export const Inventory: React.FC = () => {
           variant="success"
         />
         <KpiCard
-          label={t('inventory.lowStockItems', 'Low Stock Alert')}
+          label="Low Stock Alert"
           value={`${lowStockAlerts} items`}
           subtext="Under minimum limit"
           icon={<AlertTriangle size={20} />}
           variant="warning"
         />
         <KpiCard
-          label={t('inventory.outOfStockItems', 'Out of Stock')}
+          label="Out of Stock"
           value={`${outOfStockCount} items`}
           subtext="Zero stock quantity"
           icon={<XCircle size={20} />}
@@ -862,7 +860,7 @@ export const Inventory: React.FC = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="All">{t('inventory.allCategories', 'All Categories')}</option>
+              <option value="All">All Categories</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -877,7 +875,7 @@ export const Inventory: React.FC = () => {
           </div>
 
           <button className="btn btn-primary" onClick={handleAddNewClick}>
-            <Plus size={16} /> {t('inventory.addProduct', 'Add Product')}
+            <Plus size={16} /> Add Product
           </button>
         </div>
       </div>
