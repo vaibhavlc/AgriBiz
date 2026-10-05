@@ -326,6 +326,95 @@
   },
   "auth": {
     "logout": "Sign Out / Lock Session",
-    "switchStaff": "Switch Staff"
+    "switchStaff": "Switch Active Staff Session",
+    "loginTitle": "Sign In to AgriBiz",
+    "loginSubtitle": "Manage your store, invoices, inventory and sales",
+    "mobileLabel": "Mobile Number *",
+    "mobilePlaceholder": "10-digit mobile number",
+    "passwordLabel": "Password / Owner PIN *",
+    "passwordPlaceholder": "Enter security PIN or password",
+    "rememberDevice": "Remember this device for 30 days",
+    "signInBtn": "Sign In",
+    "forgotPassword": "Forgot Password?",
+    "registerPrompt": "Don't have an account?",
+    "registerLink": "Register Store Now",
+    "verifyEmailTitle": "Email Verification Required",
+    "verifyEmailDesc": "Please check your email inbox and click the verification link.",
+    "resetPinTitle": "Reset Owner Security PIN",
+    "resetPinDesc": "Set a new 4-digit PIN for session authorization"
+  },
+  "modals": {
+    "customer": {
+      "titleAdd": "Add New Customer",
+      "titleEdit": "Edit Customer Details",
+      "nameLabel": "Customer Full Name *",
+      "namePlaceholder": "e.g. Ramesh Kumar",
+      "phoneLabel": "Phone Number *",
+      "phonePlaceholder": "e.g. 9876543210",
+      "emailLabel": "Email ID",
+      "emailPlaceholder": "e.g. ramesh@gmail.com",
+      "gstinLabel": "GST Number (GSTIN)",
+      "gstinPlaceholder": "e.g. 23AABCR1234F1Z5",
+      "stateLabel": "Billing State *",
+      "chooseState": "-- Choose State --",
+      "addressLabel": "Billing Address",
+      "addressPlaceholder": "Store / Village Address...",
+      "saveBtn": "Save Customer",
+      "updateBtn": "Update Customer"
+    },
+    "supplier": {
+      "titleAdd": "Add New Supplier",
+      "titleEdit": "Edit Supplier Details",
+      "nameLabel": "Supplier Company/Name *",
+      "namePlaceholder": "e.g. Mahindra Agri Implements Ltd",
+      "phoneLabel": "Phone/Contact Number *",
+      "phonePlaceholder": "e.g. 0161456789",
+      "emailLabel": "Email ID",
+      "emailPlaceholder": "e.g. billing@supplier.com",
+      "gstinLabel": "GST Number (GSTIN)",
+      "gstinPlaceholder": "e.g. 03AAACF4321F1ZX",
+      "addressLabel": "Office Address",
+      "addressPlaceholder": "e.g. Phase VII, Focal Point, Ludhiana, Punjab",
+      "saveBtn": "Save Supplier",
+      "updateBtn": "Update Supplier"
+    },
+    "product": {
+      "titleAdd": "Add New Product / Crop",
+      "titleEdit": "Edit Product Details",
+      "nameLabel": "Product Name *",
+      "namePlaceholder": "e.g. Varuna Submersible Pump 5HP",
+      "skuLabel": "SKU / Item Code",
+      "skuPlaceholder": "Auto-generated if blank",
+      "hsnLabel": "HSN / SAC Code",
+      "hsnPlaceholder": "e.g. 8432",
+      "categoryLabel": "Category *",
+      "chooseCategory": "-- Select Category --",
+      "purchasePriceLabel": "Purchase Price (Cost) ₹",
+      "sellingPriceLabel": "Selling Price (Retail) ₹",
+      "gstRateLabel": "GST Tax Rate (%)",
+      "minStockLabel": "Low Stock Alert Threshold",
+      "unitLabel": "Unit of Measurement",
+      "stockOnHandLabel": "Initial Stock Quantity",
+      "saveBtn": "Save Product",
+      "updateBtn": "Update Product"
+    },
+    "delete": {
+      "title": "Delete Confirmation",
+      "deleting": "Deleting...",
+      "cancel": "Cancel",
+      "confirm": "Delete"
+    }
+  },
+  "pwa": {
+    "installTitle": "Install AgriBiz App",
+    "installSubtitle": "Install AgriBiz Trader Suite on your device for instant offline access.",
+    "installBtn": "Install App",
+    "iosSafariTitle": "iOS Safari Instructions:",
+    "iosStep1": "Tap the Share icon in Safari, scroll down, and select Add to Home Screen."
+  },
+  "notifications": {
+    "title": "Recent Notifications",
+    "noNotifications": "No new notifications",
+    "clearAll": "Clear All Notifications"
   }
 }

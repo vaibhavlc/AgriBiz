@@ -326,6 +326,95 @@
   },
   "auth": {
     "logout": "साइन आउट / सत्र लॉक करा",
-    "switchStaff": "कर्मचारी बदला"
+    "switchStaff": "कर्मचारी बदला",
+    "loginTitle": "ॲग्रीबिझमध्ये साइन इन करा",
+    "loginSubtitle": "दुकान, इनव्हॉइस, स्टॉक आणि विक्री व्यवस्थापित करा",
+    "mobileLabel": "मोबाईल क्रमांक *",
+    "mobilePlaceholder": "१० अंकी मोबाईल क्रमांक",
+    "passwordLabel": "पासवर्ड / पिन कोड *",
+    "passwordPlaceholder": "सुरक्षा पिन किंवा पासवर्ड टाका",
+    "rememberDevice": "हे डिव्हाइस ३० दिवस लक्षात ठेवा",
+    "signInBtn": "साइन इन करा",
+    "forgotPassword": "पासवर्ड विसरलात?",
+    "registerPrompt": "खाते नाही का?",
+    "registerLink": "नवीन दुकान नोंदणी करा",
+    "verifyEmailTitle": "ईमेल पडताळणी आवश्यक",
+    "verifyEmailDesc": "कृपया आपला ईमेल इनबॉक्स तपासा आणि लिंकवर क्लिक करा.",
+    "resetPinTitle": "मालक सुरक्षा पिन बदला",
+    "resetPinDesc": "सत्र अधिकारासाठी नवीन ४ अंकी पिन सेट करा"
+  },
+  "modals": {
+    "customer": {
+      "titleAdd": "नवीन ग्राहक जोडा",
+      "titleEdit": "ग्राहक तपशील संपादित करा",
+      "nameLabel": "ग्राहकाचे संपूर्ण नाव *",
+      "namePlaceholder": "उदा. रमेश कुमार",
+      "phoneLabel": "फोन क्रमांक *",
+      "phonePlaceholder": "उदा. ९८७६५४३२१०",
+      "emailLabel": "ईमेल आयडी",
+      "emailPlaceholder": "उदा. ramesh@gmail.com",
+      "gstinLabel": "जीएसटी क्रमांक (GSTIN)",
+      "gstinPlaceholder": "उदा. 23AABCR1234F1Z5",
+      "stateLabel": "बिलिंग राज्य *",
+      "chooseState": "-- राज्य निवडा --",
+      "addressLabel": "बिलिंग पत्ता",
+      "addressPlaceholder": "दुकानाचा / गावाचा पत्ता...",
+      "saveBtn": "ग्राहक जतन करा",
+      "updateBtn": "ग्राहक अद्ययावत करा"
+    },
+    "supplier": {
+      "titleAdd": "नवीन पुरवठादार जोडा",
+      "titleEdit": "पुरवठादार तपशील संपादित करा",
+      "nameLabel": "पुरवठादार कंपनी / नाव *",
+      "namePlaceholder": "उदा. महिंद्रा ॲग्री इम्प्लिमेंट्स लि.",
+      "phoneLabel": "संपर्क क्रमांक *",
+      "phonePlaceholder": "उदा. ०१६१४५६७८९",
+      "emailLabel": "ईमेल आयडी",
+      "emailPlaceholder": "उदा. billing@supplier.com",
+      "gstinLabel": "जीएसटी क्रमांक (GSTIN)",
+      "gstinPlaceholder": "उदा. 03AAACF4321F1ZX",
+      "addressLabel": "कार्यालयीन पत्ता",
+      "addressPlaceholder": "उदा. एमआयडीसी, पुणे, महाराष्ट्र",
+      "saveBtn": "पुरवठादार जतन करा",
+      "updateBtn": "पुरवठादार अद्ययावत करा"
+    },
+    "product": {
+      "titleAdd": "नवीन उत्पादन / पिक जोडा",
+      "titleEdit": "उत्पादन तपशील संपादित करा",
+      "nameLabel": "उत्पादनाचे नाव *",
+      "namePlaceholder": "उदा. वरुणा सबमर्सिबल पंप ५ एचपी",
+      "skuLabel": "एसकेयू / आयटम कोड",
+      "skuPlaceholder": "रिकामे ठेवल्यास आपोआप तयार होईल",
+      "hsnLabel": "एचएसएन / एसएसी कोड",
+      "hsnPlaceholder": "उदा. ८४३२",
+      "categoryLabel": "वर्ग / श्रेणी *",
+      "chooseCategory": "-- वर्ग निवडा --",
+      "purchasePriceLabel": "खरेदी किंमत (मूळ) ₹",
+      "sellingPriceLabel": "विक्री किंमत (किरकोळ) ₹",
+      "gstRateLabel": "जीएसटी कर दर (%)",
+      "minStockLabel": "किमान स्टॉक अलर्ट मर्यादा",
+      "unitLabel": "मोजमाप एकक",
+      "stockOnHandLabel": "सुरुवातीचे स्टॉक प्रमाण",
+      "saveBtn": "उत्पादन जतन करा",
+      "updateBtn": "उत्पादन अद्ययावत करा"
+    },
+    "delete": {
+      "title": "हटवण्याची हमी",
+      "deleting": "हटवत आहे...",
+      "cancel": "रद्द करा",
+      "confirm": "हटवा"
+    }
+  },
+  "pwa": {
+    "installTitle": "ॲग्रीबिझ ॲप इन्स्टॉल करा",
+    "installSubtitle": "ऑफलाईन वापरण्यासाठी ॲग्रीबिझ ॲप तुमच्या मोबाईलमध्ये जोडा.",
+    "installBtn": "ॲप इन्स्टॉल करा",
+    "iosSafariTitle": "आयओएस सफारी सूचना:",
+    "iosStep1": "सफारीमध्ये शेअर आयकॉनवर क्लिक करा आणि 'Add to Home Screen' निवडा."
+  },
+  "notifications": {
+    "title": "अलीकडील सूचना",
+    "noNotifications": "कोणत्याही नवीन सूचना नाहीत",
+    "clearAll": "सर्व सूचना साफ करा"
   }
 }

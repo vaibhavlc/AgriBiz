@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Product } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface ProductModalProps {
   isOpen: boolean;
@@ -20,6 +21,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   editProductData = null,
   onSaveCallback,
 }) => {
+  const { t } = useTranslation();
   const { addProduct, editProduct, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
@@ -161,11 +163,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">Product Name *</label>
+          <label className="form-label">{t('modals.product.nameLabel', 'Product Name *')}</label>
           <input
             type="text"
             className="form-control"
-            placeholder="e.g. Varuna Submersible Pump 5HP"
+            placeholder={t('modals.product.namePlaceholder', 'e.g. Varuna Submersible Pump 5HP')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -175,12 +177,12 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="form-row-three">
           <div className="form-group">
-            <label className="form-label">SKU / Item Code</label>
+            <label className="form-label">{t('modals.product.skuLabel', 'SKU / Item Code')}</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Auto-generated if blank"
+                placeholder={t('modals.product.skuPlaceholder', 'Auto-generated if blank')}
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
               />
@@ -196,17 +198,17 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">HSN / SAC Code</label>
+            <label className="form-label">{t('modals.product.hsnLabel', 'HSN / SAC Code')}</label>
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. 8432"
+              placeholder={t('modals.product.hsnPlaceholder', 'e.g. 8432')}
               value={hsn}
               onChange={(e) => setHsn(e.target.value)}
             />
           </div>
           <div className="form-group">
-            <label className="form-label">Category *</label>
+            <label className="form-label">{t('modals.product.categoryLabel', 'Category *')}</label>
             <select
               className="form-control"
               value={category}

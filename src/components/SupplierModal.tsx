@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Supplier } from '../types';
+import { useTranslation } from 'react-i18next';
 
 interface SupplierModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
   onSaveCallback,
   editSupplierData = null,
 }) => {
+  const { t } = useTranslation();
   const { addSupplier, editSupplier, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -122,7 +124,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Mahindra Agri Implements Ltd"
+              placeholder={t('modals.supplier.namePlaceholder', 'e.g. Mahindra Agri Implements Ltd')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -138,7 +140,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
               <input
                 type="tel"
                 className="form-control"
-                placeholder="e.g. 0161456789"
+                placeholder={t('modals.supplier.phonePlaceholder', 'e.g. 0161456789')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
@@ -150,7 +152,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
               <input
                 type="email"
                 className="form-control"
-                placeholder="e.g. billing@supplier.com"
+                placeholder={t('modals.supplier.emailPlaceholder', 'e.g. billing@supplier.com')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={{ width: '100%', boxSizing: 'border-box' }}
@@ -164,7 +166,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. 03AAACF4321F1ZX"
+              placeholder={t('modals.supplier.gstinPlaceholder', 'e.g. 03AAACF4321F1ZX')}
               maxLength={15}
               value={gstin}
               onChange={(e) => setGstin(e.target.value)}
@@ -177,7 +179,7 @@ export const SupplierModal: React.FC<SupplierModalProps> = ({
             <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Office Address</label>
             <textarea
               className="form-control"
-              placeholder="e.g. Phase VII, Focal Point, Ludhiana, Punjab"
+              placeholder={t('modals.supplier.addressPlaceholder', 'e.g. Phase VII, Focal Point, Ludhiana, Punjab')}
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}

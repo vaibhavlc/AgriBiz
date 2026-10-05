@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Customer } from '../types';
+import { useTranslation } from 'react-i18next';
 
 const INDIAN_STATES = [
   'Andhra Pradesh', 'Arunachal Pradesh', 'Assam', 'Bihar', 'Chhattisgarh', 'Goa', 'Gujarat', 
@@ -25,6 +26,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   onSaveCallback,
   editCustomerData = null,
 }) => {
+  const { t } = useTranslation();
   const { addCustomer, editCustomer, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -135,7 +137,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Ramesh Kumar"
+              placeholder={t('modals.customer.namePlaceholder', 'e.g. Ramesh Kumar')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -151,7 +153,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="tel"
                 className="form-control"
-                placeholder="e.g. 9876543210"
+                placeholder={t('modals.customer.phonePlaceholder', 'e.g. 9876543210')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
@@ -163,7 +165,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="email"
                 className="form-control"
-                placeholder="e.g. ramesh@gmail.com"
+                placeholder={t('modals.customer.emailPlaceholder', 'e.g. ramesh@gmail.com')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={{ width: '100%', boxSizing: 'border-box' }}
@@ -178,7 +180,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. 23AABCR1234F1Z5"
+                placeholder={t('modals.customer.gstinPlaceholder', 'e.g. 23AABCR1234F1Z5')}
                 maxLength={15}
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value)}
@@ -194,7 +196,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 required
                 style={{ width: '100%', boxSizing: 'border-box' }}
               >
-                <option value="">-- Choose State --</option>
+                <option value="">{t('modals.customer.chooseState', '-- Choose State --')}</option>
                 {INDIAN_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
