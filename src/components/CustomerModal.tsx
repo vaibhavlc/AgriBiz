@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Customer } from '../types';
@@ -24,6 +25,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
   onSaveCallback,
   editCustomerData = null,
 }) => {
+  const { t } = useTranslation();
   const { addCustomer, editCustomer, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -123,14 +125,14 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseClick}
-      title={editCustomerData ? 'Edit Customer Info' : 'Add New Customer'}
+      title={editCustomerData ? t('customers.editCustomer', 'Edit Customer Info') : t('customers.addCustomer', 'Add New Customer')}
     >
       <form onSubmit={handleSubmit} style={{ width: '100%' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', width: '100%' }}>
           
           {/* Full Name */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Customer Full Name *</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.customerName', 'Customer Full Name')} *</label>
             <input
               type="text"
               className="form-control"
@@ -146,7 +148,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Contact Row: Phone & Email */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Phone Number *</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.phone', 'Phone Number')} *</label>
               <input
                 type="tel"
                 className="form-control"
@@ -158,7 +160,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Email ID</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('auth.email', 'Email ID')}</label>
               <input
                 type="email"
                 className="form-control"
@@ -173,7 +175,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Tax/Location Row: GSTIN & State */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', width: '100%' }}>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>GST Number (GSTIN)</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.gstin', 'GST Number (GSTIN)')}</label>
               <input
                 type="text"
                 className="form-control"
@@ -185,7 +187,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Billing State *</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('auth.state', 'Billing State')} *</label>
               <select
                 className="form-control"
                 value={state}
@@ -193,7 +195,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
                 required
                 style={{ width: '100%', boxSizing: 'border-box' }}
               >
-                <option value="">-- Choose State --</option>
+                <option value="">{t('common.chooseState', '-- Choose State --')}</option>
                 {INDIAN_STATES.map((s) => (
                   <option key={s} value={s}>{s}</option>
                 ))}
@@ -203,7 +205,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
 
           {/* Address */}
           <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Village / Billing Address</label>
+            <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('auth.address', 'Village / Billing Address')}</label>
             <textarea
               className="form-control"
               placeholder="e.g. Ward No. 4, Pipariya Village, MP"
@@ -217,7 +219,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Opening Outstanding */}
           {!editCustomerData && (
             <div className="form-group" style={{ marginBottom: 0, width: '100%' }}>
-              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Opening Outstanding Balance (₹)</label>
+              <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('customers.outstanding', 'Opening Outstanding Balance (₹)')}</label>
               <input
                 type="number"
                 className="form-control"
@@ -232,10 +234,10 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
           {/* Footer Buttons */}
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px', width: '100%', boxSizing: 'border-box' }}>
             <button type="button" className="btn btn-secondary" onClick={handleCloseClick} style={{ minWidth: '90px' }}>
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ minWidth: '110px' }}>
-              {isSubmitting ? 'Saving...' : editCustomerData ? 'Update Customer' : 'Add Customer'}
+              {isSubmitting ? t('common.saving', 'Saving...') : editCustomerData ? t('common.save', 'Update Customer') : t('customers.addCustomer', 'Add Customer')}
             </button>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface ModalProps {
   isOpen: boolean;
@@ -17,6 +18,7 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   size = 'standard',
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   // Close on backdrop click
@@ -31,7 +33,7 @@ export const Modal: React.FC<ModalProps> = ({
       <div className={`modal-content ${size === 'large' ? 'large' : ''}`}>
         <div className="modal-header">
           <h3 className="modal-title">{title}</h3>
-          <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
+          <button className="modal-close-btn" onClick={onClose} aria-label={t('common.closeModal', 'Close modal')}>
             <X size={20} />
           </button>
         </div>

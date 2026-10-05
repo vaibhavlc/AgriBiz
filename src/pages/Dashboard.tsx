@@ -1,4 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
+import { translateCategory } from '../utils/statusTranslation';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -110,7 +112,6 @@ const BarChart = ({
         {data.map((d, idx) => {
           const h1 = (d.value1 / maxVal) * 100;
           const h2 = (d.value2 / maxVal) * 100;
-          // Strip year for compact labels
           const cleanLabel = d.label.replace(/,?\s*\d{4}/, '');
           
           return (
@@ -160,7 +161,7 @@ const BarChart = ({
     </div>
   );
 };
-// Custom Horizontal Progress Bar
+
 const ProgressBar = ({
   label,
   value,
@@ -199,7 +200,9 @@ const ProgressBar = ({
     </div>
   );
 };
+
 export const Dashboard: React.FC = () => {
+  const { t } = useTranslation();
   const {
     products,
     customers,
@@ -286,7 +289,6 @@ export const Dashboard: React.FC = () => {
     }
   }, [searchQuery, activeKpiTab]);
 
-  // Center active KPI tab in header scroll container without scrolling window vertically
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       const activeBtn = document.getElementById(`kpi-tab-button-${activeKpiTab}`);
@@ -301,7 +303,6 @@ export const Dashboard: React.FC = () => {
     return () => cancelAnimationFrame(rafId);
   }, [activeKpiTab]);
 
-  // Center active Analysis tab in header scroll container without scrolling window vertically
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       const activeBtn = document.getElementById(`analysis-tab-button-${activeAnalysisTab}`);
@@ -316,7 +317,6 @@ export const Dashboard: React.FC = () => {
     return () => cancelAnimationFrame(rafId);
   }, [activeAnalysisTab]);
 
-  // Center active duration pill in horizontal scroll container without scrolling window vertically
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       const activeBtn = document.getElementById(`duration-pill-button-${filterType}`);
@@ -331,7 +331,6 @@ export const Dashboard: React.FC = () => {
     return () => cancelAnimationFrame(rafId);
   }, [filterType]);
 
-  // Simulated Reload
   const [isRefreshing, setIsRefreshing] = useState(false);
   const triggerRefresh = () => {
     setIsRefreshing(true);
@@ -341,9 +340,8 @@ export const Dashboard: React.FC = () => {
     }, 600);
   };
 
-  // 1. Calculate active date ranges
   const dateLimits = useMemo(() => {
-    const today = new Date('2026-07-10'); // Set fixed system time
+    const today = new Date('2026-07-10');
     today.setHours(0, 0, 0, 0);
 
     let start = new Date(2020, 0, 1);
@@ -396,11 +394,9 @@ export const Dashboard: React.FC = () => {
     return { start, end };
   }, [filterType, customRange]);
 
-  // 2. Perform Dynamic calculations based on active date range
   const stats = useMemo(() => {
     const { start, end } = dateLimits;
 
-    // Filter transactions
     const filteredInvoices = invoices.filter((i) => {
       const d = new Date(i.date);
       return d >= start && d <= end;
@@ -421,13 +417,11 @@ export const Dashboard: React.FC = () => {
       return d >= start && d <= end;
     });
 
-    // Sum totals
     const totalSales = filteredInvoices.reduce((sum, i) => sum + i.grandTotal, 0);
     const totalSalesBase = filteredInvoices.reduce((sum, i) => sum + i.subtotal, 0);
     const totalPurchases = filteredPurchases.reduce((sum, p) => sum + p.grandTotal, 0);
     const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // Calculate COGS
     let cogs = 0;
     filteredInvoices.forEach((inv) => {
       inv.items.forEach((item) => {
@@ -441,29 +435,24 @@ export const Dashboard: React.FC = () => {
     const netProfit = grossProfit - totalExpenses;
     const grossProfitMargin = totalSalesBase > 0 ? (grossProfit / totalSalesBase) * 100 : 0;
 
-    // Receivables / Payables (Always current cumulative values)
     const receivables = customers.reduce((sum, c) => sum + (c.outstanding > 0 ? c.outstanding : 0), 0);
     const payables = suppliers.reduce((sum, s) => sum + (s.outstanding > 0 ? s.outstanding : 0), 0);
 
-    // Collections
     const collectedAmount = filteredPayments
       .filter((p) => p.type === 'CustomerReceipt')
       .reduce((sum, p) => sum + p.amount, 0);
 
     const pendingCollection = filteredInvoices.reduce((sum, i) => sum + i.balanceDue, 0);
 
-    // GST
     const gstCollected = filteredInvoices.reduce((sum, i) => sum + i.gstTotal, 0);
     const gstPaid = filteredPurchases.reduce((sum, p) => sum + p.gstTotal, 0);
     const gstLiability = gstCollected - gstPaid;
 
-    // Inventory
     const stockValue = products.reduce((sum, p) => sum + (p.stock * p.purchasePrice), 0);
     const totalInventoryItems = products.reduce((sum, p) => sum + p.stock, 0);
     const lowStockCount = products.filter((p) => p.stock <= p.minStock && p.stock > 0).length;
     const outOfStockCount = products.filter((p) => p.stock === 0).length;
 
-    // Transaction Counts
     const invoicesCount = filteredInvoices.length;
     const purchasesCount = filteredPurchases.length;
     const totalTransactions = invoicesCount + purchasesCount + filteredPayments.length + filteredExpenses.length;
@@ -498,12 +487,9 @@ export const Dashboard: React.FC = () => {
     };
   }, [invoices, purchases, payments, expenses, products, customers, suppliers, dateLimits]);
 
-  // 3. Chart computations
   const chartData = useMemo(() => {
-    // Generate dates based on filtered items
     const dataMap: { [key: string]: { value1: number; value2: number } } = {};
     
-    // Group invoices & purchases by date
     stats.filteredInvoices.forEach((inv) => {
       const label = formatDate(inv.date);
       if (!dataMap[label]) dataMap[label] = { value1: 0, value2: 0 };
@@ -516,13 +502,11 @@ export const Dashboard: React.FC = () => {
       dataMap[label].value2 += pur.grandTotal;
     });
 
-    // Convert map to sorted array
     const sortedLabels = Object.keys(dataMap).sort((a, b) => new Date(a).getTime() - new Date(b).getTime());
     
-    // Fallback if empty
     if (sortedLabels.length === 0) {
       return [
-        { label: 'No Data', value1: 0, value2: 0 }
+        { label: t('common.noData', 'No Data'), value1: 0, value2: 0 }
       ];
     }
 
@@ -531,9 +515,8 @@ export const Dashboard: React.FC = () => {
       value1: dataMap[label].value1,
       value2: dataMap[label].value2,
     }));
-  }, [stats]);
+  }, [stats, t]);
 
-  // 4. Top Selling / Profitable Products Analysis
   const productPerformance = useMemo(() => {
     const quantitiesSold: { [id: string]: number } = {};
     const revenueSold: { [id: string]: number } = {};
@@ -545,7 +528,6 @@ export const Dashboard: React.FC = () => {
         quantitiesSold[item.productId] = (quantitiesSold[item.productId] || 0) + qty;
         revenueSold[item.productId] = (revenueSold[item.productId] || 0) + item.total;
 
-        // profit = item subtotal value - purchaseCost
         const prod = products.find((p) => p.id === item.productId);
         const cost = prod ? prod.purchasePrice * qty : 0;
         profitEarned[item.productId] = (profitEarned[item.productId] || 0) + (item.subtotal - cost);
@@ -572,11 +554,9 @@ export const Dashboard: React.FC = () => {
     };
   }, [stats, products]);
 
-  // 5. Recent Activity Logs builder
   const recentActivities = useMemo(() => {
     const logs: { id: string; time: string; type: string; details: string; icon: string; bg: string; targetTab: string; targetQuery: string }[] = [];
 
-    // Map Invoices
     stats.filteredInvoices.slice(0, 4).forEach((inv) => {
       logs.push({
         id: `act-${inv.id}`,
@@ -590,7 +570,6 @@ export const Dashboard: React.FC = () => {
       });
     });
 
-    // Map Purchases
     stats.filteredPurchases.slice(0, 4).forEach((pur) => {
       logs.push({
         id: `act-${pur.id}`,
@@ -604,7 +583,6 @@ export const Dashboard: React.FC = () => {
       });
     });
 
-    // Map Payments
     stats.filteredPayments.slice(0, 4).forEach((pay) => {
       logs.push({
         id: `act-${pay.id}`,
@@ -618,7 +596,6 @@ export const Dashboard: React.FC = () => {
       });
     });
 
-    // Map Expenses
     stats.filteredExpenses.slice(0, 4).forEach((exp) => {
       logs.push({
         id: `act-${exp.id}`,
@@ -635,7 +612,6 @@ export const Dashboard: React.FC = () => {
     return logs.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime()).slice(0, 8);
   }, [stats]);
 
-  // 6. Action cards list
   const outstandingCustomers = useMemo(() => {
     return [...customers].sort((a, b) => b.outstanding - a.outstanding).filter((c) => c.outstanding > 0).slice(0, 5);
   }, [customers]);
@@ -659,7 +635,7 @@ export const Dashboard: React.FC = () => {
             <div className="stock-warning-left">
               <AlertTriangle size={18} />
               <span style={{ fontSize: '13px' }}>
-                <strong>Inventory Warning:</strong>{' '}
+                <strong>{t('inventory.stockWarning', 'Inventory Warning:')}</strong>{' '}
                 {isLowStockActive && isOutOfStockActive ? (
                   `${stats.lowStockCount} products are below safety limits, and ${stats.outOfStockCount} products are completely out of stock.`
                 ) : isLowStockActive ? (
@@ -671,7 +647,7 @@ export const Dashboard: React.FC = () => {
             </div>
             <div className="stock-warning-right" style={{ position: 'relative' }}>
               <button className="alert-action-btn" onClick={() => setCurrentTab('inventory')} style={{ fontSize: '12px', padding: '6px 12px' }}>
-                Reorder Stock
+                {t('inventory.reorderStock', 'Reorder Stock')}
               </button>
               
               <button 
@@ -738,6 +714,7 @@ export const Dashboard: React.FC = () => {
           </div>
         );
       })()}
+
       {/* Date Filter & Title Toolbar */}
       <div 
         style={{ 
@@ -758,10 +735,10 @@ export const Dashboard: React.FC = () => {
             )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <h2 className="dashboard-title-text" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-                {settings.businessName || 'Business Intelligence Dashboard'}
+                {settings.businessName || t('dashboard.title', 'Business Intelligence Dashboard')}
               </h2>
               <p className="dashboard-welcome-text" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
-                Welcome back, {settings.ownerName || 'Partner'}
+                {t('dashboard.welcome', 'Welcome back')}, {settings.ownerName || 'Partner'}
               </p>
             </div>
           </div>
@@ -789,18 +766,18 @@ export const Dashboard: React.FC = () => {
           </button>
         </div>
 
-        {/* Modern Segmented Pill Tabs */}
+        {/* Segmented Pill Tabs */}
         <div className="pill-filter-bar">
           {[
-            { value: 'All', label: 'All Time' },
-            { value: 'today', label: 'Today' },
-            { value: 'yesterday', label: 'Yesterday' },
-            { value: 'week', label: 'This Week' },
-            { value: 'month', label: 'This Month' },
-            { value: 'last_month', label: 'Last Month' },
-            { value: 'quarter', label: 'This Quarter' },
-            { value: 'year', label: 'This Year' },
-            { value: 'custom', label: 'Custom Date' },
+            { value: 'All', label: t('common.all', 'All Time') },
+            { value: 'today', label: t('dashboard.today', 'Today') },
+            { value: 'yesterday', label: t('dashboard.yesterday', 'Yesterday') },
+            { value: 'week', label: t('dashboard.thisWeek', 'This Week') },
+            { value: 'month', label: t('dashboard.thisMonth', 'This Month') },
+            { value: 'last_month', label: t('dashboard.lastMonth', 'Last Month') },
+            { value: 'quarter', label: t('dashboard.thisQuarter', 'This Quarter') },
+            { value: 'year', label: t('dashboard.thisYear', 'This Year') },
+            { value: 'custom', label: t('dashboard.customDate', 'Custom Date') },
           ].map((opt) => (
             <button
               key={opt.value}
@@ -889,28 +866,28 @@ export const Dashboard: React.FC = () => {
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'financial' ? 800 : 500, color: activeKpiTab === 'financial' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'financial' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('financial')}
           >
-            Financial Health
+            {t('dashboard.financialHealth', 'Financial Health')}
           </button>
           <button 
             id="kpi-tab-button-payments"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'payments' ? 800 : 500, color: activeKpiTab === 'payments' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'payments' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('payments')}
           >
-            Collections & Book dues
+            {t('dashboard.collectionsBookDues', 'Collections & Book dues')}
           </button>
           <button 
             id="kpi-tab-button-gst"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'gst' ? 800 : 500, color: activeKpiTab === 'gst' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'gst' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('gst')}
           >
-            GST Ledger
+            {t('dashboard.gstLedger', 'GST Ledger')}
           </button>
           <button 
             id="kpi-tab-button-inventory"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'inventory' ? 800 : 500, color: activeKpiTab === 'inventory' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'inventory' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('inventory')}
           >
-            Inventory & Entity Counts
+            {t('dashboard.inventoryEntityCounts', 'Inventory & Entity Counts')}
           </button>
         </div>
 
@@ -922,9 +899,9 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'financial' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label="Total Sales Billing"
+              label={t('dashboard.todaySales', 'Total Sales Billing')}
               value={<AnimatedCounter value={stats.totalSales} isCurrency />}
-              subtext="Sales inclusive of GST"
+              subtext={t('dashboard.salesInclusiveGst', 'Sales inclusive of GST')}
               icon={<TrendingUp size={20} />}
               variant="success"
               onClick={() => setCurrentTab('sales')}
@@ -932,9 +909,9 @@ export const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              label="Taxable Sales Revenue"
+              label={t('dashboard.taxableSalesRevenue', 'Taxable Sales Revenue')}
               value={<AnimatedCounter value={stats.totalSalesBase} isCurrency />}
-              subtext="Excluding collected GST"
+              subtext={t('dashboard.excludingGst', 'Excluding collected GST')}
               icon={<TrendingUp size={20} />}
               variant="success"
               onClick={() => setCurrentTab('sales')}
@@ -942,9 +919,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total Purchases Billing"
+              label={t('dashboard.todayPurchases', 'Total Purchases Billing')}
               value={<AnimatedCounter value={stats.totalPurchases} isCurrency />}
-              subtext="Cumulative stock acquisitions"
+              subtext={t('dashboard.stockAcquisitions', 'Cumulative stock acquisitions')}
               icon={<TrendingDown size={20} />}
               variant="warning"
               onClick={() => setCurrentTab('purchases')}
@@ -952,9 +929,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total Expenses Spends"
+              label={t('dashboard.totalExpenses', 'Total Expenses Spends')}
               value={<AnimatedCounter value={stats.totalExpenses} isCurrency />}
-              subtext="Operational overhead costs"
+              subtext={t('dashboard.operationalCosts', 'Operational overhead costs')}
               icon={<TrendingDown size={20} />}
               variant="danger"
               onClick={() => setCurrentTab('expenses')}
@@ -962,36 +939,36 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Gross Sales Profit"
+              label={t('dashboard.grossProfit', 'Gross Sales Profit')}
               value={<AnimatedCounter value={stats.grossProfit} isCurrency />}
-              subtext="Sales subtotal minus COGS"
+              subtext={t('dashboard.cogsSubtext', 'Sales subtotal minus COGS')}
               icon={<DollarSign size={20} />}
               variant="success"
               className={shouldBlink(['profit', 'gross', 'margin']) ? 'search-blink-highlight' : ''}
             />
 
             <KpiCard
-              label="Net Operating Profit"
+              label={t('dashboard.netProfit', 'Net Operating Profit')}
               value={<AnimatedCounter value={stats.netProfit} isCurrency />}
-              subtext="Gross profit minus expenses"
+              subtext={t('dashboard.netProfitSubtext', 'Gross profit minus expenses')}
               icon={<DollarSign size={20} />}
               variant="success"
               className={shouldBlink(['profit', 'net', 'earnings', 'income']) ? 'search-blink-highlight' : ''}
             />
 
             <KpiCard
-              label="Gross Profit Margin"
+              label={t('dashboard.profitMargin', 'Gross Profit Margin')}
               value={<AnimatedCounter value={stats.grossProfitMargin} isPercent />}
-              subtext="Efficiency percentage return"
+              subtext={t('dashboard.marginSubtext', 'Efficiency percentage return')}
               icon={<Percent size={20} />}
               variant="info"
               className={shouldBlink(['profit', 'margin', 'gross']) ? 'search-blink-highlight' : ''}
             />
 
             <KpiCard
-              label="COGS (Stock Cost)"
+              label={t('dashboard.cogs', 'COGS (Stock Cost)')}
               value={<AnimatedCounter value={stats.cogs} isCurrency />}
-              subtext="Cost price of items sold"
+              subtext={t('dashboard.cogsCostSubtext', 'Cost price of items sold')}
               icon={<Package size={20} />}
               variant="danger"
               className={shouldBlink(['cogs', 'cost', 'stock cost']) ? 'search-blink-highlight' : ''}
@@ -1003,9 +980,9 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'payments' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label="Total Amount Collected"
+              label={t('dashboard.totalCollected', 'Total Amount Collected')}
               value={<AnimatedCounter value={stats.collectedAmount} isCurrency />}
-              subtext="Total receipts collected"
+              subtext={t('dashboard.totalReceipts', 'Total receipts collected')}
               icon={<ArrowDownLeft size={20} />}
               variant="success"
               onClick={() => setCurrentTab('payments')}
@@ -1013,9 +990,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Outstanding Receivables"
+              label={t('dashboard.totalReceivable', 'Outstanding Receivables')}
               value={<AnimatedCounter value={stats.receivables} isCurrency />}
-              subtext="Dues left on invoices"
+              subtext={t('dashboard.duesOnInvoices', 'Dues left on invoices')}
               icon={<Users size={20} />}
               variant="danger"
               onClick={() => setCurrentTab('sales')}
@@ -1023,9 +1000,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Outstanding Payables"
+              label={t('dashboard.totalPayable', 'Outstanding Payables')}
               value={<AnimatedCounter value={stats.payables} isCurrency />}
-              subtext="Dues owed to manufacturers"
+              subtext={t('dashboard.duesOwedSuppliers', 'Dues owed to manufacturers')}
               icon={<Truck size={20} />}
               variant="danger"
               onClick={() => setCurrentTab('suppliers')}
@@ -1033,9 +1010,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Pending Billing Collection"
+              label={t('dashboard.pendingCollection', 'Pending Billing Collection')}
               value={<AnimatedCounter value={stats.pendingCollection} isCurrency />}
-              subtext="Amount yet to collect"
+              subtext={t('dashboard.yetToCollect', 'Amount yet to collect')}
               icon={<Clock size={20} />}
               variant="warning"
               onClick={() => setCurrentTab('sales')}
@@ -1048,9 +1025,9 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'gst' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label="Total GST Collected"
+              label={t('dashboard.gstCollected', 'Total GST Collected')}
               value={<AnimatedCounter value={stats.gstCollected} isCurrency />}
-              subtext="Output tax collected"
+              subtext={t('dashboard.outputTax', 'Output tax collected')}
               icon={<TrendingUp size={20} />}
               variant="success"
               onClick={() => setCurrentTab('reports')}
@@ -1058,9 +1035,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total GST Paid"
+              label={t('dashboard.gstPaid', 'Total GST Paid')}
               value={<AnimatedCounter value={stats.gstPaid} isCurrency />}
-              subtext="Input tax credit paid"
+              subtext={t('dashboard.inputTaxCredit', 'Input tax credit paid')}
               icon={<TrendingDown size={20} />}
               variant="warning"
               onClick={() => setCurrentTab('reports')}
@@ -1068,9 +1045,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total GST Liability"
+              label={t('dashboard.gstLiability', 'Total GST Liability')}
               value={<AnimatedCounter value={stats.gstLiability} isCurrency />}
-              subtext="Output minus Input tax"
+              subtext={t('dashboard.outputMinusInput', 'Output minus Input tax')}
               icon={<FileText size={20} />}
               variant={stats.gstLiability > 0 ? "danger" : "info"}
               onClick={() => setCurrentTab('reports')}
@@ -1078,9 +1055,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="CGST / SGST Share"
+              label={t('dashboard.cgstSgstShare', 'CGST / SGST Share')}
               value={<AnimatedCounter value={stats.gstCollected / 2} isCurrency />}
-              subtext="50% equal split values"
+              subtext={t('dashboard.equalSplit', '50% equal split values')}
               icon={<Percent size={20} />}
               variant="info"
               onClick={() => setCurrentTab('reports')}
@@ -1088,13 +1065,14 @@ export const Dashboard: React.FC = () => {
             />
           </div>
         )}
+
         {/* Tab 4: Inventory & Counts */}
         {activeKpiTab === 'inventory' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label="Current Stock Value"
+              label={t('dashboard.stockValue', 'Current Stock Value')}
               value={<AnimatedCounter value={stats.stockValue} isCurrency />}
-              subtext="Valuation of current stock"
+              subtext={t('dashboard.stockValuation', 'Valuation of current stock')}
               icon={<ShoppingBag size={20} />}
               variant="success"
               onClick={() => setCurrentTab('inventory')}
@@ -1102,9 +1080,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total Items in Stock"
+              label={t('dashboard.totalStockItems', 'Total Items in Stock')}
               value={<AnimatedCounter value={stats.totalInventoryItems} />}
-              subtext="Sum of all individual items"
+              subtext={t('dashboard.sumStockItems', 'Sum of all individual items')}
               icon={<Package size={20} />}
               variant="info"
               onClick={() => setCurrentTab('inventory')}
@@ -1112,9 +1090,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Low Stock Products"
+              label={t('dashboard.lowStockAlerts', 'Low Stock Products')}
               value={<AnimatedCounter value={stats.lowStockCount} />}
-              subtext="Below safety buffer levels"
+              subtext={t('dashboard.belowSafety', 'Below safety buffer levels')}
               icon={<AlertTriangle size={20} />}
               variant="danger"
               onClick={() => setCurrentTab('inventory')}
@@ -1122,9 +1100,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Out of Stock Products"
+              label={t('dashboard.outOfStockProducts', 'Out of Stock Products')}
               value={<AnimatedCounter value={stats.outOfStockCount} />}
-              subtext="Zero inventory units"
+              subtext={t('dashboard.zeroUnits', 'Zero inventory units')}
               icon={<AlertTriangle size={20} />}
               variant="danger"
               onClick={() => setCurrentTab('inventory')}
@@ -1132,9 +1110,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Active Customers"
+              label={t('dashboard.totalCustomers', 'Active Customers')}
               value={<AnimatedCounter value={customers.length} />}
-              subtext="Profiles in directories"
+              subtext={t('dashboard.customerProfiles', 'Profiles in directories')}
               icon={<Users size={20} />}
               variant="info"
               onClick={() => setCurrentTab('customers')}
@@ -1142,9 +1120,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Active Suppliers"
+              label={t('dashboard.totalSuppliers', 'Active Suppliers')}
               value={<AnimatedCounter value={suppliers.length} />}
-              subtext="Suppliers registered"
+              subtext={t('dashboard.supplierProfiles', 'Suppliers registered')}
               icon={<Truck size={20} />}
               variant="info"
               onClick={() => setCurrentTab('suppliers')}
@@ -1152,9 +1130,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total Invoices Raised"
+              label={t('dashboard.totalInvoices', 'Total Invoices Raised')}
               value={<AnimatedCounter value={stats.invoicesCount} />}
-              subtext="Customer invoices generated"
+              subtext={t('dashboard.invoicesGenerated', 'Customer invoices generated')}
               icon={<FileText size={20} />}
               variant="success"
               onClick={() => setCurrentTab('sales')}
@@ -1162,9 +1140,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label="Total Transactions Logs"
+              label={t('dashboard.totalTransactions', 'Total Transactions Logs')}
               value={<AnimatedCounter value={stats.totalTransactions} />}
-              subtext="Invoice, bills, receipts, spends"
+              subtext={t('dashboard.transactionLogs', 'Invoice, bills, receipts, spends')}
               icon={<Activity size={20} />}
               variant="info"
               className={shouldBlink(['transactions', 'logs', 'entries']) ? 'search-blink-highlight' : ''}
@@ -1178,73 +1156,70 @@ export const Dashboard: React.FC = () => {
 
       {/* Quick Actions Panel */}
       <div className="card" style={{ padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Quick Actions Console</h3>
+        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{t('dashboard.quickActions', 'Quick Actions Console')}</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
           <button 
             className="btn btn-primary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => { setCurrentTab('sales'); setIsCreatingInvoice(true); }}
           >
-            <PlusCircle size={15} /> New Invoice
+            <PlusCircle size={15} /> {t('dashboard.newSale', 'New Invoice')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => { setCurrentTab('purchases'); setIsEnteringPurchase(true); }}
           >
-            <PlusCircle size={15} /> Add Purchase
+            <PlusCircle size={15} /> {t('dashboard.newPurchase', 'Add Purchase')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('inventory')}
           >
-            <Package size={15} /> Add Product
+            <Package size={15} /> {t('dashboard.addProduct', 'Add Product')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('customers')}
           >
-            <Users size={15} /> Add Customer
+            <Users size={15} /> {t('dashboard.addCustomer', 'Add Customer')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('suppliers')}
           >
-            <Truck size={15} /> Add Supplier
+            <Truck size={15} /> {t('suppliers.addSupplier', 'Add Supplier')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('expenses')}
           >
-            <FileText size={15} /> Record Expense
+            <FileText size={15} /> {t('expenses.addExpense', 'Record Expense')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => openNewPaymentForm()}
           >
-            <ArrowRightLeft size={15} /> Record Payment
+            <ArrowRightLeft size={15} /> {t('payments.recordPayment', 'Record Payment')}
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('reports')}
           >
-            <TrendingUp size={15} /> View Reports
+            <TrendingUp size={15} /> {t('reports.title', 'View Reports')}
           </button>
         </div>
       </div>
 
-
       {/* Main Analysis Blocks divided into tab panels */}
       <div className="dashboard-main-layout">
-        {/* Left Side: Dynamic Analytics Tabs */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, width: '100%' }}>
-          {/* Tabs Navigation Bar */}
           <div 
             style={{ 
               display: 'flex', 
@@ -1259,10 +1234,10 @@ export const Dashboard: React.FC = () => {
             className="no-scrollbar"
           >
             {[
-              { id: 'sales', label: 'Sales & Purchases' },
-              { id: 'profit', label: 'Product Profitability' },
-              { id: 'inventory', label: 'Stock Status' },
-              { id: 'entities', label: 'Directories & Accounts' }
+              { id: 'sales', label: t('dashboard.salesAndPurchases', 'Sales & Purchases') },
+              { id: 'profit', label: t('dashboard.productProfitability', 'Product Profitability') },
+              { id: 'inventory', label: t('dashboard.stockStatus', 'Stock Status') },
+              { id: 'entities', label: t('dashboard.directoriesAccounts', 'Directories & Accounts') }
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1286,7 +1261,6 @@ export const Dashboard: React.FC = () => {
             ))}
           </div>
 
-          {/* Active Tab Panel Content */}
           <div style={{ width: '100%', minWidth: 0 }}>
             {/* Tab A: Sales & Purchases */}
             {activeAnalysisTab === 'sales' && (
@@ -1301,14 +1275,14 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div style={{ marginBottom: '16px' }}>
-                  <h4 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Sales Billing vs Purchase Billing Trend</h4>
+                  <h4 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{t('dashboard.salesVsPurchaseTrend', 'Sales Billing vs Purchase Billing Trend')}</h4>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Latest active periods</p>
                 </div>
                 <div style={{ width: '100%', minWidth: 0 }}>
                   <BarChart 
                     data={chartData} 
-                    label1="Total Sales (₹)" 
-                    label2="Total Purchases (₹)" 
+                    label1={t('dashboard.totalSales', 'Total Sales (₹)')} 
+                    label2={t('dashboard.totalPurchases', 'Total Purchases (₹)')} 
                     color1="var(--primary)" 
                     color2="#3b82f6" 
                   />
@@ -1332,10 +1306,10 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Top Highly Profitable Products</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>{t('dashboard.topProfitableProducts', 'Top Highly Profitable Products')}</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
                     {productPerformance.highestProfit.length === 0 ? (
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No sales data available in selected period.</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>{t('common.noData', 'No sales data available in selected period.')}</p>
                     ) : (
                       productPerformance.highestProfit.map((prod, idx) => (
                         <ProgressBar 
@@ -1356,10 +1330,10 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Highest Revenue Generating Products</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>{t('dashboard.highestRevenueProducts', 'Highest Revenue Generating Products')}</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
                     {productPerformance.highestRevenue.length === 0 ? (
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No sales data available in selected period.</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>{t('common.noData', 'No sales data available in selected period.')}</p>
                     ) : (
                       productPerformance.highestRevenue.map((prod, idx) => (
                         <ProgressBar 
@@ -1394,10 +1368,10 @@ export const Dashboard: React.FC = () => {
                 }}
               >
                 <div>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Fast-Moving Products (Quantity Sold)</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>{t('dashboard.fastMovingProducts', 'Fast-Moving Products (Quantity Sold)')}</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '100%' }}>
                     {productPerformance.bestSelling.length === 0 ? (
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>No sales registered.</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '16px 0' }}>{t('common.noData', 'No sales registered.')}</p>
                     ) : (
                       productPerformance.bestSelling.map((prod, idx) => {
                         const totalQty = productPerformance.bestSelling.reduce((sum, p) => sum + p.sold, 0);
@@ -1421,7 +1395,7 @@ export const Dashboard: React.FC = () => {
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '20px', marginTop: '20px' }}>
-                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>Recently Registered Stock Items</h4>
+                  <h4 style={{ fontSize: '14px', fontWeight: 800, margin: '0 0 16px 0', color: 'var(--text-primary)' }}>{t('dashboard.recentStockItems', 'Recently Registered Stock Items')}</h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
                     {products.slice(-4).reverse().map((prod) => (
                       <div 
@@ -1445,7 +1419,7 @@ export const Dashboard: React.FC = () => {
                       >
                         <div style={{ minWidth: 0, flex: 1 }}>
                           <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{prod.name}</div>
-                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Category: {prod.category} • SKU: {prod.sku}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Category: {translateCategory(t, prod.category)} • SKU: {prod.sku}</div>
                         </div>
                         <span className="badge badge-secondary" style={{ fontSize: '11px', flexShrink: 0 }}>{prod.stock} units</span>
                       </div>
@@ -1472,12 +1446,12 @@ export const Dashboard: React.FC = () => {
                   style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Top Customer Outstanding Balances</h4>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>Receivable Dues</span>
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{t('dashboard.topCustomerOutstanding', 'Top Customer Outstanding Balances')}</h4>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>{t('dashboard.receivableDues', 'Receivable Dues')}</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {outstandingCustomers.length === 0 ? (
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No outstanding dues.</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>{t('common.noData', 'No outstanding dues.')}</p>
                     ) : (
                       outstandingCustomers.map((cust) => (
                         <div 
@@ -1515,12 +1489,12 @@ export const Dashboard: React.FC = () => {
                   style={{ padding: '16px', borderRadius: '12px', width: '100%', boxSizing: 'border-box' }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', gap: '12px', flexWrap: 'wrap' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Top Outstanding Payables to Suppliers</h4>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>Supplier Bills</span>
+                    <h4 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{t('dashboard.topSupplierPayables', 'Top Outstanding Payables to Suppliers')}</h4>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-danger)' }}>{t('dashboard.supplierBills', 'Supplier Bills')}</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                     {outstandingSuppliers.length === 0 ? (
-                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>No outstanding payables.</p>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '10px 0' }}>{t('common.noData', 'No outstanding payables.')}</p>
                     ) : (
                       outstandingSuppliers.map((supp) => (
                         <div 
@@ -1572,12 +1546,12 @@ export const Dashboard: React.FC = () => {
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px' }}>
             <Activity size={18} style={{ color: 'var(--primary)', flexShrink: 0 }} />
-            <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>Recent Activity Feed</h3>
+            <h3 style={{ fontSize: '14px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{t('dashboard.recentActivityFeed', 'Recent Activity Feed')}</h3>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxHeight: '420px', overflowY: 'auto', paddingRight: '4px' }}>
             {recentActivities.length === 0 ? (
-              <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>No recent activities logged in this period.</p>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '20px 0' }}>{t('common.noData', 'No recent activities logged in this period.')}</p>
             ) : (
               recentActivities.map((act) => (
                 <div 

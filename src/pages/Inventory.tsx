@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR } from '../utils/dummyData';
+import { translateCategory } from '../utils/statusTranslation';
 import { ProductModal } from '../components/ProductModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
@@ -26,6 +28,7 @@ import {
 import type { Product } from '../types';
 
 export const Inventory: React.FC = () => {
+  const { t } = useTranslation();
   const {
     products,
     deleteProduct,
@@ -131,20 +134,20 @@ export const Inventory: React.FC = () => {
     if (p.stock === 0) {
       return (
         <span className="badge badge-danger" style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
-          <XCircle size={12} /> Out of Stock
+          <XCircle size={12} /> {t('inventory.outOfStock', 'Out of Stock')}
         </span>
       );
     }
     if (p.stock <= p.minStock) {
       return (
         <span className="badge badge-warning" style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
-          <AlertTriangle size={12} /> Low Stock
+          <AlertTriangle size={12} /> {t('inventory.lowStock', 'Low Stock')}
         </span>
       );
     }
     return (
       <span className="badge badge-success" style={{ display: 'inline-flex', gap: '4px', alignItems: 'center' }}>
-        <CheckCircle2 size={12} /> In Stock
+        <CheckCircle2 size={12} /> {t('inventory.inStock', 'In Stock')}
       </span>
     );
   };
@@ -163,21 +166,21 @@ export const Inventory: React.FC = () => {
           const name = deletingProduct.name;
           try {
             await deleteProduct(id);
-            showToast(`"${name}" deleted from catalog.`, 'info');
+            showToast(t('inventory.deletedSuccess', '\"{{name}}\" deleted from catalog.', { name }), 'info');
             setDeletingProduct(null);
             setViewProductId(null);
           } catch (error: any) {
             console.error("Delete product error:", error);
-            showToast(`Failed to delete product: ${error.message || error}`, 'error');
+            showToast(t('inventory.deleteFailed', 'Failed to delete product: {{error}}', { error: error.message || error }), 'error');
           } finally {
             setIsDeletingProduct(false);
           }
         }}
-        title="Delete Product"
+        title={t('inventory.deleteProduct', 'Delete Product')}
         itemName={deletingProduct?.name}
         description={deletingProduct ? (
           <>
-            Are you sure you want to delete <strong>{deletingProduct.name}</strong>? This action cannot be undone and will remove it from the catalog permanently.
+            {t('inventory.deleteConfirmDesc', 'Are you sure you want to delete {{name}}? This action cannot be undone and will remove it from the catalog permanently.', { name: deletingProduct.name })}
           </>
         ) : ''}
         isLoading={isDeletingProduct}
@@ -282,7 +285,7 @@ export const Inventory: React.FC = () => {
       : '0.0';
 
     const handleTransactionClick = (tx: { type: string; id: string }) => {
-      if (tx.type === 'Sales') {
+      if (tx.type === 'Sales' || tx.type === 'Sales Return') {
         setCurrentTab('sales');
         setViewInvoice(tx.id);
       } else {
@@ -330,20 +333,20 @@ export const Inventory: React.FC = () => {
                 onClick={() => setViewProductId(null)}
                 style={{ display:'flex', alignItems:'center', gap:'6px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', borderRadius:'10px', padding:'7px 14px', fontSize:'13px', fontWeight:600, cursor:'pointer', backdropFilter:'blur(8px)' }}
               >
-                <ArrowLeft size={14} /> Back
+                <ArrowLeft size={14} /> {t('common.back', 'Back')}
               </button>
               <div style={{ display:'flex', gap:'8px' }}>
                 <button
                   onClick={() => handleEditClick(selectedProduct)}
                   style={{ display:'flex', alignItems:'center', gap:'6px', background:'rgba(255,255,255,0.15)', border:'1px solid rgba(255,255,255,0.25)', color:'#fff', borderRadius:'10px', padding:'7px 14px', fontSize:'13px', fontWeight:600, cursor:'pointer', backdropFilter:'blur(8px)' }}
                 >
-                  <Edit2 size={13} /> Edit
+                  <Edit2 size={13} /> {t('common.edit', 'Edit')}
                 </button>
                 <button
                   onClick={() => setDeletingProduct(selectedProduct)}
                   style={{ display:'flex', alignItems:'center', gap:'6px', background:'rgba(220,38,38,0.3)', border:'1px solid rgba(220,38,38,0.5)', color:'#fff', borderRadius:'10px', padding:'7px 14px', fontSize:'13px', fontWeight:600, cursor:'pointer', backdropFilter:'blur(8px)' }}
                 >
-                  <Trash2 size={13} /> Delete
+                  <Trash2 size={13} /> {t('common.delete', 'Delete')}
                 </button>
               </div>
             </div>
@@ -373,7 +376,7 @@ export const Inventory: React.FC = () => {
                 <div style={{ display:'flex', gap:'16px', marginTop:'5px', fontSize:'12px', color:'var(--text-secondary)', flexWrap:'wrap', alignItems:'center' }}>
                   <span>SKU: <code style={{ fontFamily:'monospace', fontWeight:700, background:'var(--bg-app)', padding:'1px 6px', borderRadius:'4px', fontSize:'11px' }}>{selectedProduct.sku}</code></span>
                   <span style={{ color:'var(--border-color)' }}>|</span>
-                  <span>Category: <strong style={{ color:'var(--primary-dark)' }}>{selectedProduct.category}</strong></span>
+                  <span>{t('inventory.category', 'Category')}: <strong style={{ color:'var(--primary-dark)' }}>{translateCategory(t, selectedProduct.category)}</strong></span>
                   {selectedProduct.hsn && (
                     <>
                       <span style={{ color:'var(--border-color)' }}>|</span>
@@ -391,18 +394,18 @@ export const Inventory: React.FC = () => {
           {/* Stock on hand */}
           <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'16px 18px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Stock On Hand</span>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{t('inventory.stockOnHand', 'Stock On Hand')}</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(34,197,94,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#16a34a' }}>
                 <Package size={14} />
               </div>
             </div>
             <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{selectedProduct.stock}</div>
-            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>units available</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.unitsAvailable', 'units available')}</div>
             {/* Progress bar */}
             <div style={{ marginTop:'10px', height:'4px', background:'var(--bg-app)', borderRadius:'9999px', overflow:'hidden' }}>
               <div style={{ height:'100%', width:`${stockHealthPct}%`, background:stockBarColor, borderRadius:'9999px', transition:'width 0.5s ease' }} />
             </div>
-            <div style={{ fontSize:'10px', color:'var(--text-muted)', marginTop:'4px' }}>Min threshold: {selectedProduct.minStock}</div>
+            <div style={{ fontSize:'10px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.minThreshold', 'Min threshold: {{min}}', { min: selectedProduct.minStock })}</div>
           </div>
 
           {/* Cost price - click to go to Purchases */}
@@ -413,13 +416,13 @@ export const Inventory: React.FC = () => {
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
           >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Cost Price</span>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{t('inventory.costPrice', 'Cost Price')}</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(99,102,241,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#6366f1' }}>
                 <Tag size={14} />
               </div>
             </div>
             <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'var(--text-primary)', lineHeight:1 }}>{formatINR(selectedProduct.purchasePrice)}</div>
-            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (purchase)</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.perUnitPurchase', 'per unit (purchase)')}</div>
           </div>
 
           {/* Selling price - click to go to Sales */}
@@ -430,13 +433,13 @@ export const Inventory: React.FC = () => {
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
           >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Selling Price</span>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{t('inventory.sellingPrice', 'Selling Price')}</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(16,185,129,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#059669' }}>
                 <TrendingUp size={14} />
               </div>
             </div>
             <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'var(--primary-dark)', lineHeight:1 }}>{formatINR(selectedProduct.sellingPrice)}</div>
-            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>per unit (retail)</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.perUnitRetail', 'per unit (retail)')}</div>
           </div>
 
           {/* Profit margin - click to go to Sales */}
@@ -447,7 +450,7 @@ export const Inventory: React.FC = () => {
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
           >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Profit Margin</span>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{t('inventory.profitMargin', 'Profit Margin')}</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(245,158,11,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#d97706' }}>
                 <CheckCircle2 size={14} />
               </div>
@@ -456,7 +459,7 @@ export const Inventory: React.FC = () => {
               <span style={{ fontSize:'22px', fontWeight:800, color: profitMargin >= 0 ? '#16a34a' : '#dc2626', lineHeight:1 }}>{formatINR(profitMargin)}</span>
               <span style={{ fontSize:'12px', fontWeight:700, color: profitMargin >= 0 ? '#16a34a' : '#dc2626' }}>({marginPercent}%)</span>
             </div>
-            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>gross per unit sold</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.grossPerUnitSold', 'gross per unit sold')}</div>
           </div>
 
           {/* Total Sales Amount - click to go to Sales */}
@@ -467,13 +470,13 @@ export const Inventory: React.FC = () => {
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
           >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Total Sales</span>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{t('inventory.totalSales', 'Total Sales')}</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(34,197,94,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#16a34a' }}>
                 <TrendingUp size={14} />
               </div>
             </div>
             <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'#16a34a', lineHeight:1 }}>{formatINR(totalSalesValue)}</div>
-            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{totalSalesQty} units sold</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.unitsSold', '{{count}} units sold', { count: totalSalesQty })}</div>
           </div>
 
           {/* Total Purchases Amount - click to go to Purchases */}
@@ -484,13 +487,13 @@ export const Inventory: React.FC = () => {
             onMouseLeave={e => { (e.currentTarget as HTMLDivElement).style.boxShadow='0 2px 8px rgba(0,0,0,0.04)'; (e.currentTarget as HTMLDivElement).style.transform=''; }}
           >
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:'10px' }}>
-              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>Total Purchases</span>
+              <span style={{ fontSize:'10px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px' }}>{t('inventory.totalPurchases', 'Total Purchases')}</span>
               <div style={{ width:'28px', height:'28px', borderRadius:'8px', background:'rgba(99,102,241,0.12)', display:'flex', alignItems:'center', justifyContent:'center', color:'#6366f1' }}>
                 <Tag size={14} />
               </div>
             </div>
             <div className="stat-value" style={{ fontSize:'22px', fontWeight:800, color:'#6366f1', lineHeight:1 }}>{formatINR(totalPurchasesValue)}</div>
-            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{totalPurchasesQty} units bought</div>
+            <div style={{ fontSize:'11px', color:'var(--text-muted)', marginTop:'4px' }}>{t('inventory.unitsBought', '{{count}} units bought', { count: totalPurchasesQty })}</div>
           </div>
         </div>
 
@@ -498,13 +501,13 @@ export const Inventory: React.FC = () => {
         <div className="inv-profile-detail-grid">
           {/* Pricing detail breakdown */}
           <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
-            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Price Breakdown</h4>
+            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>{t('inventory.priceBreakdown', 'Price Breakdown')}</h4>
             {[
-              { label:'Purchase Price (excl. GST)', value: formatINR(selectedProduct.purchasePrice) },
-              { label:'Selling Price (excl. GST)', value: formatINR(selectedProduct.sellingPrice) },
-              { label:'GST Rate', value: `${selectedProduct.gstRate}%` },
-              { label:'GST on Selling Price', value: formatINR(selectedProduct.sellingPrice * selectedProduct.gstRate / 100) },
-              { label:'MRP (incl. GST)', value: formatINR(selectedProduct.sellingPrice * (1 + selectedProduct.gstRate / 100)), highlight: true },
+              { label: t('inventory.purchasePriceExclGst', 'Purchase Price (excl. GST)'), value: formatINR(selectedProduct.purchasePrice) },
+              { label: t('inventory.sellingPriceExclGst', 'Selling Price (excl. GST)'), value: formatINR(selectedProduct.sellingPrice) },
+              { label: t('inventory.gstRate', 'GST Rate'), value: `${selectedProduct.gstRate}%` },
+              { label: t('inventory.gstOnSellingPrice', 'GST on Selling Price'), value: formatINR(selectedProduct.sellingPrice * selectedProduct.gstRate / 100) },
+              { label: t('inventory.mrpInclGst', 'MRP (incl. GST)'), value: formatINR(selectedProduct.sellingPrice * (1 + selectedProduct.gstRate / 100)), highlight: true },
             ].map((row, i) => (
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom: i < 4 ? '1px dashed var(--border-color)' : 'none' }}>
                 <span style={{ fontSize:'12px', color:'var(--text-secondary)' }}>{row.label}</span>
@@ -515,13 +518,13 @@ export const Inventory: React.FC = () => {
 
           {/* Stock info card */}
           <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
-            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Stock Details</h4>
+            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>{t('inventory.stockDetails', 'Stock Details')}</h4>
             {[
-              { label:'Current Stock', value:`${selectedProduct.stock} units` },
-              { label:'Minimum Stock Limit', value:`${selectedProduct.minStock} units` },
-              { label:'Stock Value (at cost)', value: formatINR(selectedProduct.stock * selectedProduct.purchasePrice) },
-              { label:'Stock Value (at MRP)', value: formatINR(selectedProduct.stock * selectedProduct.sellingPrice) },
-              { label:'Potential Profit', value: formatINR(selectedProduct.stock * profitMargin), highlight: true },
+              { label: t('inventory.currentStock', 'Current Stock'), value: `${selectedProduct.stock} ${t('inventory.units', 'units')}` },
+              { label: t('inventory.minimumStockLimit', 'Minimum Stock Limit'), value: `${selectedProduct.minStock} ${t('inventory.units', 'units')}` },
+              { label: t('inventory.stockValueAtCost', 'Stock Value (at cost)'), value: formatINR(selectedProduct.stock * selectedProduct.purchasePrice) },
+              { label: t('inventory.stockValueAtMrp', 'Stock Value (at MRP)'), value: formatINR(selectedProduct.stock * selectedProduct.sellingPrice) },
+              { label: t('inventory.potentialProfit', 'Potential Profit'), value: formatINR(selectedProduct.stock * profitMargin), highlight: true },
             ].map((row, i) => (
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom: i < 4 ? '1px dashed var(--border-color)' : 'none' }}>
                 <span style={{ fontSize:'12px', color:'var(--text-secondary)' }}>{row.label}</span>
@@ -532,13 +535,13 @@ export const Inventory: React.FC = () => {
 
           {/* Lifetime statistics card */}
           <div style={{ background:'var(--card-bg,#fff)', borderRadius:'16px', padding:'20px', border:'1px solid var(--border-color)', boxShadow:'0 2px 8px rgba(0,0,0,0.04)' }}>
-            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>Lifetime Activity</h4>
+            <h4 style={{ fontSize:'12px', fontWeight:700, color:'var(--text-muted)', textTransform:'uppercase', letterSpacing:'0.5px', margin:'0 0 14px' }}>{t('inventory.lifetimeActivity', 'Lifetime Activity')}</h4>
             {[
-              { label:'Total Quantity Sold', value:`${totalSalesQty} units` },
-              { label:'Total Revenue Generated', value: formatINR(totalSalesValue) },
-              { label:'Total Quantity Purchased', value:`${totalPurchasesQty} units` },
-              { label:'Total Procurement Cost', value: formatINR(totalPurchasesValue) },
-              { label:'Net Ledger Balance', value: formatINR(totalSalesValue - totalPurchasesValue), highlight: true, highlightColor: (totalSalesValue - totalPurchasesValue) >= 0 ? '#16a34a' : '#dc2626' },
+              { label: t('inventory.totalQuantitySold', 'Total Quantity Sold'), value: `${totalSalesQty} ${t('inventory.units', 'units')}` },
+              { label: t('inventory.totalRevenueGenerated', 'Total Revenue Generated'), value: formatINR(totalSalesValue) },
+              { label: t('inventory.totalQuantityPurchased', 'Total Quantity Purchased'), value: `${totalPurchasesQty} ${t('inventory.units', 'units')}` },
+              { label: t('inventory.totalProcurementCost', 'Total Procurement Cost'), value: formatINR(totalPurchasesValue) },
+              { label: t('inventory.netLedgerBalance', 'Net Ledger Balance'), value: formatINR(totalSalesValue - totalPurchasesValue), highlight: true, highlightColor: (totalSalesValue - totalPurchasesValue) >= 0 ? '#16a34a' : '#dc2626' },
             ].map((row, i) => (
               <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'7px 0', borderBottom: i < 4 ? '1px dashed var(--border-color)' : 'none' }}>
                 <span style={{ fontSize:'12px', color:'var(--text-secondary)' }}>{row.label}</span>
@@ -556,14 +559,14 @@ export const Inventory: React.FC = () => {
               <TrendingUp size={15} />
             </div>
             <div>
-              <h3 style={{ fontSize:'14px', fontWeight:700, margin:0, color:'var(--text-primary)' }}>Product Ledger Activity</h3>
-              <div style={{ fontSize:'11px', color:'var(--text-muted)' }}>All sales and purchase transactions for this item</div>
+              <h3 style={{ fontSize:'14px', fontWeight:700, margin:0, color:'var(--text-primary)' }}>{t('inventory.productLedgerActivity', 'Product Ledger Activity')}</h3>
+              <div style={{ fontSize:'11px', color:'var(--text-muted)' }}>{t('inventory.productLedgerSubtitle', 'All sales and purchase transactions for this item')}</div>
             </div>
             <div style={{ marginLeft:'auto', background:'var(--card-bg,#fff)', border:'1px solid var(--border-color)', borderRadius:'8px', padding:'4px 10px', fontSize:'12px', fontWeight:700, color:'var(--text-secondary)' }}>
               {transactions.length === allTransactions.length ? (
-                `${transactions.length} records`
+                `${transactions.length} ${t('common.records', 'records')}`
               ) : (
-                `Showing ${transactions.length} of ${allTransactions.length} records`
+                `${t('common.showing', 'Showing')} ${transactions.length} ${t('common.of', 'of')} ${allTransactions.length} ${t('common.records', 'records')}`
               )}
             </div>
           </div>
@@ -572,7 +575,7 @@ export const Inventory: React.FC = () => {
           <div className="ledger-filter-container">
             <div className="ledger-dates-row">
               <div className="ledger-filter-group">
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>From Date</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t('inventory.fromDate', 'From Date')}</span>
                 <div className="ledger-input-wrapper">
                   <Calendar size={14} />
                   <input 
@@ -584,7 +587,7 @@ export const Inventory: React.FC = () => {
               </div>
 
               <div className="ledger-filter-group">
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>To Date</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t('inventory.toDate', 'To Date')}</span>
                 <div className="ledger-input-wrapper">
                   <Calendar size={14} />
                   <input 
@@ -598,15 +601,15 @@ export const Inventory: React.FC = () => {
 
             <div className="ledger-actions-row">
               <div className="ledger-filter-group">
-                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>Transaction Type</span>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.3px' }}>{t('inventory.transactionType', 'Transaction Type')}</span>
                 <div className="ledger-select-wrapper">
                   <select
                     value={ledgerTypeFilter}
                     onChange={(e) => setLedgerTypeFilter(e.target.value as 'All' | 'Sales' | 'Purchase')}
                   >
-                    <option value="All">All Transactions</option>
-                    <option value="Sales">Sales Only</option>
-                    <option value="Purchase">Purchases Only</option>
+                    <option value="All">{t('inventory.allTransactions', 'All Transactions')}</option>
+                    <option value="Sales">{t('inventory.salesOnly', 'Sales Only')}</option>
+                    <option value="Purchase">{t('inventory.purchasesOnly', 'Purchases Only')}</option>
                   </select>
                 </div>
               </div>
@@ -620,7 +623,7 @@ export const Inventory: React.FC = () => {
                   }}
                   className="btn btn-secondary ledger-clear-btn"
                 >
-                  Clear Filters
+                  {t('common.clearFilters', 'Clear Filters')}
                 </button>
               )}
             </div>
@@ -629,14 +632,14 @@ export const Inventory: React.FC = () => {
           {allTransactions.length === 0 ? (
             <div style={{ padding:'48px 0', textAlign:'center', color:'var(--text-muted)' }}>
               <FileText size={40} style={{ opacity:0.25, marginBottom:'12px' }} />
-              <div style={{ fontSize:'14px', fontWeight:600 }}>No Transaction Records Yet</div>
-              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px' }}>This item hasn't appeared in any invoice or purchase bill.</div>
+              <div style={{ fontSize:'14px', fontWeight:600 }}>{t('inventory.noRecordsYet', 'No Transaction Records Yet')}</div>
+              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px' }}>{t('inventory.noRecordsDesc', 'This item hasn\'t appeared in any invoice or purchase bill.')}</div>
             </div>
           ) : transactions.length === 0 ? (
             <div style={{ padding:'48px 0', textAlign:'center', color:'var(--text-muted)' }}>
               <FileText size={40} style={{ opacity:0.25, marginBottom:'12px' }} />
-              <div style={{ fontSize:'14px', fontWeight:600 }}>No Transactions Match Filters</div>
-              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px', marginBottom:'16px' }}>Adjust your start date, end date, or transaction type filters.</div>
+              <div style={{ fontSize:'14px', fontWeight:600 }}>{t('inventory.noMatchFilters', 'No Transactions Match Filters')}</div>
+              <div style={{ fontSize:'12px', opacity:0.7, marginTop:'4px', marginBottom:'16px' }}>{t('inventory.adjustFiltersDesc', 'Adjust your start date, end date, or transaction type filters.')}</div>
               <button 
                 onClick={() => {
                   setLedgerStartDate('');
@@ -646,7 +649,7 @@ export const Inventory: React.FC = () => {
                 className="btn btn-secondary"
                 style={{ padding: '8px 16px', borderRadius: '10px' }}
               >
-                Reset Date Filters
+                {t('inventory.resetFilters', 'Reset Date Filters')}
               </button>
             </div>
           ) : (
@@ -657,13 +660,13 @@ export const Inventory: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Type</th>
-                        <th>Ref No.</th>
-                        <th>Party / Contact</th>
-                        <th style={{ textAlign:'right' }}>Qty</th>
-                        <th style={{ textAlign:'right' }}>Rate (₹)</th>
-                        <th style={{ textAlign:'right' }}>Total (₹)</th>
+                        <th>{t('common.date', 'Date')}</th>
+                        <th>{t('common.type', 'Type')}</th>
+                        <th>{t('common.refNo', 'Ref No.')}</th>
+                        <th>{t('common.partyContact', 'Party / Contact')}</th>
+                        <th style={{ textAlign:'right' }}>{t('common.qty', 'Qty')}</th>
+                        <th style={{ textAlign:'right' }}>{t('common.rate', 'Rate (₹)')}</th>
+                        <th style={{ textAlign:'right' }}>{t('common.total', 'Total (₹)')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -675,7 +678,11 @@ export const Inventory: React.FC = () => {
                           title="Click to view transaction details"
                         >
                           <td className="text-nowrap">{new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
-                          <td><span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>{tx.type}</span></td>
+                          <td>
+                            <span className={`badge ${tx.type === 'Sales' || tx.type === 'Sales Return' ? 'badge-success' : 'badge-info'}`}>
+                              {tx.type === 'Sales' ? t('sales.sales', 'Sales') : tx.type === 'Purchase' ? t('purchases.purchase', 'Purchase') : tx.type === 'Sales Return' ? t('sales.salesReturn', 'Sales Return') : t('purchases.purchaseReturn', 'Purchase Return')}
+                            </span>
+                          </td>
                           <td style={{ fontWeight:600 }}>{tx.number}</td>
                           <td>{tx.contactName}</td>
                           <td style={{ textAlign:'right', fontWeight:600 }}>{tx.quantity}</td>
@@ -701,25 +708,27 @@ export const Inventory: React.FC = () => {
                   >
                     <div className="mobile-list-card-header">
                       <div>
-                        <span className={`badge ${tx.type === 'Sales' ? 'badge-success' : 'badge-info'}`}>{tx.type}</span>
+                        <span className={`badge ${tx.type === 'Sales' || tx.type === 'Sales Return' ? 'badge-success' : 'badge-info'}`}>
+                          {tx.type === 'Sales' ? t('sales.sales', 'Sales') : tx.type === 'Purchase' ? t('purchases.purchase', 'Purchase') : tx.type === 'Sales Return' ? t('sales.salesReturn', 'Sales Return') : t('purchases.purchaseReturn', 'Purchase Return')}
+                        </span>
                         <h4 className="mobile-list-card-title" style={{ marginTop:'4px' }}>{tx.number}</h4>
                       </div>
                       <span className="mobile-list-card-subtitle">{new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Party</span>
+                      <span className="mobile-list-card-label">{t('common.party', 'Party')}</span>
                       <span className="mobile-list-card-val">{tx.contactName}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Qty</span>
+                      <span className="mobile-list-card-label">{t('common.qty', 'Qty')}</span>
                       <span className="mobile-list-card-val">{tx.quantity}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Rate</span>
+                      <span className="mobile-list-card-label">{t('common.rate', 'Rate')}</span>
                       <span className="mobile-list-card-val">{formatINR(tx.price)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Total Value</span>
+                      <span className="mobile-list-card-label">{t('common.totalValue', 'Total Value')}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight:700 }}>{formatINR(tx.total)}</span>
                     </div>
                   </div>
@@ -745,30 +754,30 @@ export const Inventory: React.FC = () => {
       {/* Inventory KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label="Total Products"
-          value={`${totalProducts} Items`}
-          subtext="Unique catalog skus"
+          label={t('inventory.totalProducts', 'Total Products')}
+          value={`${totalProducts} ${t('inventory.items', 'Items')}`}
+          subtext={t('inventory.uniqueCatalogSkus', 'Unique catalog skus')}
           icon={<Package size={20} />}
           variant="info"
         />
         <KpiCard
-          label="Stock Valuation"
+          label={t('inventory.stockValuation', 'Stock Valuation')}
           value={formatINR(totalStockValue)}
-          subtext="Valued at purchase rate"
+          subtext={t('inventory.valuedAtPurchaseRate', 'Valued at purchase rate')}
           icon={<TrendingUp size={20} />}
           variant="success"
         />
         <KpiCard
-          label="Low Stock Alert"
-          value={`${lowStockAlerts} items`}
-          subtext="Under minimum limit"
+          label={t('inventory.lowStockAlert', 'Low Stock Alert')}
+          value={`${lowStockAlerts} ${t('inventory.items', 'items')}`}
+          subtext={t('inventory.underMinimumLimit', 'Under minimum limit')}
           icon={<AlertTriangle size={20} />}
           variant="warning"
         />
         <KpiCard
-          label="Out of Stock"
-          value={`${outOfStockCount} items`}
-          subtext="Zero stock quantity"
+          label={t('inventory.outOfStockVal', 'Out of Stock')}
+          value={`${outOfStockCount} ${t('inventory.items', 'items')}`}
+          subtext={t('inventory.zeroStockQuantity', 'Zero stock quantity')}
           icon={<XCircle size={20} />}
           variant="danger"
         />
@@ -781,7 +790,7 @@ export const Inventory: React.FC = () => {
             <Search size={16} className="search-input-icon" />
             <input
               type="text"
-              placeholder="Search product name or SKU..."
+              placeholder={t('inventory.searchPlaceholder', 'Search product name or SKU...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -791,6 +800,7 @@ export const Inventory: React.FC = () => {
           <div className="desktop-status-filters segmented-control-inventory" style={{ display: 'flex', backgroundColor: 'var(--bg-app)', padding: '3px', borderRadius: '10px', border: '1.5px solid var(--border-color)', gap: '2px', flexShrink: 1, minWidth: 0 }}>
             {['All', 'In Stock', 'Low Stock', 'Out of Stock'].map((status) => {
               const isActive = stockStatusFilter === status;
+              const displayLabel = status === 'All' ? t('inventory.allLevels', 'All Levels') : status === 'In Stock' ? t('inventory.inStock', 'In Stock') : status === 'Low Stock' ? t('inventory.lowStock', 'Low Stock') : t('inventory.outOfStock', 'Out of Stock');
               return (
                 <button
                   key={status}
@@ -820,7 +830,7 @@ export const Inventory: React.FC = () => {
                     setCurrentPage(1);
                   }}
                 >
-                  {status === 'All' ? 'All Levels' : status}
+                  {displayLabel}
                 </button>
               );
             })}
@@ -838,7 +848,7 @@ export const Inventory: React.FC = () => {
             >
               {['All', 'In Stock', 'Low Stock', 'Out of Stock'].map((status) => (
                 <option key={status} value={status}>
-                  {status === 'All' ? 'All Levels' : status}
+                  {status === 'All' ? t('inventory.allLevels', 'All Levels') : status === 'In Stock' ? t('inventory.inStock', 'In Stock') : status === 'Low Stock' ? t('inventory.lowStock', 'Low Stock') : t('inventory.outOfStock', 'Out of Stock')}
                 </option>
               ))}
             </select>
@@ -860,10 +870,10 @@ export const Inventory: React.FC = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="All">All Categories</option>
+              <option value="All">{t('inventory.allCategories', 'All Categories')}</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
-                  {cat}
+                  {translateCategory(t, cat)}
                 </option>
               ))}
             </select>
@@ -875,7 +885,7 @@ export const Inventory: React.FC = () => {
           </div>
 
           <button className="btn btn-primary" onClick={handleAddNewClick}>
-            <Plus size={16} /> Add Product
+            <Plus size={16} /> {t('inventory.addProduct', 'Add Product')}
           </button>
         </div>
       </div>
@@ -885,12 +895,12 @@ export const Inventory: React.FC = () => {
         {filteredProducts.length === 0 ? (
           <div className="empty-state">
             <Package size={48} className="empty-state-icon" />
-            <h4 className="empty-state-title">No Products Found</h4>
+            <h4 className="empty-state-title">{t('inventory.noProductsFound', 'No Products Found')}</h4>
             <p className="empty-state-desc">
-              Your inventory filter configuration didn't match any items in the store warehouse catalog.
+              {t('inventory.noProductsDesc', 'Your inventory filter configuration didn\'t match any items in the store warehouse catalog.')}
             </p>
             <button className="btn btn-primary" onClick={handleAddNewClick}>
-              Create First Product
+              {t('inventory.createFirstProduct', 'Create First Product')}
             </button>
           </div>
         ) : (
@@ -901,16 +911,16 @@ export const Inventory: React.FC = () => {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="text-nowrap">SKU Code</th>
-                      <th>Product Name</th>
-                      <th>Category</th>
-                      <th className="text-nowrap">Stock Qty</th>
-                      <th className="text-nowrap">Min Stock</th>
-                      <th className="text-nowrap">Cost Price (₹)</th>
-                      <th className="text-nowrap">Retail Rate (₹)</th>
-                      <th className="text-nowrap">GST Rate</th>
-                      <th className="text-nowrap">Status</th>
-                      <th style={{ textAlign: 'center' }}>Actions</th>
+                      <th className="text-nowrap">{t('inventory.skuCode', 'SKU Code')}</th>
+                      <th>{t('inventory.productName', 'Product Name')}</th>
+                      <th>{t('inventory.category', 'Category')}</th>
+                      <th className="text-nowrap">{t('inventory.stockQty', 'Stock Qty')}</th>
+                      <th className="text-nowrap">{t('inventory.minStock', 'Min Stock')}</th>
+                      <th className="text-nowrap">{t('inventory.costPriceHeader', 'Cost Price (₹)')}</th>
+                      <th className="text-nowrap">{t('inventory.retailRateHeader', 'Retail Rate (₹)')}</th>
+                      <th className="text-nowrap">{t('inventory.gstRateHeader', 'GST Rate')}</th>
+                      <th className="text-nowrap">{t('inventory.status', 'Status')}</th>
+                      <th style={{ textAlign: 'center' }}>{t('common.actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -927,7 +937,7 @@ export const Inventory: React.FC = () => {
                             {p.name}
                           </button>
                         </td>
-                        <td>{p.category}</td>
+                        <td>{translateCategory(t, p.category)}</td>
                         <td
                           className="text-nowrap"
                           style={{
@@ -953,7 +963,7 @@ export const Inventory: React.FC = () => {
                               e.stopPropagation();
                               setActiveMenuProductId(activeMenuProductId === p.id ? null : p.id);
                             }}
-                            title="Actions"
+                            title={t('common.actions', 'Actions')}
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -1006,7 +1016,7 @@ export const Inventory: React.FC = () => {
                                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                 >
-                                  <Eye size={14} /> View Info
+                                  <Eye size={14} /> {t('inventory.viewInfo', 'View Info')}
                                 </button>
                                 <button 
                                   className="dropdown-item" 
@@ -1031,7 +1041,7 @@ export const Inventory: React.FC = () => {
                                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                 >
-                                  <Edit2 size={14} /> Edit Product
+                                  <Edit2 size={14} /> {t('inventory.editProduct', 'Edit Product')}
                                 </button>
                                 <button 
                                   className="dropdown-item danger" 
@@ -1056,7 +1066,7 @@ export const Inventory: React.FC = () => {
                                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-danger-light, #fef2f2)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                 >
-                                  <Trash2 size={14} /> Delete Product
+                                  <Trash2 size={14} /> {t('inventory.deleteProduct', 'Delete Product')}
                                 </button>
                               </div>
                             </>
@@ -1084,7 +1094,7 @@ export const Inventory: React.FC = () => {
                           {p.name}
                         </button>
                       </h4>
-                      <span className="mobile-list-card-subtitle">SKU: {p.sku} • {p.category}</span>
+                      <span className="mobile-list-card-subtitle">SKU: {p.sku} • {translateCategory(t, p.category)}</span>
                     </div>
                     <div style={{ position: 'relative' }}>
                       <button
@@ -1107,15 +1117,15 @@ export const Inventory: React.FC = () => {
                           }}>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { setViewProductId(p.id); setActiveMenuProductId(null); }}>
-                              <Eye size={14} /> View Info
+                              <Eye size={14} /> {t('inventory.viewInfo', 'View Info')}
                             </button>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { handleEditClick(p); setActiveMenuProductId(null); }}>
-                              <Edit2 size={14} /> Edit Details
+                              <Edit2 size={14} /> {t('inventory.editDetails', 'Edit Details')}
                             </button>
                             <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
                               onClick={() => { handleDeleteProduct(p.id, p.name); setActiveMenuProductId(null); }}>
-                              <Trash2 size={14} /> Delete Product
+                              <Trash2 size={14} /> {t('inventory.deleteProduct', 'Delete Product')}
                             </button>
                           </div>
                         </>
@@ -1124,26 +1134,26 @@ export const Inventory: React.FC = () => {
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Stock Status</span>
+                    <span className="mobile-list-card-label">{t('inventory.stockStatus', 'Stock Status')}</span>
                     <span className="mobile-list-card-val">{getStockStatusBadge(p)}</span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Stock Quantity</span>
+                    <span className="mobile-list-card-label">{t('inventory.stockQuantity', 'Stock Quantity')}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700, color: p.stock === 0 ? 'var(--color-danger)' : p.stock <= p.minStock ? 'var(--color-warning-dark)' : 'inherit' }}>
-                      {p.stock} units (Min: {p.minStock})
+                      {p.stock} {t('inventory.units', 'units')} (Min: {p.minStock})
                     </span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Cost / Selling</span>
+                    <span className="mobile-list-card-label">{t('inventory.costSelling', 'Cost / Selling')}</span>
                     <span className="mobile-list-card-val">
                       {formatINR(p.purchasePrice)} / <strong style={{ color: 'var(--primary-dark)' }}>{formatINR(p.sellingPrice)}</strong>
                     </span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Tax Rate</span>
+                    <span className="mobile-list-card-label">{t('inventory.taxRate', 'Tax Rate')}</span>
                     <span className="mobile-list-card-val">{p.gstRate}% GST</span>
                   </div>
                 </div>
@@ -1154,22 +1164,22 @@ export const Inventory: React.FC = () => {
             {totalPages > 1 && (
               <div className="pagination-row">
                 <span>
-                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
-                  <strong>{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</strong> of{' '}
-                  <strong>{filteredProducts.length}</strong> items
+                  {t('common.showing', 'Showing')} <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> {t('common.to', 'to')}{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</strong> {t('common.of', 'of')}{' '}
+                  <strong>{filteredProducts.length}</strong> {t('inventory.items', 'items')}
                 </span>
                 <div className="pagination-btn-group">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
-                    title="Previous Page"
+                    title={t('common.previousPage', 'Previous Page')}
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
-                    title="Next Page"
+                    title={t('common.nextPage', 'Next Page')}
                   >
                     <ChevronRight size={16} />
                   </button>

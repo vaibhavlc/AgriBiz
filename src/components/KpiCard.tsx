@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Info } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface KpiCardProps {
   label: string;
@@ -101,6 +102,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
   className = '',
   style,
 }) => {
+  const { t } = useTranslation();
   const isClickable = typeof onClick === 'function';
   const cardRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -213,7 +215,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
         ref={iconWrapRef}
         className={`stat-card-icon-wrap variant-${variant} cursor-pointer hover:scale-105 transition-transform`}
         onClick={handleIconClick}
-        title="Click to view full overall amount"
+        title={t('dashboard.viewFullAmount', 'Click to view full overall amount')}
       >
         {icon}
       </div>
@@ -271,7 +273,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
                 alignItems: 'center',
                 justifyContent: 'center',
               }}
-              title="Close"
+              title={t('common.close', 'Close')}
             >
               <X size={16} />
             </button>
@@ -329,7 +331,7 @@ export const KpiCard: React.FC<KpiCardProps> = ({
               fontWeight: 600,
             }}>
               <Info size={14} />
-              <span>Compact View:</span>
+              <span>{t('common.compactView', 'Compact View:')}</span>
               <strong style={{ fontWeight: 800 }}>{displayVal}</strong>
             </div>
           </div>

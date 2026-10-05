@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
+import { translateCategory, translatePaymentMethod } from '../utils/statusTranslation';
 import { Modal } from '../components/Modal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
@@ -26,6 +28,7 @@ import {
 import type { Expense } from '../types';
 
 export const Expenses: React.FC = () => {
+  const { t } = useTranslation();
   const ts = new Date().toISOString();
   const {
     expenses,
@@ -206,11 +209,11 @@ export const Expenses: React.FC = () => {
     const finalAmount = parseFloat(amount);
 
     if (!finalCategory) {
-      showToast('Please specify a category.', 'error');
+      showToast(t('expenses.specifyCategoryError', 'Please specify a category.'), 'error');
       return;
     }
     if (isNaN(finalAmount) || finalAmount <= 0) {
-      showToast('Please enter a valid amount greater than zero.', 'error');
+      showToast(t('expenses.invalidAmountError', 'Please enter a valid amount greater than zero.'), 'error');
       return;
     }
 
@@ -227,7 +230,7 @@ export const Expenses: React.FC = () => {
         referenceNumber: referenceNumber.trim() || undefined,
         notes: notes.trim() || undefined,
       });
-      showToast('Expense record updated successfully!');
+      showToast(t('expenses.updatedSuccess', 'Expense record updated successfully!'));
     } else {
       addExpense({
         date,
@@ -240,7 +243,7 @@ export const Expenses: React.FC = () => {
         referenceNumber: referenceNumber.trim() || undefined,
         notes: notes.trim() || undefined,
       });
-      showToast('New expense recorded successfully!');
+      showToast(t('expenses.recordedSuccess', 'New expense recorded successfully!'));
     }
 
     // Reset fields & close
@@ -283,7 +286,7 @@ export const Expenses: React.FC = () => {
       ...exp,
       status: 'Paid',
     });
-    showToast(`Expense for ${exp.category} marked as Paid!`);
+    showToast(t('expenses.markedPaidSuccess', 'Expense for {{category}} marked as Paid!', { category: translateCategory(t, exp.category) }));
   };
 
   const [isDeletingExpense, setIsDeletingExpense] = useState(false);
@@ -298,10 +301,10 @@ export const Expenses: React.FC = () => {
     setIsDeletingExpense(true);
     try {
       await deleteExpense(deletingExpenseTarget.id);
-      showToast('Expense record deleted successfully.', 'info');
+      showToast(t('expenses.deletedSuccess', 'Expense record deleted successfully.'), 'info');
       setDeletingExpenseTarget(null);
     } catch (err: any) {
-      showToast(`Failed to delete expense: ${err.message || err}`, 'error');
+      showToast(t('expenses.deleteFailed', 'Failed to delete expense: {{error}}', { error: err.message || err }), 'error');
     } finally {
       setIsDeletingExpense(false);
     }
@@ -342,18 +345,18 @@ export const Expenses: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('Expenses CSV exported successfully!');
+    showToast(t('expenses.csvExportedSuccess', 'Expenses CSV exported successfully!'));
   };
 
   // PDF Exporter
   const handleDownloadPDF = async () => {
     const wrapper = document.getElementById('expenses-print-area');
     if (!wrapper) {
-      showToast('Could not locate printable layout.', 'error');
+      showToast(t('expenses.printAreaError', 'Could not locate printable layout.'), 'error');
       return;
     }
 
-    showToast('Generating expenses PDF...', 'info');
+    showToast(t('expenses.generatingPdf', 'Generating expenses PDF...'), 'info');
 
     // Reveal wrapper
     wrapper.style.display = 'block';
@@ -388,11 +391,11 @@ export const Expenses: React.FC = () => {
       }
 
       pdf.save(`expenses_report_${new Date().toISOString().split('T')[0]}.pdf`);
-      showToast('PDF statement downloaded successfully!');
+      showToast(t('expenses.pdfDownloadedSuccess', 'PDF statement downloaded successfully!'));
     } catch (err) {
       wrapper.style.display = 'none';
       console.error(err);
-      showToast('Error exporting PDF statement.', 'error');
+      showToast(t('expenses.pdfExportError', 'Error exporting PDF statement.'), 'error');
     }
   };
 
@@ -401,33 +404,33 @@ export const Expenses: React.FC = () => {
       {/* KPI Stats Widgets Row */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label="Total Historical Expenses"
+          label={t('expenses.totalHistoricalExpenses', 'Total Historical Expenses')}
           value={formatINR(totalExpenseAmt)}
-          subtext="Cumulative operational spends"
+          subtext={t('expenses.cumulativeOperationalSpends', 'Cumulative operational spends')}
           icon={<TrendingDown size={22} />}
           variant="danger"
         />
 
         <KpiCard
-          label="Expenses (Current Month)"
+          label={t('expenses.expensesCurrentMonth', 'Expenses (Current Month)')}
           value={formatINR(thisMonthExpenseAmt)}
-          subtext="Active calendar month spending"
+          subtext={t('expenses.activeCalendarMonthSpending', 'Active calendar month spending')}
           icon={<Calendar size={22} />}
           variant="danger"
         />
 
         <KpiCard
-          label="Top Expense Category"
-          value={topCategory.name}
-          subtext={`Total: ${formatINR(topCategory.amount)}`}
+          label={t('expenses.topExpenseCategory', 'Top Expense Category')}
+          value={translateCategory(t, topCategory.name)}
+          subtext={`${t('common.total', 'Total')}: ${formatINR(topCategory.amount)}`}
           icon={<Tag size={22} />}
           variant="warning"
         />
 
         <KpiCard
-          label="Pending / Due Amount"
+          label={t('expenses.pendingDueAmount', 'Pending / Due Amount')}
           value={formatINR(totalDueAmt)}
-          subtext={`${totalDueCount} due ${totalDueCount === 1 ? 'entry' : 'entries'} pending`}
+          subtext={`${totalDueCount} ${totalDueCount === 1 ? t('expenses.dueEntryPending', 'due entry pending') : t('expenses.dueEntriesPending', 'due entries pending')}`}
           icon={<AlertCircle size={22} />}
           variant="warning"
         />
@@ -634,7 +637,7 @@ export const Expenses: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder="Search notes, reference, ID..."
+                placeholder={t('expenses.searchPlaceholder', 'Search notes, reference, ID...')}
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -654,11 +657,11 @@ export const Expenses: React.FC = () => {
               }}
               style={{ minWidth: '150px', flex: '1 1 120px' }}
             >
-              <option value="All">All Categories</option>
+              <option value="All">{t('expenses.allCategories', 'All Categories')}</option>
               {categoriesList.filter(c => c !== 'Other').map((c) => (
-                <option key={c} value={c}>{c}</option>
+                <option key={c} value={c}>{translateCategory(t, c)}</option>
               ))}
-              <option value="Other">Other Custom</option>
+              <option value="Other">{t('expenses.otherCustom', 'Other Custom')}</option>
             </select>
 
             <select
@@ -670,11 +673,11 @@ export const Expenses: React.FC = () => {
               }}
               className="filter-select method-select"
             >
-              <option value="All">All Methods</option>
+              <option value="All">{t('expenses.allMethods', 'All Methods')}</option>
               <option value="UPI">UPI</option>
-              <option value="Cash">Cash</option>
-              <option value="Bank Transfer">Bank Transfer</option>
-              <option value="Cheque">Cheque</option>
+              <option value="Cash">{translatePaymentMethod(t, 'Cash')}</option>
+              <option value="Bank Transfer">{translatePaymentMethod(t, 'Bank Transfer')}</option>
+              <option value="Cheque">{translatePaymentMethod(t, 'Cheque')}</option>
             </select>
 
             {/* Status Dropdown */}
@@ -687,9 +690,9 @@ export const Expenses: React.FC = () => {
               }}
               className="filter-select status-select"
             >
-              <option value="All">All Statuses</option>
-              <option value="Paid">Paid</option>
-              <option value="Due">Due</option>
+              <option value="All">{t('expenses.allStatuses', 'All Statuses')}</option>
+              <option value="Paid">{t('expenses.paid', 'Paid')}</option>
+              <option value="Due">{t('expenses.due', 'Due')}</option>
             </select>
 
             {/* Date Selector */}
@@ -702,21 +705,21 @@ export const Expenses: React.FC = () => {
               }}
               style={{ minWidth: '130px', flex: '1 1 100px' }}
             >
-              <option value="All">All Historical</option>
-              <option value="Custom">Custom Dates</option>
+              <option value="All">{t('expenses.allHistorical', 'All Historical')}</option>
+              <option value="Custom">{t('expenses.customDates', 'Custom Dates')}</option>
             </select>
           </div>
 
           {/* Group 2: Actions */}
           <div className="expense-filter-actions">
-            <button className="btn btn-secondary btn-export" onClick={handleExportCSV} title="Export current sheet as CSV">
-              <Download size={16} /> Export CSV
+            <button className="btn btn-secondary btn-export" onClick={handleExportCSV} title={t('common.exportCsv', 'Export CSV')}>
+              <Download size={16} /> {t('common.exportCsv', 'Export CSV')}
             </button>
-            <button className="btn btn-secondary btn-pdf" onClick={handleDownloadPDF} title="Download current report as PDF">
-              <FileText size={16} /> Save PDF
+            <button className="btn btn-secondary btn-pdf" onClick={handleDownloadPDF} title={t('common.savePdf', 'Save PDF')}>
+              <FileText size={16} /> {t('common.savePdf', 'Save PDF')}
             </button>
             <button className="btn btn-primary btn-log-expense" onClick={() => setIsFormOpen(true)}>
-              <Plus size={16} /> Log Expense
+              <Plus size={16} /> {t('expenses.logExpense', 'Log Expense')}
             </button>
           </div>
         </div>
@@ -724,7 +727,7 @@ export const Expenses: React.FC = () => {
         {/* Conditional Custom Dates Row (Vertical expansion, preserves horizontal layout positions) */}
         {dateRange === 'Custom' && (
           <div className="expense-custom-dates-row">
-            <span className="expense-custom-dates-label">Date Range:</span>
+            <span className="expense-custom-dates-label">{t('expenses.dateRange', 'Date Range:')}</span>
             <div className="expense-custom-dates-inputs">
               <input
                 type="date"
@@ -735,7 +738,7 @@ export const Expenses: React.FC = () => {
                   setCurrentPage(1);
                 }}
               />
-              <span className="expense-custom-dates-separator">to</span>
+              <span className="expense-custom-dates-separator">{t('common.to', 'to')}</span>
               <input
                 type="date"
                 className="filter-select"
@@ -756,7 +759,7 @@ export const Expenses: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                Clear Dates
+                {t('expenses.clearDates', 'Clear Dates')}
               </button>
             )}
           </div>
@@ -768,12 +771,12 @@ export const Expenses: React.FC = () => {
         {filteredExpenses.length === 0 ? (
           <div className="empty-state">
             <TrendingDown size={48} className="empty-state-icon" style={{ color: 'var(--text-muted)' }} />
-            <h4 className="empty-state-title">No Expenses Logged</h4>
+            <h4 className="empty-state-title">{t('expenses.noExpensesLogged', 'No Expenses Logged')}</h4>
             <p className="empty-state-desc">
-              No matching expense receipts or transaction records were found for the selected filter configuration.
+              {t('expenses.noExpensesDesc', 'No matching expense receipts or transaction records were found for the selected filter configuration.')}
             </p>
             <button className="btn btn-primary" onClick={() => setIsFormOpen(true)}>
-              Record First Expense
+              {t('expenses.recordFirstExpense', 'Record First Expense')}
             </button>
           </div>
         ) : (
@@ -784,16 +787,16 @@ export const Expenses: React.FC = () => {
                 <table className="data-table expense-table-fit">
                   <thead>
                     <tr>
-                      <th style={{ width: '10%' }}>Expense Date</th>
-                      <th style={{ width: '9%' }}>Voucher ID</th>
-                      <th style={{ width: '12%' }}>Category</th>
-                      <th style={{ width: '13%' }}>Payee (Paid To)</th>
-                      <th style={{ width: '11%', textAlign: 'right' }}>Amount (₹)</th>
-                      <th style={{ width: '8%' }}>Status</th>
-                      <th style={{ width: '9%' }}>Payment Method</th>
-                      <th style={{ width: '11%' }}>Reference Number</th>
-                      <th style={{ width: '12%' }}>Notes / Remarks</th>
-                      <th style={{ width: '5%', textAlign: 'center' }}>Actions</th>
+                      <th style={{ width: '10%' }}>{t('expenses.expenseDate', 'Expense Date')}</th>
+                      <th style={{ width: '9%' }}>{t('expenses.voucherId', 'Voucher ID')}</th>
+                      <th style={{ width: '12%' }}>{t('expenses.category', 'Category')}</th>
+                      <th style={{ width: '13%' }}>{t('expenses.payeePaidTo', 'Payee (Paid To)')}</th>
+                      <th style={{ width: '11%', textAlign: 'right' }}>{t('expenses.amountInr', 'Amount (₹)')}</th>
+                      <th style={{ width: '8%' }}>{t('expenses.status', 'Status')}</th>
+                      <th style={{ width: '9%' }}>{t('expenses.paymentMethod', 'Payment Method')}</th>
+                      <th style={{ width: '11%' }}>{t('expenses.referenceNumber', 'Reference Number')}</th>
+                      <th style={{ width: '12%' }}>{t('expenses.notesRemarks', 'Notes / Remarks')}</th>
+                      <th style={{ width: '5%', textAlign: 'center' }}>{t('common.actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -804,7 +807,7 @@ export const Expenses: React.FC = () => {
                         <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
                           <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
                             <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: exp.status === 'Due' ? '#D97706' : 'var(--color-danger)' }}></span>
-                            {exp.category}
+                            {translateCategory(t, exp.category)}
                           </span>
                         </td>
                         <td style={{ fontWeight: 600 }}>{exp.payee || 'General'}</td>
@@ -814,19 +817,19 @@ export const Expenses: React.FC = () => {
                         <td className="text-nowrap">
                           {exp.status === 'Due' ? (
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
-                              <span className="badge" style={{ display: 'inline-block', width: 'fit-content', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.1)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.2)' }}>Due</span>
+                              <span className="badge" style={{ display: 'inline-block', width: 'fit-content', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(217, 119, 6, 0.1)', color: '#D97706', border: '1px solid rgba(217, 119, 6, 0.2)' }}>{t('expenses.due', 'Due')}</span>
                               {exp.dueDate && (
                                 <span style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                                  By: {formatDate(exp.dueDate)}
+                                  {t('expenses.byDate', 'By: {{date}}', { date: formatDate(exp.dueDate) })}
                                 </span>
                               )}
                             </div>
                           ) : (
-                            <span className="badge" style={{ display: 'inline-block', width: 'fit-content', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>Paid</span>
+                            <span className="badge" style={{ display: 'inline-block', width: 'fit-content', padding: '2px 6px', fontSize: '11px', borderRadius: '4px', fontWeight: 700, backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', border: '1px solid rgba(16, 185, 129, 0.2)' }}>{t('expenses.paid', 'Paid')}</span>
                           )}
                         </td>
                         <td className="text-nowrap">
-                          {exp.status === 'Due' ? '—' : <span className="badge badge-info">{exp.paymentMethod}</span>}
+                          {exp.status === 'Due' ? '—' : <span className="badge badge-info">{translatePaymentMethod(t, exp.paymentMethod)}</span>}
                         </td>
                         <td className="text-nowrap" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
                           {exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}
@@ -843,7 +846,7 @@ export const Expenses: React.FC = () => {
                               e.stopPropagation();
                               setActiveMenuExpId(activeMenuExpId === exp.id ? null : exp.id);
                             }}
-                            title="Actions"
+                            title={t('common.actions', 'Actions')}
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -895,7 +898,7 @@ export const Expenses: React.FC = () => {
                                       handleMarkAsPaid(exp);
                                     }}
                                   >
-                                    <CheckCircle2 size={14} /> Mark as Paid
+                                    <CheckCircle2 size={14} /> {t('expenses.markAsPaid', 'Mark as Paid')}
                                   </button>
                                 )}
                                 
@@ -919,7 +922,7 @@ export const Expenses: React.FC = () => {
                                     handleEditClick(exp);
                                   }}
                                 >
-                                  <Edit2 size={14} /> Edit Record
+                                  <Edit2 size={14} /> {t('expenses.editRecord', 'Edit Record')}
                                 </button>
                                 
                                 <button 
@@ -942,7 +945,7 @@ export const Expenses: React.FC = () => {
                                     handleDeleteExpense(exp.id, exp.category, exp.amount);
                                   }}
                                 >
-                                  <Trash size={14} /> Delete Record
+                                  <Trash size={14} /> {t('expenses.deleteRecord', 'Delete Record')}
                                 </button>
                               </div>
                             </>
@@ -991,7 +994,7 @@ export const Expenses: React.FC = () => {
                           fontSize: '15px', fontWeight: 700,
                           color: 'var(--text-primary)',
                           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
-                        }}>{exp.category}</span>
+                        }}>{translateCategory(t, exp.category)}</span>
                       </div>
                       {/* Payee + date subtitle */}
                       <span style={{ fontSize: '12px', color: 'var(--text-muted)', display: 'block' }}>
@@ -1014,7 +1017,7 @@ export const Expenses: React.FC = () => {
                             borderRadius: '20px', letterSpacing: '0.04em',
                             background: 'rgba(217,119,6,0.15)', color: '#B45309',
                             border: '1px solid rgba(217,119,6,0.3)'
-                          }}>DUE</span>
+                          }}>{t('expenses.due', 'DUE')}</span>
                         ) : (
                           <span style={{
                             display: 'inline-block', marginTop: '3px',
@@ -1022,7 +1025,7 @@ export const Expenses: React.FC = () => {
                             borderRadius: '20px', letterSpacing: '0.04em',
                             background: 'rgba(16,185,129,0.12)', color: 'var(--primary)',
                             border: '1px solid rgba(16,185,129,0.25)'
-                          }}>PAID</span>
+                          }}>{t('expenses.paid', 'PAID')}</span>
                         )}
                       </div>
                       {/* ⋮ Dropdown */}
@@ -1047,19 +1050,19 @@ export const Expenses: React.FC = () => {
                               <button className="dropdown-item"
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }}
                                 onClick={() => { handleEditClick(exp); setActiveMenuExpId(null); }}>
-                                <Edit2 size={14} /> Edit
+                                <Edit2 size={14} /> {t('common.edit', 'Edit')}
                               </button>
                               {exp.status === 'Due' && (
                                 <button className="dropdown-item"
                                   style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500, color: 'var(--color-success-dark)' }}
                                   onClick={() => { handleMarkAsPaid(exp); setActiveMenuExpId(null); }}>
-                                  <CheckCircle2 size={14} /> Mark Paid
+                                  <CheckCircle2 size={14} /> {t('expenses.markPaid', 'Mark Paid')}
                                 </button>
                               )}
                               <button className="dropdown-item danger"
                                 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 14px', background: 'none', border: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', fontWeight: 500 }}
                                 onClick={() => { handleDeleteExpense(exp.id, exp.category, exp.amount); setActiveMenuExpId(null); }}>
-                                <Trash size={14} /> Delete
+                                <Trash size={14} /> {t('common.delete', 'Delete')}
                               </button>
                             </div>
                           </>
@@ -1074,13 +1077,13 @@ export const Expenses: React.FC = () => {
                     {/* 2-column detail grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
                       <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Voucher ID</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{t('expenses.voucherIdLabel', 'Voucher ID')}</div>
                         <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>{exp.id}</div>
                       </div>
                       <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Payment</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{t('expenses.paymentLabel', 'Payment')}</div>
                         <div style={{ fontSize: '12px', fontWeight: 700, color: exp.status === 'Due' ? '#D97706' : 'var(--text-primary)' }}>
-                          {exp.status === 'Due' ? `Due ${exp.dueDate ? formatDate(exp.dueDate) : ''}` : exp.paymentMethod}
+                          {exp.status === 'Due' ? `${t('expenses.due', 'Due')} ${exp.dueDate ? formatDate(exp.dueDate) : ''}` : translatePaymentMethod(t, exp.paymentMethod)}
                         </div>
                       </div>
                     </div>
@@ -1088,7 +1091,7 @@ export const Expenses: React.FC = () => {
                     {/* Reference number if exists */}
                     {exp.status !== 'Due' && exp.referenceNumber && (
                       <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Ref Number</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{t('expenses.refNumberLabel', 'Ref Number')}</div>
                         <div style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 600, color: 'var(--text-primary)' }}>{exp.referenceNumber}</div>
                       </div>
                     )}
@@ -1096,7 +1099,7 @@ export const Expenses: React.FC = () => {
                     {/* Notes if exists */}
                     {exp.notes && (
                       <div style={{ background: 'var(--bg-app)', borderRadius: '8px', padding: '7px 10px' }}>
-                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>Remarks</div>
+                        <div style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '2px' }}>{t('expenses.remarksLabel', 'Remarks')}</div>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', fontStyle: 'italic' }}>{exp.notes}</div>
                       </div>
                     )}
@@ -1110,7 +1113,7 @@ export const Expenses: React.FC = () => {
                           background: 'linear-gradient(135deg, #10B981, #059669)', border: 'none', fontSize: '13px' }}
                         onClick={() => handleMarkAsPaid(exp)}
                       >
-                        <CheckCircle2 size={15} /> Mark as Paid
+                        <CheckCircle2 size={15} /> {t('expenses.markAsPaid', 'Mark as Paid')}
                       </button>
                     )}
                   </div>
@@ -1122,20 +1125,22 @@ export const Expenses: React.FC = () => {
             {totalPages > 1 && (
               <div className="pagination-row">
                 <span>
-                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
-                  <strong>{Math.min(currentPage * itemsPerPage, filteredExpenses.length)}</strong> of{' '}
-                  <strong>{filteredExpenses.length}</strong> records
+                  {t('common.showing', 'Showing')} <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> {t('common.to', 'to')}{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredExpenses.length)}</strong> {t('common.of', 'of')}{' '}
+                  <strong>{filteredExpenses.length}</strong> {t('common.records', 'records')}
                 </span>
                 <div className="pagination-btn-group">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
+                    title={t('common.previousPage', 'Previous Page')}
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
+                    title={t('common.nextPage', 'Next Page')}
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -1155,11 +1160,11 @@ export const Expenses: React.FC = () => {
             setEditingExpenseId(null);
           });
         }}
-        title={editingExpenseId ? "Edit Expense Entry" : "Record New Expense Entry"}
+        title={editingExpenseId ? t('expenses.editExpenseEntry', 'Edit Expense Entry') : t('expenses.recordNewExpenseEntry', 'Record New Expense Entry')}
       >
         <form onSubmit={handleSaveExpense}>
           <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label">Expense Category *</label>
+            <label className="form-label">{t('expenses.expenseCategoryLabel', 'Expense Category *')}</label>
             <select
               className="form-control"
               value={category}
@@ -1167,18 +1172,18 @@ export const Expenses: React.FC = () => {
               required
             >
               {categoriesList.map((cat) => (
-                <option key={cat} value={cat}>{cat}</option>
+                <option key={cat} value={cat}>{translateCategory(t, cat)}</option>
               ))}
             </select>
           </div>
 
           {category === 'Other' && (
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label className="form-label">Specify Custom Category *</label>
+              <label className="form-label">{t('expenses.specifyCustomCategoryLabel', 'Specify Custom Category *')}</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Enter custom category name"
+                placeholder={t('expenses.customCategoryPlaceholder', 'Enter custom category name')}
                 value={customCategory}
                 onChange={(e) => setCustomCategory(e.target.value)}
                 required
@@ -1187,11 +1192,11 @@ export const Expenses: React.FC = () => {
           )}
 
           <div className="form-group" style={{ marginBottom: '16px' }}>
-            <label className="form-label">Paid To / Payee Name *</label>
+            <label className="form-label">{t('expenses.paidToPayeeLabel', 'Paid To / Payee Name *')}</label>
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Mandi Board Complex, Madan Tea Stall, Staff Name"
+              placeholder={t('expenses.payeePlaceholder', 'e.g. Mandi Board Complex, Madan Tea Stall, Staff Name')}
               value={payee}
               onChange={(e) => setPayee(e.target.value)}
               required
@@ -1200,7 +1205,7 @@ export const Expenses: React.FC = () => {
 
           <div className="grid-cols-2" style={{ gap: '16px', marginBottom: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Expense Date *</label>
+              <label className="form-label">{t('expenses.expenseDateInputLabel', 'Expense Date *')}</label>
               <input
                 type="date"
                 className="form-control"
@@ -1211,7 +1216,7 @@ export const Expenses: React.FC = () => {
             </div>
 
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Amount (₹) *</label>
+              <label className="form-label">{t('expenses.amountInputLabel', 'Amount (₹) *')}</label>
               <input
                 type="number"
                 step="0.01"
@@ -1226,21 +1231,21 @@ export const Expenses: React.FC = () => {
 
           <div className="grid-cols-2" style={{ gap: '16px', marginBottom: '16px' }}>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Payment Status *</label>
+              <label className="form-label">{t('expenses.paymentStatusLabel', 'Payment Status *')}</label>
               <select
                 className="form-control"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as 'Paid' | 'Due')}
                 required
               >
-                <option value="Paid">Paid (Expense Settled)</option>
-                <option value="Due">Due (Pay Later / Dues)</option>
+                <option value="Paid">{t('expenses.paidSettled', 'Paid (Expense Settled)')}</option>
+                <option value="Due">{t('expenses.duePayLater', 'Due (Pay Later / Dues)')}</option>
               </select>
             </div>
 
             {status === 'Due' ? (
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Payment Due Date *</label>
+                <label className="form-label">{t('expenses.paymentDueDateLabel', 'Payment Due Date *')}</label>
                 <input
                   type="date"
                   className="form-control"
@@ -1251,7 +1256,7 @@ export const Expenses: React.FC = () => {
               </div>
             ) : (
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Payment Method *</label>
+                <label className="form-label">{t('expenses.paymentMethodInputLabel', 'Payment Method *')}</label>
                 <select
                   className="form-control"
                   value={paymentMethod}
@@ -1259,9 +1264,9 @@ export const Expenses: React.FC = () => {
                   required
                 >
                   <option value="UPI">UPI</option>
-                  <option value="Cash">Cash</option>
-                  <option value="Bank Transfer">Bank Transfer / NetBanking</option>
-                  <option value="Cheque">Cheque</option>
+                  <option value="Cash">{translatePaymentMethod(t, 'Cash')}</option>
+                  <option value="Bank Transfer">{translatePaymentMethod(t, 'Bank Transfer')}</option>
+                  <option value="Cheque">{translatePaymentMethod(t, 'Cheque')}</option>
                 </select>
               </div>
             )}
@@ -1269,11 +1274,11 @@ export const Expenses: React.FC = () => {
 
           {status === 'Paid' && (
             <div className="form-group" style={{ marginBottom: '16px' }}>
-              <label className="form-label">Reference Number (optional)</label>
+              <label className="form-label">{t('expenses.referenceNumberOptLabel', 'Reference Number (optional)')}</label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Transaction ID, UPI reference, Cheque number"
+                placeholder={t('expenses.referencePlaceholder', 'Transaction ID, UPI reference, Cheque number')}
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
               />
@@ -1281,10 +1286,10 @@ export const Expenses: React.FC = () => {
           )}
 
           <div className="form-group" style={{ marginBottom: '24px' }}>
-            <label className="form-label">Notes / Remarks</label>
+            <label className="form-label">{t('expenses.notesRemarksInputLabel', 'Notes / Remarks')}</label>
             <textarea
               className="form-control"
-              placeholder="Provide context or explanation for this expense..."
+              placeholder={t('expenses.notesPlaceholder', 'Provide context or explanation for this expense...')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
@@ -1302,10 +1307,10 @@ export const Expenses: React.FC = () => {
                 });
               }}
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button type="submit" className="btn btn-primary">
-              {editingExpenseId ? 'Update Expense' : 'Save Expense'}
+              {editingExpenseId ? t('expenses.updateExpense', 'Update Expense') : t('expenses.saveExpense', 'Save Expense')}
             </button>
           </div>
         </form>
@@ -1317,10 +1322,10 @@ export const Expenses: React.FC = () => {
           if (!isDeletingExpense) setDeletingExpenseTarget(null);
         }}
         onConfirm={confirmDeleteExpense}
-        title="Delete Expense Record"
+        title={t('expenses.deleteExpenseRecord', 'Delete Expense Record')}
         description={deletingExpenseTarget ? (
           <>
-            Are you sure you want to delete the expense of <strong>{formatINR(deletingExpenseTarget.amount)}</strong> for <strong>{deletingExpenseTarget.category}</strong>?
+            {t('expenses.deleteConfirmDesc', 'Are you sure you want to delete the expense of {{amount}} for {{category}}?', { amount: formatINR(deletingExpenseTarget.amount), category: translateCategory(t, deletingExpenseTarget.category) })}
           </>
         ) : ''}
         isLoading={isDeletingExpense}
@@ -1354,38 +1359,38 @@ export const Expenses: React.FC = () => {
           </div>
           <div style={{ textAlign: 'right' }}>
             <h2 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#555555', textTransform: 'uppercase' }}>
-              Expenses Transaction Audit Statement
+              {t('expenses.auditStatementTitle', 'Expenses Transaction Audit Statement')}
             </h2>
             <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#555555' }}>
-              Date Range: {startDate || 'Historical'} to {endDate || 'Present'}
+              {t('expenses.dateRangeLabel', 'Date Range: {{start}} to {{end}}', { start: startDate || 'Historical', end: endDate || 'Present' })}
             </p>
             <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555555' }}>
-              Generated On: {new Date().toLocaleDateString('en-IN')}
+              {t('expenses.generatedOn', 'Generated On:')} {new Date().toLocaleDateString('en-IN')}
             </p>
           </div>
         </div>
 
         {/* Quick summary stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', padding: '12px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '20px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-          <div><strong>Total Spends:</strong> {formatINR(filteredExpenses.reduce((sum, e) => sum + e.amount, 0))}</div>
-          <div><strong>Paid Spends:</strong> {formatINR(filteredExpenses.filter(e => e.status !== 'Due').reduce((sum, e) => sum + e.amount, 0))}</div>
-          <div><strong>Due Dues:</strong> {formatINR(filteredExpenses.filter(e => e.status === 'Due').reduce((sum, e) => sum + e.amount, 0))}</div>
-          <div><strong>Entries Count:</strong> {filteredExpenses.length}</div>
-          <div><strong>Category Filter:</strong> {categoryFilter}</div>
+          <div><strong>{t('expenses.totalSpends', 'Total Spends:')}</strong> {formatINR(filteredExpenses.reduce((sum, e) => sum + e.amount, 0))}</div>
+          <div><strong>{t('expenses.paidSpends', 'Paid Spends:')}</strong> {formatINR(filteredExpenses.filter(e => e.status !== 'Due').reduce((sum, e) => sum + e.amount, 0))}</div>
+          <div><strong>{t('expenses.dueDues', 'Due Dues:')}</strong> {formatINR(filteredExpenses.filter(e => e.status === 'Due').reduce((sum, e) => sum + e.amount, 0))}</div>
+          <div><strong>{t('expenses.entriesCount', 'Entries Count:')}</strong> {filteredExpenses.length}</div>
+          <div><strong>{t('expenses.categoryFilterLabel', 'Category Filter:')}</strong> {categoryFilter === 'All' ? 'All' : translateCategory(t, categoryFilter)}</div>
         </div>
 
         {/* Audit Data Table */}
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
           <thead>
             <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Date</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Voucher ID</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Category</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Payee (Paid To)</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'right' }}>Amount (₹)</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'center' }}>Status</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Method</th>
-              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>Reference ID</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>{t('common.date', 'Date')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>{t('expenses.voucherId', 'Voucher ID')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>{t('expenses.category', 'Category')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>{t('expenses.payeePaidTo', 'Payee (Paid To)')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'right' }}>{t('expenses.amountInr', 'Amount (₹)')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'center' }}>{t('expenses.status', 'Status')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>{t('expenses.paymentMethod', 'Method')}</th>
+              <th style={{ padding: '6px 8px', border: '1px solid #2F3E33', textAlign: 'left' }}>{t('expenses.referenceId', 'Reference ID')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1393,11 +1398,11 @@ export const Expenses: React.FC = () => {
               <tr key={exp.id} style={{ backgroundColor: idx % 2 === 0 ? '#ffffff' : '#F9FAF9' }}>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(exp.date)}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.id}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{exp.category}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{translateCategory(t, exp.category)}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.payee || 'General'}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(exp.amount).replace('₹', '')}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold', color: exp.status === 'Due' ? '#D97706' : 'var(--primary)' }}>{exp.status || 'Paid'}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.status === 'Due' ? '—' : exp.paymentMethod}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold', color: exp.status === 'Due' ? '#D97706' : 'var(--primary)' }}>{exp.status === 'Due' ? t('expenses.due', 'Due') : t('expenses.paid', 'Paid')}</td>
+                <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.status === 'Due' ? '—' : translatePaymentMethod(t, exp.paymentMethod)}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}</td>
               </tr>
             ))}
@@ -1406,8 +1411,8 @@ export const Expenses: React.FC = () => {
 
         {/* Signatures */}
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '50px', fontSize: '11px', color: '#555555' }}>
-          <div>Prepared By: ___________________________</div>
-          <div>Verified By: ___________________________</div>
+          <div>{t('expenses.preparedBy', 'Prepared By: ___________________________')}</div>
+          <div>{t('expenses.verifiedBy', 'Verified By: ___________________________')}</div>
         </div>
       </div>
     </div>

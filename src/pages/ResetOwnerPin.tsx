@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import api from '../utils/api';
 import { KeyRound, CheckCircle2, AlertCircle, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react';
 
@@ -7,6 +8,7 @@ interface ResetOwnerPinProps {
 }
 
 export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin }) => {
+  const { t } = useTranslation();
   const [newPin, setNewPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [showPin, setShowPin] = useState(false);
@@ -21,19 +23,19 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
     e.preventDefault();
     if (!token) {
       setStatus('error');
-      setMessage('No valid PIN reset token found in URL link.');
+      setMessage(t('resetOwnerPin.noToken', 'No valid PIN reset token found in URL link.'));
       return;
     }
 
     if (!/^\d{4}$/.test(newPin)) {
       setStatus('error');
-      setMessage('Owner PIN must be exactly 4 numeric digits.');
+      setMessage(t('resetOwnerPin.err4Digits', 'Owner PIN must be exactly 4 numeric digits.'));
       return;
     }
 
     if (newPin !== confirmPin) {
       setStatus('error');
-      setMessage('PINs do not match.');
+      setMessage(t('resetOwnerPin.errMatch', 'PINs do not match.'));
       return;
     }
 
@@ -49,15 +51,15 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
           window.history.replaceState({}, document.title, '/');
         } catch (e) {}
         setStatus('success');
-        setMessage(res.data.message || 'Owner PIN reset successfully!');
+        setMessage(res.data.message || t('resetOwnerPin.successMsg', 'Owner PIN reset successfully!'));
       } else {
         setStatus('error');
-        setMessage(res.data.message || 'PIN reset failed.');
+        setMessage(res.data.message || t('resetOwnerPin.failedMsg', 'PIN reset failed.'));
       }
     } catch (err: any) {
       setLoading(false);
       setStatus('error');
-      setMessage(err.response?.data?.message || 'Failed to reset Owner PIN. The link may be expired or already used.');
+      setMessage(err.response?.data?.message || t('resetOwnerPin.errExpired', 'Failed to reset Owner PIN. The link may be expired or already used.'));
     }
   };
 
@@ -107,12 +109,12 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
             {status === 'success' ? <CheckCircle2 size={32} /> : <KeyRound size={28} />}
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0 }}>
-            {status === 'success' ? 'Owner PIN Reset Complete' : 'Create New Owner PIN'}
+            {status === 'success' ? t('resetOwnerPin.completeTitle', 'Owner PIN Reset Complete') : t('resetOwnerPin.createTitle', 'Create New Owner PIN')}
           </h2>
           <p style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', margin: '4px 0 0' }}>
             {status === 'success'
-              ? 'Your new Owner PIN has been saved securely.'
-              : 'Enter a 4-digit PIN for the Owner account.'}
+              ? t('resetOwnerPin.completeSub', 'Your new Owner PIN has been saved securely.')
+              : t('resetOwnerPin.createSub', 'Enter a 4-digit PIN for the Owner account.')}
           </p>
         </div>
 
@@ -167,7 +169,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
                 boxShadow: '0 4px 14px rgba(16,185,129,0.25)',
               }}
             >
-              Continue to Sign In →
+              {t('resetOwnerPin.continueSignIn', 'Continue to Sign In →')}
             </button>
           </div>
         ) : (
@@ -175,7 +177,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
             {/* New PIN Field */}
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary,#475569)', marginBottom: '6px' }}>
-                New 4-Digit Owner PIN
+                {t('resetOwnerPin.newPin', 'New 4-Digit Owner PIN')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -183,7 +185,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={4}
-                  placeholder="Enter 4 digits"
+                  placeholder={t('resetOwnerPin.placeholder', 'Enter 4 digits')}
                   value={newPin}
                   onChange={e => setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   style={{
@@ -216,7 +218,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
             {/* Confirm PIN Field */}
             <div style={{ marginBottom: '24px' }}>
               <label style={{ display: 'block', fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary,#475569)', marginBottom: '6px' }}>
-                Confirm 4-Digit Owner PIN
+                {t('resetOwnerPin.confirmPin', 'Confirm 4-Digit Owner PIN')}
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -224,7 +226,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
                   inputMode="numeric"
                   pattern="[0-9]*"
                   maxLength={4}
-                  placeholder="Re-enter 4 digits"
+                  placeholder={t('resetOwnerPin.reenterPlaceholder', 'Re-enter 4 digits')}
                   value={confirmPin}
                   onChange={e => setConfirmPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                   style={{
@@ -268,10 +270,10 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
               {loading ? (
                 <>
                   <Loader2 size={18} className="spin-animation" />
-                  Updating PIN...
+                  {t('resetOwnerPin.updating', 'Updating PIN...')}
                 </>
               ) : (
-                'Save New Owner PIN'
+                t('resetOwnerPin.saveBtn', 'Save New Owner PIN')
               )}
             </button>
           </form>
@@ -293,7 +295,7 @@ export const ResetOwnerPin: React.FC<ResetOwnerPinProps> = ({ onSwitchToLogin })
               gap: '4px',
             }}
           >
-            <ArrowLeft size={14} /> Back to Sign In
+            <ArrowLeft size={14} /> {t('auth.backToSignIn', 'Back to Sign In')}
           </button>
         </div>
       </div>

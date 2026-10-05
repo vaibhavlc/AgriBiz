@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
@@ -39,6 +40,7 @@ interface InvoiceItemLocal {
 }
 
 export const Sales: React.FC = () => {
+  const { t } = useTranslation();
   const {
     invoices,
     quotations,
@@ -1451,13 +1453,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         {isConvertModalOpen && convertQuotationId && createPortal(
           <div className="modal-overlay" style={{ zIndex: 1000 }}>
             <div className="card modal-content" style={{ maxWidth: '450px', padding: '28px', animation: 'scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>Convert to Invoice</h3>
+              <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '12px' }}>{t('sales.convertToInvoice', 'Convert to Invoice')}</h3>
               <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                Create a sales invoice from this quotation. Please confirm payment collection details.
+                {t('sales.convertModalDesc', 'Create a sales invoice from this quotation. Please confirm payment collection details.')}
               </p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Amount Collected (₹)</label>
+                  <label className="form-label">{t('sales.amountCollected', 'Amount Collected (₹)')}</label>
                   <input 
                     type="number" 
                     className="form-control" 
@@ -1468,23 +1470,23 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
                 {convertAmountPaid > 0 && (
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Payment Method</label>
+                    <label className="form-label">{t('sales.paymentMethod', 'Payment Method')}</label>
                     <select 
                       className="form-control" 
                       value={convertPaymentMethod} 
                       onChange={(e) => setConvertPaymentMethod(e.target.value)}
                     >
-                      <option value="UPI">UPI / GPay / PhonePe</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Bank Transfer">Bank Transfer</option>
-                      <option value="Cheque">Cheque</option>
+                      <option value="UPI">{t('sales.upiGpayPhonePe', 'UPI / GPay / PhonePe')}</option>
+                      <option value="Cash">{t('sales.cash', 'Cash')}</option>
+                      <option value="Bank Transfer">{t('sales.bankTransfer', 'Bank Transfer')}</option>
+                      <option value="Cheque">{t('sales.cheque', 'Cheque')}</option>
                     </select>
                   </div>
                 )}
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button className="btn btn-secondary" style={{ flex: 1 }} onClick={() => { setIsConvertModalOpen(false); setConvertQuotationId(null); }}>
-                  Cancel
+                  {t('sales.cancel', 'Cancel')}
                 </button>
                 <button 
                   className="btn btn-primary" 
@@ -1493,7 +1495,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     try {
                       const invoiceId = await convertQuotationToInvoice(convertQuotationId!, convertAmountPaid, convertPaymentMethod);
                       if (invoiceId) {
-                        showToast("Quotation converted to Invoice successfully!");
+                        showToast(t('sales.convertSuccessMsg', 'Quotation converted to Invoice successfully!'));
                         clearAllDirtyForms();
                         setIsConvertModalOpen(false);
                         setConvertQuotationId(null);
@@ -1502,11 +1504,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         setViewQuotation(null, true);
                       }
                     } catch (err: any) {
-                      showToast(err.message || "Failed to convert quotation", "error");
+                      showToast(err.message || t('sales.failedConvert', 'Failed to convert quotation'), 'error');
                     }
                   }}
                 >
-                  Convert
+                  {t('sales.convert', 'Convert')}
                 </button>
               </div>
             </div>

@@ -6,6 +6,8 @@ import {
   Smartphone, Lock, Eye, EyeOff, ArrowRight,
   ChevronLeft, KeyRound
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { translateRole } from '../../utils/statusTranslation';
 import type { User as UserType } from '../../types';
 
 // 'create-pin' stage handles migration for existing users with no PIN set
@@ -23,6 +25,7 @@ const ROLE_CONFIG = {
 };
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwitchToForgot }) => {
+  const { t } = useTranslation();
   const { login, staffLogin, currentCompany, forgetDevice } = useAuth();
 
   const [stage, setStage] = useState<Stage>(() => {
@@ -65,7 +68,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     if (!selectedStaff || selectedStaff.role !== 'Owner') return;
     const company = currentCompany || authService.getCurrentCompany();
     if (!company) {
-      setErrorMsg('Business session not found. Please log in again.');
+      setErrorMsg(t('login.errorSessionNotFound', 'Business session not found. Please log in again.'));
       return;
     }
 
@@ -79,12 +82,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         userId: selectedStaff.id || (selectedStaff as any)._id || (selectedStaff as any).userId,
       });
       if (res.data.success) {
-        setForgotPinSuccessMsg(res.data.message || 'Owner PIN reset link has been sent to your email.');
+        setForgotPinSuccessMsg(res.data.message || t('login.ownerPinSent', 'Owner PIN reset link has been sent to your email.'));
       } else {
-        setErrorMsg(res.data.message || 'Failed to send PIN reset link.');
+        setErrorMsg(res.data.message || t('login.failedSendPinReset', 'Failed to send PIN reset link.'));
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Failed to request Owner PIN reset. Please try again.');
+      setErrorMsg(err.response?.data?.message || t('login.failedRequestPinReset', 'Failed to request Owner PIN reset. Please try again.'));
     } finally {
       setForgotPinLoading(false);
     }
@@ -112,17 +115,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         setStaffList(scopedStaff);
         setStaffFetchError(null);
       } else {
-        setStaffFetchError(res.message || 'Failed to fetch staff profiles. Please try again.');
+        setStaffFetchError(res.message || t('login.failedFetchStaff', 'Failed to fetch staff profiles. Please try again.'));
         setStaffList([]);
       }
     } catch (err: any) {
       console.error('Failed to load staff profiles:', err);
-      setStaffFetchError('Failed to load staff profiles. Please reconnect and try again.');
+      setStaffFetchError(t('login.failedLoadStaff', 'Failed to load staff profiles. Please reconnect and try again.'));
       setStaffList([]);
     } finally {
       setIsStaffLoading(false);
     }
-  }, [currentCompany?.id]);
+  }, [currentCompany?.id, t]);
 
   const hasCheckedSession = React.useRef(false);
 
@@ -164,8 +167,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   // ── Stage 1: Business Login ─────────────────────────────────────────────
   const handleBusinessLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!mobile.trim()) { setErrorMsg('Please enter your mobile number.'); return; }
-    if (!password)      { setErrorMsg('Please enter your password.'); return; }
+    if (!mobile.trim()) { setErrorMsg(t('login.enterMobile', 'Please enter your mobile number.')); return; }
+    if (!password)      { setErrorMsg(t('login.enterPassword', 'Please enter your password.')); return; }
     setErrorMsg('');
     setLoading(true);
     const res = await login(mobile, password, 'Owner', true);
@@ -264,8 +267,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   // ── Stage 4: Create PIN (migration) ────────────────────────────────────
   const handleCreatePin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!/^\d{4}$/.test(newPin)) { setErrorMsg('PIN must be exactly 4 digits.'); return; }
-    if (newPin !== confirmNewPin) { setErrorMsg('PINs do not match.'); return; }
+    if (!/^\d{4}$/.test(newPin)) { setErrorMsg(t('login.pin4Digits', 'PIN must be exactly 4 digits.')); return; }
+    if (newPin !== confirmNewPin) { setErrorMsg(t('login.pinsDoNotMatch', 'PINs do not match.')); return; }
     if (!selectedStaff) return;
     setErrorMsg('');
     setLoading(true);
@@ -276,7 +279,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         setErrorMsg(res.message);
       }
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.message || 'Failed to set PIN. Please try again.');
+      setErrorMsg(err.response?.data?.message || t('login.failedSetPin', 'Failed to set PIN. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -290,10 +293,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         justifyContent: 'center', margin: '0 auto 8px', boxShadow: '0 6px 18px rgba(16,185,129,0.28)', fontSize: '20px',
       }}>🌱</div>
       <h2 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0 }}>
-        AgriBiz Trader Suite
+        {t('login.agribizTraderSuite', 'AgriBiz Trader Suite')}
       </h2>
       <p style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted,#64748b)', margin: '3px 0 0' }}>
-        Manage Billing • Inventory • GST • Reports
+        {t('login.tagline', 'Manage Billing • Inventory • GST • Reports')}
       </p>
     </div>
   );
@@ -392,7 +395,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           )}
         </div>
         <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--primary,#10b981)', marginBottom: '2px' }}>
-          You are logging into
+          {t('login.youAreLoggingInto', 'You are logging into')}
         </div>
         <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0, lineHeight: 1.25 }}>
           {businessName}
@@ -439,7 +442,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         <form onSubmit={handleBusinessLogin}>
           <div style={{ marginBottom: '12px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '4px', color: 'var(--text-secondary,#475569)' }}>
-              Business Mobile Number *
+              {t('login.businessMobileNumber', 'Business Mobile Number *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{
@@ -450,7 +453,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               }}>
                 <Smartphone size={14} /> +91
               </span>
-              <input type="tel" className="form-control" placeholder="Enter registered mobile"
+              <input type="tel" className="form-control" placeholder={t('login.placeholderMobile', 'Enter registered mobile')}
                 value={mobile} onChange={e => setMobile(e.target.value)}
                 style={{ paddingLeft: '78px', height: '40px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
                 maxLength={10} autoComplete="tel" autoFocus />
@@ -458,14 +461,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '4px', color: 'var(--text-secondary,#475569)' }}>
-              Password *
+              {t('login.password', 'Password *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}>
                 <Lock size={16} />
               </span>
               <input type={showPassword ? 'text' : 'password'} className="form-control"
-                placeholder="Enter your password" value={password}
+                placeholder={t('login.placeholderPassword', 'Enter your password')} value={password}
                 onChange={e => setPassword(e.target.value)}
                 style={{ paddingLeft: '40px', paddingRight: '40px', height: '40px', borderRadius: '10px', fontSize: '14px' }}
                 autoComplete="current-password" />
@@ -479,22 +482,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             <button type="button"
               style={{ background: 'none', border: 'none', color: 'var(--primary,#10b981)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               onClick={onSwitchToForgot}>
-              Forgot Password?
+              {t('login.forgotPassword', 'Forgot Password?')}
             </button>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}
             style={{ width: '100%', height: '42px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, justifyContent: 'center', boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
-            {loading ? 'Verifying...' : <><span>Continue</span> <ArrowRight size={16} /></>}
+            {loading ? t('login.verifying', 'Verifying...') : <><span>{t('login.continue', 'Continue')}</span> <ArrowRight size={16} /></>}
           </button>
         </form>
         <div style={{ textAlign: 'center', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-color,#e2e8f0)' }}>
           <p style={{ fontSize: '12px', color: 'var(--text-muted,#64748b)', margin: '0 0 6px' }}>
-            Don't have a business registered?
+            {t('login.noBusinessRegistered', "Don't have a business registered?")}
           </p>
           <button type="button" className="btn btn-secondary"
             style={{ width: '100%', borderRadius: '10px', height: '36px', justifyContent: 'center', fontWeight: 700 }}
             onClick={onSwitchToRegister}>
-            Register Business
+            {t('login.registerBusiness', 'Register Business')}
           </button>
         </div>
       </div>
@@ -519,7 +522,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           borderRadius: '10px',
           padding: '6px 10px'
         }}>
-          Select your staff profile to continue
+          {t('login.selectStaffProfile', 'Select your staff profile to continue')}
         </div>
         <ErrorBanner />
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '14px' }}>
@@ -537,12 +540,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 style={{ borderRadius: '8px', height: '32px', fontSize: '12px' }}
                 onClick={() => loadStaffList()}
               >
-                Retry Loading Staff
+                {t('login.retryLoadingStaff', 'Retry Loading Staff')}
               </button>
             </div>
           ) : staffList.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted,#94a3b8)', fontSize: '12px' }}>
-              No active staff found. Please reconnect and try again.
+              {t('login.noActiveStaff', 'No active staff found. Please reconnect and try again.')}
             </div>
           ) : (
             [...staffList]
@@ -575,7 +578,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>{staff.name}</div>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: cfg.color, marginTop: '1px' }}>{staff.role}</div>
+                    <div style={{ fontSize: '11px', fontWeight: 600, color: cfg.color, marginTop: '1px' }}>{translateRole(t, staff.role)}</div>
                   </div>
                   <ArrowRight size={15} style={{ color: 'var(--text-muted,#94a3b8)', flexShrink: 0 }} />
                 </button>
@@ -596,7 +599,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             borderRadius: '10px', padding: '9px', fontSize: '12px', fontWeight: 700,
             color: 'var(--text-secondary,#475569)', cursor: 'pointer',
           }}>
-          <ChevronLeft size={14} /> Forget This Device / Switch Account
+          <ChevronLeft size={14} /> {t('login.forgetDevice', 'Forget This Device / Switch Account')}
         </button>
       </div>
     );
@@ -625,12 +628,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           <span style={{ fontSize: '20px' }}>{cfg.emoji}</span>
           <div style={{ textAlign: 'left' }}>
             <div style={{ fontWeight: 800, fontSize: '14px', color: 'var(--text-primary,#0f172a)', lineHeight: 1.1 }}>{selectedStaff.name}</div>
-            <div style={{ fontSize: '11px', fontWeight: 600, color: cfg.color, marginTop: '2px' }}>{selectedStaff.role}</div>
+            <div style={{ fontSize: '11px', fontWeight: 600, color: cfg.color, marginTop: '2px' }}>{translateRole(t, selectedStaff.role)}</div>
           </div>
         </div>
 
         <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-secondary,#475569)', textAlign: 'center', marginBottom: '10px' }}>
-          Enter 4-Digit PIN
+          {t('login.enter4DigitPin', 'Enter 4-Digit PIN')}
         </div>
         <ErrorBanner />
 
@@ -748,7 +751,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 textDecoration: 'underline',
               }}
             >
-              {forgotPinLoading ? 'Sending Reset Link...' : 'Forgot PIN?'}
+              {forgotPinLoading ? t('login.sendingResetLink', 'Sending Reset Link...') : t('login.forgotPin', 'Forgot PIN?')}
             </button>
           </div>
         )}
@@ -779,7 +782,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             borderRadius: '10px', padding: '8px', fontSize: '12px', fontWeight: 700,
             color: 'var(--text-secondary,#475569)', cursor: 'pointer',
           }}>
-          <ChevronLeft size={14} /> Back to Staff Selection
+          <ChevronLeft size={14} /> {t('login.backToStaffSelection', 'Back to Staff Selection')}
         </button>
       </div>
     );
@@ -802,10 +805,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           <KeyRound size={16} style={{ color: '#6366f1', flexShrink: 0, marginTop: '2px' }} />
           <div>
             <div style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-primary,#0f172a)', marginBottom: '3px' }}>
-              Create Your Login PIN
+              {t('login.createYourLoginPin', 'Create Your Login PIN')}
             </div>
             <div style={{ fontSize: '12px', color: 'var(--text-secondary,#475569)', lineHeight: '1.5' }}>
-              No PIN was set for <strong>{selectedStaff.name}</strong>. Create a 4-digit PIN to use for future logins.
+              {t('login.noPinSetNotice', 'No PIN was set for {{name}}. Create a 4-digit PIN to use for future logins.', { name: selectedStaff.name })}
             </div>
           </div>
         </div>
@@ -817,7 +820,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px',
           }}>{cfg.emoji}</div>
           <div style={{ fontWeight: 800, fontSize: '15px', color: 'var(--text-primary,#0f172a)' }}>{selectedStaff.name}</div>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: cfg.color }}>{selectedStaff.role}</div>
+          <div style={{ fontSize: '12px', fontWeight: 600, color: cfg.color }}>{translateRole(t, selectedStaff.role)}</div>
         </div>
 
         <ErrorBanner />
@@ -826,7 +829,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           {/* New PIN field */}
           <div style={{ marginBottom: '14px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '6px', color: 'var(--text-secondary,#475569)' }}>
-              New 4-Digit PIN *
+              {t('login.new4DigitPin', 'New 4-Digit PIN *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}>
@@ -843,7 +846,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           </div>
           <div style={{ marginBottom: '20px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '6px', color: 'var(--text-secondary,#475569)' }}>
-              Confirm PIN *
+              {t('login.confirmPin', 'Confirm PIN *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}>
@@ -860,13 +863,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               />
             </div>
             {confirmNewPin && confirmNewPin !== newPin && (
-              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'block' }}>PINs do not match</span>
+              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'block' }}>{t('login.pinsDoNotMatch', 'PINs do not match')}</span>
             )}
           </div>
 
           <button type="submit" className="btn btn-primary" disabled={loading}
             style={{ width: '100%', height: '44px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, justifyContent: 'center', boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
-            {loading ? 'Setting PIN...' : <><KeyRound size={15} /> Set PIN & Login</>}
+            {loading ? t('login.settingPin', 'Setting PIN...') : <><KeyRound size={15} /> {t('login.setPinAndLogin', 'Set PIN & Login')}</>}
           </button>
         </form>
 
@@ -878,7 +881,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             borderRadius: '10px', padding: '10px', fontSize: '12px', fontWeight: 700,
             color: 'var(--text-secondary,#475569)', cursor: 'pointer',
           }}>
-          <ChevronLeft size={14} /> Back to Staff Selection
+          <ChevronLeft size={14} /> {t('login.backToStaffSelection', 'Back to Staff Selection')}
         </button>
       </div>
     );

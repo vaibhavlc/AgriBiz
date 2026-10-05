@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import type { RecycleBinItem } from '../types';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
@@ -17,6 +18,7 @@ import {
 } from 'lucide-react';
 
 export const RecycleBin: React.FC = () => {
+  const { t } = useTranslation();
   const {
     recycleBin,
     restoreRecord,
@@ -28,7 +30,7 @@ export const RecycleBin: React.FC = () => {
 
   const renderDetailContent = (item: RecycleBinItem) => {
     const data = item.originalData;
-    if (!data) return <p>No details available.</p>;
+    if (!data) return <p>{t('recycleBin.noDetailsAvailable', 'No details available.')}</p>;
 
     switch (item.module) {
       case 'Customer':
@@ -164,7 +166,7 @@ export const RecycleBin: React.FC = () => {
     setIsLoading(true);
     setTimeout(() => {
       setIsLoading(false);
-      showToast('Recycle bin reloaded', 'info');
+      showToast(t('recycleBin.reloaded', 'Recycle bin reloaded'), 'info');
     }, 800);
   };
 
@@ -211,14 +213,14 @@ export const RecycleBin: React.FC = () => {
     restoreRecords(selectedIds);
     setSelectedIds([]);
     setActionConfirm(null);
-    showToast('Selected records restored successfully', 'success');
+    showToast(t('recycleBin.bulkRestoreSuccess', 'Selected records restored successfully'), 'success');
   };
 
   const handleBulkPermanentDelete = () => {
     deleteRecordsPermanently(selectedIds);
     setSelectedIds([]);
     setActionConfirm(null);
-    showToast('Selected records permanently deleted', 'error');
+    showToast(t('recycleBin.bulkDeleteSuccess', 'Selected records permanently deleted'), 'error');
   };
 
   // Filtering and Sorting logic
@@ -290,15 +292,15 @@ export const RecycleBin: React.FC = () => {
       {/* Header Panel */}
       <div className="creator-banner-header no-print" style={{ marginBottom: '24px' }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#ffffff', margin: 0 }}>Recycle Bin</h2>
+          <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#ffffff', margin: 0 }}>{t('recycleBin.title', 'Recycle Bin')}</h2>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: '4px 0 0 0' }}>
-            View, search, and restore records deleted from customers, suppliers, inventory, sales, or reports.
+            {t('recycleBin.subtitle', 'View, search, and restore records deleted from customers, suppliers, inventory, sales, or reports.')}
           </p>
         </div>
         <button 
           className="btn btn-secondary btn-icon" 
           onClick={handleReload}
-          title="Refresh deleted logs"
+          title={t('recycleBin.refreshLogs', 'Refresh deleted logs')}
           style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', borderColor: 'rgba(255, 255, 255, 0.25)', color: '#ffffff' }}
         >
           <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
@@ -314,7 +316,7 @@ export const RecycleBin: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder="Search..."
+                placeholder={t('recycleBin.searchPlaceholder', 'Search...')}
                 value={searchQuery}
                 style={{ width: '100%' }}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -331,15 +333,15 @@ export const RecycleBin: React.FC = () => {
                 value={moduleFilter} 
                 onChange={(e) => setModuleFilter(e.target.value)}
               >
-                <option value="All">All Modules</option>
-                <option value="Customer">Customers</option>
-                <option value="Supplier">Suppliers</option>
-                <option value="Product">Products</option>
-                <option value="Invoice">Invoices</option>
-                <option value="Quotation">Quotations</option>
-                <option value="Purchase">Purchases</option>
-                <option value="Expense">Expenses</option>
-                <option value="Payment">Payments</option>
+                <option value="All">{t('recycleBin.allModules', 'All Modules')}</option>
+                <option value="Customer">{t('customer.customers', 'Customers')}</option>
+                <option value="Supplier">{t('supplier.suppliers', 'Suppliers')}</option>
+                <option value="Product">{t('inventory.products', 'Products')}</option>
+                <option value="Invoice">{t('sales.invoices', 'Invoices')}</option>
+                <option value="Quotation">{t('sales.quotations', 'Quotations')}</option>
+                <option value="Purchase">{t('purchases.purchases', 'Purchases')}</option>
+                <option value="Expense">{t('expenses.expenses', 'Expenses')}</option>
+                <option value="Payment">{t('payments.payments', 'Payments')}</option>
               </select>
             </div>
           </div>
@@ -356,11 +358,11 @@ export const RecycleBin: React.FC = () => {
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
               >
-                <option value="All">All Dates</option>
-                <option value="today">Today</option>
-                <option value="yesterday">Yesterday</option>
-                <option value="week">Last 7 Days</option>
-                <option value="month">Last 30 Days</option>
+                <option value="All">{t('recycleBin.allDates', 'All Dates')}</option>
+                <option value="today">{t('recycleBin.today', 'Today')}</option>
+                <option value="yesterday">{t('recycleBin.yesterday', 'Yesterday')}</option>
+                <option value="week">{t('recycleBin.last7Days', 'Last 7 Days')}</option>
+                <option value="month">{t('recycleBin.last30Days', 'Last 30 Days')}</option>
               </select>
             </div>
           </div>
@@ -377,10 +379,10 @@ export const RecycleBin: React.FC = () => {
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
               >
-                <option value="newest">Newest Deleted</option>
-                <option value="oldest">Oldest Deleted</option>
-                <option value="name-asc">Name (A-Z)</option>
-                <option value="name-desc">Name (Z-A)</option>
+                <option value="newest">{t('recycleBin.newestDeleted', 'Newest Deleted')}</option>
+                <option value="oldest">{t('recycleBin.oldestDeleted', 'Oldest Deleted')}</option>
+                <option value="name-asc">{t('recycleBin.nameAsc', 'Name (A-Z)')}</option>
+                <option value="name-desc">{t('recycleBin.nameDesc', 'Name (Z-A)')}</option>
               </select>
             </div>
           </div>
@@ -406,7 +408,7 @@ export const RecycleBin: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-danger-dark)' }}>
             <Info size={16} />
             <span style={{ fontSize: '13px', fontWeight: 600 }}>
-              {selectedIds.length} {selectedIds.length === 1 ? 'record' : 'records'} selected
+              {selectedIds.length === 1 ? t('recycleBin.recordSelected', '1 record selected') : t('recycleBin.recordsSelected', '{{count}} records selected', { count: selectedIds.length })}
             </span>
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
@@ -415,14 +417,14 @@ export const RecycleBin: React.FC = () => {
               onClick={() => setActionConfirm({ type: 'bulk-restore' })}
               style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
             >
-              <RotateCcw size={13} /> Restore Selected
+              <RotateCcw size={13} /> {t('recycleBin.restoreSelected', 'Restore Selected')}
             </button>
             <button 
               className="btn btn-primary btn-sm btn-danger"
               onClick={() => setActionConfirm({ type: 'bulk-delete' })}
               style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: 'var(--color-danger)', borderColor: 'var(--color-danger)' }}
             >
-              <Trash2 size={13} /> Delete Selected
+              <Trash2 size={13} /> {t('recycleBin.deleteSelected', 'Delete Selected')}
             </button>
           </div>
         </div>
@@ -432,24 +434,24 @@ export const RecycleBin: React.FC = () => {
       {isLoading ? (
         <div className="card" style={{ padding: '80px 20px', textAlign: 'center', borderRadius: '12px' }}>
           <RefreshCw size={36} className="animate-spin" style={{ color: 'var(--primary)', marginBottom: '12px' }} />
-          <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)' }}>Loading deleted logs...</h4>
+          <h4 style={{ margin: 0, fontSize: '14px', color: 'var(--text-secondary)' }}>{t('recycleBin.loadingLogs', 'Loading deleted logs...')}</h4>
         </div>
       ) : recycleBin.length === 0 ? (
         /* Empty State */
         <div className="empty-state card" style={{ padding: '60px 20px', borderRadius: '12px', textAlign: 'center' }}>
           <Trash2 size={48} className="empty-state-icon" style={{ color: 'var(--text-muted)', opacity: 0.5, marginBottom: '16px' }} />
-          <h4 className="empty-state-title" style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>Recycle Bin is Empty</h4>
+          <h4 className="empty-state-title" style={{ fontSize: '16px', fontWeight: 700, margin: 0 }}>{t('recycleBin.binIsEmpty', 'Recycle Bin is Empty')}</h4>
           <p className="empty-state-text" style={{ maxWidth: '360px', margin: '8px auto 0 auto', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            There are no deleted records recorded in your database. Deleted items from any module will instantly appear here.
+            {t('recycleBin.binEmptyDesc', 'There are no deleted records recorded in your database. Deleted items from any module will instantly appear here.')}
           </p>
         </div>
       ) : sortedRecords.length === 0 ? (
         /* No Results State */
         <div className="card" style={{ padding: '60px 20px', borderRadius: '12px', textAlign: 'center' }}>
           <Search size={36} style={{ color: 'var(--text-muted)', opacity: 0.5, marginBottom: '16px' }} />
-          <h4 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>No Matching Records Found</h4>
+          <h4 style={{ fontSize: '15px', fontWeight: 700, margin: 0 }}>{t('recycleBin.noMatchFound', 'No Matching Records Found')}</h4>
           <p style={{ maxWidth: '320px', margin: '6px auto 0 auto', fontSize: '13px', color: 'var(--text-secondary)' }}>
-            Try modifying your search query or filters to find the deleted records.
+            {t('recycleBin.noMatchDesc', 'Try modifying your search query or filters to find the deleted records.')}
           </p>
           <button 
             className="btn btn-secondary btn-sm" 
@@ -460,7 +462,7 @@ export const RecycleBin: React.FC = () => {
               setDateFilter('All');
             }}
           >
-            Clear Filters
+            {t('common.clearFilters', 'Clear Filters')}
           </button>
         </div>
       ) : (
@@ -484,13 +486,13 @@ export const RecycleBin: React.FC = () => {
                         )}
                       </button>
                     </th>
-                    <th>Record Name</th>
-                    <th>Module</th>
-                    <th>Original ID</th>
-                    <th>Deleted Date & Time</th>
-                    <th>Deleted By</th>
-                    <th style={{ textAlign: 'center' }}>Status</th>
-                    <th className="no-print" style={{ textAlign: 'center', width: '120px' }}>Actions</th>
+                    <th>{t('recycleBin.recordName', 'Record Name')}</th>
+                    <th>{t('recycleBin.module', 'Module')}</th>
+                    <th>{t('recycleBin.originalId', 'Original ID')}</th>
+                    <th>{t('recycleBin.deletedDateTime', 'Deleted Date & Time')}</th>
+                    <th>{t('recycleBin.deletedBy', 'Deleted By')}</th>
+                    <th style={{ textAlign: 'center' }}>{t('common.status', 'Status')}</th>
+                    <th className="no-print" style={{ textAlign: 'center', width: '120px' }}>{t('common.actions', 'Actions')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -518,7 +520,7 @@ export const RecycleBin: React.FC = () => {
                         <td>{new Date(rec.deletedAt).toLocaleString()}</td>
                         <td>{rec.deletedBy}</td>
                         <td style={{ textAlign: 'center' }}>
-                          <span className="badge badge-danger">Deleted</span>
+                          <span className="badge badge-danger">{t('recycleBin.deleted', 'Deleted')}</span>
                         </td>
                         <td className="no-print">
                           <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
@@ -526,7 +528,7 @@ export const RecycleBin: React.FC = () => {
                               className="btn btn-secondary btn-icon"
                               style={{ padding: '6px' }}
                               onClick={() => setSelectedRecord(rec)}
-                              title="View details"
+                              title={t('common.view', 'View')}
                             >
                               <Eye size={14} />
                             </button>
@@ -534,7 +536,7 @@ export const RecycleBin: React.FC = () => {
                               className="btn btn-secondary btn-icon"
                               style={{ padding: '6px' }}
                               onClick={() => setActionConfirm({ type: 'restore', targetId: recId })}
-                              title="Restore record"
+                              title={t('common.restore', 'Restore')}
                             >
                               <RotateCcw size={14} />
                             </button>
@@ -542,7 +544,7 @@ export const RecycleBin: React.FC = () => {
                               className="btn btn-secondary btn-icon danger"
                               style={{ padding: '6px' }}
                               onClick={() => setActionConfirm({ type: 'delete', targetId: recId })}
-                              title="Delete permanently"
+                              title={t('common.delete', 'Delete')}
                             >
                               <Trash2 size={14} />
                             </button>
@@ -560,14 +562,14 @@ export const RecycleBin: React.FC = () => {
           <div className="mobile-card-list">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', padding: '0 4px' }} className="no-print">
               <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                Showing {sortedRecords.length} deleted items
+                {t('recycleBin.showingDeletedItems', 'Showing {{count}} deleted items', { count: sortedRecords.length })}
               </span>
               <button 
                 className="btn btn-secondary btn-sm"
                 onClick={() => toggleSelectAll(sortedRecords)}
                 style={{ fontSize: '11px', padding: '4px 8px' }}
               >
-                {selectedIds.length === sortedRecords.length ? 'Deselect All' : 'Select All'}
+                {selectedIds.length === sortedRecords.length ? t('recycleBin.deselectAll', 'Deselect All') : t('recycleBin.selectAll', 'Select All')}
               </button>
             </div>
             
@@ -602,16 +604,16 @@ export const RecycleBin: React.FC = () => {
                         </div>
                       </div>
                     </div>
-                    <span className="badge badge-danger">Deleted</span>
+                    <span className="badge badge-danger">{t('recycleBin.deleted', 'Deleted')}</span>
                   </div>
 
                   <div style={{ fontSize: '12px', marginTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '10px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Deleted On:</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{t('recycleBin.deletedOnLabel', 'Deleted On:')}</span>
                       <span style={{ fontWeight: 500 }}>{new Date(rec.deletedAt).toLocaleString()}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>Deleted By:</span>
+                      <span style={{ color: 'var(--text-muted)' }}>{t('recycleBin.deletedByLabel', 'Deleted By:')}</span>
                       <span style={{ fontWeight: 500 }}>{rec.deletedBy}</span>
                     </div>
                   </div>
@@ -623,21 +625,21 @@ export const RecycleBin: React.FC = () => {
                       style={{ fontSize: '11px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
                       onClick={() => setSelectedRecord(rec)}
                     >
-                      <Eye size={13} /> View
+                      <Eye size={13} /> {t('common.view', 'View')}
                     </button>
                     <button
                       className="btn btn-secondary btn-sm"
                       style={{ fontSize: '11px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
                       onClick={() => setActionConfirm({ type: 'restore', targetId: recId })}
                     >
-                      <RotateCcw size={13} /> Restore
+                      <RotateCcw size={13} /> {t('common.restore', 'Restore')}
                     </button>
                     <button
                       className="btn btn-secondary btn-sm danger"
                       style={{ fontSize: '11px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '4px' }}
                       onClick={() => setActionConfirm({ type: 'delete', targetId: recId })}
                     >
-                      <Trash2 size={13} /> Delete
+                      <Trash2 size={13} /> {t('common.delete', 'Delete')}
                     </button>
                   </div>
                 </div>
@@ -652,7 +654,7 @@ export const RecycleBin: React.FC = () => {
         <div className="modal-overlay no-print" onClick={() => setSelectedRecord(null)}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '480px' }}>
             <div className="modal-header">
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>Deleted Record Details</h3>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>{t('recycleBin.deletedRecordDetails', 'Deleted Record Details')}</h3>
               <button className="btn-icon" onClick={() => setSelectedRecord(null)}>
                 <X size={18} />
               </button>
@@ -660,36 +662,36 @@ export const RecycleBin: React.FC = () => {
             <div className="modal-body" style={{ padding: '20px 24px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Record Name</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{t('recycleBin.recordName', 'Record Name')}</span>
                   <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--primary-dark)', marginTop: '2px' }}>{selectedRecord.name}</div>
                 </div>
                 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Module</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{t('recycleBin.module', 'Module')}</span>
                     <div style={{ marginTop: '2px' }}>
                       <span className="badge badge-secondary">{selectedRecord.module}</span>
                     </div>
                   </div>
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Original Record ID</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{t('recycleBin.originalRecordId', 'Original Record ID')}</span>
                     <div style={{ fontSize: '13px', fontWeight: 600, fontFamily: 'monospace', marginTop: '4px' }}>{selectedRecord.originalId}</div>
                   </div>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Deleted On</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{t('recycleBin.deletedOn', 'Deleted On')}</span>
                     <div style={{ fontSize: '13px', fontWeight: 500, marginTop: '2px' }}>{new Date(selectedRecord.deletedAt).toLocaleString()}</div>
                   </div>
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Deleted By</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{t('recycleBin.deletedBy', 'Deleted By')}</span>
                     <div style={{ fontSize: '13px', fontWeight: 500, marginTop: '2px' }}>{selectedRecord.deletedBy}</div>
                   </div>
                 </div>
 
                 <div>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Record Details</span>
+                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>{t('recycleBin.recordDetails', 'Record Details')}</span>
                   <div style={{ 
                     fontSize: '13px', 
                     padding: '12px', 
@@ -705,7 +707,7 @@ export const RecycleBin: React.FC = () => {
               </div>
             </div>
             <div className="modal-footer" style={{ padding: '14px 20px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
-              <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRecord(null)}>Close</button>
+              <button className="btn btn-secondary btn-sm" onClick={() => setSelectedRecord(null)}>{t('common.close', 'Close')}</button>
               <button 
                 className="btn btn-secondary btn-sm"
                 onClick={() => {
@@ -714,7 +716,7 @@ export const RecycleBin: React.FC = () => {
                 }}
                 style={{ display: 'flex', alignItems: 'center', gap: '4px' }}
               >
-                <RotateCcw size={12} /> Restore
+                <RotateCcw size={12} /> {t('common.restore', 'Restore')}
               </button>
             </div>
           </div>
@@ -739,32 +741,32 @@ export const RecycleBin: React.FC = () => {
         }}
         title={
           actionConfirm?.type === 'restore'
-            ? 'Restore Record'
+            ? t('recycleBin.restoreRecordTitle', 'Restore Record')
             : actionConfirm?.type === 'bulk-restore'
-            ? 'Restore Selected Records'
+            ? t('recycleBin.restoreSelectedRecordsTitle', 'Restore Selected Records')
             : actionConfirm?.type === 'bulk-delete'
-            ? 'Delete Selected Records Permanently'
-            : 'Delete Record Permanently'
+            ? t('recycleBin.deleteSelectedRecordsTitle', 'Delete Selected Records Permanently')
+            : t('recycleBin.deleteRecordTitle', 'Delete Record Permanently')
         }
         description={
           actionConfirm?.type === 'restore' ? (
-            'Are you sure you want to restore this deleted record to its original directory?'
+            t('recycleBin.restoreSingleDesc', 'Are you sure you want to restore this deleted record to its original directory?')
           ) : actionConfirm?.type === 'delete' ? (
-            'WARNING: This will permanently delete the record. This action CANNOT be undone and will delete it from history.'
+            t('recycleBin.deleteSingleDesc', 'WARNING: This will permanently delete the record. This action CANNOT be undone and will delete it from history.')
           ) : actionConfirm?.type === 'bulk-restore' ? (
-            `Are you sure you want to restore all ${selectedIds.length} selected records?`
+            t('recycleBin.restoreBulkDesc', 'Are you sure you want to restore all {{count}} selected records?', { count: selectedIds.length })
           ) : actionConfirm?.type === 'bulk-delete' ? (
-            `WARNING: This will permanently delete all ${selectedIds.length} selected records. This action CANNOT be undone.`
+            t('recycleBin.deleteBulkDesc', 'WARNING: This will permanently delete all {{count}} selected records. This action CANNOT be undone.', { count: selectedIds.length })
           ) : ''
         }
         confirmText={
           actionConfirm?.type === 'restore'
-            ? 'Restore Record'
+            ? t('common.restoreRecord', 'Restore Record')
             : actionConfirm?.type === 'bulk-restore'
-            ? 'Restore All Selected'
+            ? t('recycleBin.restoreAllSelected', 'Restore All Selected')
             : actionConfirm?.type === 'bulk-delete'
-            ? 'Delete All Selected'
-            : 'Delete Permanently'
+            ? t('recycleBin.deleteAllSelected', 'Delete All Selected')
+            : t('recycleBin.deletePermanently', 'Delete Permanently')
         }
         variant={actionConfirm?.type.includes('delete') ? 'danger' : 'primary'}
         icon={actionConfirm?.type.includes('restore') ? <RotateCcw size={24} /> : undefined}

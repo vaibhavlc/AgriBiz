@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -44,6 +45,7 @@ interface LocalPurchaseItem {
 }
 
 export const Purchases: React.FC = () => {
+  const { t } = useTranslation();
   const {
     settings,
     purchases,
@@ -403,10 +405,10 @@ export const Purchases: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', fontWeight: 'bold' }}>
-                  <th style={{ textAlign: 'left', padding: '4px' }}>Item description</th>
-                  <th style={{ textAlign: 'center', padding: '4px', width: '50px' }}>Qty</th>
-                  <th style={{ textAlign: 'right', padding: '4px', width: '80px' }}>Rate (₹)</th>
-                  <th style={{ textAlign: 'right', padding: '4px', width: '90px' }}>Total (₹)</th>
+                  <th style={{ textAlign: 'left', padding: '4px' }}>{t('sales.product', 'Item description')}</th>
+                  <th style={{ textAlign: 'center', padding: '4px', width: '50px' }}>{t('sales.quantity', 'Qty')}</th>
+                  <th style={{ textAlign: 'right', padding: '4px', width: '80px' }}>{t('sales.rate', 'Rate (₹)')}</th>
+                  <th style={{ textAlign: 'right', padding: '4px', width: '90px' }}>{t('common.total', 'Total (₹)')}</th>
                 </tr>
               </thead>
               <tbody>

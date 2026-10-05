@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import authService from '../auth/authService';
 import { CheckCircle2, AlertCircle, Mail, Send, ArrowLeft, Loader2 } from 'lucide-react';
 import registrationSync from '../utils/registrationSync';
@@ -9,6 +10,7 @@ interface VerifyEmailProps {
 }
 
 export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwitchToRegisterStep3 }) => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'success' | 'error' | 'idle'>('idle');
   const [message, setMessage] = useState('');
@@ -47,7 +49,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
     if (!token) {
       setLoading(false);
       setStatus('error');
-      setMessage('No verification token provided in URL link.');
+      setMessage(t('verifyEmail.noToken', 'No verification token provided in URL link.'));
       return;
     }
 
@@ -60,7 +62,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
 
       if (res.success) {
         setStatus('success');
-        setMessage(res.message || 'Email verified successfully!');
+        setMessage(res.message || t('verifyEmail.verifiedSuccess', 'Email verified successfully!'));
         if (res.email) {
           localStorage.setItem('agribiz_verified_email', res.email.trim().toLowerCase());
         }
@@ -73,7 +75,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
         const verifiedEmail = localStorage.getItem('agribiz_verified_email');
         if (verifiedEmail) {
           setStatus('success');
-          setMessage('Your email address has already been verified!');
+          setMessage(t('verifyEmail.alreadyVerified', 'Your email address has already been verified!'));
           registrationSync.broadcast({
             type: 'EMAIL_VERIFIED',
             registrationSessionId: currentSid,
@@ -81,13 +83,13 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
           });
         } else {
           setStatus('error');
-          setMessage(res.message || 'Invalid, expired, or already-used verification link.');
+          setMessage(res.message || t('verifyEmail.invalidLink', 'Invalid, expired, or already-used verification link.'));
         }
       }
     };
 
     verify();
-  }, []);
+  }, [t]);
 
   const handleContinueToStep3 = () => {
     const currentSid = registrationSync.getOrCreateSessionId();
@@ -117,7 +119,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
     e.preventDefault();
     if (!resendEmail.trim()) {
       setResendStatus('error');
-      setResendMessage('Please enter your registered email address.');
+      setResendMessage(t('verifyEmail.enterEmail', 'Please enter your registered email address.'));
       return;
     }
 
@@ -130,10 +132,10 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
 
     if (res.success) {
       setResendStatus('success');
-      setResendMessage(res.message || 'A new verification link has been sent to your email.');
+      setResendMessage(res.message || t('verifyEmail.linkSent', 'A new verification link has been sent to your email.'));
     } else {
       setResendStatus('error');
-      setResendMessage(res.message || 'Failed to resend verification email.');
+      setResendMessage(res.message || t('verifyEmail.resendFailed', 'Failed to resend verification email.'));
     }
   };
 
@@ -182,7 +184,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
         </div>
 
         <h2 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: '0 0 8px' }}>
-          Owner Email Verification
+          {t('verifyEmail.ownerEmailVerification', 'Owner Email Verification')}
         </h2>
 
         {/* Loading state */}
@@ -190,7 +192,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
           <div style={{ padding: '30px 0' }}>
             <Loader2 size={36} className="animate-spin" style={{ color: '#10b981', margin: '0 auto 12px', display: 'block' }} />
             <p style={{ fontSize: '14px', color: 'var(--text-muted, #64748b)', margin: 0 }}>
-              Verifying your email address... Please wait.
+              {t('verifyEmail.verifyingNotice', 'Verifying your email address... Please wait.')}
             </p>
           </div>
         )}
@@ -208,11 +210,11 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
             </div>
 
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#10b981', margin: '0 0 10px' }}>
-              Email Verified Successfully!
+              {t('verifyEmail.emailVerifiedSuccessfully', 'Email Verified Successfully!')}
             </h3>
 
             <p style={{ fontSize: '14px', color: 'var(--text-secondary, #475569)', lineHeight: 1.5, marginBottom: '24px' }}>
-              {message || 'Thank you! Your email address has been verified.'}
+              {message || t('verifyEmail.thankYouVerified', 'Thank you! Your email address has been verified.')}
             </p>
 
             <button
@@ -229,7 +231,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                 marginBottom: '12px',
               }}
             >
-              Continue to Registration (Step 3: Create Password & PIN) →
+              {t('verifyEmail.continueToStep3', 'Continue to Registration (Step 3: Create Password & PIN) →')}
             </button>
 
             <button
@@ -245,7 +247,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                 textDecoration: 'underline',
               }}
             >
-              Already registered? Sign In to Existing Account
+              {t('verifyEmail.alreadyRegistered', 'Already registered? Sign In to Existing Account')}
             </button>
           </div>
         )}
@@ -263,7 +265,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
             </div>
 
             <h3 style={{ fontSize: '18px', fontWeight: 700, color: '#EF4444', margin: '0 0 10px' }}>
-              Verification Failed
+              {t('verifyEmail.verificationFailed', 'Verification Failed')}
             </h3>
 
             <p style={{ fontSize: '14px', color: 'var(--text-secondary, #475569)', lineHeight: 1.5, marginBottom: '20px' }}>
@@ -279,7 +281,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
               marginBottom: '20px',
             }}>
               <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px', color: 'var(--text-primary, #0f172a)' }}>
-                Request a new verification link:
+                {t('verifyEmail.requestNewLink', 'Request a new verification link:')}
               </h4>
 
               {resendMessage && (
@@ -306,7 +308,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                     <input
                       type="email"
                       className="form-control"
-                      placeholder="Enter registered email"
+                      placeholder={t('verifyEmail.placeholderEmail', 'Enter registered email')}
                       value={resendEmail}
                       onChange={(e) => setResendEmail(e.target.value)}
                       style={{ paddingLeft: '38px', height: '42px', borderRadius: '8px', fontSize: '13px' }}
@@ -329,7 +331,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                     gap: '6px',
                   }}
                 >
-                  {resendLoading ? 'Resending...' : <><Send size={14} /> Resend Verification Email</>}
+                  {resendLoading ? t('verifyEmail.resending', 'Resending...') : <><Send size={14} /> {t('verifyEmail.resendEmail', 'Resend Verification Email')}</>}
                 </button>
               </form>
             </div>
@@ -348,7 +350,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                 gap: '6px',
               }}
             >
-              <ArrowLeft size={14} /> Back to Sign In
+              <ArrowLeft size={14} /> {t('verifyEmail.backToSignIn', 'Back to Sign In')}
             </button>
           </div>
         )}

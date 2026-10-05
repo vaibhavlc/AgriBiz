@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress } from '../utils/dummyData';
+import { translatePaymentMethod } from '../utils/statusTranslation';
 import { Modal } from '../components/Modal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { KpiCard } from '../components/KpiCard';
@@ -25,6 +27,7 @@ import {
 import type { Payment } from '../types';
 
 export const Payments: React.FC = () => {
+  const { t } = useTranslation();
   const {
     payments,
     customers,
@@ -77,8 +80,6 @@ export const Payments: React.FC = () => {
     window.print();
   };
 
-
-
   const [isDeletingPayment, setIsDeletingPayment] = useState(false);
   const [deletingPaymentTarget, setDeletingPaymentTarget] = useState<{ id: string; name: string; type: string } | null>(null);
 
@@ -91,10 +92,10 @@ export const Payments: React.FC = () => {
     setIsDeletingPayment(true);
     try {
       await deletePayment(deletingPaymentTarget.id);
-      showToast('Payment record deleted successfully.', 'info');
+      showToast(t('payments.deletedSuccess', 'Payment record deleted successfully.'), 'info');
       setDeletingPaymentTarget(null);
     } catch (err: any) {
-      showToast(`Failed to delete payment: ${err.message || err}`, 'error');
+      showToast(t('payments.deleteFailed', 'Failed to delete payment: {{error}}', { error: err.message || err }), 'error');
     } finally {
       setIsDeletingPayment(false);
     }
@@ -151,7 +152,7 @@ export const Payments: React.FC = () => {
             gap: '8px'
           }}
         >
-          <TrendingUp size={16} /> Customer Receipts
+          <TrendingUp size={16} /> {t('payments.customerReceipts', 'Customer Receipts')}
         </button>
         <button
           type="button"
@@ -174,16 +175,16 @@ export const Payments: React.FC = () => {
             gap: '8px'
           }}
         >
-          <TrendingDown size={16} /> Supplier Payments
+          <TrendingDown size={16} /> {t('payments.supplierPayments', 'Supplier Payments')}
         </button>
       </div>
 
       {/* Quick stats for payments overview */}
       <div className="grid-cols-2" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label="Customer Receipts (Inward)"
+          label={t('payments.customerReceiptsInward', 'Customer Receipts (Inward)')}
           value={formatINR(payments.filter((p) => p.type === 'CustomerReceipt').reduce((s, p) => s + p.amount, 0))}
-          subtext="Total collection bank deposits"
+          subtext={t('payments.totalCollectionBankDeposits', 'Total collection bank deposits')}
           icon={<TrendingUp size={24} />}
           variant="success"
           onClick={() => {
@@ -194,9 +195,9 @@ export const Payments: React.FC = () => {
         />
 
         <KpiCard
-          label="Supplier Payments (Outward)"
+          label={t('payments.supplierPaymentsOutward', 'Supplier Payments (Outward)')}
           value={formatINR(payments.filter((p) => p.type === 'SupplierPayment').reduce((s, p) => s + p.amount, 0))}
-          subtext="Total supplier cash outlays"
+          subtext={t('payments.totalSupplierCashOutlays', 'Total supplier cash outlays')}
           icon={<TrendingDown size={24} />}
           variant="danger"
           onClick={() => {
@@ -210,36 +211,36 @@ export const Payments: React.FC = () => {
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         {/* UPI Ledger */}
         <KpiCard
-          label="UPI Ledger"
+          label={t('payments.upiLedger', 'UPI Ledger')}
           value={formatINR(upiIn + upiOut)}
-          subtext={`In: ${formatINR(upiIn)} | Out: ${formatINR(upiOut)}`}
+          subtext={t('payments.inOutSubtext', 'In: {{inAmt}} | Out: {{outAmt}}', { inAmt: formatINR(upiIn), outAmt: formatINR(upiOut) })}
           icon={<Smartphone size={20} />}
           variant="info"
         />
 
         {/* Cash Ledger */}
         <KpiCard
-          label="Cash Ledger"
+          label={t('payments.cashLedger', 'Cash Ledger')}
           value={formatINR(cashIn + cashOut)}
-          subtext={`In: ${formatINR(cashIn)} | Out: ${formatINR(cashOut)}`}
+          subtext={t('payments.inOutSubtext', 'In: {{inAmt}} | Out: {{outAmt}}', { inAmt: formatINR(cashIn), outAmt: formatINR(cashOut) })}
           icon={<Wallet size={20} />}
           variant="success"
         />
 
         {/* Total Customer Dues */}
         <KpiCard
-          label="Customer Dues (Receivable)"
+          label={t('payments.customerDuesReceivable', 'Customer Dues (Receivable)')}
           value={formatINR(totalCustomerDues)}
-          subtext="Total outstanding balance"
+          subtext={t('payments.totalOutstandingBalance', 'Total outstanding balance')}
           icon={<AlertCircle size={20} />}
           variant="warning"
         />
 
         {/* Total Supplier Owed */}
         <KpiCard
-          label="Supplier Owed (Payable)"
+          label={t('payments.supplierOwedPayable', 'Supplier Owed (Payable)')}
           value={formatINR(totalSupplierOwed)}
-          subtext="Total accounts payable balance"
+          subtext={t('payments.totalAccountsPayableBalance', 'Total accounts payable balance')}
           icon={<TrendingDown size={20} />}
           variant="danger"
         />
@@ -328,7 +329,7 @@ export const Payments: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder="Search contact or reference..."
+                placeholder={t('payments.searchPlaceholder', 'Search contact or reference...')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ width: '100%' }}
@@ -349,11 +350,11 @@ export const Payments: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                <option value="All">All Methods</option>
+                <option value="All">{t('payments.allMethods', 'All Methods')}</option>
                 <option value="UPI">UPI</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Cheque">Cheque</option>
+                <option value="Cash">{translatePaymentMethod(t, 'Cash')}</option>
+                <option value="Bank Transfer">{translatePaymentMethod(t, 'Bank Transfer')}</option>
+                <option value="Cheque">{translatePaymentMethod(t, 'Cheque')}</option>
               </select>
             </div>
           </div>
@@ -374,7 +375,7 @@ export const Payments: React.FC = () => {
                 openNewPaymentForm({ contactId: '', type: activeTab });
               }}
             >
-              <Plus size={16} /> Record Payment
+              <Plus size={16} /> {t('payments.recordPayment', 'Record Payment')}
             </button>
           </div>
         </div>
@@ -385,12 +386,12 @@ export const Payments: React.FC = () => {
         {filteredPayments.length === 0 ? (
           <div className="empty-state">
             <ArrowRightLeft size={48} className="empty-state-icon" />
-            <h4 className="empty-state-title">No Payments Recorded</h4>
+            <h4 className="empty-state-title">{t('payments.noPaymentsRecorded', 'No Payments Recorded')}</h4>
             <p className="empty-state-desc">
-              There are no transactions matching your search query or selected method filters.
+              {t('payments.noPaymentsDesc', 'There are no transactions matching your search query or selected method filters.')}
             </p>
             <button className="btn btn-primary" onClick={() => openNewPaymentForm({ contactId: '', type: activeTab })}>
-              Record First Payment
+              {t('payments.recordFirstPayment', 'Record First Payment')}
             </button>
           </div>
         ) : (
@@ -401,14 +402,14 @@ export const Payments: React.FC = () => {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="text-nowrap">Receipt Date</th>
-                      <th className="text-nowrap">ID Code</th>
-                      <th>{activeTab === 'CustomerReceipt' ? 'Customer' : 'Supplier'} Name</th>
-                      <th className="text-nowrap">Amount Paid (₹)</th>
-                      <th className="text-nowrap">Payment Method</th>
-                      <th className="text-nowrap">Reference / Document No</th>
-                      <th>Remarks / Notes</th>
-                      <th className="text-nowrap" style={{ textAlign: 'center' }}>Actions</th>
+                      <th className="text-nowrap">{t('payments.receiptDate', 'Receipt Date')}</th>
+                      <th className="text-nowrap">{t('payments.idCode', 'ID Code')}</th>
+                      <th>{activeTab === 'CustomerReceipt' ? t('customer.customerName', 'Customer Name') : t('supplier.supplierName', 'Supplier Name')}</th>
+                      <th className="text-nowrap">{t('payments.amountPaid', 'Amount Paid (₹)')}</th>
+                      <th className="text-nowrap">{t('payments.paymentMethod', 'Payment Method')}</th>
+                      <th className="text-nowrap">{t('payments.refDocNo', 'Reference / Document No')}</th>
+                      <th>{t('payments.remarksNotes', 'Remarks / Notes')}</th>
+                      <th className="text-nowrap" style={{ textAlign: 'center' }}>{t('common.actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -443,7 +444,7 @@ export const Payments: React.FC = () => {
                           {formatINR(pay.amount)}
                         </td>
                         <td className="text-nowrap">
-                          <span className="badge badge-info">{pay.paymentMethod}</span>
+                          <span className="badge badge-info">{translatePaymentMethod(t, pay.paymentMethod)}</span>
                         </td>
                         <td className="text-nowrap" style={{ fontFamily: 'monospace', fontSize: '13px' }}>
                           {pay.referenceNumber || '—'}
@@ -460,7 +461,7 @@ export const Payments: React.FC = () => {
                               e.stopPropagation();
                               setActiveMenuPaymentId(activeMenuPaymentId === pay.id ? null : pay.id);
                             }}
-                            title="Actions"
+                            title={t('common.actions', 'Actions')}
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -510,7 +511,7 @@ export const Payments: React.FC = () => {
                                     handleOpenReceipt(pay);
                                   }}
                                 >
-                                  <Eye size={14} /> View Voucher
+                                  <Eye size={14} /> {t('payments.viewVoucher', 'View Voucher')}
                                 </button>
 
                                 <button 
@@ -533,7 +534,7 @@ export const Payments: React.FC = () => {
                                     openEditPaymentForm(pay);
                                   }}
                                 >
-                                  <Edit2 size={14} /> Edit Record
+                                  <Edit2 size={14} /> {t('payments.editRecord', 'Edit Record')}
                                 </button>
                                 
                                 <button 
@@ -556,7 +557,7 @@ export const Payments: React.FC = () => {
                                     handleDeletePayment(pay.id, pay.contactName, pay.type);
                                   }}
                                 >
-                                  <Trash size={14} /> Delete Record
+                                  <Trash size={14} /> {t('payments.deleteRecord', 'Delete Record')}
                                 </button>
                               </div>
                             </>
@@ -592,7 +593,7 @@ export const Payments: React.FC = () => {
                           {pay.contactName}
                         </button>
                       </h4>
-                      <span className="mobile-list-card-subtitle">{formatDate(pay.date)} • <span className="badge badge-info">{pay.paymentMethod}</span></span>
+                      <span className="mobile-list-card-subtitle">{formatDate(pay.date)} • <span className="badge badge-info">{translatePaymentMethod(t, pay.paymentMethod)}</span></span>
                     </div>
                     <div style={{ position: 'relative' }}>
                       <button
@@ -615,18 +616,18 @@ export const Payments: React.FC = () => {
                           }}>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { setActiveMenuPaymentId(null); handleOpenReceipt(pay); }}>
-                              <Eye size={14} /> View Voucher
+                              <Eye size={14} /> {t('payments.viewVoucher', 'View Voucher')}
                             </button>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => {
                                 setActiveMenuPaymentId(null);
                                 openEditPaymentForm(pay);
                               }}>
-                              <Edit2 size={14} /> Edit Record
+                              <Edit2 size={14} /> {t('payments.editRecord', 'Edit Record')}
                             </button>
                             <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
                               onClick={() => { setActiveMenuPaymentId(null); handleDeletePayment(pay.id, pay.contactName, pay.type); }}>
-                              <Trash size={14} /> Delete Record
+                              <Trash size={14} /> {t('payments.deleteRecord', 'Delete Record')}
                             </button>
                           </div>
                         </>
@@ -635,24 +636,24 @@ export const Payments: React.FC = () => {
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Voucher ID</span>
+                    <span className="mobile-list-card-label">{t('payments.voucherId', 'Voucher ID')}</span>
                     <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{pay.id}</span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Reference</span>
+                    <span className="mobile-list-card-label">{t('payments.reference', 'Reference')}</span>
                     <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{pay.referenceNumber || '—'}</span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Amount</span>
+                    <span className="mobile-list-card-label">{t('payments.amount', 'Amount')}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700, color: pay.type === 'CustomerReceipt' ? 'var(--color-success-dark)' : 'var(--color-danger-dark)' }}>
                       {formatINR(pay.amount)}
                     </span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Remarks</span>
+                    <span className="mobile-list-card-label">{t('payments.remarks', 'Remarks')}</span>
                     <span className="mobile-list-card-val" style={{ fontStyle: 'italic', fontSize: '12px' }}>{pay.notes || '—'}</span>
                   </div>
                 </div>
@@ -663,22 +664,22 @@ export const Payments: React.FC = () => {
             {totalPages > 1 && (
               <div className="pagination-row">
                 <span>
-                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
-                  <strong>{Math.min(currentPage * itemsPerPage, filteredPayments.length)}</strong> of{' '}
-                  <strong>{filteredPayments.length}</strong> transactions
+                  {t('common.showing', 'Showing')} <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> {t('common.to', 'to')}{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredPayments.length)}</strong> {t('common.of', 'of')}{' '}
+                  <strong>{filteredPayments.length}</strong> {t('payments.transactions', 'transactions')}
                 </span>
                 <div className="pagination-btn-group">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
-                    title="Previous Page"
+                    title={t('common.previousPage', 'Previous Page')}
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
-                    title="Next Page"
+                    title={t('common.nextPage', 'Next Page')}
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -689,10 +690,8 @@ export const Payments: React.FC = () => {
         )}
       </div>
 
-
-
       {/* Printable Receipt Modal */}
-      <Modal isOpen={isReceiptOpen} onClose={() => setIsReceiptOpen(false)} title="Payment Voucher Slip">
+      <Modal isOpen={isReceiptOpen} onClose={() => setIsReceiptOpen(false)} title={t('payments.paymentVoucherSlip', 'Payment Voucher Slip')}>
         {selectedReceipt && (
           <div>
             {/* Printable Area */}
@@ -724,43 +723,43 @@ export const Payments: React.FC = () => {
                   </p>
                 )}
                 <h3 style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginTop: '10px', color: 'var(--primary-dark)' }}>
-                  {selectedReceipt.type === 'CustomerReceipt' ? 'Receipt Voucher' : 'Payment Outflow Voucher'}
+                  {selectedReceipt.type === 'CustomerReceipt' ? t('payments.receiptVoucher', 'Receipt Voucher') : t('payments.paymentOutflowVoucher', 'Payment Outflow Voucher')}
                 </h3>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Voucher Number:</span>
+                  <span style={{ color: '#64748b' }}>{t('payments.voucherNumber', 'Voucher Number:')}</span>
                   <strong style={{ fontFamily: 'monospace' }}>{selectedReceipt.id}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Transaction Date:</span>
+                  <span style={{ color: '#64748b' }}>{t('payments.transactionDate', 'Transaction Date:')}</span>
                   <strong>{formatDate(selectedReceipt.date)}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #e2e8f0', paddingTop: '8px' }}>
                   <span style={{ color: '#64748b' }}>
-                    {selectedReceipt.type === 'CustomerReceipt' ? 'Received From (Customer):' : 'Paid To (Supplier):'}
+                    {selectedReceipt.type === 'CustomerReceipt' ? t('payments.receivedFromCustomer', 'Received From (Customer):') : t('payments.paidToSupplier', 'Paid To (Supplier):')}
                   </span>
                   <strong>{selectedReceipt.contactName}</strong>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: '#64748b' }}>Transfer Method:</span>
-                  <strong>{selectedReceipt.paymentMethod}</strong>
+                  <span style={{ color: '#64748b' }}>{t('payments.transferMethod', 'Transfer Method:')}</span>
+                  <strong>{translatePaymentMethod(t, selectedReceipt.paymentMethod)}</strong>
                 </div>
                 {selectedReceipt.referenceNumber && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ color: '#64748b' }}>Txn Reference ID:</span>
+                    <span style={{ color: '#64748b' }}>{t('payments.txnReferenceId', 'Txn Reference ID:')}</span>
                     <strong style={{ fontFamily: 'monospace' }}>{selectedReceipt.referenceNumber}</strong>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '2px solid #0f172a', borderBottom: '2px solid #0f172a', padding: '8px 0', fontSize: '16px', fontWeight: 700 }}>
-                  <span>Amount Transferred:</span>
+                  <span>{t('payments.amountTransferred', 'Amount Transferred:')}</span>
                   <span style={{ color: 'var(--primary-dark)' }}>{formatINR(selectedReceipt.amount)}</span>
                 </div>
 
                 {selectedReceipt.notes && (
                   <div style={{ marginTop: '8px' }}>
-                    <span style={{ color: '#64748b', fontSize: '12px' }}>Remarks / Notes:</span>
+                    <span style={{ color: '#64748b', fontSize: '12px' }}>{t('payments.remarksNotesLabel', 'Remarks / Notes:')}</span>
                     <p style={{ fontStyle: 'italic', fontSize: '13px', color: '#475569', marginTop: '2px' }}>
                       {selectedReceipt.notes}
                     </p>
@@ -769,16 +768,16 @@ export const Payments: React.FC = () => {
               </div>
 
               <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '11px', color: '#94a3b8', borderTop: '1px dashed #cbd5e1', paddingTop: '12px' }}>
-                <p>Computer generated transaction voucher. Thank you!</p>
+                <p>{t('payments.computerGeneratedNotice', 'Computer generated transaction voucher. Thank you!')}</p>
               </div>
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '20px' }} className="no-print">
               <button type="button" className="btn btn-secondary" onClick={() => setIsReceiptOpen(false)}>
-                Close
+                {t('common.close', 'Close')}
               </button>
               <button type="button" className="btn btn-primary" onClick={handlePrintReceipt}>
-                <Printer size={16} /> Print Voucher
+                <Printer size={16} /> {t('payments.printVoucher', 'Print Voucher')}
               </button>
             </div>
           </div>
@@ -791,16 +790,16 @@ export const Payments: React.FC = () => {
           if (!isDeletingPayment) setDeletingPaymentTarget(null);
         }}
         onConfirm={confirmDeletePayment}
-        title={deletingPaymentTarget?.type === 'CustomerReceipt' ? 'Delete Payment Receipt' : 'Delete Payment Payout'}
+        title={deletingPaymentTarget?.type === 'CustomerReceipt' ? t('payments.deletePaymentReceipt', 'Delete Payment Receipt') : t('payments.deletePaymentPayout', 'Delete Payment Payout')}
         itemName={deletingPaymentTarget?.name}
         description={deletingPaymentTarget ? (
           deletingPaymentTarget.type === 'CustomerReceipt' ? (
             <>
-              Are you sure you want to delete this payment receipt from <strong>{deletingPaymentTarget.name}</strong>? This will <strong>INCREASE</strong> their outstanding balance.
+              {t('payments.deleteReceiptConfirmDesc', 'Are you sure you want to delete this payment receipt from {{name}}? This will INCREASE their outstanding balance.', { name: deletingPaymentTarget.name })}
             </>
           ) : (
             <>
-              Are you sure you want to delete this payment payout to <strong>{deletingPaymentTarget.name}</strong>? This will <strong>INCREASE</strong> our outstanding balance owed.
+              {t('payments.deletePayoutConfirmDesc', 'Are you sure you want to delete this payment payout to {{name}}? This will INCREASE our outstanding balance owed.', { name: deletingPaymentTarget.name })}
             </>
           )
         ) : ''}

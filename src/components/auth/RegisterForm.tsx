@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import authService from '../../auth/authService';
 import registrationSync, { type RegistrationSyncEvent } from '../../utils/registrationSync';
@@ -19,6 +20,7 @@ const PinInput = ({
   inputId: string;
   nextInputId?: string;
 }) => {
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement | null>(null);
 
   return (
@@ -29,7 +31,7 @@ const PinInput = ({
         </label>
         {value.length === 4 && (
           <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-            <CheckCircle2 size={14} /> Ready
+            <CheckCircle2 size={14} /> {t('register.ready', 'Ready')}
           </span>
         )}
       </div>
@@ -116,6 +118,7 @@ interface RegisterFormProps {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, initialStep }) => {
+  const { t } = useTranslation();
   const { registerCompany } = useAuth();
   
   // Get or create temporary registration session ID for cross-tab matching
@@ -266,7 +269,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
 
   const handleSendVerification = async () => {
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-      setErrorMsg('Please enter a valid Email Address before sending verification email.');
+      setErrorMsg(t('register.errValidEmail', 'Please enter a valid Email Address before sending verification email.'));
       return;
     }
     setErrorMsg('');
@@ -284,7 +287,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
         setVerificationSent(true);
       }
     } else {
-      setErrorMsg(res.message || 'Failed to send verification email.');
+      setErrorMsg(res.message || t('register.errFailedSendEmail', 'Failed to send verification email.'));
     }
   };
 
@@ -293,22 +296,22 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
     setErrorMsg('');
 
     if (step === 1) {
-      if (!businessName.trim()) { setErrorMsg('Please enter your Business Name.'); return; }
+      if (!businessName.trim()) { setErrorMsg(t('register.errBusinessName', 'Please enter your Business Name.')); return; }
       setStep(2);
     } else if (step === 2) {
-      if (!ownerName.trim()) { setErrorMsg('Please enter the Owner Name.'); return; }
+      if (!ownerName.trim()) { setErrorMsg(t('register.errOwnerName', 'Please enter the Owner Name.')); return; }
       if (!mobile.trim() || mobile.replace(/\D/g, '').length < 10) {
-        setErrorMsg('Please enter a valid 10-digit Mobile Number.'); return;
+        setErrorMsg(t('register.errMobile', 'Please enter a valid 10-digit Mobile Number.')); return;
       }
-      if (!email.trim()) { setErrorMsg('Please enter your Email Address.'); return; }
+      if (!email.trim()) { setErrorMsg(t('register.errEmail', 'Please enter your Email Address.')); return; }
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
-        setErrorMsg('Please enter a valid Email Address.'); return;
+        setErrorMsg(t('register.errValidEmail', 'Please enter a valid Email Address.')); return;
       }
       if (!isEmailVerified) {
         if (!verificationSent && !sendingEmail) {
           handleSendVerification();
         }
-        setErrorMsg(`Verification email sent to ${email.trim()}. Please check your inbox and click the link to continue.`);
+        setErrorMsg(t('register.errVerifyEmailSent', 'Verification email sent to {{email}}. Please check your inbox and click the link to continue.', { email: email.trim() }));
         return;
       }
       setStep(3);
@@ -319,11 +322,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
     e.preventDefault();
     setErrorMsg('');
 
-    if (!password) { setErrorMsg('Please enter a password.'); return; }
-    if (password.length < 6) { setErrorMsg('Password must be at least 6 characters long.'); return; }
-    if (password !== confirmPassword) { setErrorMsg('Passwords do not match.'); return; }
-    if (!ownerPin || !/^\d{4}$/.test(ownerPin)) { setErrorMsg('Owner PIN must be exactly 4 digits.'); return; }
-    if (ownerPin !== confirmPin) { setErrorMsg('PINs do not match. Please re-enter your PIN.'); return; }
+    if (!password) { setErrorMsg(t('register.errPassword', 'Please enter a password.')); return; }
+    if (password.length < 6) { setErrorMsg(t('register.errPasswordLength', 'Password must be at least 6 characters long.')); return; }
+    if (password !== confirmPassword) { setErrorMsg(t('register.errPasswordsDoNotMatch', 'Passwords do not match.')); return; }
+    if (!ownerPin || !/^\d{4}$/.test(ownerPin)) { setErrorMsg(t('register.errOwnerPinDigits', 'Owner PIN must be exactly 4 digits.')); return; }
+    if (ownerPin !== confirmPin) { setErrorMsg(t('register.errPinsDoNotMatch', 'PINs do not match. Please re-enter your PIN.')); return; }
 
     setLoading(true);
     const res = await registerCompany(
@@ -371,10 +374,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
         </div>
 
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: '0 0 6px' }}>
-          Registration Successful!
+          {t('register.registrationSuccessful', 'Registration Successful!')}
         </h2>
         <p style={{ fontSize: '13px', color: 'var(--text-muted,#64748b)', margin: '0 0 16px' }}>
-          A verification link has been sent to your email address:
+          {t('register.verificationLinkSent', 'A verification link has been sent to your email address:')}
         </p>
 
         <div style={{
@@ -396,10 +399,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
             marginBottom: '18px', textAlign: 'left',
           }}>
             <div style={{ fontWeight: 800, fontSize: '13px', color: '#d97706', marginBottom: '4px' }}>
-              🛠️ Local Dev Mode Verification Link
+              {t('register.localDevLink', '🛠️ Local Dev Mode Verification Link')}
             </div>
             <p style={{ fontSize: '12px', color: 'var(--text-secondary,#475569)', margin: '0 0 10px', lineHeight: 1.4 }}>
-              Click below to verify your email directly in local testing:
+              {t('register.clickToVerifyNotice', 'Click below to verify your email directly in local testing:')}
             </p>
             <a
               href={registeredSuccessInfo.devVerificationLink}
@@ -415,7 +418,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
                 boxShadow: '0 2px 8px rgba(16,185,129,0.3)',
               }}
             >
-              🔗 Click Here to Verify Email
+              {t('register.clickHereToVerify', '🔗 Click Here to Verify Email')}
             </a>
           </div>
         )}
@@ -428,7 +431,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
             boxShadow: '0 4px 14px rgba(16,185,129,0.25)',
           }}
         >
-          🚀 Continue to AgriBiz Suite
+          {t('register.continueToSuite', '🚀 Continue to AgriBiz Suite')}
         </button>
       </div>
     );
@@ -445,10 +448,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
           margin: '0 auto 10px', boxShadow: '0 8px 20px rgba(16,185,129,0.28)', fontSize: '20px',
         }}>🌱</div>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0 }}>
-          Register Your Business
+          {t('register.registerYourBusiness', 'Register Your Business')}
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted,#64748b)', margin: '4px 0 0' }}>
-          Setup your company account with full enterprise access
+          {t('register.setupCompanyAccount', 'Setup your company account with full enterprise access')}
         </p>
       </div>
 
@@ -470,7 +473,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
                 {done ? <CheckCircle2 size={16} /> : s}
               </div>
               <span style={{ fontSize: '10px', fontWeight: active ? 700 : 500, color: active ? 'var(--text-primary,#0f172a)' : 'var(--text-muted,#94a3b8)', marginTop: '4px' }}>
-                {s === 1 ? 'Business' : s === 2 ? 'Owner' : 'Security'}
+                {s === 1 ? t('register.stepBusiness', 'Business') : s === 2 ? t('register.stepOwner', 'Owner') : t('register.stepSecurity', 'Security')}
               </span>
             </div>
           );
@@ -491,38 +494,38 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
       {step === 1 && (
         <form onSubmit={handleNextStep} style={{ animation: 'fadeIn 0.2s ease-out' }}>
           <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Business Name *</label>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.businessName', 'Business Name *')}</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><Building2 size={16} /></span>
-              <input type="text" className="form-control" placeholder="e.g. Patel Seeds & Agriculture Store"
+              <input type="text" className="form-control" placeholder={t('register.placeholderBusinessName', 'e.g. Patel Seeds & Agriculture Store')}
                 value={businessName} onChange={e => setBusinessName(e.target.value)}
                 style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} autoFocus required />
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: '14px' }}>
             <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              GSTIN <span style={{ fontWeight: 400, color: 'var(--text-muted,#94a3b8)' }}>(Optional)</span>
+              {t('register.gstin', 'GSTIN')} <span style={{ fontWeight: 400, color: 'var(--text-muted,#94a3b8)' }}>{t('register.optional', '(Optional)')}</span>
             </label>
-            <input type="text" className="form-control" placeholder="e.g. 23AAACA9876C1Z9"
+            <input type="text" className="form-control" placeholder={t('register.placeholderGstin', 'e.g. 23AAACA9876C1Z9')}
               value={gstin} onChange={e => setGstin(e.target.value.toUpperCase())}
               style={{ height: '44px', borderRadius: '10px', fontSize: '14px', textTransform: 'uppercase' }} maxLength={15} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '18px' }}>
             <div>
-              <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>City / Town</label>
-              <input type="text" className="form-control" placeholder="e.g. Pipariya"
+              <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.cityTown', 'City / Town')}</label>
+              <input type="text" className="form-control" placeholder={t('register.placeholderCity', 'e.g. Pipariya')}
                 value={city} onChange={e => setCity(e.target.value)}
                 style={{ height: '44px', borderRadius: '10px', fontSize: '14px' }} />
             </div>
             <div>
-              <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>State</label>
-              <input type="text" className="form-control" placeholder="e.g. Madhya Pradesh"
+              <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.state', 'State')}</label>
+              <input type="text" className="form-control" placeholder={t('register.placeholderState', 'e.g. Madhya Pradesh')}
                 value={state} onChange={e => setState(e.target.value)}
                 style={{ height: '44px', borderRadius: '10px', fontSize: '14px' }} />
             </div>
           </div>
           <button type="submit" className="btn btn-primary" style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}>
-            Continue to Owner Details <ArrowRight size={16} />
+            {t('register.continueToOwnerDetails', 'Continue to Owner Details')} <ArrowRight size={16} />
           </button>
         </form>
       )}
@@ -531,16 +534,16 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
       {step === 2 && (
         <form onSubmit={handleNextStep} style={{ animation: 'fadeIn 0.2s ease-out' }}>
           <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Owner Name *</label>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.ownerName', 'Owner Name *')}</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><User size={16} /></span>
-              <input type="text" className="form-control" placeholder="e.g. Vaibhav Patel"
+              <input type="text" className="form-control" placeholder={t('register.placeholderOwnerName', 'e.g. Vaibhav Patel')}
                 value={ownerName} onChange={e => setOwnerName(e.target.value)}
                 style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} autoFocus required />
             </div>
           </div>
           <div className="form-group" style={{ marginBottom: '14px' }}>
-            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Mobile Number (Login ID) *</label>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.mobileNumber', 'Mobile Number (Login ID) *')}</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{
                 position: 'absolute', left: '12px', color: 'var(--text-muted,#94a3b8)',
@@ -549,7 +552,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
               }}>
                 <Smartphone size={14} /> +91
               </span>
-              <input type="tel" className="form-control" placeholder="10-digit mobile number"
+              <input type="tel" className="form-control" placeholder={t('register.placeholderMobile', '10-digit mobile number')}
                 value={mobile} onChange={e => setMobile(e.target.value)}
                 style={{ paddingLeft: '78px', height: '44px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
                 maxLength={10} required />
@@ -557,14 +560,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
           </div>
           <div className="form-group" style={{ marginBottom: '18px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-              <label style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>Email Address *</label>
+              <label style={{ fontWeight: 700, fontSize: '13px', margin: 0 }}>{t('register.emailAddress', 'Email Address *')}</label>
               {isEmailVerified ? (
                 <span style={{ color: '#10b981', fontSize: '12px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <CheckCircle2 size={14} /> ✓ Email verified
+                  <CheckCircle2 size={14} /> {t('register.emailVerified', '✓ Email verified')}
                 </span>
               ) : (
                 <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '4px' }}>
-                  <AlertCircle size={14} /> Email not verified
+                  <AlertCircle size={14} /> {t('register.emailNotVerified', 'Email not verified')}
                 </span>
               )}
             </div>
@@ -574,7 +577,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
               <input
                 type="email"
                 className="form-control"
-                placeholder="e.g. vaibhav@agribizstore.com"
+                placeholder={t('register.placeholderEmail', 'e.g. vaibhav@agribizstore.com')}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
@@ -614,11 +617,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
                   }}
                 >
                   {sendingEmail ? (
-                    'Sending Email...'
+                    t('register.sendingEmail', 'Sending Email...')
                   ) : verificationSent ? (
-                    <><Send size={14} /> Resend Verification Email</>
+                    <><Send size={14} /> {t('register.resendVerificationEmail', 'Resend Verification Email')}</>
                   ) : (
-                    <><Send size={14} /> Send Verification Email</>
+                    <><Send size={14} /> {t('register.sendVerificationEmail', 'Send Verification Email')}</>
                   )}
                 </button>
               </div>
@@ -639,7 +642,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
                 alignItems: 'center',
                 gap: '6px',
               }}>
-                <CheckCircle2 size={14} /> Verification email sent. Check your inbox.
+                <CheckCircle2 size={14} /> {t('register.verificationEmailSentNotice', 'Verification email sent. Check your inbox.')}
               </div>
             )}
           </div>
@@ -647,11 +650,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
             <button type="button" className="btn btn-secondary"
               style={{ flex: '0 0 90px', height: '44px', borderRadius: '10px', justifyContent: 'center' }}
               onClick={() => setStep(1)}>
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> {t('register.back', 'Back')}
             </button>
             <button type="submit" className="btn btn-primary"
               style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}>
-              Continue to Security <ArrowRight size={16} />
+              {t('register.continueToSecurity', 'Continue to Security')} <ArrowRight size={16} />
             </button>
           </div>
         </form>
@@ -662,20 +665,20 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
         <form onSubmit={handleFinalRegister} style={{ animation: 'fadeIn 0.2s ease-out' }}>
           {/* Password */}
           <div className="form-group" style={{ marginBottom: '12px' }}>
-            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Create Password *</label>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.createPassword', 'Create Password *')}</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><Lock size={16} /></span>
-              <input type="password" className="form-control" placeholder="At least 6 characters"
+              <input type="password" className="form-control" placeholder={t('register.placeholderPassword', 'At least 6 characters')}
                 value={password} onChange={e => setPassword(e.target.value)}
                 style={{ paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px' }} autoFocus required />
             </div>
             <PasswordStrength password={password} />
           </div>
           <div className="form-group" style={{ marginBottom: '18px' }}>
-            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>Confirm Password *</label>
+            <label style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>{t('register.confirmPassword', 'Confirm Password *')}</label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}><ShieldCheck size={16} /></span>
-              <input type="password" className="form-control" placeholder="Re-enter your password"
+              <input type="password" className="form-control" placeholder={t('register.placeholderConfirmPassword', 'Re-enter your password')}
                 value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                 style={{
                   paddingLeft: '40px', height: '44px', borderRadius: '10px', fontSize: '14px',
@@ -683,7 +686,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
                 }} required />
             </div>
             {confirmPassword && confirmPassword !== password && (
-              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'block' }}>Passwords do not match</span>
+              <span style={{ fontSize: '11px', color: '#EF4444', fontWeight: 600, marginTop: '4px', display: 'block' }}>{t('register.passwordsDoNotMatch', 'Passwords do not match')}</span>
             )}
           </div>
 
@@ -696,35 +699,35 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
               <KeyRound size={15} style={{ color: '#10b981' }} />
               <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>
-                Owner Login PIN
+                {t('register.ownerLoginPin', 'Owner Login PIN')}
               </span>
               <span style={{ fontSize: '11px', color: 'var(--text-muted,#64748b)', marginLeft: 'auto' }}>
-                Used every time you log in
+                {t('register.usedEveryTimeLogin', 'Used every time you log in')}
               </span>
             </div>
 
             <PinInput
               value={ownerPin}
               onChange={setOwnerPin}
-              label="4-Digit Owner PIN *"
+              label={t('register.fourDigitOwnerPin', '4-Digit Owner PIN *')}
               inputId="owner-pin-input"
               nextInputId="confirm-pin-input"
             />
             <PinInput
               value={confirmPin}
               onChange={setConfirmPin}
-              label="Confirm PIN *"
+              label={t('register.confirmPin', 'Confirm PIN *')}
               inputId="confirm-pin-input"
             />
 
             {confirmPin.length === 4 && ownerPin.length === 4 && ownerPin !== confirmPin && (
               <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(239,68,68,0.08)', color: '#EF4444', fontSize: '12px', fontWeight: 600 }}>
-                PINs do not match
+                {t('register.pinsDoNotMatch', 'PINs do not match')}
               </div>
             )}
             {confirmPin.length === 4 && ownerPin.length === 4 && ownerPin === confirmPin && (
               <div style={{ padding: '8px 12px', borderRadius: '8px', background: 'rgba(16,185,129,0.08)', color: '#10b981', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <CheckCircle2 size={14} /> PIN confirmed ✓
+                <CheckCircle2 size={14} /> {t('register.pinConfirmed', 'PIN confirmed ✓')}
               </div>
             )}
           </div>
@@ -733,12 +736,12 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
             <button type="button" className="btn btn-secondary"
               style={{ flex: '0 0 90px', height: '44px', borderRadius: '10px', justifyContent: 'center' }}
               onClick={() => setStep(2)}>
-              <ArrowLeft size={16} /> Back
+              <ArrowLeft size={16} /> {t('register.back', 'Back')}
             </button>
             <button type="submit" className="btn btn-primary" disabled={loading}
               style={{ flex: 1, height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center',
                 boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
-              {loading ? 'Registering...' : '🚀 Complete & Launch Suite'}
+              {loading ? t('register.registering', 'Registering...') : t('register.completeAndLaunchSuite', '🚀 Complete & Launch Suite')}
             </button>
           </div>
         </form>
@@ -749,7 +752,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin, ini
         <button type="button"
           style={{ background: 'none', border: 'none', color: 'var(--text-secondary,#475569)', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           onClick={onSwitchToLogin}>
-          Already have an account? <strong style={{ color: 'var(--primary,#10b981)' }}>Sign In</strong>
+          {t('register.alreadyHaveAccount', 'Already have an account?')} <strong style={{ color: 'var(--primary,#10b981)' }}>{t('register.signIn', 'Sign In')}</strong>
         </button>
       </div>
     </div>

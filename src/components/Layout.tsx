@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
+import { translateRole } from '../utils/statusTranslation';
 import { useApp } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import { Modal } from './Modal';
@@ -43,6 +45,8 @@ interface LayoutProps {
 }
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
+  const { t, i18n } = useTranslation();
+
   const {
     currentTab,
     settings,
@@ -115,13 +119,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mainWrapperRef = useRef<HTMLDivElement>(null);
   const bottomNavRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>('en');
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>(
+    () => (i18n.language?.slice(0, 2) as 'en' | 'mr' | 'hi') || 'en'
+  );
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const LANGUAGES = [
     { code: 'en', label: 'English', nativeLabel: 'English' },
     { code: 'mr', label: 'Marathi', nativeLabel: 'मराठी' },
-    { code: 'hi', label: 'Hindi', nativeLabel: 'हिंदी' },
+    { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
   ];
 
   useEffect(() => {
@@ -133,8 +139,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       window.removeEventListener('scroll', handleScroll);
     };
   }, []);
-
-
 
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
@@ -174,12 +178,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
       const target = e.target as HTMLElement;
 
-      // Do not trigger swipe page navigation inside any horizontally scrollable container
       if (isHorizontallyScrollable(target)) {
         return;
       }
 
-      // Do not trigger swipe inside modals, inputs, and controls
       if (
         target.closest('.modal') ||
         target.closest('input') ||
@@ -205,11 +207,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       const diffX = touchStartX - touchEndX;
       const diffY = touchStartY - touchEndY;
 
-      // Reset coordinates
       touchStartX = 0;
       touchStartY = 0;
 
-      // Must be a horizontal swipe (X diff larger than Y diff) and above threshold (e.g. 75px)
       if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 75) {
         const orderedTabs = [
           'dashboard',
@@ -228,24 +228,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         if (currentIndex === -1) return;
 
         if (diffX > 0) {
-          // Swiped Left -> Next Tab
           const nextIndex = currentIndex + 1;
           if (nextIndex < orderedTabs.length) {
             handleTabChange(orderedTabs[nextIndex]);
           } else {
-            handleTabChange(orderedTabs[0]); // Wrap last -> first
+            handleTabChange(orderedTabs[0]);
           }
         } else {
-          // Swiped Right -> Previous Tab
           if (currentIndex === orderedTabs.length - 1) {
-            // From last page on right swipe, go to first page
             handleTabChange(orderedTabs[0]);
           } else {
             const prevIndex = currentIndex - 1;
             if (prevIndex >= 0) {
               handleTabChange(orderedTabs[prevIndex]);
             } else {
-              handleTabChange(orderedTabs[orderedTabs.length - 1]); // Wrap first -> last
+              handleTabChange(orderedTabs[orderedTabs.length - 1]);
             }
           }
         }
@@ -261,7 +258,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     };
   }, [currentTab]);
 
-  // Center the active mobile bottom nav tab item when currentTab changes without scrolling window vertically
   useEffect(() => {
     window.scrollTo(0, 0);
     const rafId = requestAnimationFrame(() => {
@@ -305,7 +301,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  // Keyboard shortcut Ctrl+K / Cmd+K listener
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
@@ -317,7 +312,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
-  // Handle clicking outside of dropdowns to close them
   useEffect(() => {
     const handleOutsideClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
@@ -332,7 +326,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => document.removeEventListener('click', handleOutsideClick);
   }, []);
 
-  // Scroll page to top on page / view transitions
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'auto' });
   }, [
@@ -345,8 +338,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     isEnteringPurchase
   ]);
 
-
-
   const handleTabChange = (tab: string) => {
     navigateTab(tab);
     setIsMobileSidebarOpen(false);
@@ -356,69 +347,67 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     setTheme(activeTheme === 'light' ? 'dark' : 'light');
   };
 
-
-
   const getPageTitle = () => {
     switch (currentTab) {
       case 'dashboard':
-        return 'Business Overview';
+        return t('dashboard.title', 'Business Overview');
       case 'sales':
-        return 'Sales Invoices';
+        return t('sales.title', 'Sales Invoices');
       case 'purchases':
-        return 'Supplier Purchases';
+        return t('purchases.title', 'Supplier Purchases');
       case 'inventory':
-        return 'Inventory Stock';
+        return t('inventory.title', 'Inventory Stock');
       case 'customers':
-        return 'Customer Directory';
+        return t('customers.title', 'Customer Directory');
       case 'suppliers':
-        return 'Supplier Directory';
+        return t('suppliers.title', 'Supplier Directory');
       case 'payments':
-        return 'Payments Ledger';
+        return t('payments.title', 'Payments Ledger');
       case 'reports':
-        return 'Business Reports';
+        return t('reports.title', 'Business Reports');
       case 'settings':
-        return 'Application Settings';
+        return t('settings.title', 'Application Settings');
       case 'expenses':
-        return 'Expense Manager';
+        return t('expenses.title', 'Expense Manager');
       case 'recycle_bin':
-        return 'Recycle Bin';
+        return t('recycleBin.title', 'Recycle Bin');
       default:
         return settings.businessName || 'AgriBiz';
     }
   };
 
   const operationsItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: <LayoutDashboard size={18} />, color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)' },
-    { id: 'sales', label: 'Sales Invoices', icon: <FileSpreadsheet size={18} />, color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.15)' },
-    { id: 'purchases', label: 'Purchases Ledger', icon: <ShoppingBag size={18} />, color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)' },
-    { id: 'inventory', label: 'Inventory Stock', icon: <Package size={18} />, color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.15)' },
-    { id: 'expenses', label: 'Expenses Book', icon: <TrendingDown size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
+    { id: 'dashboard', label: t('nav.dashboard', 'Dashboard'), icon: <LayoutDashboard size={18} />, color: '#10b981', glow: 'rgba(16, 185, 129, 0.15)' },
+    { id: 'sales', label: t('nav.sales', 'Sales Invoices'), icon: <FileSpreadsheet size={18} />, color: '#3b82f6', glow: 'rgba(59, 130, 246, 0.15)' },
+    { id: 'purchases', label: t('nav.purchases', 'Purchases Ledger'), icon: <ShoppingBag size={18} />, color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.15)' },
+    { id: 'inventory', label: t('nav.inventory', 'Inventory Stock'), icon: <Package size={18} />, color: '#8b5cf6', glow: 'rgba(139, 92, 246, 0.15)' },
+    { id: 'expenses', label: t('nav.expenses', 'Expenses Book'), icon: <TrendingDown size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
   ];
 
   const directoriesItems = [
-    { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={18} />, color: '#0d9488', glow: 'rgba(13, 148, 136, 0.15)' },
-    { id: 'customers', label: 'Customers List', icon: <Users size={18} />, color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)' },
-    { id: 'suppliers', label: 'Suppliers List', icon: <Truck size={18} />, color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)' },
+    { id: 'payments', label: t('nav.payments', 'Payments Book'), icon: <IndianRupee size={18} />, color: '#0d9488', glow: 'rgba(13, 148, 136, 0.15)' },
+    { id: 'customers', label: t('nav.customers', 'Customers List'), icon: <Users size={18} />, color: '#ec4899', glow: 'rgba(236, 72, 153, 0.15)' },
+    { id: 'suppliers', label: t('nav.suppliers', 'Suppliers List'), icon: <Truck size={18} />, color: '#06b6d4', glow: 'rgba(6, 182, 212, 0.15)' },
   ];
 
   const adminItems = [
-    { id: 'reports', label: 'Business Reports', icon: <TrendingUp size={18} />, color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)' },
-    { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
-    { id: 'settings', label: 'Store Settings', icon: <SettingsIcon size={18} />, color: '#64748b', glow: 'rgba(100, 116, 139, 0.15)' },
+    { id: 'reports', label: t('nav.reports', 'Business Reports'), icon: <TrendingUp size={18} />, color: '#6366f1', glow: 'rgba(99, 102, 241, 0.15)' },
+    { id: 'recycle_bin', label: t('nav.recycleBin', 'Recycle Bin'), icon: <Trash2 size={18} />, color: '#ef4444', glow: 'rgba(239, 68, 68, 0.15)' },
+    { id: 'settings', label: t('nav.settings', 'Store Settings'), icon: <SettingsIcon size={18} />, color: '#64748b', glow: 'rgba(100, 116, 139, 0.15)' },
   ];
 
   const bottomNavItems = [
-    { id: 'dashboard', label: 'Home', icon: <LayoutDashboard size={18} /> },
-    { id: 'sales', label: 'Sales', icon: <FileSpreadsheet size={18} /> },
-    { id: 'purchases', label: 'Purchases', icon: <ShoppingBag size={18} /> },
-    { id: 'inventory', label: 'Inventory', icon: <Package size={18} /> },
-    { id: 'expenses', label: 'Expenses', icon: <TrendingDown size={18} /> },
-    { id: 'payments', label: 'Payments', icon: <IndianRupee size={18} /> },
-    { id: 'customers', label: 'Customers', icon: <Users size={18} /> },
-    { id: 'suppliers', label: 'Suppliers', icon: <Truck size={18} /> },
-    { id: 'reports', label: 'Reports', icon: <TrendingUp size={18} /> },
-    { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={18} /> },
-    { id: 'settings', label: 'Settings', icon: <SettingsIcon size={18} /> },
+    { id: 'dashboard', label: t('nav.dashboard', 'Home'), icon: <LayoutDashboard size={18} /> },
+    { id: 'sales', label: t('nav.sales', 'Sales'), icon: <FileSpreadsheet size={18} /> },
+    { id: 'purchases', label: t('nav.purchases', 'Purchases'), icon: <ShoppingBag size={18} /> },
+    { id: 'inventory', label: t('nav.inventory', 'Inventory'), icon: <Package size={18} /> },
+    { id: 'expenses', label: t('nav.expenses', 'Expenses'), icon: <TrendingDown size={18} /> },
+    { id: 'payments', label: t('nav.payments', 'Payments'), icon: <IndianRupee size={18} /> },
+    { id: 'customers', label: t('nav.customers', 'Customers'), icon: <Users size={18} /> },
+    { id: 'suppliers', label: t('nav.suppliers', 'Suppliers'), icon: <Truck size={18} /> },
+    { id: 'reports', label: t('nav.reports', 'Reports'), icon: <TrendingUp size={18} /> },
+    { id: 'recycle_bin', label: t('nav.recycleBin', 'Recycle Bin'), icon: <Trash2 size={18} /> },
+    { id: 'settings', label: t('nav.settings', 'Settings'), icon: <SettingsIcon size={18} /> },
   ];
 
   const permittedBottomNavItems = bottomNavItems.filter((item) => hasPermission(item.id));
@@ -466,13 +455,13 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     if (!isMobileMoreOpen) return null;
 
     const moreItems = [
-      { id: 'expenses', label: 'Expenses Book', icon: <TrendingDown size={20} />, desc: 'Store operational costs', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
-      { id: 'payments', label: 'Payments Book', icon: <IndianRupee size={20} />, desc: 'Ledger & Cashbook', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
-      { id: 'customers', label: 'Customers', icon: <Users size={20} />, desc: 'Client Directory', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
-      { id: 'suppliers', label: 'Suppliers', icon: <Truck size={20} />, desc: 'Vendor Contacts', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
-      { id: 'reports', label: 'Tax & Reports', icon: <TrendingUp size={20} />, desc: 'GSTR & P&L Analytics', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
-      { id: 'recycle_bin', label: 'Recycle Bin', icon: <Trash2 size={20} />, desc: 'Restore deleted records', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
-      { id: 'settings', label: 'Settings', icon: <SettingsIcon size={20} />, desc: 'Store Preferences', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' },
+      { id: 'expenses', label: t('nav.expenses', 'Expenses Book'), icon: <TrendingDown size={20} />, desc: 'Store operational costs', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+      { id: 'payments', label: t('nav.payments', 'Payments Book'), icon: <IndianRupee size={20} />, desc: 'Ledger & Cashbook', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.1)' },
+      { id: 'customers', label: t('nav.customers', 'Customers'), icon: <Users size={20} />, desc: 'Client Directory', color: '#10b981', bg: 'rgba(16, 185, 129, 0.1)' },
+      { id: 'suppliers', label: t('nav.suppliers', 'Suppliers'), icon: <Truck size={20} />, desc: 'Vendor Contacts', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.1)' },
+      { id: 'reports', label: t('nav.reports', 'Tax & Reports'), icon: <TrendingUp size={20} />, desc: 'GSTR & P&L Analytics', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.1)' },
+      { id: 'recycle_bin', label: t('nav.recycleBin', 'Recycle Bin'), icon: <Trash2 size={20} />, desc: 'Restore deleted records', color: '#ef4444', bg: 'rgba(239, 68, 68, 0.1)' },
+      { id: 'settings', label: t('nav.settings', 'Settings'), icon: <SettingsIcon size={20} />, desc: 'Store Preferences', color: '#64748b', bg: 'rgba(100, 116, 139, 0.1)' },
     ].filter((item) => hasPermission(item.id));
 
     return createPortal(
@@ -492,12 +481,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          {/* Drag Handle */}
           <div style={{ width: '46px', height: '5px', backgroundColor: 'var(--border-color)', borderRadius: '3px', margin: '0 auto 24px auto', opacity: 0.8 }} />
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '18px', fontWeight: 800, fontFamily: 'var(--font-display)', color: 'var(--text-primary)', margin: 0 }}>
-              Store Management
+              {t('common.storeManagement', 'Store Management')}
             </h3>
             <button
               type="button"
@@ -623,7 +611,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           borderRight: `1px solid ${activeTheme === 'dark' ? 'rgba(255,255,255,0.055)' : '#e8edf2'}`,
         }}
       >
-        {/* ── Logo-only branding area ── */}
         <div
           className="prem-workspace-card prem-logo-only"
           onMouseMove={handleGlowMove}
@@ -632,7 +619,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           tabIndex={0}
           title="Go to Settings"
         >
-          {/* Glass logo frame */}
           <div className="prem-logo-frame prem-logo-large">
             {settings.showLogo && settings.logo ? (
               <img src={settings.logo} alt={settings.businessName || 'Logo'} fetchPriority="high" decoding="async" />
@@ -643,7 +629,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             )}
           </div>
 
-          {/* Mobile close button */}
           {isMobileSidebarOpen && (
             <button
               type="button"
@@ -656,14 +641,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           )}
         </div>
 
-        {/* ── Navigation Menu ── */}
         <nav className="prem-nav-menu" aria-label="Main navigation">
-          {renderNavGroup('Operations', operationsItems)}
-          {renderNavGroup('Directories', directoriesItems)}
-          {renderNavGroup('Admin', adminItems)}
+          {renderNavGroup(t('nav.operations', 'Operations'), operationsItems)}
+          {renderNavGroup(t('nav.directories', 'Directories'), directoriesItems)}
+          {renderNavGroup(t('nav.admin', 'Admin'), adminItems)}
         </nav>
 
-        {/* ── Tooltip portal for collapsed mode ── */}
         {isSidebarCollapsed && navTooltip && createPortal(
           <div
             className="prem-nav-tooltip"
@@ -674,10 +657,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>,
           document.body
         )}
-
       </aside>
 
-      {/* Edge Collapse Toggle Button */}
       <button
         type="button"
         className="prem-edge-collapse-btn no-print"
@@ -690,11 +671,9 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         {isSidebarCollapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
       </button>
 
-      {/* Main Content Area */}
       <div className="main-wrapper" ref={mainWrapperRef}>
         <div className="header-outer-wrapper no-print">
           <header className={`header${scrolled ? ' scrolled' : ''}`}>
-          {/* Left: Brand logo & badge */}
           <div className="header-left">
             <button 
               className="menu-toggle no-print" 
@@ -718,7 +697,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Middle: Global Search Input */}
           <div className="header-middle no-print">
             <div className="global-search-wrapper">
               <Search size={15} className="search-icon" />
@@ -727,7 +705,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   ref={searchInputRef}
                   type="text"
                   className="search-input"
-                  placeholder={`Search...`}
+                  placeholder={t('common.search', 'Search...')}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -745,9 +723,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
-          {/* Right Actions */}
           <div className="header-right no-print">
-            {/* Theme Toggle */}
             <button
               className="theme-toggle-btn"
               onClick={toggleTheme}
@@ -756,13 +732,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {activeTheme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
 
-            {/* Language Selector (Farma Style - Non-functional) */}
             <div className="lang-selector-wrapper">
               <button
                 type="button"
                 className={`lang-selector-btn${isLangDropdownOpen ? ' active' : ''}`}
                 onClick={() => setIsLangDropdownOpen(!isLangDropdownOpen)}
-                title="Select Language"
+                title={t('common.selectLanguage', 'Select Language')}
               >
                 <Globe size={18} className="lang-selector-globe" style={{ margin: 0 }} />
               </button>
@@ -774,7 +749,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       type="button"
                       className={`lang-dropdown-item${lang.code === selectedLanguage ? ' active' : ''}`}
                       onClick={() => {
-                        setSelectedLanguage(lang.code as 'en' | 'mr' | 'hi');
+                        const code = lang.code as 'en' | 'mr' | 'hi';
+                        setSelectedLanguage(code);
+                        i18n.changeLanguage(code);
+                        try { localStorage.setItem('agribiz_language', code); } catch {}
                         setIsLangDropdownOpen(false);
                       }}
                     >
@@ -788,7 +766,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
             </div>
 
-            {/* Notifications Bell */}
             <div className="notification-wrapper">
               <button
                 className="notification-btn"
@@ -855,7 +832,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               )}
             </div>
 
-            {/* Profile Dropdown */}
             <div className="profile-wrapper">
               <button
                 className="profile-trigger"
@@ -880,7 +856,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       backgroundColor: currentUser?.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : currentUser?.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
                       color: currentUser?.role === 'Owner' ? 'var(--primary, #10b981)' : currentUser?.role === 'Accounts' ? '#6366F1' : '#D97706'
                     }}>
-                      {currentUser ? currentUser.role : 'Owner'}
+                      {translateRole(t, currentUser?.role)}
                     </span>
                   </span>
                 </div>
@@ -889,7 +865,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
               {isProfileDropdownOpen && (
                 <div className="profile-dropdown animate-fade-in-scale">
-                  {/* Header Identity Card */}
                   <div className="profile-dropdown-header-card">
                     <div className="profile-dropdown-avatar">
                       {getUserInitials(currentUser?.name)}
@@ -916,7 +891,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                   <div className="profile-dropdown-divider" />
 
-                  {/* Menu List */}
                   <div className="profile-dropdown-menu-list">
                     {hasPermission('settings') && (
                       <button
@@ -931,7 +905,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                           <User size={15} />
                         </div>
                         <div className="profile-menu-text">
-                          <span className="title">Profile & Settings</span>
+                          <span className="title">{t('settings.businessProfile', 'Profile & Settings')}</span>
                           <span className="desc">Manage business profile & team</span>
                         </div>
                         <ChevronRight size={14} className="chevron" />
@@ -944,14 +918,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       onClick={() => {
                         setIsProfileDropdownOpen(false);
                         logoutStaff();
-                        showToast('Switched — please select your profile', 'info');
+                        showToast(t('auth.switchedProfile', 'Switched — please select your profile'), 'info');
                       }}
                     >
                       <div className="profile-menu-icon icon-switch">
                         <Users size={15} />
                       </div>
                       <div className="profile-menu-text">
-                        <span className="title">Switch Staff</span>
+                        <span className="title">{t('nav.switchStaff', 'Switch Staff')}</span>
                         <span className="desc">Switch active user session</span>
                       </div>
                       <ChevronRight size={14} className="chevron" />
@@ -960,21 +934,19 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
                   <div className="profile-dropdown-divider" />
 
-                  {/* Logout Button */}
                   <button
                     type="button"
                     className="profile-logout-btn"
                     onClick={() => {
                       setIsProfileDropdownOpen(false);
                       logout();
-                      showToast('Signed out to Role Selection', 'info');
+                      showToast(t('auth.signedOut', 'Signed out to Role Selection'), 'info');
                     }}
                   >
                     <LogOut size={15} />
-                    <span>Sign Out / Lock Session</span>
+                    <span>{t('nav.logout', 'Sign Out / Lock Session')}</span>
                   </button>
 
-                  {/* Forget This Device Button */}
                   <button
                     type="button"
                     className="profile-logout-btn"
@@ -986,7 +958,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     }}
                   >
                     <Smartphone size={15} />
-                    <span>Forget This Device</span>
+                    <span>{t('auth.forgetDevice', 'Forget This Device')}</span>
                   </button>
                 </div>
               )}
@@ -1050,7 +1022,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       {renderMobileBottomNav()}
       {renderMobileMoreBottomSheet()}
 
-      {/* Global Toast Notification */}
       {toast && (
         <div className="toast-container no-print">
           <div className={`toast ${toast.type}`}>
@@ -1062,12 +1033,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       )}
 
-      {/* Unsaved Changes Confirmation Modal */}
       {showUnsavedModal && (
         <Modal
           isOpen={showUnsavedModal}
           onClose={confirmStay}
-          title="Unsaved Changes Warning"
+          title={t('modals.unsavedTitle', 'Unsaved Changes Warning')}
         >
           <div style={{ padding: '4px 0 0 0', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
@@ -1086,10 +1056,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Unsaved Changes Warning
+                  {t('modals.unsavedTitle', 'Unsaved Changes Warning')}
                 </h4>
                 <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5', margin: '4px 0 0 0', wordBreak: 'break-word' }}>
-                  You are leaving the form without saving it. Any unsaved changes will be lost if you proceed.
+                  {t('modals.unsavedMsg', 'You are leaving the form without saving it. Any unsaved changes will be lost if you proceed.')}
                 </p>
               </div>
             </div>
@@ -1120,7 +1090,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   justifyContent: 'center'
                 }}
               >
-                Cancel
+                {t('common.cancel', 'Cancel')}
               </button>
               <button 
                 type="button" 
@@ -1141,22 +1111,21 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   justifyContent: 'center'
                 }}
               >
-                Leave
+                {t('common.leave', 'Leave')}
               </button>
             </div>
           </div>
         </Modal>
       )}
 
-      {/* Global Record/Edit Payment Modal */}
       <Modal 
         isOpen={isPaymentFormOpen} 
         onClose={() => requestNavigation(() => setIsPaymentFormOpen(false))} 
-        title={editingPaymentId ? "Edit Transaction Record" : "Record New Transaction"}
+        title={editingPaymentId ? t('payments.editTransaction', 'Edit Transaction Record') : t('payments.recordTransaction', 'Record New Transaction')}
       >
         <form onSubmit={handleSavePayment}>
           <div className="form-group">
-            <label className="form-label">Transaction Type *</label>
+            <label className="form-label">{t('payments.type', 'Transaction Type')} *</label>
             <div className="payment-type-toggle">
               <button
                 type="button"
@@ -1171,7 +1140,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   setContactId('');
                 }}
               >
-                Inward Receipt (Customer)
+                {t('payments.inward', 'Inward Receipt (Customer)')}
               </button>
               <button
                 type="button"
@@ -1186,14 +1155,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   setContactId('');
                 }}
               >
-                Outward Payout (Supplier)
+                {t('payments.outward', 'Outward Payout (Supplier)')}
               </button>
             </div>
           </div>
 
           <div className="form-group">
             <label className="form-label">
-              Select {paymentType === 'CustomerReceipt' ? 'Customer' : 'Supplier'} *
+              {t('payments.selectParty', 'Select Party')} *
             </label>
             <select
               className="form-control"
@@ -1202,7 +1171,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               required
               style={{ paddingRight: '36px' }}
             >
-              <option value="">-- Choose Contact --</option>
+              <option value="">{t('common.chooseContact', '-- Choose Contact --')}</option>
               {paymentType === 'CustomerReceipt'
                 ? customers.map((c) => (
                     <option key={c.id} value={c.id}>
@@ -1233,7 +1202,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               const textColor = paymentType === 'CustomerReceipt'
                 ? (isOwed ? 'var(--color-warning-dark)' : 'var(--color-success-dark)')
                 : (isOwed ? 'var(--color-danger-dark)' : 'var(--color-success-dark)');
-              const labelText = paymentType === 'CustomerReceipt' ? 'Customer Dues' : 'Balance We Owe';
+              const labelText = paymentType === 'CustomerReceipt' ? t('customers.outstanding', 'Customer Dues') : t('suppliers.payable', 'Balance We Owe');
 
               return (
                 <div className="selected-contact-card" style={{ background: cardColor, borderColor: borderColor } as React.CSSProperties}>
@@ -1257,7 +1226,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <div className="form-row">
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Payment Date *</label>
+              <label className="form-label">{t('common.date', 'Payment Date')} *</label>
               <input
                 type="date"
                 className="form-control"
@@ -1267,7 +1236,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               />
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Amount Transferred *</label>
+              <label className="form-label">{t('payments.amount', 'Amount Transferred')} *</label>
               <div style={{ position: 'relative' }}>
                 <span style={{
                   position: 'absolute',
@@ -1294,7 +1263,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <div className="form-row">
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Payment Method *</label>
+              <label className="form-label">{t('sales.paymentMethod', 'Payment Method')} *</label>
               <select
                 className="form-control"
                 value={paymentMethod}
@@ -1307,7 +1276,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               </select>
             </div>
             <div className="form-group" style={{ margin: 0 }}>
-              <label className="form-label">Reference Number (Txn/Cheque ID)</label>
+              <label className="form-label">{t('payments.reference', 'Reference Number (Txn/Cheque ID)')}</label>
               <input
                 type="text"
                 className="form-control"
@@ -1319,7 +1288,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Remarks / Description</label>
+            <label className="form-label">{t('common.notes', 'Remarks / Description')}</label>
             <textarea
               className="form-control"
               placeholder="e.g. Settle outstanding bill payment"
@@ -1332,7 +1301,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <div className="modal-form-actions no-print">
             <button type="button" className="btn btn-secondary" onClick={() => requestNavigation(() => setIsPaymentFormOpen(false))} style={{ borderRadius: '8px' }}>
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button
               type="submit"
@@ -1346,13 +1315,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 cursor: isSubmittingPayment ? 'not-allowed' : 'pointer',
               }}
             >
-              {isSubmittingPayment ? 'Saving...' : editingPaymentId ? '✓ Save Changes' : '✓ Log Transaction'}
+              {isSubmittingPayment ? t('common.saving', 'Saving...') : editingPaymentId ? t('common.saveChanges', '✓ Save Changes') : t('payments.logTransaction', '✓ Log Transaction')}
             </button>
           </div>
         </form>
       </Modal>
 
-      {/* Custom PWA Installation Dialog */}
       <PWAInstallModal />
     </div>
   );

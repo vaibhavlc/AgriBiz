@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { authService } from '../auth/authService';
 import { Smartphone, Mail, ArrowLeft, CheckCircle2, KeyRound, Lock, AlertCircle, Loader2 } from 'lucide-react';
@@ -9,13 +10,14 @@ interface ForgotPasswordProps {
 }
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin, token: propToken }) => {
+  const { t } = useTranslation();
   const [urlToken, setUrlToken] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const t = propToken || params.get('token');
-    if (t) {
-      setUrlToken(t);
+    const tParam = propToken || params.get('token');
+    if (tParam) {
+      setUrlToken(tParam);
       setStep('reset');
     }
   }, [propToken]);
@@ -33,7 +35,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
     e.preventDefault();
     const cleanMobile = mobile.replace(/\D/g, '');
     if (!cleanMobile || cleanMobile.length !== 10) {
-      setErrorMsg('Please enter a valid 10-digit registered mobile number.');
+      setErrorMsg(t('forgotPassword.errValidMobile', 'Please enter a valid 10-digit registered mobile number.'));
       return;
     }
 
@@ -51,7 +53,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         setErrorMsg(res.message);
       }
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Connection error. Please try again.');
+      setErrorMsg(err?.message || t('forgotPassword.errConnection', 'Connection error. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -69,16 +71,16 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
     const tokenToUse = urlToken || new URLSearchParams(window.location.search).get('token');
 
     if (!tokenToUse) {
-      setErrorMsg('Password reset token is missing or expired. Please request a new link.');
+      setErrorMsg(t('forgotPassword.errTokenMissing', 'Password reset token is missing or expired. Please request a new link.'));
       return;
     }
 
     if (!newPassword || newPassword.length < 6) {
-      setErrorMsg('New password must be at least 6 characters.');
+      setErrorMsg(t('forgotPassword.errPasswordMin', 'New password must be at least 6 characters.'));
       return;
     }
     if (newPassword !== confirmPassword) {
-      setErrorMsg('Passwords do not match.');
+      setErrorMsg(t('forgotPassword.errPasswordMatch', 'Passwords do not match.'));
       return;
     }
 
@@ -95,7 +97,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         setErrorMsg(res.message);
       }
     } catch (err: any) {
-      setErrorMsg(err?.message || 'Connection error. Please try again.');
+      setErrorMsg(err?.message || t('forgotPassword.errConnection', 'Connection error. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -120,12 +122,12 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
           <KeyRound size={24} />
         </div>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0 }}>
-          {step === 'reset' ? 'Create New Password' : 'Password Recovery'}
+          {step === 'reset' ? t('forgotPassword.createNewPassword', 'Create New Password') : t('forgotPassword.passwordRecovery', 'Password Recovery')}
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', margin: '4px 0 0 0' }}>
           {step === 'reset'
-            ? 'Enter a secure new password for your AgriBiz account'
-            : 'Reset link will be sent to the verified email linked to your mobile'}
+            ? t('forgotPassword.enterSecurePassword', 'Enter a secure new password for your AgriBiz account')
+            : t('forgotPassword.resetLinkSentToEmail', 'Reset link will be sent to the verified email linked to your mobile')}
         </p>
       </div>
 
@@ -155,7 +157,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         <form onSubmit={handleRequestResetLink}>
           <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Registered Mobile Number *
+              {t('forgotPassword.registeredMobileNumber', 'Registered Mobile Number *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span
@@ -178,7 +180,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
               <input
                 type="tel"
                 className="form-control"
-                placeholder="10-digit mobile number"
+                placeholder={t('forgotPassword.placeholderMobile', '10-digit mobile number')}
                 value={mobile}
                 onChange={(e) => setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))}
                 style={{ paddingLeft: '78px', height: '44px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
@@ -188,7 +190,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
               />
             </div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', marginTop: '6px', display: 'block' }}>
-              The password reset link will be sent to the verified email address linked to this account.
+              {t('forgotPassword.resetLinkNotice', 'The password reset link will be sent to the verified email address linked to this account.')}
             </span>
           </div>
 
@@ -200,10 +202,10 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
           >
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Loader2 size={16} className="spin-animation" /> Finding Account & Sending Link...
+                <Loader2 size={16} className="spin-animation" /> {t('forgotPassword.findingAccount', 'Finding Account & Sending Link...')}
               </span>
             ) : (
-              'Send Reset Link to Linked Email'
+              t('forgotPassword.sendResetLink', 'Send Reset Link to Linked Email')
             )}
           </button>
         </form>
@@ -245,7 +247,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
           </div>
 
           <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', marginBottom: '20px' }}>
-            Please check your email inbox and click the reset link to create a new password. If you don't see it, check your spam folder.
+            {t('forgotPassword.checkInboxNotice', "Please check your email inbox and click the reset link to create a new password. If you don't see it, check your spam folder.")}
           </p>
 
           <button
@@ -254,7 +256,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
             style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
             onClick={handleBackToLogin}
           >
-            Back to Sign In
+            {t('forgotPassword.backToSignIn', 'Back to Sign In')}
           </button>
         </div>
       )}
@@ -264,7 +266,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
         <form onSubmit={handleResetPassword} style={{ animation: 'fadeIn 0.2s ease-out' }}>
           <div className="form-group" style={{ marginBottom: '16px' }}>
             <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              New Password *
+              {t('forgotPassword.newPassword', 'New Password *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
@@ -273,7 +275,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
               <input
                 type="password"
                 className="form-control"
-                placeholder="Enter at least 6 characters"
+                placeholder={t('forgotPassword.placeholderPassword', 'Enter at least 6 characters')}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 style={{ paddingLeft: '38px', height: '44px', borderRadius: '10px', fontSize: '14px' }}
@@ -285,7 +287,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
 
           <div className="form-group" style={{ marginBottom: '20px' }}>
             <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-              Confirm New Password *
+              {t('forgotPassword.confirmNewPassword', 'Confirm New Password *')}
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '12px', color: 'var(--text-muted, #94a3b8)', pointerEvents: 'none' }}>
@@ -294,7 +296,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
               <input
                 type="password"
                 className="form-control"
-                placeholder="Re-enter new password"
+                placeholder={t('forgotPassword.placeholderConfirmPassword', 'Re-enter new password')}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 style={{ paddingLeft: '38px', height: '44px', borderRadius: '10px', fontSize: '14px' }}
@@ -311,10 +313,10 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
           >
             {loading ? (
               <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Loader2 size={16} className="spin-animation" /> Updating Password...
+                <Loader2 size={16} className="spin-animation" /> {t('forgotPassword.updatingPassword', 'Updating Password...')}
               </span>
             ) : (
-              'Reset Password & Update'
+              t('forgotPassword.resetPasswordAndUpdate', 'Reset Password & Update')
             )}
           </button>
         </form>
@@ -327,10 +329,10 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
             <CheckCircle2 size={48} style={{ margin: '0 auto' }} />
           </div>
           <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary, #0f172a)' }}>
-            Password Reset Successful!
+            {t('forgotPassword.resetSuccessful', 'Password Reset Successful!')}
           </h3>
           <p style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', margin: '6px 0 20px 0' }}>
-            Your account password has been updated successfully. You can now sign in with your new password.
+            {t('forgotPassword.resetSuccessNotice', 'Your account password has been updated successfully. You can now sign in with your new password.')}
           </p>
           <button
             type="button"
@@ -338,7 +340,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
             style={{ width: '100%', height: '44px', borderRadius: '10px', fontWeight: 700, justifyContent: 'center' }}
             onClick={handleBackToLogin}
           >
-            Back to Sign In
+            {t('forgotPassword.backToSignIn', 'Back to Sign In')}
           </button>
         </div>
       )}
@@ -350,7 +352,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
             style={{ background: 'none', border: 'none', color: 'var(--text-muted, #64748b)', fontSize: '13px', fontWeight: 600, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px' }}
             onClick={handleBackToLogin}
           >
-            <ArrowLeft size={14} /> Back to Sign In
+            <ArrowLeft size={14} /> {t('forgotPassword.backToSignIn', 'Back to Sign In')}
           </button>
         </div>
       )}
