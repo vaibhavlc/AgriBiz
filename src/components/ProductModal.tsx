@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { Modal } from './Modal';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import type { Product } from '../types';
@@ -20,7 +19,6 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   editProductData = null,
   onSaveCallback,
 }) => {
-  const { t } = useTranslation();
   const { addProduct, editProduct, requestNavigation, clearAllDirtyForms } = useApp();
   const [name, setName] = useState('');
   const [sku, setSku] = useState('');
@@ -158,11 +156,11 @@ export const ProductModal: React.FC<ProductModalProps> = ({
     <Modal
       isOpen={isOpen}
       onClose={handleCloseClick}
-      title={editProductData ? t('inventory.editProduct', 'Edit Product') : t('inventory.addProduct', 'Add New Product')}
+      title={editProductData ? 'Edit Product Master Details' : 'Add New Agricultural Product'}
     >
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label className="form-label">{t('inventory.productName', 'Product Name')} *</label>
+          <label className="form-label">Product Name *</label>
           <input
             type="text"
             className="form-control"
@@ -176,7 +174,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="form-row-three">
           <div className="form-group">
-            <label className="form-label">{t('inventory.sku', 'SKU / Code')}</label>
+            <label className="form-label">SKU / Item Code</label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="text"
@@ -197,7 +195,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">{t('inventory.hsnCode', 'HSN / SAC Code')}</label>
+            <label className="form-label">HSN / SAC Code</label>
             <input
               type="text"
               className="form-control"
@@ -207,7 +205,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             />
           </div>
           <div className="form-group">
-            <label className="form-label">{t('inventory.category', 'Category')} *</label>
+            <label className="form-label">Category *</label>
             <select
               className="form-control"
               value={category}
@@ -225,7 +223,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
         <div className="form-row-three">
           <div className="form-group">
             <label className="form-label">
-              {editProductData ? t('inventory.currentStock', 'Current Stock (Read-Only)') : t('inventory.openingStock', 'Opening Stock (Initial Stock IN)')}
+              {editProductData ? 'Current Stock (Read-Only)' : 'Opening Stock (Initial Stock IN)'}
             </label>
             <input
               type="number"
@@ -251,7 +249,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             )}
           </div>
           <div className="form-group">
-            <label className="form-label">{t('inventory.minStockLevel', 'Min Stock Alert Level')} *</label>
+            <label className="form-label">Low Stock limit *</label>
             <input
               type="number"
               className="form-control"
@@ -265,7 +263,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             />
           </div>
           <div className="form-group">
-            <label className="form-label">{t('inventory.taxRate', 'GST Rate (%)')} *</label>
+            <label className="form-label">GST Bracket (%) *</label>
             <select
               className="form-control"
               value={gstRate}
@@ -282,7 +280,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">{t('inventory.purchasePrice', 'Purchase Price (₹)')} *</label>
+            <label className="form-label">Purchase Price (₹) *</label>
             <input
               type="number"
               className="form-control"
@@ -296,7 +294,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             />
           </div>
           <div className="form-group">
-            <label className="form-label">{t('inventory.sellingPrice', 'Selling Price (₹)')} *</label>
+            <label className="form-label">Selling Price (₹) *</label>
             <input
               type="number"
               className="form-control"
@@ -313,10 +311,10 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
           <button type="button" className="btn btn-secondary" onClick={handleCloseClick}>
-            {t('common.cancel', 'Cancel')}
+            Cancel
           </button>
           <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
-            {isSubmitting ? t('common.saving', 'Saving...') : editProductData ? t('common.save', 'Save Changes') : t('inventory.addProduct', 'Add Product')}
+            {isSubmitting ? 'Saving...' : editProductData ? 'Save Changes' : 'Add Product'}
           </button>
         </div>
       </form>

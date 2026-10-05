@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -201,7 +200,6 @@ const ProgressBar = ({
   );
 };
 export const Dashboard: React.FC = () => {
-  const { t } = useTranslation();
   const {
     products,
     customers,
@@ -760,10 +758,10 @@ export const Dashboard: React.FC = () => {
             )}
             <div style={{ minWidth: 0, flex: 1 }}>
               <h2 className="dashboard-title-text" style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, lineHeight: 1.2 }}>
-                {settings.businessName || t('dashboard.title', 'Business Overview')}
+                {settings.businessName || 'Business Intelligence Dashboard'}
               </h2>
               <p className="dashboard-welcome-text" style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '4px 0 0 0', lineHeight: 1.3 }}>
-                {t('dashboard.subtitle', 'Real-time summary of your store\'s performance')}
+                Welcome back, {settings.ownerName || 'Partner'}
               </p>
             </div>
           </div>
@@ -771,7 +769,7 @@ export const Dashboard: React.FC = () => {
           <button 
             className="btn btn-secondary btn-icon"
             onClick={triggerRefresh}
-            title={t('common.refresh', 'Recalculate metrics')}
+            title="Recalculate metrics"
             disabled={isRefreshing}
             style={{ 
               flexShrink: 0, 
@@ -794,15 +792,15 @@ export const Dashboard: React.FC = () => {
         {/* Modern Segmented Pill Tabs */}
         <div className="pill-filter-bar">
           {[
-            { value: 'All', label: t('common.all', 'All Time') },
-            { value: 'today', label: t('reports.today', 'Today') },
-            { value: 'yesterday', label: t('reports.today', 'Yesterday') },
-            { value: 'week', label: t('reports.thisWeek', 'This Week') },
-            { value: 'month', label: t('reports.thisMonth', 'This Month') },
-            { value: 'last_month', label: t('reports.thisMonth', 'Last Month') },
-            { value: 'quarter', label: t('reports.thisQuarter', 'This Quarter') },
-            { value: 'year', label: t('reports.thisYear', 'This Year') },
-            { value: 'custom', label: t('reports.customRange', 'Custom Date') },
+            { value: 'All', label: 'All Time' },
+            { value: 'today', label: 'Today' },
+            { value: 'yesterday', label: 'Yesterday' },
+            { value: 'week', label: 'This Week' },
+            { value: 'month', label: 'This Month' },
+            { value: 'last_month', label: 'Last Month' },
+            { value: 'quarter', label: 'This Quarter' },
+            { value: 'year', label: 'This Year' },
+            { value: 'custom', label: 'Custom Date' },
           ].map((opt) => (
             <button
               key={opt.value}
@@ -891,28 +889,28 @@ export const Dashboard: React.FC = () => {
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'financial' ? 800 : 500, color: activeKpiTab === 'financial' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'financial' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('financial')}
           >
-            {t('dashboard.financialTab', 'Financial Performance')}
+            Financial Health
           </button>
           <button 
             id="kpi-tab-button-payments"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'payments' ? 800 : 500, color: activeKpiTab === 'payments' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'payments' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('payments')}
           >
-            {t('dashboard.collectionsTab', 'Collections & Book dues')}
+            Collections & Book dues
           </button>
           <button 
             id="kpi-tab-button-gst"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'gst' ? 800 : 500, color: activeKpiTab === 'gst' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'gst' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('gst')}
           >
-            {t('dashboard.gstLedgerTab', 'GST Ledger')}
+            GST Ledger
           </button>
           <button 
             id="kpi-tab-button-inventory"
             style={{ padding: '8px 12px', border: 'none', background: 'none', fontSize: '13px', fontWeight: activeKpiTab === 'inventory' ? 800 : 500, color: activeKpiTab === 'inventory' ? 'var(--primary-dark)' : 'var(--text-muted)', borderBottom: activeKpiTab === 'inventory' ? '2px solid var(--primary)' : 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
             onClick={() => setActiveKpiTab('inventory')}
           >
-            {t('dashboard.inventoryTab', 'Inventory & Entity Counts')}
+            Inventory & Entity Counts
           </button>
         </div>
 
@@ -924,9 +922,9 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'financial' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label={t('dashboard.totalSalesBilling', 'Total Sales Billing')}
+              label="Total Sales Billing"
               value={<AnimatedCounter value={stats.totalSales} isCurrency />}
-              subtext={t('dashboard.salesInclusiveGst', 'Sales inclusive of GST')}
+              subtext="Sales inclusive of GST"
               icon={<TrendingUp size={20} />}
               variant="success"
               onClick={() => setCurrentTab('sales')}
@@ -934,9 +932,9 @@ export const Dashboard: React.FC = () => {
             />
             
             <KpiCard
-              label={t('dashboard.taxableSalesRevenue', 'Taxable Sales Revenue')}
+              label="Taxable Sales Revenue"
               value={<AnimatedCounter value={stats.totalSalesBase} isCurrency />}
-              subtext={t('dashboard.excludingGst', 'Excluding collected GST')}
+              subtext="Excluding collected GST"
               icon={<TrendingUp size={20} />}
               variant="success"
               onClick={() => setCurrentTab('sales')}
@@ -944,9 +942,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalPurchasesBilling', 'Total Purchases Billing')}
+              label="Total Purchases Billing"
               value={<AnimatedCounter value={stats.totalPurchases} isCurrency />}
-              subtext={t('dashboard.cumulativeStock', 'Cumulative stock acquisitions')}
+              subtext="Cumulative stock acquisitions"
               icon={<TrendingDown size={20} />}
               variant="warning"
               onClick={() => setCurrentTab('purchases')}
@@ -954,9 +952,9 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalExpensesSpends', 'Total Expenses Spends')}
+              label="Total Expenses Spends"
               value={<AnimatedCounter value={stats.totalExpenses} isCurrency />}
-              subtext={t('dashboard.operationalCosts', 'Operational overhead costs')}
+              subtext="Operational overhead costs"
               icon={<TrendingDown size={20} />}
               variant="danger"
               onClick={() => setCurrentTab('expenses')}
@@ -964,7 +962,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.grossSalesProfit', 'Gross Sales Profit')}
+              label="Gross Sales Profit"
               value={<AnimatedCounter value={stats.grossProfit} isCurrency />}
               subtext="Sales subtotal minus COGS"
               icon={<DollarSign size={20} />}
@@ -973,7 +971,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.netOperatingProfit', 'Net Operating Profit')}
+              label="Net Operating Profit"
               value={<AnimatedCounter value={stats.netProfit} isCurrency />}
               subtext="Gross profit minus expenses"
               icon={<DollarSign size={20} />}
@@ -982,7 +980,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.grossProfitMargin', 'Gross Profit Margin')}
+              label="Gross Profit Margin"
               value={<AnimatedCounter value={stats.grossProfitMargin} isPercent />}
               subtext="Efficiency percentage return"
               icon={<Percent size={20} />}
@@ -991,7 +989,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.cogsStockCost', 'COGS (Stock Cost)')}
+              label="COGS (Stock Cost)"
               value={<AnimatedCounter value={stats.cogs} isCurrency />}
               subtext="Cost price of items sold"
               icon={<Package size={20} />}
@@ -1005,7 +1003,7 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'payments' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label={t('dashboard.totalAmountCollected', 'Total Amount Collected')}
+              label="Total Amount Collected"
               value={<AnimatedCounter value={stats.collectedAmount} isCurrency />}
               subtext="Total receipts collected"
               icon={<ArrowDownLeft size={20} />}
@@ -1015,7 +1013,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.outstandingReceivables', 'Outstanding Receivables')}
+              label="Outstanding Receivables"
               value={<AnimatedCounter value={stats.receivables} isCurrency />}
               subtext="Dues left on invoices"
               icon={<Users size={20} />}
@@ -1025,7 +1023,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.outstandingPayables', 'Outstanding Payables')}
+              label="Outstanding Payables"
               value={<AnimatedCounter value={stats.payables} isCurrency />}
               subtext="Dues owed to manufacturers"
               icon={<Truck size={20} />}
@@ -1035,7 +1033,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.pendingBillingCollection', 'Pending Billing Collection')}
+              label="Pending Billing Collection"
               value={<AnimatedCounter value={stats.pendingCollection} isCurrency />}
               subtext="Amount yet to collect"
               icon={<Clock size={20} />}
@@ -1050,7 +1048,7 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'gst' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label={t('dashboard.totalGstCollected', 'Total GST Collected')}
+              label="Total GST Collected"
               value={<AnimatedCounter value={stats.gstCollected} isCurrency />}
               subtext="Output tax collected"
               icon={<TrendingUp size={20} />}
@@ -1060,7 +1058,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalGstPaid', 'Total GST Paid')}
+              label="Total GST Paid"
               value={<AnimatedCounter value={stats.gstPaid} isCurrency />}
               subtext="Input tax credit paid"
               icon={<TrendingDown size={20} />}
@@ -1070,7 +1068,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalGstLiability', 'Total GST Liability')}
+              label="Total GST Liability"
               value={<AnimatedCounter value={stats.gstLiability} isCurrency />}
               subtext="Output minus Input tax"
               icon={<FileText size={20} />}
@@ -1080,7 +1078,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.cgstSgstShare', 'CGST / SGST Share')}
+              label="CGST / SGST Share"
               value={<AnimatedCounter value={stats.gstCollected / 2} isCurrency />}
               subtext="50% equal split values"
               icon={<Percent size={20} />}
@@ -1094,7 +1092,7 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'inventory' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label={t('dashboard.currentStockValue', 'Current Stock Value')}
+              label="Current Stock Value"
               value={<AnimatedCounter value={stats.stockValue} isCurrency />}
               subtext="Valuation of current stock"
               icon={<ShoppingBag size={20} />}
@@ -1104,7 +1102,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalUniqueProducts', 'Total Items in Stock')}
+              label="Total Items in Stock"
               value={<AnimatedCounter value={stats.totalInventoryItems} />}
               subtext="Sum of all individual items"
               icon={<Package size={20} />}
@@ -1114,7 +1112,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.lowStockAlerts', 'Low Stock Products')}
+              label="Low Stock Products"
               value={<AnimatedCounter value={stats.lowStockCount} />}
               subtext="Below safety buffer levels"
               icon={<AlertTriangle size={20} />}
@@ -1124,7 +1122,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('inventory.outOfStock', 'Out of Stock Products')}
+              label="Out of Stock Products"
               value={<AnimatedCounter value={stats.outOfStockCount} />}
               subtext="Zero inventory units"
               icon={<AlertTriangle size={20} />}
@@ -1134,7 +1132,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalActiveCustomers', 'Active Customers')}
+              label="Active Customers"
               value={<AnimatedCounter value={customers.length} />}
               subtext="Profiles in directories"
               icon={<Users size={20} />}
@@ -1144,7 +1142,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalActiveSuppliers', 'Active Suppliers')}
+              label="Active Suppliers"
               value={<AnimatedCounter value={suppliers.length} />}
               subtext="Suppliers registered"
               icon={<Truck size={20} />}
@@ -1154,7 +1152,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.totalSalesBilling', 'Total Invoices Raised')}
+              label="Total Invoices Raised"
               value={<AnimatedCounter value={stats.invoicesCount} />}
               subtext="Customer invoices generated"
               icon={<FileText size={20} />}
@@ -1164,7 +1162,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.recentTransactions', 'Total Transactions Logs')}
+              label="Total Transactions Logs"
               value={<AnimatedCounter value={stats.totalTransactions} />}
               subtext="Invoice, bills, receipts, spends"
               icon={<Activity size={20} />}
@@ -1180,63 +1178,63 @@ export const Dashboard: React.FC = () => {
 
       {/* Quick Actions Panel */}
       <div className="card" style={{ padding: '16px', borderRadius: '12px', marginBottom: '24px' }}>
-        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{t('dashboard.quickActions', 'Quick Actions Console')}</h3>
+        <h3 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Quick Actions Console</h3>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '10px' }}>
           <button 
             className="btn btn-primary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => { setCurrentTab('sales'); setIsCreatingInvoice(true); }}
           >
-            <PlusCircle size={15} /> {t('sales.newInvoice', 'New Invoice')}
+            <PlusCircle size={15} /> New Invoice
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => { setCurrentTab('purchases'); setIsEnteringPurchase(true); }}
           >
-            <PlusCircle size={15} /> {t('purchases.newPurchase', 'Add Purchase')}
+            <PlusCircle size={15} /> Add Purchase
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('inventory')}
           >
-            <Package size={15} /> {t('inventory.addProduct', 'Add Product')}
+            <Package size={15} /> Add Product
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('customers')}
           >
-            <Users size={15} /> {t('customers.addCustomer', 'Add Customer')}
+            <Users size={15} /> Add Customer
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('suppliers')}
           >
-            <Truck size={15} /> {t('suppliers.addSupplier', 'Add Supplier')}
+            <Truck size={15} /> Add Supplier
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('expenses')}
           >
-            <FileText size={15} /> {t('expenses.addExpense', 'Record Expense')}
+            <FileText size={15} /> Record Expense
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => openNewPaymentForm()}
           >
-            <ArrowRightLeft size={15} /> {t('payments.addPayment', 'Record Payment')}
+            <ArrowRightLeft size={15} /> Record Payment
           </button>
           <button 
             className="btn btn-secondary" 
             style={{ fontSize: '12px', padding: '10px', justifyContent: 'center' }} 
             onClick={() => setCurrentTab('reports')}
           >
-            <TrendingUp size={15} /> {t('reports.title', 'View Reports')}
+            <TrendingUp size={15} /> View Reports
           </button>
         </div>
       </div>

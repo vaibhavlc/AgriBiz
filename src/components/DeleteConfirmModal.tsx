@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AlertTriangle, Trash2, Loader2 } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 export interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -21,17 +20,15 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
-  title,
+  title = 'Delete Entry',
   itemName,
   description,
   confirmText,
-  cancelText,
+  cancelText = 'Cancel',
   isLoading = false,
   variant = 'danger',
   icon,
 }) => {
-  const { t } = useTranslation();
-
   useEffect(() => {
     if (!isOpen) return;
 
@@ -60,9 +57,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
   };
 
   const isDanger = variant === 'danger';
-  const resolvedTitle = title || t('modals.deleteTitle', 'Delete Confirmation');
-  const resolvedCancelText = cancelText || t('common.cancel', 'Cancel');
-  const resolvedConfirmText = confirmText || (isDanger ? t('common.delete', 'Delete') : t('common.confirm', 'Confirm'));
+  const defaultConfirmText = confirmText || (isDanger ? 'Delete' : 'Confirm');
 
   // Styling helper based on variant
   const getBadgeStyle = () => {
@@ -185,7 +180,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             lineHeight: 1.3,
           }}
         >
-          {resolvedTitle}
+          {title}
         </h3>
 
         {/* Description / Content */}
@@ -201,9 +196,8 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             description
           ) : (
             <>
-              {t('modals.deleteConfirmMessage', 'Are you sure you want to delete {{name}}? This action cannot be undone.', {
-                name: itemName || t('modals.thisEntry', 'this entry'),
-              })}
+              Are you sure you want to delete{' '}
+              {itemName ? <strong>{itemName}</strong> : 'this entry'}? This action cannot be undone.
             </>
           )}
         </div>
@@ -236,7 +230,7 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
               cursor: isLoading ? 'not-allowed' : 'pointer',
             }}
           >
-            {resolvedCancelText}
+            {cancelText}
           </button>
 
           <button
@@ -268,12 +262,12 @@ export const DeleteConfirmModal: React.FC<DeleteConfirmModalProps> = ({
             {isLoading ? (
               <>
                 <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
-                <span>{t('common.deleting', 'Deleting...')}</span>
+                <span>Deleting...</span>
               </>
             ) : (
               <>
                 {isDanger && <Trash2 size={15} />}
-                <span>{resolvedConfirmText}</span>
+                <span>{defaultConfirmText}</span>
               </>
             )}
           </button>

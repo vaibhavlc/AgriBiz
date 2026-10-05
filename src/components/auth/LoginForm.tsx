@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../auth/AuthContext';
 import { authService } from '../../auth/authService';
 import api from '../../utils/api';
@@ -24,7 +23,6 @@ const ROLE_CONFIG = {
 };
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwitchToForgot }) => {
-  const { t } = useTranslation();
   const { login, staffLogin, currentCompany, forgetDevice } = useAuth();
 
   const [stage, setStage] = useState<Stage>(() => {
@@ -394,7 +392,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           )}
         </div>
         <div style={{ fontSize: '10px', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--primary,#10b981)', marginBottom: '2px' }}>
-          {t('auth.youAreLoggingInto', 'You are logging into')}
+          You are logging into
         </div>
         <h2 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', margin: 0, lineHeight: 1.25 }}>
           {businessName}
@@ -441,7 +439,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         <form onSubmit={handleBusinessLogin}>
           <div style={{ marginBottom: '12px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '4px', color: 'var(--text-secondary,#475569)' }}>
-              {t('auth.phoneLabel', 'Business Mobile Number *')}
+              Business Mobile Number *
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{
@@ -452,7 +450,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               }}>
                 <Smartphone size={14} /> +91
               </span>
-              <input type="tel" className="form-control" placeholder={t('auth.phonePlaceholder', 'Enter registered mobile')}
+              <input type="tel" className="form-control" placeholder="Enter registered mobile"
                 value={mobile} onChange={e => setMobile(e.target.value)}
                 style={{ paddingLeft: '78px', height: '40px', borderRadius: '10px', fontSize: '14px', fontWeight: 600 }}
                 maxLength={10} autoComplete="tel" autoFocus />
@@ -460,14 +458,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
           </div>
           <div style={{ marginBottom: '14px' }}>
             <label style={{ fontWeight: 700, fontSize: '12px', display: 'block', marginBottom: '4px', color: 'var(--text-secondary,#475569)' }}>
-              {t('auth.passwordLabel', 'Password *')}
+              Password *
             </label>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <span style={{ position: 'absolute', left: '14px', color: 'var(--text-muted,#94a3b8)', pointerEvents: 'none' }}>
                 <Lock size={16} />
               </span>
               <input type={showPassword ? 'text' : 'password'} className="form-control"
-                placeholder={t('auth.passwordPlaceholder', 'Enter password')} value={password}
+                placeholder="Enter your password" value={password}
                 onChange={e => setPassword(e.target.value)}
                 style={{ paddingLeft: '40px', paddingRight: '40px', height: '40px', borderRadius: '10px', fontSize: '14px' }}
                 autoComplete="current-password" />
@@ -481,22 +479,22 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
             <button type="button"
               style={{ background: 'none', border: 'none', color: 'var(--primary,#10b981)', fontSize: '12px', fontWeight: 700, cursor: 'pointer' }}
               onClick={onSwitchToForgot}>
-              {t('auth.forgotPassword', 'Forgot Password?')}
+              Forgot Password?
             </button>
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}
             style={{ width: '100%', height: '42px', borderRadius: '12px', fontSize: '14px', fontWeight: 700, justifyContent: 'center', boxShadow: '0 4px 14px rgba(16,185,129,0.25)' }}>
-            {loading ? t('common.loading', 'Verifying...') : <><span>{t('common.next', 'Continue')}</span> <ArrowRight size={16} /></>}
+            {loading ? 'Verifying...' : <><span>Continue</span> <ArrowRight size={16} /></>}
           </button>
         </form>
         <div style={{ textAlign: 'center', marginTop: '14px', paddingTop: '12px', borderTop: '1px solid var(--border-color,#e2e8f0)' }}>
           <p style={{ fontSize: '12px', color: 'var(--text-muted,#64748b)', margin: '0 0 6px' }}>
-            {t('auth.noBusinessRegistered', "Don't have a business registered?")}
+            Don't have a business registered?
           </p>
           <button type="button" className="btn btn-secondary"
             style={{ width: '100%', borderRadius: '10px', height: '36px', justifyContent: 'center', fontWeight: 700 }}
             onClick={onSwitchToRegister}>
-            {t('auth.registerButton', 'Register Business')}
+            Register Business
           </button>
         </div>
       </div>

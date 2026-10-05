@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR } from '../utils/dummyData';
 import { ProductModal } from '../components/ProductModal';
@@ -27,7 +26,6 @@ import {
 import type { Product } from '../types';
 
 export const Inventory: React.FC = () => {
-  const { t } = useTranslation();
   const {
     products,
     deleteProduct,
@@ -747,29 +745,29 @@ export const Inventory: React.FC = () => {
       {/* Inventory KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label={t('inventory.totalProducts', 'Total Products')}
-          value={`${totalProducts}`}
+          label="Total Products"
+          value={`${totalProducts} Items`}
           subtext="Unique catalog skus"
           icon={<Package size={20} />}
           variant="info"
         />
         <KpiCard
-          label={t('inventory.totalValue', 'Stock Valuation')}
+          label="Stock Valuation"
           value={formatINR(totalStockValue)}
           subtext="Valued at purchase rate"
           icon={<TrendingUp size={20} />}
           variant="success"
         />
         <KpiCard
-          label={t('inventory.lowStock', 'Low Stock Alert')}
-          value={`${lowStockAlerts}`}
+          label="Low Stock Alert"
+          value={`${lowStockAlerts} items`}
           subtext="Under minimum limit"
           icon={<AlertTriangle size={20} />}
           variant="warning"
         />
         <KpiCard
-          label={t('inventory.outOfStock', 'Out of Stock')}
-          value={`${outOfStockCount}`}
+          label="Out of Stock"
+          value={`${outOfStockCount} items`}
           subtext="Zero stock quantity"
           icon={<XCircle size={20} />}
           variant="danger"
@@ -783,7 +781,7 @@ export const Inventory: React.FC = () => {
             <Search size={16} className="search-input-icon" />
             <input
               type="text"
-              placeholder={t('inventory.searchPlaceholder', 'Search product name or SKU...')}
+              placeholder="Search product name or SKU..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -862,7 +860,7 @@ export const Inventory: React.FC = () => {
                 setCurrentPage(1);
               }}
             >
-              <option value="All">{t('inventory.allCategories', 'All Categories')}</option>
+              <option value="All">All Categories</option>
               {categories.map((cat) => (
                 <option key={cat} value={cat}>
                   {cat}
@@ -877,7 +875,7 @@ export const Inventory: React.FC = () => {
           </div>
 
           <button className="btn btn-primary" onClick={handleAddNewClick}>
-            <Plus size={16} /> {t('inventory.addProduct', 'Add Product')}
+            <Plus size={16} /> Add Product
           </button>
         </div>
       </div>

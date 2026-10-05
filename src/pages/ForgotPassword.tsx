@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { AuthLayout } from '../components/auth/AuthLayout';
 import { authService } from '../auth/authService';
 import { Smartphone, Mail, ArrowLeft, CheckCircle2, KeyRound, Lock, AlertCircle, Loader2 } from 'lucide-react';
@@ -10,14 +9,13 @@ interface ForgotPasswordProps {
 }
 
 export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin, token: propToken }) => {
-  const { t } = useTranslation();
   const [urlToken, setUrlToken] = useState<string | null>(null);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const resetToken = propToken || params.get('token');
-    if (resetToken) {
-      setUrlToken(resetToken);
+    const t = propToken || params.get('token');
+    if (t) {
+      setUrlToken(t);
       setStep('reset');
     }
   }, [propToken]);
@@ -122,7 +120,7 @@ export const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onSwitchToLogin,
           <KeyRound size={24} />
         </div>
         <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary, #0f172a)', margin: 0 }}>
-          {step === 'reset' ? t('auth.createPassword', 'Create New Password') : t('auth.forgotPassword', 'Password Recovery')}
+          {step === 'reset' ? 'Create New Password' : 'Password Recovery'}
         </h2>
         <p style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', margin: '4px 0 0 0' }}>
           {step === 'reset'

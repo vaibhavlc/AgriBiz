@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
@@ -23,7 +22,6 @@ import {
 } from 'lucide-react';
 
 export const Reports: React.FC = () => {
-  const { t } = useTranslation();
   const {
     invoices,
     purchases,
@@ -1232,7 +1230,7 @@ export const Reports: React.FC = () => {
             <>
               <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309' }}>{t('reportsSection.reconciliationWarning', 'Reconciliation Warning')}</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309' }}>Reconciliation Warning</div>
                 <div style={{ fontSize: '12px', color: '#b45309' }}>
                   Discrepancy of {formatINR(gstDiff)} found between Sales Invoice Register ({formatINR(totalSalesTax)}) and Outward Tax ({formatINR(outwardTaxTotal)}). Please verify your tax configurations.
                 </div>
@@ -1242,8 +1240,8 @@ export const Reports: React.FC = () => {
             <>
               <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>{t('reportsSection.ledgerReconciled', 'Ledger Reconciled')}</div>
-                <div style={{ fontSize: '12px', color: '#15803d' }}>{t('reportsSection.reconciledMessage', 'Outward tax matches Sales Invoice Register perfectly. No discrepancy found.')}</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>Ledger Reconciled</div>
+                <div style={{ fontSize: '12px', color: '#15803d' }}>Outward tax matches Sales Invoice Register perfectly. No discrepancy found.</div>
               </div>
             </>
           )}
@@ -1271,17 +1269,17 @@ export const Reports: React.FC = () => {
               <table className="data-table">
                 <thead>
                   <tr>
-                    <th className="text-nowrap">{t('reportsSection.natureOfSupplies', 'Nature of Supplies')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.taxableValue', 'Taxable Value')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.igst', 'IGST')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.cgst', 'CGST')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.sgst', 'SGST/UTGST')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.cess', 'Cess')}</th>
+                    <th className="text-nowrap">Nature of Supplies</th>
+                    <th className="text-nowrap align-right">Taxable Value</th>
+                    <th className="text-nowrap align-right">IGST</th>
+                    <th className="text-nowrap align-right">CGST</th>
+                    <th className="text-nowrap align-right">SGST/UTGST</th>
+                    <th className="text-nowrap align-right">Cess</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>{t('reportsSection.outwardTaxable', '(a) Outward taxable supplies (other than zero rated, nil rated and exempted)')}</td>
+                    <td>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
                     <td className="align-right">{formatINR(gstr3BData.outward.taxable)}</td>
                     <td className="align-right">{formatINR(gstr3BData.outward.igst)}</td>
                     <td className="align-right">{formatINR(gstr3BData.outward.cgst)}</td>
@@ -1289,7 +1287,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>{t('reportsSection.zeroRated', '(b) Outward taxable supplies (Zero Rated)')}</td>
+                    <td>(b) Outward taxable supplies (Zero Rated)</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1297,7 +1295,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>{t('reportsSection.nilExempted', '(c) Other Outward Supplies (Nil Rated / Exempted)')}</td>
+                    <td>(c) Other Outward Supplies (Nil Rated / Exempted)</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1305,7 +1303,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>{t('reportsSection.reverseCharge', '(d) Inward Supplies liable to Reverse Charge')}</td>
+                    <td>(d) Inward Supplies liable to Reverse Charge</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1313,7 +1311,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>{t('reportsSection.nonGstOutward', '(e) Non GST Outward Supplies')}</td>
+                    <td>(e) Non GST Outward Supplies</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1405,9 +1403,9 @@ export const Reports: React.FC = () => {
                 <thead>
                   <tr>
                     <th className="text-nowrap">ITC Category</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.igst', 'IGST')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.cgst', 'CGST')}</th>
-                    <th className="text-nowrap align-right">{t('reportsSection.sgst', 'SGST/UTGST')}</th>
+                    <th className="text-nowrap align-right">IGST</th>
+                    <th className="text-nowrap align-right">CGST</th>
+                    <th className="text-nowrap align-right">SGST/UTGST</th>
                     <th className="text-nowrap align-right">Total ITC</th>
                   </tr>
                 </thead>
@@ -1691,7 +1689,7 @@ export const Reports: React.FC = () => {
               </thead>
               <tbody>
                 <tr>
-                  <td>{t('reportsSection.outwardTaxable', '(a) Outward taxable supplies (other than zero rated, nil rated and exempted)')}</td>
+                  <td>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.taxable).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.igst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.cgst).replace('₹', '')}</td>
@@ -1699,7 +1697,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>{t('reportsSection.zeroRated', '(b) Outward taxable supplies (Zero Rated)')}</td>
+                  <td>(b) Outward taxable supplies (Zero Rated)</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1707,7 +1705,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>{t('reportsSection.nilExempted', '(c) Other Outward Supplies (Nil Rated / Exempted)')}</td>
+                  <td>(c) Other Outward Supplies (Nil Rated / Exempted)</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1715,7 +1713,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>{t('reportsSection.reverseCharge', '(d) Inward Supplies liable to Reverse Charge')}</td>
+                  <td>(d) Inward Supplies liable to Reverse Charge</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1723,7 +1721,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>{t('reportsSection.nonGstOutward', '(e) Non GST Outward Supplies')}</td>
+                  <td>(e) Non GST Outward Supplies</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -2053,28 +2051,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label={t('reports.salesCount', 'Sales Invoices Count')}
+                label="Sales Invoices Count"
                 value={filteredInvoices.length}
                 subtext="Tax bills generated"
                 icon={<BookOpen size={20} />}
                 variant="success"
               />
               <KpiCard
-                label={t('reports.taxableSales', 'Total Taxable Sales')}
+                label="Total Taxable Sales"
                 value={formatINR(totalSalesBase)}
                 subtext="Excludes GST tax"
                 icon={<DollarSign size={20} />}
                 variant="success"
               />
               <KpiCard
-                label={t('reports.taxCollected', 'Total GST Collected')}
+                label="Total GST Collected"
                 value={formatINR(totalSalesTax)}
                 subtext="GST tax liability"
                 icon={<Percent size={20} />}
                 variant="success"
               />
               <KpiCard
-                label={t('sales.grandTotal', 'Total Invoice Value')}
+                label="Total Invoice Value"
                 value={formatINR(totalSalesVal)}
                 subtext="Inclusive of GST"
                 icon={<TrendingUp size={20} />}
@@ -3274,10 +3272,10 @@ export const Reports: React.FC = () => {
                         <th className="text-nowrap align-right">Total Value</th>
                         <th className="text-nowrap">POS</th>
                         <th className="text-nowrap align-center">Rate</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.taxableValue', 'Taxable Value')}</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.cgst', 'CGST')}</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST</th>
                         <th className="text-nowrap align-right">SGST</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.igst', 'IGST')}</th>
+                        <th className="text-nowrap align-right">IGST</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3388,7 +3386,7 @@ export const Reports: React.FC = () => {
                         <th className="text-nowrap">Unit (UQC)</th>
                         <th className="text-nowrap align-center">Total Qty</th>
                         <th className="text-nowrap align-right">Total Value</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.taxableValue', 'Taxable Value')}</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
                         <th className="text-nowrap align-right">CGST Paid</th>
                         <th className="text-nowrap align-right">SGST Paid</th>
                         <th className="text-nowrap align-right">IGST Paid</th>
@@ -3540,10 +3538,10 @@ export const Reports: React.FC = () => {
                         <th className="text-nowrap align-right">Total Value</th>
                         <th className="text-nowrap">POS</th>
                         <th className="text-nowrap align-center">Rate</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.taxableValue', 'Taxable Value')}</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.cgst', 'CGST')}</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
+                        <th className="text-nowrap align-right">CGST</th>
                         <th className="text-nowrap align-right">SGST</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.igst', 'IGST')}</th>
+                        <th className="text-nowrap align-right">IGST</th>
                         <th className="text-nowrap align-center">ITC Eligible</th>
                       </tr>
                     </thead>
@@ -3602,7 +3600,7 @@ export const Reports: React.FC = () => {
                         <th className="text-nowrap">Unit (UQC)</th>
                         <th className="text-nowrap align-center">Total Qty</th>
                         <th className="text-nowrap align-right">Total Value</th>
-                        <th className="text-nowrap align-right">{t('reportsSection.taxableValue', 'Taxable Value')}</th>
+                        <th className="text-nowrap align-right">Taxable Value</th>
                         <th className="text-nowrap align-right">CGST Paid</th>
                         <th className="text-nowrap align-right">SGST Paid</th>
                         <th className="text-nowrap align-right">IGST Paid</th>

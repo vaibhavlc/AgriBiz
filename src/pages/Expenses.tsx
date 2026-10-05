@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { Modal } from '../components/Modal';
@@ -27,7 +26,6 @@ import {
 import type { Expense } from '../types';
 
 export const Expenses: React.FC = () => {
-  const { t } = useTranslation();
   const ts = new Date().toISOString();
   const {
     expenses,
@@ -636,7 +634,7 @@ export const Expenses: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder={t('expenses.searchPlaceholder', 'Search notes, reference ID...')}
+                placeholder="Search notes, reference, ID..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
@@ -656,7 +654,7 @@ export const Expenses: React.FC = () => {
               }}
               style={{ minWidth: '150px', flex: '1 1 120px' }}
             >
-              <option value="All">{t('expenses.allCategories', 'All Categories')}</option>
+              <option value="All">All Categories</option>
               {categoriesList.filter(c => c !== 'Other').map((c) => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -672,7 +670,7 @@ export const Expenses: React.FC = () => {
               }}
               className="filter-select method-select"
             >
-              <option value="All">{t('expenses.allMethods', 'All Payment Methods')}</option>
+              <option value="All">All Methods</option>
               <option value="UPI">UPI</option>
               <option value="Cash">Cash</option>
               <option value="Bank Transfer">Bank Transfer</option>
@@ -689,9 +687,9 @@ export const Expenses: React.FC = () => {
               }}
               className="filter-select status-select"
             >
-              <option value="All">{t('expenses.allStatuses', 'All Statuses')}</option>
-              <option value="Paid">{t('expenses.paid', 'Paid')}</option>
-              <option value="Due">{t('expenses.due', 'Pending / Due')}</option>
+              <option value="All">All Statuses</option>
+              <option value="Paid">Paid</option>
+              <option value="Due">Due</option>
             </select>
 
             {/* Date Selector */}
@@ -712,13 +710,13 @@ export const Expenses: React.FC = () => {
           {/* Group 2: Actions */}
           <div className="expense-filter-actions">
             <button className="btn btn-secondary btn-export" onClick={handleExportCSV} title="Export current sheet as CSV">
-              <Download size={16} /> {t('common.export', 'Export CSV')}
+              <Download size={16} /> Export CSV
             </button>
             <button className="btn btn-secondary btn-pdf" onClick={handleDownloadPDF} title="Download current report as PDF">
-              <FileText size={16} /> {t('common.pdf', 'Save PDF')}
+              <FileText size={16} /> Save PDF
             </button>
             <button className="btn btn-primary btn-log-expense" onClick={() => setIsFormOpen(true)}>
-              <Plus size={16} /> {t('expenses.addExpense', 'Log Expense')}
+              <Plus size={16} /> Log Expense
             </button>
           </div>
         </div>

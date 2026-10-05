@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { useTranslation } from 'react-i18next';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -45,7 +44,6 @@ interface LocalPurchaseItem {
 }
 
 export const Purchases: React.FC = () => {
-  const { t } = useTranslation();
   const {
     settings,
     purchases,
@@ -405,10 +403,10 @@ export const Purchases: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
               <thead>
                 <tr style={{ borderBottom: '1px solid #cbd5e1', fontWeight: 'bold' }}>
-                  <th style={{ textAlign: 'left', padding: '4px' }}>{t('common.description', 'Item description')}</th>
-                  <th style={{ textAlign: 'center', padding: '4px', width: '50px' }}>{t('common.quantity', 'Qty')}</th>
-                  <th style={{ textAlign: 'right', padding: '4px', width: '80px' }}>{t('common.rate', 'Rate (₹)')}</th>
-                  <th style={{ textAlign: 'right', padding: '4px', width: '90px' }}>{t('common.total', 'Total (₹)')}</th>
+                  <th style={{ textAlign: 'left', padding: '4px' }}>Item description</th>
+                  <th style={{ textAlign: 'center', padding: '4px', width: '50px' }}>Qty</th>
+                  <th style={{ textAlign: 'right', padding: '4px', width: '80px' }}>Rate (₹)</th>
+                  <th style={{ textAlign: 'right', padding: '4px', width: '90px' }}>Total (₹)</th>
                 </tr>
               </thead>
               <tbody>
@@ -425,19 +423,19 @@ export const Purchases: React.FC = () => {
 
             <div style={{ marginTop: 'auto', borderTop: '2px solid #cbd5e1', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', alignSelf: 'flex-end', width: '220px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{t('common.subtotal', 'Goods Value')}:</span>
+                <span>Goods Value:</span>
                 <span>{formatINR(modalSubtotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{t('common.discount', 'Discounts')}:</span>
+                <span>Discounts:</span>
                 <span>-{formatINR(modalDiscount)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{t('common.tax', 'GST Taxes')}:</span>
+                <span>GST Taxes:</span>
                 <span>{formatINR(modalGstTotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px solid #e2e8f0', paddingTop: '4px', fontSize: '12px' }}>
-                <span>{t('common.total', 'Total Bill')}:</span>
+                <span>Total Bill:</span>
                 <span>{formatINR(modalGrandTotal)}</span>
               </div>
             </div>
@@ -2089,14 +2087,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 height: '42px',
               }}
             >
-              <ArrowLeft size={16} /> {t('common.back', 'Exit Editor')}
+              <ArrowLeft size={16} /> Exit Editor
             </button>
             <div>
               <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                {editingPurchaseId ? t('common.edit', 'Edit Entry') : t('common.new', 'New Entry')}
+                {editingPurchaseId ? 'Edit Entry' : 'New Entry'}
               </span>
               <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
-                {editingPurchaseId ? t('purchases.editPurchase', 'Edit Inward Purchase Bill') : t('purchases.newPurchase', 'Log Inward Purchase Entry')}
+                {editingPurchaseId ? 'Edit Inward Purchase Bill' : 'Log Inward Purchase Entry'}
               </h1>
             </div>
           </div>

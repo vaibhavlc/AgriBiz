@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { Download, X, AlertCircle, Info, Sparkles, Smartphone } from 'lucide-react';
 
 export const PWAInstallModal: React.FC = () => {
-  const { t } = useTranslation();
   const {
     isInstallModalOpen,
     closeInstallModal,
@@ -120,10 +118,10 @@ export const PWAInstallModal: React.FC = () => {
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                {t('pwa.installTitle', 'Install Application')}
+                Install Application
               </h3>
               <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)' }}>
-                {t('pwa.installDescription', 'Install AgriBiz Trader Suite on your home screen for quick offline access and app performance.')}
+                Customize your app experience before installing
               </p>
             </div>
           </div>
@@ -317,7 +315,7 @@ export const PWAInstallModal: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              {t('common.cancel', 'Cancel')}
+              Cancel
             </button>
             <button
               type="submit"
@@ -335,7 +333,7 @@ export const PWAInstallModal: React.FC = () => {
               }}
             >
               <Download size={16} />
-              <span>{isSubmitting ? t('common.loading', 'Installing...') : t('pwa.installBtn', 'Install App')}</span>
+              <span>{isSubmitting ? 'Installing...' : 'Install App'}</span>
             </button>
           </div>
         </form>

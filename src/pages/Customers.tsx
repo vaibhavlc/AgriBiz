@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import { formatINR, formatDate } from '../utils/dummyData';
 import { CustomerModal } from '../components/CustomerModal';
@@ -28,10 +27,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { Customer } from '../types';
-import { translatePaymentMethod } from '../utils/statusTranslation';
 
 export const Customers: React.FC = () => {
-  const { t } = useTranslation();
   const {
     customers,
     invoices,
@@ -84,10 +81,10 @@ export const Customers: React.FC = () => {
     setIsDeletingCustomer(true);
     try {
       await deleteCustomer(deletingCustomerTarget.id);
-      showToast(t('customers.deletedSuccess', 'Customer {{name}} deleted successfully.', { name: deletingCustomerTarget.name }), 'info');
+      showToast(`Customer ${deletingCustomerTarget.name} deleted successfully.`, 'info');
       setDeletingCustomerTarget(null);
     } catch (err: any) {
-      showToast(t('customers.deleteFailed', 'Failed to delete customer: {{error}}', { error: err.message || err }), 'error');
+      showToast(`Failed to delete customer: ${err.message || err}`, 'error');
     } finally {
       setIsDeletingCustomer(false);
     }
@@ -137,7 +134,7 @@ export const Customers: React.FC = () => {
         date: inv.date,
         docNo: inv.invoiceNumber,
         type: 'Invoice',
-        desc: `${t('customers.salesInvoice', 'Sales Invoice')} - ${inv.items.map((i) => i.productName).slice(0, 2).join(', ')}`,
+        desc: `Sales Invoice - ${inv.items.map((i) => i.productName).slice(0, 2).join(', ')}`,
         debit: inv.grandTotal,
         credit: 0,
         refId: inv.id,
@@ -147,7 +144,7 @@ export const Customers: React.FC = () => {
         date: pay.date,
         docNo: pay.referenceNumber || 'N/A',
         type: 'Receipt',
-        desc: `${t('customers.paymentReceived', 'Payment Received')} - ${translatePaymentMethod(pay.paymentMethod, t)}${pay.notes ? ` (${pay.notes})` : ''}`,
+        desc: `Payment Received - ${pay.paymentMethod}${pay.notes ? ` (${pay.notes})` : ''}`,
         debit: 0,
         credit: pay.amount,
         refId: pay.id,
@@ -174,14 +171,14 @@ export const Customers: React.FC = () => {
         {/* Top Nav Bar */}
         <div className="cust-profile-topbar no-print">
           <button className="btn btn-secondary" onClick={() => setViewCustomer(null)}>
-            <ArrowLeft size={16} /> <span>{t('common.back', 'Back')}</span>
+            <ArrowLeft size={16} /> <span>Back</span>
           </button>
           <div className="cust-profile-topbar-actions">
             <button className="btn btn-secondary" onClick={() => handleEditClick(selectedCustomer)}>
-              <Edit2 size={15} /> <span>{t('common.edit', 'Edit')}</span>
+              <Edit2 size={15} /> <span>Edit</span>
             </button>
             <button className="btn btn-primary" onClick={() => window.print()}>
-              <FileText size={15} /> <span>{t('common.print', 'Print')}</span>
+              <FileText size={15} /> <span>Print</span>
             </button>
           </div>
         </div>
@@ -194,7 +191,7 @@ export const Customers: React.FC = () => {
             </div>
             <div className="cust-hero-name-block">
               <h2 className="cust-hero-name">{selectedCustomer.name}</h2>
-              <span className="badge badge-info">{t('common.id', 'ID')}: {selectedCustomer.id}</span>
+              <span className="badge badge-info">ID: {selectedCustomer.id}</span>
             </div>
           </div>
 
@@ -218,7 +215,7 @@ export const Customers: React.FC = () => {
             {selectedCustomer.gstin && (
               <div className="cust-contact-item">
                 <FileText size={14} className="cust-contact-icon" />
-                <span>{t('common.gstin', 'GSTIN')}: <strong>{selectedCustomer.gstin}</strong></span>
+                <span>GSTIN: <strong>{selectedCustomer.gstin}</strong></span>
               </div>
             )}
           </div>
@@ -233,9 +230,9 @@ export const Customers: React.FC = () => {
             }}
           >
             <div>
-              <div className="cust-outstanding-label">{t('customers.outstandingBalance', 'Outstanding Balance')}</div>
+              <div className="cust-outstanding-label">Outstanding Balance</div>
               <div className="cust-outstanding-sub">
-                {selectedCustomer.outstanding > 0 ? t('customers.amountOwesYou', 'Amount customer owes you') : selectedCustomer.outstanding < 0 ? t('customers.advanceCredit', 'Advance credit balance') : t('customers.accountSettled', 'Account fully settled')}
+                {selectedCustomer.outstanding > 0 ? 'Amount customer owes you' : selectedCustomer.outstanding < 0 ? 'Advance credit balance' : 'Account fully settled'}
               </div>
             </div>
             <div className="cust-outstanding-amount" style={{ color: selectedCustomer.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : outstandingColor }}>
@@ -248,13 +245,13 @@ export const Customers: React.FC = () => {
               className="btn btn-primary cust-action-btn"
               onClick={() => { setSalesFormPresetCustomerId(selectedCustomer.id); setCurrentTab('sales'); }}
             >
-              <FileText size={15} /> {t('customers.createInvoice', 'Create Invoice')}
+              <FileText size={15} /> Create Invoice
             </button>
             <button
               className="btn btn-secondary cust-action-btn"
               onClick={() => openNewPaymentForm({ contactId: selectedCustomer.id, type: 'CustomerReceipt' })}
             >
-              <ArrowDownLeft size={15} /> {t('customers.recordReceipt', 'Record Receipt')}
+              <ArrowDownLeft size={15} /> Record Receipt
             </button>
           </div>
         </div>
@@ -262,33 +259,33 @@ export const Customers: React.FC = () => {
         {/* Stats Row */}
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
           <KpiCard
-            label={t('customers.totalInvoiced', 'Total Invoiced')}
+            label="Total Invoiced"
             value={formatINR(totalInvoiced)}
-            subtext={`${totalInvoiceCount} ${totalInvoiceCount !== 1 ? t('customers.invoices', 'invoices') : t('customers.invoice', 'invoice')}`}
+            subtext={`${totalInvoiceCount} invoice${totalInvoiceCount !== 1 ? 's' : ''}`}
             icon={<FileText size={20} />}
             variant="info"
           />
           
           <KpiCard
-            label={t('customers.totalReceived', 'Total Received')}
+            label="Total Received"
             value={formatINR(totalReceived)}
-            subtext={`${totalPaymentCount} ${totalPaymentCount !== 1 ? t('customers.payments', 'payments') : t('customers.payment', 'payment')}`}
+            subtext={`${totalPaymentCount} payment${totalPaymentCount !== 1 ? 's' : ''}`}
             icon={<CreditCard size={20} />}
             variant="success"
           />
 
           <KpiCard
-            label={t('customers.balanceDue', 'Balance Due')}
+            label="Balance Due"
             value={formatINR(selectedCustomer.outstanding)}
-            subtext={selectedCustomer.outstanding > 0 ? t('common.pending', 'Pending') : selectedCustomer.outstanding < 0 ? t('common.advance', 'Advance') : t('common.settled', 'Settled')}
+            subtext={selectedCustomer.outstanding > 0 ? 'Pending' : selectedCustomer.outstanding < 0 ? 'Advance' : 'Settled'}
             icon={<Scale size={20} />}
             variant={selectedCustomer.outstanding > 0 ? 'warning' : selectedCustomer.outstanding < 0 ? 'success' : 'info'}
           />
 
           <KpiCard
-            label={t('customers.lastTransaction', 'Last Transaction')}
+            label="Last Transaction"
             value={lastTxDate ? formatDate(lastTxDate) : '—'}
-            subtext={`${ledgerEntries.length} ${t('customers.entriesTotal', 'entries total')}`}
+            subtext={`${ledgerEntries.length} entries total`}
             icon={<Activity size={20} />}
             variant="info"
           />
@@ -296,13 +293,13 @@ export const Customers: React.FC = () => {
 
         {/* Ledger */}
         <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '16px' }}>{t('customers.ledgerAccount', 'Customer Ledger Account')}</h3>
+          <h3 className="card-title" style={{ marginBottom: '16px' }}>Customer Ledger Account</h3>
 
           {ledgerWithBalance.length === 0 ? (
             <div className="empty-state" style={{ padding: '40px 20px' }}>
               <FileText size={40} className="empty-state-icon" />
-              <h4 className="empty-state-title">{t('customers.noTransactions', 'No Transactions Yet')}</h4>
-              <p className="empty-state-desc">{t('customers.noTransactionsDesc', 'No ledger entries found for this customer.')}</p>
+              <h4 className="empty-state-title">No Transactions Yet</h4>
+              <p className="empty-state-desc">No ledger entries found for this customer.</p>
             </div>
           ) : (
             <>
@@ -312,13 +309,13 @@ export const Customers: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>{t('common.date', 'Date')}</th>
-                        <th>{t('common.docNo', 'Doc No')}</th>
-                        <th>{t('common.description', 'Description')}</th>
-                        <th>{t('common.debit', 'Debit (+)')}</th>
-                        <th>{t('common.credit', 'Credit (-)')}</th>
-                        <th>{t('common.balance', 'Balance (₹)')}</th>
-                        <th className="no-print" style={{ textAlign: 'center' }}>{t('common.view', 'View')}</th>
+                        <th>Date</th>
+                        <th>Doc No</th>
+                        <th>Description</th>
+                        <th>Debit (+)</th>
+                        <th>Credit (-)</th>
+                        <th>Balance (₹)</th>
+                        <th className="no-print" style={{ textAlign: 'center' }}>View</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -338,11 +335,11 @@ export const Customers: React.FC = () => {
                           </td>
                           <td className="no-print" style={{ textAlign: 'center' }}>
                             {entry.type === 'Invoice' ? (
-                              <button className="btn-icon" onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }} title={t('customers.viewInvoice', 'View Invoice')}>
+                              <button className="btn-icon" onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }} title="View Invoice">
                                 <Eye size={14} />
                               </button>
                             ) : (
-                              <button className="btn-icon" onClick={() => setCurrentTab('payments')} title={t('customers.viewPayment', 'View Payment')}>
+                              <button className="btn-icon" onClick={() => setCurrentTab('payments')} title="View Payment">
                                 <ArrowDownLeft size={14} />
                               </button>
                             )}
@@ -380,7 +377,7 @@ export const Customers: React.FC = () => {
                           </div>
                         </div>
                         <span className={`badge ${isInvoice ? 'badge-info' : 'badge-success'}`}>
-                          {entry.type === 'Invoice' ? t('sales.invoicesTab', 'Invoice') : t('customers.receipt', 'Receipt')}
+                          {entry.type}
                         </span>
                       </div>
 
@@ -392,13 +389,13 @@ export const Customers: React.FC = () => {
                       {/* Debit and Credit in one row */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '8px' }}>
                         <div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>{t('common.debit', 'Debit')}:</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Debit:</span>
                           <span style={{ fontSize: '12px', fontWeight: 700, color: entry.debit > 0 ? 'var(--color-danger-dark)' : 'var(--text-secondary)' }}>
                             {entry.debit > 0 ? formatINR(entry.debit) : '—'}
                           </span>
                         </div>
                         <div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>{t('common.credit', 'Credit')}:</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Credit:</span>
                           <span style={{ fontSize: '12px', fontWeight: 700, color: entry.credit > 0 ? 'var(--color-success-dark)' : 'var(--text-secondary)' }}>
                             {entry.credit > 0 ? formatINR(entry.credit) : '—'}
                           </span>
@@ -408,7 +405,7 @@ export const Customers: React.FC = () => {
                       {/* Balance and Action button in one row */}
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '4px' }}>
                         <div>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>{t('common.balance', 'Balance')}:</span>
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginRight: '6px' }}>Balance:</span>
                           <span style={{ fontSize: '13px', fontWeight: 800, color: entry.balance > 0 ? 'var(--color-warning-dark, #b45309)' : entry.balance < 0 ? 'var(--color-success-dark)' : 'var(--text-primary)' }}>
                             {formatINR(entry.balance)}
                           </span>
@@ -416,11 +413,11 @@ export const Customers: React.FC = () => {
                         <div>
                           {isInvoice ? (
                             <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => { setViewInvoice(entry.refId); setCurrentTab('sales'); }}>
-                              <Eye size={12} /> {t('customers.viewInvoice', 'View Invoice')}
+                              <Eye size={12} /> View Invoice
                             </button>
                           ) : (
                             <button className="btn btn-secondary btn-sm" style={{ display: 'flex', alignItems: 'center', gap: '4px', padding: '4px 10px', fontSize: '11px' }} onClick={() => setCurrentTab('payments')}>
-                              <ArrowDownLeft size={12} /> {t('customers.viewReceipt', 'View Receipt')}
+                              <ArrowDownLeft size={12} /> View Receipt
                             </button>
                           )}
                         </div>
@@ -447,13 +444,13 @@ export const Customers: React.FC = () => {
           <div>
             <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#2F3E33" }}>{settings.businessName}</h1>
             <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#555555" }}>{settings.address}</p>
-            <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#555555", fontWeight: 600 }}>{t('common.gstin', 'GSTIN')}: {settings.gstin}</p>
+            <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#555555", fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
           </div>
           <div style={{ textAlign: "right" }}>
             <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#555555", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-              {t('customers.accountLedgerStatement', 'Account Ledger Statement')}
+              Account Ledger Statement
             </h2>
-            <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#555555" }}>{t('customers.dateGenerated', 'Date Generated:')} {formatDate(new Date().toISOString())}</p>
+            <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#555555" }}>Date Generated: {formatDate(new Date().toISOString())}</p>
           </div>
         </div>
 
@@ -461,30 +458,30 @@ export const Customers: React.FC = () => {
         <div style={{ display: "grid", gridTemplateColumns: "1.2fr 0.8fr", gap: "20px", marginBottom: "16px", padding: "12px", border: "1px solid #C8D3C5", borderRadius: "6px", backgroundColor: "#F9FAF9" }}>
           <div>
             <h3 style={{ margin: 0, fontSize: "11px", textTransform: "uppercase", color: "#556B5D", fontWeight: 700, letterSpacing: "0.5px" }}>
-              {t('customers.accountHolderDetails', 'Account Holder Details')}
+              Account Holder Details
             </h3>
             <h2 style={{ margin: "4px 0", fontSize: "15px", fontWeight: 800, color: "#1E352F" }}>{selectedCustomer.name}</h2>
-            <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>{t('common.phone', 'Phone')}: {selectedCustomer.phone}</p>
-            {selectedCustomer.email && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>{t('common.email', 'Email')}: {selectedCustomer.email}</p>}
-            {selectedCustomer.address && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>{t('common.address', 'Address')}: {selectedCustomer.address}</p>}
-            {selectedCustomer.gstin && <p style={{ margin: "2px 0", fontSize: "11px", color: "#1E352F", fontWeight: 600 }}>{t('common.gstin', 'GSTIN')}: {selectedCustomer.gstin}</p>}
+            <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>Phone: {selectedCustomer.phone}</p>
+            {selectedCustomer.email && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>Email: {selectedCustomer.email}</p>}
+            {selectedCustomer.address && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>Address: {selectedCustomer.address}</p>}
+            {selectedCustomer.gstin && <p style={{ margin: "2px 0", fontSize: "11px", color: "#1E352F", fontWeight: 600 }}>GSTIN: {selectedCustomer.gstin}</p>}
           </div>
           <div style={{ borderLeft: "1px solid #C8D3C5", paddingLeft: "20px" }}>
             <h3 style={{ margin: "0 0 6px 0", fontSize: "11px", textTransform: "uppercase", color: "#556B5D", fontWeight: 700, letterSpacing: "0.5px" }}>
-              {t('customers.ledgerSummary', 'Ledger Summary')}
+              Ledger Summary
             </h3>
             <table style={{ width: "100%", fontSize: "11px", borderCollapse: "collapse" }}>
               <tbody>
                 <tr>
-                  <td style={{ padding: "3px 0", color: "#555555" }}>{t('customers.totalInvoicedLabel', 'Total Invoiced:')}</td>
+                  <td style={{ padding: "3px 0", color: "#555555" }}>Total Invoiced:</td>
                   <td style={{ padding: "3px 0", textAlign: "right", fontWeight: 700 }}>{formatINR(totalInvoiced)}</td>
                 </tr>
                 <tr>
-                  <td style={{ padding: "3px 0", color: "#555555" }}>{t('customers.totalReceivedLabel', 'Total Received:')}</td>
+                  <td style={{ padding: "3px 0", color: "#555555" }}>Total Received:</td>
                   <td style={{ padding: "3px 0", textAlign: "right", fontWeight: 700 }}>{formatINR(totalReceived)}</td>
                 </tr>
                 <tr style={{ borderTop: "1px solid #C8D3C5", fontWeight: 800 }}>
-                  <td style={{ padding: "6px 0 0 0", color: "#2F3E33" }}>{t('customers.outstandingBalanceLabel', 'Outstanding Balance:')}</td>
+                  <td style={{ padding: "6px 0 0 0", color: "#2F3E33" }}>Outstanding Balance:</td>
                   <td style={{ padding: "6px 0 0 0", textAlign: "right", color: selectedCustomer.outstanding > 0 ? "#BE3144" : "#27AE60" }}>
                     {formatINR(selectedCustomer.outstanding)}
                   </td>
@@ -498,12 +495,12 @@ export const Customers: React.FC = () => {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "11px", marginBottom: "32px" }}>
           <thead>
             <tr style={{ backgroundColor: "#2F3E33", color: "#ffffff" }}>
-              <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #2F3E33" }}>{t('common.date', 'Date')}</th>
-              <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #2F3E33" }}>{t('common.docNo', 'Doc No')}</th>
-              <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #2F3E33" }}>{t('common.description', 'Description')}</th>
-              <th style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #2F3E33", width: "90px" }}>{t('common.debit', 'Debit (+)')}</th>
-              <th style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #2F3E33", width: "90px" }}>{t('common.credit', 'Credit (-)')}</th>
-              <th style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #2F3E33", width: "100px" }}>{t('common.balance', 'Balance (₹)')}</th>
+              <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #2F3E33" }}>Date</th>
+              <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #2F3E33" }}>Doc No</th>
+              <th style={{ padding: "8px 10px", textAlign: "left", border: "1px solid #2F3E33" }}>Description</th>
+              <th style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #2F3E33", width: "90px" }}>Debit (+)</th>
+              <th style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #2F3E33", width: "90px" }}>Credit (-)</th>
+              <th style={{ padding: "8px 10px", textAlign: "right", border: "1px solid #2F3E33", width: "100px" }}>Balance (₹)</th>
             </tr>
           </thead>
           <tbody>
@@ -530,11 +527,11 @@ export const Customers: React.FC = () => {
         <div style={{ display: "flex", justifyContent: "space-between", marginTop: "40px", padding: "0 10px" }}>
           <div style={{ textAlign: "center", width: "150px" }}>
             <div style={{ height: "40px", borderBottom: "1px solid #C8D3C5" }}></div>
-            <p style={{ margin: "6px 0 0 0", fontSize: "10px", color: "#555555", fontWeight: 600 }}>{t('customers.customerSignature', 'Customer Signature')}</p>
+            <p style={{ margin: "6px 0 0 0", fontSize: "10px", color: "#555555", fontWeight: 600 }}>Customer Signature</p>
           </div>
           <div style={{ textAlign: "center", width: "150px" }}>
             <div style={{ height: "40px", borderBottom: "1px solid #C8D3C5" }}></div>
-            <p style={{ margin: "6px 0 0 0", fontSize: "10px", color: "#555555", fontWeight: 600 }}>{t('customers.authorizedSignatory', 'Authorized Signatory')}</p>
+            <p style={{ margin: "6px 0 0 0", fontSize: "10px", color: "#555555", fontWeight: 600 }}>Authorized Signatory</p>
           </div>
         </div>
       </div>
@@ -548,30 +545,30 @@ export const Customers: React.FC = () => {
       {/* KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label={t('customers.totalCustomers', 'Total Customers')}
+          label="Total Customers"
           value={totalCustomers}
-          subtext={t('customers.registeredAccounts', 'Registered accounts')}
+          subtext="Registered accounts"
           icon={<Users size={20} />}
           variant="info"
         />
         <KpiCard
-          label={t('customers.pendingReceivables', 'Pending Receivables')}
+          label="Pending Receivables"
           value={formatINR(pendingReceivables)}
-          subtext={t('customers.totalOutstandingBalance', 'Total outstanding balance')}
+          subtext="Total outstanding balance"
           icon={<AlertTriangle size={20} />}
           variant="danger"
         />
         <KpiCard
-          label={t('customers.activeBilling', 'Active Billing')}
-          value={`${activeBilling} ${t('customers.accounts', 'accounts')}`}
-          subtext={t('customers.invoiceTransactionActivity', 'Invoice transaction activity')}
+          label="Active Billing"
+          value={`${activeBilling} accounts`}
+          subtext="Invoice transaction activity"
           icon={<Activity size={20} />}
           variant="success"
         />
         <KpiCard
-          label={t('customers.avgReceivable', 'Average Receivable')}
+          label="Average Receivable"
           value={formatINR(averageReceivable)}
-          subtext={t('customers.perAccountOutstanding', 'Per account outstanding')}
+          subtext="Per account outstanding"
           icon={<Scale size={20} />}
           variant="info"
         />
@@ -659,7 +656,7 @@ export const Customers: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder={t('customers.searchPlaceholder', 'Search customer name, phone, or GSTIN...')}
+                placeholder="Search customer name, phone, or GSTIN..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 style={{ width: '100%' }}
@@ -680,10 +677,10 @@ export const Customers: React.FC = () => {
                   setCurrentPage(1);
                 }}
               >
-                <option value="All">{t('customers.allDues', 'All Dues')}</option>
-                <option value="Owed">{t('customers.pendingDues', 'Pending Dues')}</option>
-                <option value="Credit">{t('customers.advancePaid', 'Advance Paid')}</option>
-                <option value="Zero">{t('customers.fullySettled', 'Fully Settled')}</option>
+                <option value="All">All Dues</option>
+                <option value="Owed">Pending Dues</option>
+                <option value="Credit">Advance Paid</option>
+                <option value="Zero">Fully Settled</option>
               </select>
             </div>
           </div>
@@ -702,7 +699,7 @@ export const Customers: React.FC = () => {
               }}
               onClick={handleAddNewClick}
             >
-              <Plus size={16} /> {t('customers.addCustomer', 'Add Customer')}
+              <Plus size={16} /> Add Customer
             </button>
           </div>
         </div>
@@ -713,9 +710,9 @@ export const Customers: React.FC = () => {
         {filteredCustomers.length === 0 ? (
           <div className="empty-state">
             <Users size={48} className="empty-state-icon" />
-            <h4 className="empty-state-title">{t('customers.noCustomersRegistered', 'No Customers Registered')}</h4>
-            <p className="empty-state-desc">{t('customers.noCustomersDesc', 'No customer entries found matching your query or selected outstanding balance filter.')}</p>
-            <button className="btn btn-primary" onClick={handleAddNewClick}>{t('customers.addFirstCustomer', 'Add First Customer')}</button>
+            <h4 className="empty-state-title">No Customers Registered</h4>
+            <p className="empty-state-desc">No customer entries found matching your query or selected outstanding balance filter.</p>
+            <button className="btn btn-primary" onClick={handleAddNewClick}>Add First Customer</button>
           </div>
         ) : (
           <>
@@ -725,12 +722,12 @@ export const Customers: React.FC = () => {
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th>{t('customers.customerName', 'Customer Name')}</th>
-                      <th className="text-nowrap">{t('customers.phoneContact', 'Phone / Contact')}</th>
-                      <th>{t('customers.billingAddress', 'Billing Address')}</th>
-                      <th className="text-nowrap">{t('customers.gstinIdentification', 'GSTIN Identification')}</th>
-                      <th className="text-nowrap">{t('customers.outstandingBalanceHeader', 'Outstanding Balance (₹)')}</th>
-                      <th style={{ textAlign: 'center' }}>{t('common.actions', 'Actions')}</th>
+                      <th>Customer Name</th>
+                      <th className="text-nowrap">Phone / Contact</th>
+                      <th>Billing Address</th>
+                      <th className="text-nowrap">GSTIN Identification</th>
+                      <th className="text-nowrap">Outstanding Balance (₹)</th>
+                      <th style={{ textAlign: 'center' }}>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -758,7 +755,7 @@ export const Customers: React.FC = () => {
                             className="btn btn-secondary btn-sm"
                             style={{ padding: '6px', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto' }}
                             onClick={(e) => { e.stopPropagation(); setActiveMenuCustomerId(activeMenuCustomerId === c.id ? null : c.id); }}
-                            title={t('common.actions', 'Actions')}
+                            title="Actions"
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -775,15 +772,15 @@ export const Customers: React.FC = () => {
                               }}>
                                 <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                                   onClick={() => { setActiveMenuCustomerId(null); setViewCustomer(c.id); }}>
-                                  <Eye size={14} /> {t('customers.viewProfile', 'View Profile')}
+                                  <Eye size={14} /> View Profile
                                 </button>
                                 <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                                   onClick={() => { setActiveMenuCustomerId(null); handleEditClick(c); }}>
-                                  <Edit2 size={14} /> {t('customers.editDetails', 'Edit Details')}
+                                  <Edit2 size={14} /> Edit Details
                                 </button>
                                 <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
                                   onClick={() => { setActiveMenuCustomerId(null); handleDeleteCustomer(c.id, c.name); }}>
-                                  <Trash2 size={14} /> {t('customers.deleteProfile', 'Delete Profile')}
+                                  <Trash2 size={14} /> Delete Profile
                                 </button>
                               </div>
                             </>
@@ -830,15 +827,15 @@ export const Customers: React.FC = () => {
                           }}>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { setActiveMenuCustomerId(null); setViewCustomer(c.id); }}>
-                              <Eye size={14} /> {t('customers.viewProfile', 'View Profile')}
+                              <Eye size={14} /> View Profile
                             </button>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { setActiveMenuCustomerId(null); handleEditClick(c); }}>
-                              <Edit2 size={14} /> {t('customers.editDetails', 'Edit Details')}
+                              <Edit2 size={14} /> Edit Details
                             </button>
                             <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 16px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
                               onClick={() => { setActiveMenuCustomerId(null); handleDeleteCustomer(c.id, c.name); }}>
-                              <Trash2 size={14} /> {t('customers.deleteProfile', 'Delete Profile')}
+                              <Trash2 size={14} /> Delete Profile
                             </button>
                           </div>
                         </>
@@ -847,19 +844,19 @@ export const Customers: React.FC = () => {
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">{t('common.gstin', 'GSTIN')}</span>
+                    <span className="mobile-list-card-label">GSTIN</span>
                     <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</span>
                   </div>
 
                   <div className="mobile-list-card-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px' }}>
-                    <span className="mobile-list-card-label" style={{ flexShrink: 0 }}>{t('common.address', 'Address')}</span>
+                    <span className="mobile-list-card-label" style={{ flexShrink: 0 }}>Address</span>
                     <span className="mobile-list-card-val" style={{ fontSize: '12px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%', textAlign: 'right' }} title={c.address ? `${c.address} (${c.state || 'Madhya Pradesh'})` : '—'}>
                       {c.address ? `${c.address} (${c.state || 'Madhya Pradesh'})` : '—'}
                     </span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">{t('customers.outstandingBalance', 'Outstanding Balance')}</span>
+                    <span className="mobile-list-card-label">Outstanding Balance</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700, color: c.outstanding > 0 ? 'var(--color-warning-dark, #b45309)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit' }}>
                       {formatINR(c.outstanding)}
                     </span>
@@ -871,22 +868,22 @@ export const Customers: React.FC = () => {
             {totalPages > 1 && (
               <div className="pagination-row">
                 <span>
-                  {t('common.showing', 'Showing')} <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> {t('common.to', 'to')}{' '}
-                  <strong>{Math.min(currentPage * itemsPerPage, filteredCustomers.length)}</strong> {t('common.of', 'of')}{' '}
-                  <strong>{filteredCustomers.length}</strong> {t('customers.profiles', 'profiles')}
+                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, filteredCustomers.length)}</strong> of{' '}
+                  <strong>{filteredCustomers.length}</strong> profiles
                 </span>
                 <div className="pagination-btn-group">
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
-                    title={t('common.prev', 'Previous Page')}
+                    title="Previous Page"
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
-                    title={t('common.next', 'Next Page')}
+                    title="Next Page"
                   >
                     <ChevronRight size={16} />
                   </button>
@@ -909,11 +906,11 @@ export const Customers: React.FC = () => {
           if (!isDeletingCustomer) setDeletingCustomerTarget(null);
         }}
         onConfirm={confirmDeleteCustomer}
-        title={t('customers.deleteCustomerConfirm', 'Delete Customer')}
+        title="Delete Customer"
         itemName={deletingCustomerTarget?.name}
         description={deletingCustomerTarget ? (
           <>
-            {t('customers.deleteConfirmMessage', 'Are you sure you want to delete customer {{name}}? All outstanding balances and history logs will be removed.', { name: deletingCustomerTarget.name })}
+            Are you sure you want to delete customer <strong>{deletingCustomerTarget.name}</strong>? All outstanding balances and history logs will be removed.
           </>
         ) : ''}
         isLoading={isDeletingCustomer}

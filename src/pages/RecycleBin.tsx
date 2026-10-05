@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useApp } from '../context/AppContext';
 import type { RecycleBinItem } from '../types';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
@@ -18,7 +17,6 @@ import {
 } from 'lucide-react';
 
 export const RecycleBin: React.FC = () => {
-  const { t } = useTranslation();
   const {
     recycleBin,
     restoreRecord,
@@ -316,7 +314,7 @@ export const RecycleBin: React.FC = () => {
               <Search size={16} className="search-input-icon" />
               <input
                 type="text"
-                placeholder={t('common.search', 'Search...')}
+                placeholder="Search..."
                 value={searchQuery}
                 style={{ width: '100%' }}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -333,14 +331,14 @@ export const RecycleBin: React.FC = () => {
                 value={moduleFilter} 
                 onChange={(e) => setModuleFilter(e.target.value)}
               >
-                <option value="All">{t('recycleBin.allModules', 'All Modules')}</option>
-                <option value="Customer">{t('recycleBin.customersOnly', 'Customers')}</option>
-                <option value="Supplier">{t('recycleBin.suppliersOnly', 'Suppliers')}</option>
-                <option value="Product">{t('recycleBin.productsOnly', 'Products')}</option>
-                <option value="Invoice">{t('recycleBin.invoicesOnly', 'Invoices & Sales')}</option>
+                <option value="All">All Modules</option>
+                <option value="Customer">Customers</option>
+                <option value="Supplier">Suppliers</option>
+                <option value="Product">Products</option>
+                <option value="Invoice">Invoices</option>
                 <option value="Quotation">Quotations</option>
-                <option value="Purchase">{t('recycleBin.purchasesOnly', 'Purchases')}</option>
-                <option value="Expense">{t('recycleBin.expensesOnly', 'Expenses')}</option>
+                <option value="Purchase">Purchases</option>
+                <option value="Expense">Expenses</option>
                 <option value="Payment">Payments</option>
               </select>
             </div>

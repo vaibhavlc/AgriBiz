@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import authService from '../auth/authService';
 import { CheckCircle2, AlertCircle, Mail, Send, ArrowLeft, Loader2 } from 'lucide-react';
 import registrationSync from '../utils/registrationSync';
@@ -10,7 +9,6 @@ interface VerifyEmailProps {
 }
 
 export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwitchToRegisterStep3 }) => {
-  const { t } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState<'success' | 'error' | 'idle'>('idle');
   const [message, setMessage] = useState('');
@@ -331,7 +329,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                     gap: '6px',
                   }}
                 >
-                  {resendLoading ? t('common.loading', 'Resending...') : <><Send size={14} /> {t('auth.sendOtp', 'Resend Verification Email')}</>}
+                  {resendLoading ? 'Resending...' : <><Send size={14} /> Resend Verification Email</>}
                 </button>
               </form>
             </div>
@@ -350,7 +348,7 @@ export const VerifyEmail: React.FC<VerifyEmailProps> = ({ onSwitchToLogin, onSwi
                 gap: '6px',
               }}
             >
-              <ArrowLeft size={14} /> {t('common.back', 'Back to Sign In')}
+              <ArrowLeft size={14} /> Back to Sign In
             </button>
           </div>
         )}
