@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agribiz-v4';
+const CACHE_NAME = 'agribiz-v5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -47,6 +47,9 @@ self.addEventListener('fetch', (event) => {
 
   const requestUrl = new URL(event.request.url);
 
+  // Skip API backend requests and websockets so SW doesn't intercept or corrupt API calls
+  if (requestUrl.pathname.startsWith('/api/')) return;
+
   // Intercept Web App Manifest requests and return dynamic JSON with customized app name
   if (requestUrl.pathname.includes('manifest.webmanifest')) {
     const urlName = requestUrl.searchParams.get('name');
@@ -84,7 +87,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first strategy with cache fallback for all other assets
+  // Network-first strategy with safe Response fallback for all other assets
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -96,14 +99,21 @@ self.addEventListener('fetch', (event) => {
         }
         return response;
       })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
+      .catch(async () => {
+        const cachedResponse = await caches.match(event.request);
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+        if (event.request.headers.get('accept')?.includes('text/html')) {
+          const indexHtml = await caches.match('/index.html');
+          if (indexHtml) {
+            return indexHtml;
           }
-          if (event.request.headers.get('accept')?.includes('text/html')) {
-            return caches.match('/index.html');
-          }
+        }
+        return new Response('Network error or resource unavailable', {
+          status: 503,
+          statusText: 'Service Unavailable',
+          headers: { 'Content-Type': 'text/plain' }
         });
       })
   );
