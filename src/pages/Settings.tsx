@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
+import { translateRole } from '../utils/statusTranslation';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { useAuth } from '../auth/AuthContext';
 import api from '../utils/api';
@@ -96,6 +98,7 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 
 export const Settings: React.FC = () => {
+  const { t, i18n } = useTranslation();
   const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
   const { currentUser, currentCompany, forgetDevice } = useAuth();
 
@@ -1578,7 +1581,7 @@ export const Settings: React.FC = () => {
                     <Briefcase size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Information</h3>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.businessInformation', 'Business Information')}</h3>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage firm names, PAN/GST registration, and contacts</p>
                   </div>
                 </div>
@@ -1630,7 +1633,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Business Type</label>
+                    <label className="form-label">{t("settings.businessType", "Business Type")}</label>
                     <input
                       type="text"
                       placeholder="e.g. Proprietorship, Partnership"
@@ -1653,7 +1656,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Alternate Phone</label>
+                    <label className="form-label">{t("settings.alternatePhone", "Alternate Phone")}</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1675,7 +1678,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Website</label>
+                    <label className="form-label">{t("settings.website", "Website")}</label>
                     <input
                       type="text"
                       placeholder="e.g. www.agribizstore.com"
@@ -1694,7 +1697,7 @@ export const Settings: React.FC = () => {
                     <MapPin size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Business Address</h3>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.businessAddress', 'Business Address')}</h3>
                     <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Set physical store billing addresses</p>
                   </div>
                 </div>
@@ -1837,7 +1840,7 @@ export const Settings: React.FC = () => {
                   <CreditCard size={18} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Banking & Settlement Details</h3>
+                  <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.bankingDetails', 'Banking & Settlement Details')}</h3>
                   <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage bank account and UPI settlement options</p>
                 </div>
               </div>
@@ -2257,6 +2260,60 @@ export const Settings: React.FC = () => {
           {/* TAB 5: Print Preferences & System Defaults */}
           {activeTab === 'system' && (
             <>
+              
+              {/* Language Settings Card */}
+              <div className="card animate-fade-in" style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <RefreshCw size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.languageTitle', 'Language Settings / भाषा निवडा')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.languageSubtitle', 'Select interface language for AgriBiz POS')}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className={`btn ${i18n.language === 'en' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, minWidth: '140px', justifyContent: 'center', fontWeight: 700 }}
+                    onClick={() => {
+                      i18n.changeLanguage('en');
+                      localStorage.setItem('agribiz_language', 'en');
+                    }}
+                  >
+                    English
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${i18n.language === 'mr' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, minWidth: '140px', justifyContent: 'center', fontWeight: 700 }}
+                    onClick={() => {
+                      i18n.changeLanguage('mr');
+                      localStorage.setItem('agribiz_language', 'mr');
+                    }}
+                  >
+                    मराठी (Marathi)
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${i18n.language === 'hi' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, minWidth: '140px', justifyContent: 'center', fontWeight: 700 }}
+                    onClick={() => {
+                      i18n.changeLanguage('hi');
+                      localStorage.setItem('agribiz_language', 'hi');
+                    }}
+                  >
+                    हिन्दी (Hindi)
+                  </button>
+                </div>
+              </div>
+
               {/* Color Palette (Theme Selection) */}
               <div className="card animate-fade-in">
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
@@ -2660,11 +2717,11 @@ export const Settings: React.FC = () => {
                       <table className="table" style={{ margin: 0, width: '100%' }}>
                         <thead>
                           <tr style={{ background: 'var(--bg-app)' }}>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Staff Member</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Mobile (Login ID)</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>System Role</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Account Status</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Last Login</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.staffMember", "Staff Member")}</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.mobileLoginId", "Mobile (Login ID)")}</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.systemRole", "System Role")}</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.accountStatus", "Account Status")}</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.lastLogin", "Last Login")}</th>
                             <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Actions</th>
                           </tr>
                         </thead>
@@ -2705,7 +2762,7 @@ export const Settings: React.FC = () => {
                                     color: u.role === 'Owner' ? 'var(--primary)' : u.role === 'Accounts' ? '#6366F1' : '#D97706',
                                     border: u.role === 'Owner' ? '1px solid rgba(16, 185, 129, 0.25)' : u.role === 'Accounts' ? '1px solid rgba(99, 102, 241, 0.25)' : '1px solid rgba(245, 158, 11, 0.25)'
                                   }}>
-                                    {u.role === 'Owner' ? '👑 Owner' : u.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
+                                    {translateRole(t, u.role)}
                                   </span>
                                 </td>
                                 <td style={{ padding: '16px 20px', textAlign: 'center' }}>
@@ -2821,7 +2878,7 @@ export const Settings: React.FC = () => {
                                 backgroundColor: u.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : u.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
                                 color: u.role === 'Owner' ? 'var(--primary)' : u.role === 'Accounts' ? '#6366F1' : '#D97706'
                               }}>
-                                {u.role === 'Owner' ? '👑 Owner' : u.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
+                                {translateRole(t, u.role)}
                               </span>
                             </div>
                             {u.lastLogin && (

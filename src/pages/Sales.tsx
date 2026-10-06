@@ -7,6 +7,7 @@ import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
+import { translatePaymentMethod } from '../utils/statusTranslation';
 import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
 import {
@@ -1543,13 +1544,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         <div className="invoice-detail-nav-panel no-print">
           <div className="invoice-detail-top-row">
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewInvoice(null)}>
-              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Invoices</span>
+              <ArrowLeft size={16} /> {t("sales.backToInvoices", "Back to Invoices")}
             </button>
             <div className="template-selector-group">
-              <span className="template-label">Print Template:</span>
+              <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
               <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">Standard A5 Bill Book</option>
-                <option value="Thermal">Thermal 3-Inch roll POS</option>
+                <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
+                <option value="Thermal">{t('sales.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
               </select>
             </div>
           </div>
@@ -1617,7 +1618,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-title">INVOICE</h1>
+                  <h1 className="invoice-main-title">{t("sales.taxInvoice", "INVOICE")}</h1>
                   <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
                   <p className="invoice-date-text">Date: {formatDate(selectedInvoice.date)}</p>
                 </div>
@@ -1626,7 +1627,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             {/* Billed To and Payment details */}
             <div className="invoice-billing-details">
               <div>
-                <h4 className="invoice-detail-header">Billing to:</h4>
+                <h4 className="invoice-detail-header">{t("sales.billingTo", "Billing to:")}</h4>
                 {customerDetail ? (
                   <>
                     <h3 className="invoice-customer-name">
@@ -1651,17 +1652,17 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     )}
                   </>
                 ) : (
-                  <h3 className="invoice-customer-name">Walk-in Customer</h3>
+                  <h3 className="invoice-customer-name">{t("sales.walkInCustomer", "Walk-in Customer")}</h3>
                 )}
               </div>
               <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
-                <h4 className="invoice-detail-header">Payment Info:</h4>
+                <h4 className="invoice-detail-header">{t("sales.paymentInfo", "Payment Info:")}</h4>
                 <span className={`invoice-payment-badge ${selectedInvoice.paymentStatus.toLowerCase()}`}>
                   {selectedInvoice.paymentStatus.toUpperCase()}
                 </span>
                 {selectedInvoice.paymentMethod && (
                   <p className="invoice-customer-sub" style={{ marginTop: "6px", fontWeight: 600 }}>
-                    Method: {selectedInvoice.paymentMethod}
+                    Method: {translatePaymentMethod(t, selectedInvoice.paymentMethod)}
                   </p>
                 )}
                 {selectedInvoice.referenceNumber && (
@@ -1681,12 +1682,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <table className="invoice-table">
               <thead>
                 <tr>
-                  <th style={{ width: "40px", textAlign: "center" }}>Sr</th>
-                  <th style={{ textAlign: "left" }}>Product / Description</th>
-                  <th style={{ width: "80px", textAlign: "center" }}>GST</th>
+                  <th style={{ width: "40px", textAlign: "center" }}>{t('sales.srNo', 'Sr')}</th>
+                  <th style={{ textAlign: "left" }}>{t('sales.productDescription', 'Product / Description')}</th>
+                  <th style={{ width: "80px", textAlign: "center" }}>{t('sales.gst', 'GST')}</th>
                   <th style={{ width: "90px", textAlign: "right" }}>Price (₹)</th>
-                  <th style={{ width: "60px", textAlign: "center" }}>Qty</th>
-                  <th style={{ width: "70px", textAlign: "right" }}>Disc (%)</th>
+                  <th style={{ width: "60px", textAlign: "center" }}>{t('sales.qty', 'Qty')}</th>
+                  <th style={{ width: "70px", textAlign: "right" }}>{t('sales.discPercent', 'Disc (%)')}</th>
                   <th style={{ width: "100px", textAlign: "right" }}>Total (₹)</th>
                 </tr>
               </thead>
@@ -1710,22 +1711,22 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ flex: 1, maxWidth: "55%" }}>
                 {settings.showBankDetails && settings.bankName && (
                   <div style={{ marginBottom: "8px" }}>
-                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
+                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>{t('sales.bankDetails', 'BANK DETAILS:')}</h5>
                     <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
                       <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.bank', 'Bank:')}</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
                       </div>
                       <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acName', 'A/c Name:')}</span> {settings.accountHolderName}
                       </div>
                       <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acNo', 'A/c No:')}</span> {settings.accountNumber}
                         <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.ifsc', 'IFSC:')}</span> {settings.ifscCode}
                         {settings.upiId && (
                           <>
                             <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI:</span> {settings.upiId}
+                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.upi', 'UPI:')}</span> {settings.upiId}
                           </>
                         )}
                       </div>
@@ -1734,7 +1735,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 )}
                 {settings.showTerms && (settings.invoiceTerms || settings.defaultTerms) && (
                   <>
-                    <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                    <h5 className="invoice-terms-title">{t('sales.termsConditions', 'TERMS & CONDITIONS:')}</h5>
                     <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
                       {settings.invoiceTerms || settings.defaultTerms}
                     </p>
@@ -1742,7 +1743,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 )}
                 {selectedInvoice.notes && (
                   <>
-                    <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>NOTE:</h5>
+                    <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>{t('sales.note', 'NOTE:')}</h5>
                     <p className="invoice-terms-text">{selectedInvoice.notes}</p>
                   </>
                 )}
@@ -1751,12 +1752,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <table className="invoice-summary-table">
                   <tbody>
                     <tr>
-                      <td>Subtotal</td>
+                      <td>{t('sales.subtotal', 'Subtotal')}</td>
                       <td>{formatINR(invoiceTotals.subtotal)}</td>
                     </tr>
                     {invoiceTotals.discountTotal > 0 && (
                       <tr className="discount-row">
-                        <td>Discount (-)</td>
+                        <td>{t('sales.discountMinus', 'Discount (-)')}</td>
                         <td>{formatINR(invoiceTotals.discountTotal)}</td>
                       </tr>
                     )}
@@ -1778,16 +1779,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       </>
                     )}
                     <tr className="grand-total-row">
-                      <td>TOTAL</td>
+                      <td>{t('sales.totalCaps', 'TOTAL')}</td>
                       <td>{formatINR(invoiceTotals.grandTotal)}</td>
                     </tr>
                     <tr className="collected-row">
-                      <td>Collected</td>
+                      <td>{t('sales.collected', 'Collected')}</td>
                       <td>{formatINR(invoiceTotals.amountPaid)}</td>
                     </tr>
                     {invoiceTotals.balanceDue > 0 && (
                       <tr className="due-row">
-                        <td>Balance Due</td>
+                        <td>{t('sales.balanceDue', 'Balance Due')}</td>
                         <td>{formatINR(invoiceTotals.balanceDue)}</td>
                       </tr>
                     )}
@@ -1930,9 +1931,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   )}
                 </div>{customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>ITEM</span><span style={{ textAlign: "center" }}>QTY</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
+              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{t('sales.item', 'ITEM')}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Total Taxable</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>Discount (-)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>GRAND TOTAL</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>CASH COLLECTED</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>BALANCE DUE</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.totalTaxable', 'Total Taxable')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.discountMinus', 'Discount (-)')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>GRAND TOTAL</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>CASH COLLECTED</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>BALANCE DUE</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || "THANK YOU! VISIT AGAIN."}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div></div>
             </div>
@@ -1964,13 +1965,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         <div className="invoice-detail-nav-panel no-print">
           <div className="invoice-detail-top-row">
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewQuotation(null)}>
-              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Quotations</span>
+              <ArrowLeft size={16} /> {t("sales.backToQuotations", "Back to Quotations")}
             </button>
             <div className="template-selector-group">
-              <span className="template-label">Print Template:</span>
+              <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
               <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">Standard A5 Bill Book</option>
-                <option value="Thermal">Thermal 3-Inch roll POS</option>
+                <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
+                <option value="Thermal">{t('sales.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
               </select>
             </div>
           </div>
@@ -2038,7 +2039,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>ESTIMATE</h1>
+                  <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>{t('sales.estimate', 'ESTIMATE')}</h1>
                   <h3 className="invoice-number-text">#{selectedQuotation.quotationNumber}</h3>
                   <p className="invoice-date-text">Date: {formatDate(selectedQuotation.date)}</p>
                 </div>
@@ -2047,7 +2048,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               {/* Billed To and Payment details */}
               <div className="invoice-billing-details">
                 <div>
-                  <h4 className="invoice-detail-header">Estimate for:</h4>
+                  <h4 className="invoice-detail-header">{t('sales.estimateFor', 'Estimate for:')}</h4>
                   {customerDetail ? (
                     <>
                       <h3 className="invoice-customer-name">
@@ -2072,11 +2073,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       )}
                     </>
                   ) : (
-                    <h3 className="invoice-customer-name">Walk-in Customer</h3>
+                    <h3 className="invoice-customer-name">{t("sales.walkInCustomer", "Walk-in Customer")}</h3>
                   )}
                 </div>
                 <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
-                  <h4 className="invoice-detail-header">Validity Info:</h4>
+                  <h4 className="invoice-detail-header">{t('sales.validityInfo', 'Validity Info:')}</h4>
                   <span className="invoice-payment-badge paid" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}>
                     VALID UNTIL: {formatDate(selectedQuotation.validUntil)}
                   </span>
@@ -2087,12 +2088,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <table className="invoice-table">
                 <thead>
                   <tr>
-                    <th style={{ width: "40px", textAlign: "center" }}>Sr</th>
-                    <th style={{ textAlign: "left" }}>Product / Description</th>
-                    <th style={{ width: "80px", textAlign: "center" }}>GST</th>
+                    <th style={{ width: "40px", textAlign: "center" }}>{t('sales.srNo', 'Sr')}</th>
+                    <th style={{ textAlign: "left" }}>{t('sales.productDescription', 'Product / Description')}</th>
+                    <th style={{ width: "80px", textAlign: "center" }}>{t('sales.gst', 'GST')}</th>
                     <th style={{ width: "90px", textAlign: "right" }}>Price (₹)</th>
-                    <th style={{ width: "60px", textAlign: "center" }}>Qty</th>
-                    <th style={{ width: "70px", textAlign: "right" }}>Disc (%)</th>
+                    <th style={{ width: "60px", textAlign: "center" }}>{t('sales.qty', 'Qty')}</th>
+                    <th style={{ width: "70px", textAlign: "right" }}>{t('sales.discPercent', 'Disc (%)')}</th>
                     <th style={{ width: "100px", textAlign: "right" }}>Total (₹)</th>
                   </tr>
                 </thead>
@@ -2116,22 +2117,22 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ flex: 1, maxWidth: "55%" }}>
                   {settings.showBankDetails && settings.bankName && (
                     <div style={{ marginBottom: "8px" }}>
-                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>BANK DETAILS:</h5>
+                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>{t('sales.bankDetails', 'BANK DETAILS:')}</h5>
                       <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
                         <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>Bank:</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.bank', 'Bank:')}</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
                         </div>
                         <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c Name:</span> {settings.accountHolderName}
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acName', 'A/c Name:')}</span> {settings.accountHolderName}
                         </div>
                         <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>A/c No:</span> {settings.accountNumber}
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acNo', 'A/c No:')}</span> {settings.accountNumber}
                           <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>IFSC:</span> {settings.ifscCode}
+                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.ifsc', 'IFSC:')}</span> {settings.ifscCode}
                           {settings.upiId && (
                             <>
                               <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                              <span style={{ fontWeight: 700, color: "#2F3E33" }}>UPI:</span> {settings.upiId}
+                              <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.upi', 'UPI:')}</span> {settings.upiId}
                             </>
                           )}
                         </div>
@@ -2140,7 +2141,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   )}
                   {settings.showTerms && (settings.quotationTerms || settings.defaultTerms) && (
                     <>
-                      <h5 className="invoice-terms-title">TERMS & CONDITIONS:</h5>
+                      <h5 className="invoice-terms-title">{t('sales.termsConditions', 'TERMS & CONDITIONS:')}</h5>
                       <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
                         {settings.quotationTerms || settings.defaultTerms}
                       </p>
@@ -2148,7 +2149,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   )}
                   {selectedQuotation.notes && (
                     <>
-                      <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>NOTE:</h5>
+                      <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>{t('sales.note', 'NOTE:')}</h5>
                       <p className="invoice-terms-text">{selectedQuotation.notes}</p>
                     </>
                   )}
@@ -2157,12 +2158,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <table className="invoice-summary-table">
                     <tbody>
                       <tr>
-                        <td>Subtotal</td>
+                        <td>{t('sales.subtotal', 'Subtotal')}</td>
                         <td>{formatINR(quotationTotals.subtotal)}</td>
                       </tr>
                       {quotationTotals.discountTotal > 0 && (
                         <tr className="discount-row">
-                          <td>Discount (-)</td>
+                          <td>{t('sales.discountMinus', 'Discount (-)')}</td>
                           <td>{formatINR(quotationTotals.discountTotal)}</td>
                         </tr>
                       )}
@@ -2184,7 +2185,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         </>
                       )}
                       <tr className="grand-total-row">
-                        <td>TOTAL</td>
+                        <td>{t('sales.totalCaps', 'TOTAL')}</td>
                         <td>{formatINR(quotationTotals.grandTotal)}</td>
                       </tr>
                     </tbody>
@@ -2335,8 +2336,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px" }}>
                 <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
-                  <span>ITEM</span>
-                  <span style={{ textAlign: "center" }}>QTY</span>
+                  <span>{t('sales.item', 'ITEM')}</span>
+                  <span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span>
                   <span style={{ textAlign: "right" }}>AMT(₹)</span>
                 </div>
                 <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
@@ -2354,12 +2355,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Total Taxable</span>
+                  <span>{t('sales.totalTaxable', 'Total Taxable')}</span>
                   <span>₹{quotationTotals.subtotal.toFixed(2)}</span>
                 </div>
                 {quotationTotals.discountTotal > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Discount (-)</span>
+                    <span>{t('sales.discountMinus', 'Discount (-)')}</span>
                     <span>₹{quotationTotals.discountTotal.toFixed(2)}</span>
                   </div>
                 )}
@@ -2381,7 +2382,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
-                  <span>GRAND TOTAL EST</span>
+                  <span>{t('sales.grandTotalEst', 'GRAND TOTAL EST')}</span>
                   <span>₹{quotationTotals.grandTotal.toFixed(2)}</span>
                 </div>
               </div>
@@ -2622,7 +2623,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     onChange={(e) => setSelectedCustomerId(e.target.value)}
                     required
                   >
-                    <option value="">Select Customer</option>
+                    <option value="">{t('sales.selectCustomer', 'Select Customer')}</option>
                     {customers.map((c) => (
                       <option key={c.id} value={c.id}>
                         {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
@@ -2635,7 +2636,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     onClick={() => setIsCustomerModalOpen(true)}
                     style={{ height: '42px', padding: '0 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
                   >
-                    <Plus size={16} /> <span className="hide-on-mobile-inline">New Customer</span>
+                    <Plus size={16} /> <span className="hide-on-mobile-inline">{t('sales.newCustomer', 'New Customer')}</span>
                   </button>
                 </div>
               </div>
@@ -2697,7 +2698,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
 
               <div className="price-mode-selector-wrap">
-                <span className="price-mode-label">Price Input:</span>
+                <span className="price-mode-label">{t('sales.priceInput', 'Price Input:')}</span>
                 <div className="price-mode-toggle-group">
                   <button
                     type="button"
@@ -2722,13 +2723,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <thead>
                   <tr>
                     <th style={{ width: '32px' }}>#</th>
-                    <th>Product</th>
-                    <th className="col-center" style={{ width: '70px' }}>Stock</th>
+                    <th>{t("sales.product", "Product")}</th>
+                    <th className="col-center" style={{ width: '70px' }}>{t("sales.stock", "Stock")}</th>
                     <th className="col-right" style={{ width: '125px' }}>Unit SP (₹)</th>
-                    <th className="col-right" style={{ width: '140px' }}>Total Price (Incl. GST)</th>
-                    <th className="col-center" style={{ width: '75px' }}>Qty</th>
-                    <th className="col-center" style={{ width: '75px' }}>Disc %</th>
-                    <th className="col-right" style={{ width: '110px' }}>Net Total</th>
+                    <th className="col-right" style={{ width: '140px' }}>{t("sales.totalPriceInclGst", "Total Price (Incl. GST)")}</th>
+                    <th className="col-center" style={{ width: '75px' }}>{t('sales.qty', 'Qty')}</th>
+                    <th className="col-center" style={{ width: '75px' }}>{t("sales.discPercentShort", "Disc %")}</th>
+                    <th className="col-right" style={{ width: '110px' }}>{t("sales.netTotal", "Net Total")}</th>
                     <th style={{ width: '40px' }}></th>
                   </tr>
                 </thead>
@@ -2752,7 +2753,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
                             required
                           >
-                            <option value="">Choose Product</option>
+                            <option value="">{t("sales.chooseProduct", "Choose Product")}</option>
                             {products.map((p) => (
                               <option key={p.id} value={p.id} disabled={p.stock <= 0}>
                                 {p.name} [{p.category}]{p.stock <= 0 ? ' (Out of Stock)' : ''}
@@ -2931,10 +2932,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       onChange={(e) => { setPaymentMethod(e.target.value); setReferenceNumber(''); }}
                       style={{ height: '42px', fontSize: '13px' }}
                     >
-                      <option value="UPI">UPI / GPay / PhonePe</option>
-                      <option value="Cash">Cash</option>
-                      <option value="Bank Transfer">Bank Transfer (IMPS/NEFT)</option>
-                      <option value="Cheque">Cheque</option>
+                      <option value="UPI">{t("paymentMethods.upi", "UPI / GPay / PhonePe")}</option>
+                      <option value="Cash">{translatePaymentMethod(t, "Cash")}</option>
+                      <option value="Bank Transfer">{t("paymentMethods.bankTransfer", "Bank Transfer (IMPS/NEFT)")}</option>
+                      <option value="Cheque">{translatePaymentMethod(t, "Cheque")}</option>
                     </select>
                   </div>
                 )}
@@ -2976,10 +2977,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Billing Remarks / Notes</label>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t('sales.billingRemarksNotes', 'Billing Remarks / Notes')}</label>
                   <textarea
                     className="form-control"
-                    placeholder="Remarks printed on customer invoice..."
+                    placeholder={t("sales.remarksPlaceholder", "Remarks printed on customer invoice...")}
                     rows={3}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
@@ -3022,7 +3023,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('sales.subtotal', 'Subtotal')}</span>
                 <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.subtotal)}</span>
               </div>
 
@@ -3054,13 +3055,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
 
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 800 }}>
-                <span style={{ color: 'var(--text-primary)' }}>Grand Total</span>
+                <span style={{ color: 'var(--text-primary)' }}>{t('sales.grandTotal', 'Grand Total')}</span>
                 <span style={{ color: 'var(--primary-dark)' }}>{formatINR(totals.grandTotal)}</span>
               </div>
 
               {(Number(amountPaid) || 0) > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Collected</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('sales.collected', 'Collected')}</span>
                   <span style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>{formatINR(Number(amountPaid) || 0)}</span>
                 </div>
               )}
@@ -3103,7 +3104,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       : 'rgba(16, 185, 129, 0.2)'
                 }`
               }}>
-                <span>Payment Status</span>
+                <span>{t('sales.paymentStatus', 'Payment Status')}</span>
                 <span>
                   {(Number(amountPaid) || 0) === 0 
                     ? 'Pending' 
@@ -3266,7 +3267,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       onChange={(e) => setSelectedCustomerId(e.target.value)}
                       required
                     >
-                      <option value="">Select Customer</option>
+                      <option value="">{t('sales.selectCustomer', 'Select Customer')}</option>
                       {customers.map((c) => (
                         <option key={c.id} value={c.id}>
                           {c.name} {c.phone ? `(${c.phone})` : ''} — Bal: {formatINR(c.outstanding)}
@@ -3279,7 +3280,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       onClick={() => setIsCustomerModalOpen(true)}
                       style={{ height: '42px', padding: '0 12px', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}
                     >
-                      <Plus size={16} /> <span className="hide-on-mobile-inline">New Customer</span>
+                      <Plus size={16} /> <span className="hide-on-mobile-inline">{t('sales.newCustomer', 'New Customer')}</span>
                     </button>
                   </div>
                 </div>
@@ -3359,7 +3360,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
 
                 <div className="price-mode-selector-wrap">
-                  <span className="price-mode-label">Price Input:</span>
+                  <span className="price-mode-label">{t('sales.priceInput', 'Price Input:')}</span>
                   <div className="price-mode-toggle-group">
                     <button
                       type="button"
@@ -3384,13 +3385,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <thead>
                     <tr>
                       <th style={{ width: '32px' }}>#</th>
-                      <th>Product</th>
-                      <th className="col-center" style={{ width: '70px' }}>GST %</th>
+                      <th>{t("sales.product", "Product")}</th>
+                      <th className="col-center" style={{ width: '70px' }}>{t("sales.gstPercent", "GST %")}</th>
                       <th className="col-right" style={{ width: '125px' }}>Unit SP (₹)</th>
-                      <th className="col-right" style={{ width: '140px' }}>Total Price (Incl. GST)</th>
-                      <th className="col-center" style={{ width: '75px' }}>Qty</th>
-                      <th className="col-center" style={{ width: '75px' }}>Disc %</th>
-                      <th className="col-right" style={{ width: '110px' }}>Net Total</th>
+                      <th className="col-right" style={{ width: '140px' }}>{t("sales.totalPriceInclGst", "Total Price (Incl. GST)")}</th>
+                      <th className="col-center" style={{ width: '75px' }}>{t('sales.qty', 'Qty')}</th>
+                      <th className="col-center" style={{ width: '75px' }}>{t("sales.discPercentShort", "Disc %")}</th>
+                      <th className="col-right" style={{ width: '110px' }}>{t("sales.netTotal", "Net Total")}</th>
                       <th style={{ width: '40px' }}></th>
                     </tr>
                   </thead>
@@ -3414,7 +3415,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                               onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
                               required
                             >
-                              <option value="">Choose Product</option>
+                              <option value="">{t("sales.chooseProduct", "Choose Product")}</option>
                               {products.map((p) => (
                                 <option key={p.id} value={p.id}>
                                   {p.name} (Stock: {p.stock})
@@ -3574,7 +3575,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Subtotal</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('sales.subtotal', 'Subtotal')}</span>
                   <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{formatINR(totals.subtotal)}</span>
                 </div>
 
@@ -3606,7 +3607,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ height: '1px', backgroundColor: 'var(--border-color)', margin: '4px 0' }} />
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '18px', fontWeight: 800 }}>
-                  <span style={{ color: 'var(--text-primary)' }}>Grand Total</span>
+                  <span style={{ color: 'var(--text-primary)' }}>{t('sales.grandTotal', 'Grand Total')}</span>
                   <span style={{ color: 'var(--primary-dark)' }}>{formatINR(totals.grandTotal)}</span>
                 </div>
 
@@ -3915,13 +3916,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <thead>
                       <tr>
                         <th style={{ whiteSpace: 'nowrap' }}>Inv No</th>
-                        <th>Customer</th>
-                        <th style={{ whiteSpace: 'nowrap' }}>Date</th>
+                        <th>{t('sales.customer', 'Customer')}</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t('sales.date', 'Date')}</th>
                         <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
                         <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Paid (₹)</th>
                         <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Due (₹)</th>
-                        <th style={{ whiteSpace: 'nowrap' }}>Status</th>
-                        <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t('sales.status', 'Status')}</th>
+                        <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>{t('sales.actions', 'Actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4092,7 +4093,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Status</span>
+                      <span className="mobile-list-card-label">{t('sales.status', 'Status')}</span>
                       <span className="mobile-list-card-val">
                         <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
                           {inv.paymentStatus}
@@ -4115,7 +4116,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Grand Total</span>
+                      <span className="mobile-list-card-label">{t('sales.grandTotal', 'Grand Total')}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
                         {formatINR(inv.grandTotal)}
                       </span>
@@ -4169,12 +4170,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <thead>
                       <tr>
                         <th style={{ whiteSpace: 'nowrap' }}>Est No</th>
-                        <th>Customer</th>
-                        <th style={{ whiteSpace: 'nowrap' }}>Date</th>
-                        <th style={{ whiteSpace: 'nowrap' }}>Valid Until</th>
+                        <th>{t('sales.customer', 'Customer')}</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t('sales.date', 'Date')}</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t('sales.validUntil', 'Valid Until')}</th>
                         <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
-                        <th style={{ whiteSpace: 'nowrap' }}>Status</th>
-                        <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>Actions</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t('sales.status', 'Status')}</th>
+                        <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>{t('sales.actions', 'Actions')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -4376,12 +4377,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       </div>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Quotation Date</span>
+                      <span className="mobile-list-card-label">{t('sales.quotationDate', 'Quotation Date')}</span>
                       <span className="mobile-list-card-val">{formatDate(q.date)}</span>
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Status</span>
+                      <span className="mobile-list-card-label">{t('sales.status', 'Status')}</span>
                       <span className="mobile-list-card-val">
                         <span className={`badge ${
                           q.status === 'Converted' ? 'badge-success' : 
@@ -4407,14 +4408,14 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Grand Total</span>
+                      <span className="mobile-list-card-label">{t('sales.grandTotal', 'Grand Total')}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
                         {formatINR(q.grandTotal)}
                       </span>
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Valid Until</span>
+                      <span className="mobile-list-card-label">{t('sales.validUntil', 'Valid Until')}</span>
                       <span className="mobile-list-card-val">{formatDate(q.validUntil)}</span>
                     </div>
                   </div>

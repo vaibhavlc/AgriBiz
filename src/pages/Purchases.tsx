@@ -1514,13 +1514,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         <div className="invoice-detail-nav-panel no-print">
           <div className="invoice-detail-top-row">
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewPurchase(null)}>
-              <ArrowLeft size={16} /> Back<span className="desktop-only-text"> to Purchases</span>
+              <ArrowLeft size={16} /> {t("purchases.backToPurchases", "Back to Purchases")}
             </button>
             <div className="template-selector-group">
-              <span className="template-label">Print Template:</span>
+              <span className="template-label">{t("purchases.printTemplate", "Print Template:")}</span>
               <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">Standard A5 Bill Book</option>
-                <option value="Thermal">Thermal 3-Inch roll POS</option>
+                <option value="A5">{t('purchases.standardA5', 'Standard A5 Bill Book')}</option>
+                <option value="Thermal">{t('purchases.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
               </select>
             </div>
           </div>
@@ -1588,7 +1588,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <h1 className="invoice-main-title">PURCHASE</h1>
+                <h1 className="invoice-main-title">{t("purchases.purchaseVoucher", "PURCHASE")}</h1>
                 <p className="invoice-number-text">#{selectedPurchase.purchaseNumber}</p>
                 <p className="invoice-date-text">Date: {formatDate(selectedPurchase.date)}</p>
               </div>
@@ -1597,7 +1597,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             {/* Supplier details card */}
             <div className="invoice-billing-details">
               <div>
-                <h4 className="invoice-detail-header">Supplier (Seller):</h4>
+                <h4 className="invoice-detail-header">{t('purchases.supplierSeller', 'Supplier (Seller):')}</h4>
                 <h3 className="invoice-customer-name">
                   {selectedPurchase.supplierId ? (
                     <>
@@ -1626,11 +1626,11 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     {supplierDetail.gstin && <p className="invoice-customer-gst">GSTIN: {supplierDetail.gstin}</p>}
                   </>
                 ) : (
-                  <p className="invoice-customer-sub">General Vendor</p>
+                  <p className="invoice-customer-sub">{t('purchases.generalVendor', 'General Vendor')}</p>
                 )}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <h4 className="invoice-detail-header">Voucher Status:</h4>
+                <h4 className="invoice-detail-header">{t('purchases.voucherStatus', 'Voucher Status:')}</h4>
                 <span className={`invoice-payment-badge ${
                   selectedPurchase.paymentStatus === 'Paid' ? 'paid' : selectedPurchase.paymentStatus === 'Partial' ? 'partial' : 'unpaid'
                 }`}>
@@ -1646,12 +1646,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <table className="invoice-table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px', textAlign: 'center' }}>Sr</th>
+                  <th style={{ width: '40px', textAlign: 'center' }}>{t('purchases.srNo', 'Sr')}</th>
                   <th style={{ textAlign: 'left' }}>Product / Description</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}>GST</th>
+                  <th style={{ width: '80px', textAlign: 'center' }}>{t('purchases.gst', 'GST')}</th>
                   <th style={{ width: '90px', textAlign: 'right' }}>Price (₹)</th>
-                  <th style={{ width: '60px', textAlign: 'center' }}>Qty</th>
-                  <th style={{ width: '70px', textAlign: 'right' }}>Disc (%)</th>
+                  <th style={{ width: '60px', textAlign: 'center' }}>{t('purchases.qty', 'Qty')}</th>
+                  <th style={{ width: '70px', textAlign: 'right' }}>{t('purchases.discPercent', 'Disc (%)')}</th>
                   <th style={{ width: '100px', textAlign: 'right' }}>Total (₹)</th>
                 </tr>
               </thead>
@@ -1679,7 +1679,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: selectedPurchase.items.length > 3 ? '9px' : '10.5px' }}>
                       {supplierInvoiceNo && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Invoice Ref:</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.invoiceRef', 'Invoice Ref:')}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>{supplierInvoiceNo} {supplierInvoiceDt && `(Date: ${supplierInvoiceDt})`}</span>
                         </div>
                       )}
@@ -1691,25 +1691,25 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       )}
                       {dueDtVal && purchaseTypeVal === 'Credit' && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Payment Due Date:</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.paymentDueDate', 'Payment Due Date:')}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>{dueDtVal}</span>
                         </div>
                       )}
                       {(transportVal !== '₹0' || loadingVal !== '₹0' || otherVal !== '₹0') && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Charges:</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.charges', 'Charges:')}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>Transport {transportVal}, Loading {loadingVal}, Other {otherVal}</span>
                         </div>
                       )}
                       {txnRefVal && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Txn Reference:</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.txnReference', 'Txn Reference:')}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>{txnRefVal}</span>
                         </div>
                       )}
                       {remarksVal && remarksVal.trim() !== '' && !remarksVal.startsWith('Invoice Ref:') && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Remarks:</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.remarks', 'Remarks:')}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33', whiteSpace: 'pre-wrap', textAlign: 'right' }}>{remarksVal}</span>
                         </div>
                       )}
@@ -1718,7 +1718,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 )}
                 {(settings.purchaseTerms || settings.defaultTerms) && (
                   <>
-                    <h4 className="invoice-terms-title">TERMS & CONDITIONS:</h4>
+                    <h4 className="invoice-terms-title">{t('purchases.termsConditions', 'TERMS & CONDITIONS:')}</h4>
                     <p className="invoice-terms-text" style={{ whiteSpace: 'pre-wrap' }}>
                       {settings.purchaseTerms || settings.defaultTerms}
                     </p>
@@ -1729,42 +1729,42 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <table className="invoice-summary-table">
                   <tbody>
                     <tr>
-                      <td>Total Base Cost</td>
+                      <td>{t('purchases.totalBaseCost', 'Total Base Cost')}</td>
                       <td>{formatINR(totals.subtotal)}</td>
                     </tr>
                     {totals.cgst > 0 && (
                       <tr>
-                        <td>Input CGST (50% of GST)</td>
+                        <td>{t('purchases.inputCgst', 'Input CGST (50% of GST)')}</td>
                         <td>{formatINR(totals.cgst)}</td>
                       </tr>
                     )}
                     {totals.sgst > 0 && (
                       <tr>
-                        <td>Input SGST (50% of GST)</td>
+                        <td>{t('purchases.inputSgst', 'Input SGST (50% of GST)')}</td>
                         <td>{formatINR(totals.sgst)}</td>
                       </tr>
                     )}
                     <tr style={{ borderTop: '1px dashed var(--border-color)', fontWeight: 600 }}>
-                      <td>Total (Excl. Charges)</td>
+                      <td>{t('purchases.totalExclCharges', 'Total (Excl. Charges)')}</td>
                       <td>{formatINR(totalExclCharges)}</td>
                     </tr>
                     {additionalCharges > 0 && (
                       <tr>
-                        <td>Additional Charges</td>
+                        <td>{t('purchases.additionalCharges', 'Additional Charges')}</td>
                         <td>{formatINR(additionalCharges)}</td>
                       </tr>
                     )}
                     <tr className="grand-total-row">
-                      <td>Grand Total (Incl. Charges)</td>
+                      <td>{t('purchases.grandTotalInclCharges', 'Grand Total (Incl. Charges)')}</td>
                       <td>{formatINR(selectedPurchase.grandTotal)}</td>
                     </tr>
                     <tr>
-                      <td style={{ color: '#10B981' }}>Amount Paid</td>
+                      <td style={{ color: '#10B981' }}>{t('purchases.amountPaid', 'Amount Paid')}</td>
                       <td style={{ color: '#10B981' }}>{formatINR(totals.amountPaid)}</td>
                     </tr>
                     {totals.balanceDue > 0 && (
                       <tr className="due-row">
-                        <td>Balance Due</td>
+                        <td>{t('purchases.balanceDue', 'Balance Due')}</td>
                         <td>{formatINR(totals.balanceDue)}</td>
                       </tr>
                     )}
@@ -1967,7 +1967,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Total Taxable</span>
+                  <span>{t('purchases.totalTaxable', 'Total Taxable')}</span>
                   <span>{settings.currencySymbol || "₹"}{totals.subtotal.toFixed(2)}</span>
                 </div>
                 {totals.cgst > 0 && (
@@ -1983,12 +1983,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #eee', paddingTop: '3px' }}>
-                  <span>Total (Excl. Charges)</span>
+                  <span>{t('purchases.totalExclCharges', 'Total (Excl. Charges)')}</span>
                   <span>{settings.currencySymbol || "₹"}{totalExclCharges.toFixed(2)}</span>
                 </div>
                 {additionalCharges > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>Additional Charges</span>
+                    <span>{t('purchases.additionalCharges', 'Additional Charges')}</span>
                     <span>{settings.currencySymbol || "₹"}{additionalCharges.toFixed(2)}</span>
                   </div>
                 )}
@@ -2168,8 +2168,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       onChange={(e) => setGstType(e.target.value as any)}
                       required
                     >
-                      <option value="IntraState">Intra-State (CGST + SGST)</option>
-                      <option value="InterState">Inter-State (IGST)</option>
+                      <option value="IntraState">{t("purchases.intraState", "Intra-State (CGST + SGST)")}</option>
+                      <option value="InterState">{t("purchases.interState", "Inter-State (IGST)")}</option>
                     </select>
                     <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2218,7 +2218,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
                 <div className="form-grid-2">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Supplier Invoice No. (Optional)</label>
+                    <label className="form-label">{t('purchases.supplierInvoiceNoOptional', 'Supplier Invoice No. (Optional)')}</label>
                     <input
                       type="text"
                       className="form-control"
@@ -2228,7 +2228,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     />
                   </div>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Supplier Invoice Date (Optional)</label>
+                    <label className="form-label">{t('purchases.supplierInvoiceDateOptional', 'Supplier Invoice Date (Optional)')}</label>
                     <input
                       type="date"
                       className="form-control"
@@ -2250,9 +2250,9 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       onChange={(e) => setPurchaseStatus(e.target.value as any)}
                       required
                     >
-                      <option value="Received">Goods Received</option>
-                      <option value="Ordered">Ordered / Transit</option>
-                      <option value="Pending">Pending Audit</option>
+                      <option value="Received">{t("purchases.goodsReceived", "Goods Received")}</option>
+                      <option value="Ordered">{t("purchases.orderedTransit", "Ordered / Transit")}</option>
+                      <option value="Pending">{t("purchases.pendingAudit", "Pending Audit")}</option>
                     </select>
                     <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2272,8 +2272,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       onChange={(e) => setPurchaseType(e.target.value as any)}
                       required
                     >
-                      <option value="Credit">Credit / Outstanding Account</option>
-                      <option value="Cash">Cash replenishment</option>
+                      <option value="Credit">{t("purchases.creditAccount", "Credit / Outstanding Account")}</option>
+                      <option value="Cash">{t("purchases.cashReplenishment", "Cash replenishment")}</option>
                     </select>
                     <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -2285,7 +2285,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 
                 {purchaseType === 'Credit' ? (
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Payment Due Date (Optional)</label>
+                    <label className="form-label">{t('purchases.paymentDueDateOptional', 'Payment Due Date (Optional)')}</label>
                     <input
                       type="date"
                       className="form-control"
@@ -2315,18 +2315,18 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 
                 <div className="supplier-ledger-grid">
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>Supplier Name</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>{t('purchases.supplierName', 'Supplier Name')}</span>
                     <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{supplierDetail.name}</strong>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>{supplierDetail.address || 'No Address Logged'}</span>
                   </div>
                   <div>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>Contact Phone</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>{t('purchases.contactPhone', 'Contact Phone')}</span>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{supplierDetail.phone || 'N/A'}</span>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>GSTIN</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>{t('purchases.gstin', 'GSTIN')}</span>
                     <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{supplierDetail.gstin || 'Unregistered'}</span>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Outstanding Balance</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('purchases.outstandingBalance', 'Outstanding Balance')}</span>
                     <strong style={{ fontSize: '18px', fontWeight: 800, color: supplierDetail.outstanding > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', marginTop: '2px' }}>
                       {formatINR(supplierDetail.outstanding)}
                     </strong>
@@ -2375,12 +2375,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       <thead>
                         <tr>
                           <th>Product *</th>
-                          <th style={{ width: '100px' }}>Category</th>
-                          <th style={{ width: '80px', textAlign: 'center' }}>Unit</th>
+                          <th style={{ width: '100px' }}>{t('purchases.category', 'Category')}</th>
+                          <th style={{ width: '80px', textAlign: 'center' }}>{t('purchases.unit', 'Unit')}</th>
                           <th style={{ width: '85px', textAlign: 'center' }}>Qty *</th>
                           <th style={{ width: '115px', textAlign: 'right' }}>Cost Price (₹) *</th>
-                          <th style={{ width: '85px', textAlign: 'center' }}>Discount (%)</th>
-                          <th style={{ width: '70px', textAlign: 'center' }}>GST</th>
+                          <th style={{ width: '85px', textAlign: 'center' }}>{t('purchases.discount', 'Discount (%)')}</th>
+                          <th style={{ width: '70px', textAlign: 'center' }}>{t('purchases.gst', 'GST')}</th>
                           <th style={{ width: '100px', textAlign: 'right' }}>Tax Amt (₹)</th>
                           <th style={{ width: '110px', textAlign: 'right' }}>Total (₹)</th>
                           <th style={{ width: '40px' }}></th>
@@ -2581,7 +2581,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                               />
                             </div>
                             <div className="form-group" style={{ margin: 0 }}>
-                              <label className="form-label">Disc (%)</label>
+                              <label className="form-label">{t('purchases.discPercent', 'Disc (%)')}</label>
                               <input
                                 type="number"
                                 className="form-control"
@@ -2907,7 +2907,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 flexWrap: 'wrap', gap: '12px'
               }}>
                 <div>
-                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>Grand Total</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>{t('purchases.grandTotal', 'Grand Total')}</span>
                   <span style={{ color: 'var(--primary-dark)', fontSize: '22px' }}>{formatINR(totals.grandTotal)}</span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
@@ -2924,7 +2924,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             {/* FLOATING ACTION BAR */}
             <div className="form-docked-footer no-print">
               <div className="docked-total-info">
-                <span className="docked-total-label">Grand Total</span>
+                <span className="docked-total-label">{t('purchases.grandTotal', 'Grand Total')}</span>
                 <strong className="docked-total-value">{formatINR(totals.grandTotal)}</strong>
               </div>
               <div className="docked-buttons">
@@ -3161,8 +3161,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       <th className="text-nowrap">Receipt Date</th>
                       <th className="text-nowrap">Total Bill (₹)</th>
                       <th className="text-nowrap">Balance Owed (₹)</th>
-                      <th>Status</th>
-                      <th style={{ textAlign: 'center', width: '100px' }}>Actions</th>
+                      <th>{t('purchases.status', 'Status')}</th>
+                      <th style={{ textAlign: 'center', width: '100px' }}>{t('purchases.actions', 'Actions')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3453,7 +3453,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Status</span>
+                    <span className="mobile-list-card-label">{t('purchases.status', 'Status')}</span>
                     <span className="mobile-list-card-val">
                       <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
                         {pur.paymentStatus}
