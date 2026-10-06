@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
+import { translateStatus } from '../utils/statusTranslation';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate } from '../utils/dummyData';
 import { KpiCard } from '../components/KpiCard';
@@ -262,7 +263,7 @@ export const Purchases: React.FC = () => {
             </button>
             
             <h4 style={{ fontWeight: 700, fontSize: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-              <FileText size={18} style={{ color: 'var(--primary-dark)' }} /> Uploaded Invoice: {attachedFile.name}
+              <FileText size={18} style={{ color: 'var(--primary-dark)' }} /> {t('purchases.uploadedInvoice', 'Uploaded Invoice:')} {attachedFile.name}
             </h4>
 
             <div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f1f5f9', borderRadius: '12px', padding: '10px' }}>
@@ -273,7 +274,7 @@ export const Purchases: React.FC = () => {
               ) : (
                 <div style={{ textAlign: 'center', padding: '20px' }}>
                   <FileText size={48} style={{ color: 'var(--text-secondary)', marginBottom: '12px' }} />
-                  <p style={{ fontWeight: 600 }}>Preview not supported for this file type.</p>
+                  <p style={{ fontWeight: 600 }}>{t('purchases.previewNotSupported', 'Preview not supported for this file type.')}</p>
                   <a href={attachedFileUrl} download={attachedFile.name} className="btn btn-primary" style={{ marginTop: '12px' }}>
                     Download File
                   </a>
@@ -286,7 +287,7 @@ export const Purchases: React.FC = () => {
                 setShowAttachmentPreview(false);
                 setActivePreviewPurchase(null);
               }}>
-                Close Preview
+                {t('purchases.closePreview', 'Close Preview')}
               </button>
             </div>
           </div>
@@ -370,7 +371,7 @@ export const Purchases: React.FC = () => {
           </button>
           
           <h4 style={{ fontWeight: 700, fontSize: '16px', borderBottom: '1px solid var(--border-color)', paddingBottom: '12px', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <FileText size={18} style={{ color: 'var(--primary-dark)' }} /> Invoice Attachment Preview
+            <FileText size={18} style={{ color: 'var(--primary-dark)' }} /> {t('purchases.invoiceAttachmentPreview', 'Invoice Attachment Preview')}
           </h4>
 
           <div style={{ background: '#f8fafc', padding: '24px', borderRadius: '12px', border: '1px solid #e2e8f0', minHeight: '300px', display: 'flex', flexDirection: 'column', gap: '14px', fontFamily: 'monospace', fontSize: '11px', color: '#334155' }}>
@@ -386,7 +387,7 @@ export const Purchases: React.FC = () => {
                 fontSize: '12px',
                 lineHeight: '1.4'
               }}>
-                ℹ️ <strong>Simulated Invoice Preview:</strong> Showing structured voucher data reconstructed for the attached file <strong>"{getAttachmentName(activePreviewPurchase.notes)}"</strong>. (Actual binary file data is not persisted locally.)
+                ℹ️ <strong>{t('purchases.simulatedInvoicePreview', 'Simulated Invoice Preview:')}</strong> {t('purchases.simulatedPreviewDesc', 'Showing structured voucher data reconstructed for the attached file {{name}}. (Actual binary file data is not persisted locally.)', { name: getAttachmentName(activePreviewPurchase.notes) })}
               </div>
             )}
             <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '2px solid #cbd5e1', paddingBottom: '10px' }}>
@@ -396,9 +397,9 @@ export const Purchases: React.FC = () => {
                 <br />GSTIN: {modalGst}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <strong>INVOICE BILL</strong>
-                <br />Invoice No: {modalInvoiceNo}
-                <br />Invoice Date: {modalInvoiceDate}
+                <strong>{t('purchases.invoiceBillCaps', 'INVOICE BILL')}</strong>
+                <br />{t('purchases.invoiceNoLabel', 'Invoice No:')} {modalInvoiceNo}
+                <br />{t('purchases.invoiceDateLabel', 'Invoice Date:')} {modalInvoiceDate}
               </div>
             </div>
 
@@ -425,19 +426,19 @@ export const Purchases: React.FC = () => {
 
             <div style={{ marginTop: 'auto', borderTop: '2px solid #cbd5e1', paddingTop: '10px', display: 'flex', flexDirection: 'column', gap: '4px', alignSelf: 'flex-end', width: '220px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Goods Value:</span>
+                <span>{t('purchases.goodsValue', 'Goods Value:')}</span>
                 <span>{formatINR(modalSubtotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>Discounts:</span>
+                <span>{t('purchases.discountsLabel', 'Discounts:')}</span>
                 <span>-{formatINR(modalDiscount)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>GST Taxes:</span>
+                <span>{t('purchases.gstTaxesLabel', 'GST Taxes:')}</span>
                 <span>{formatINR(modalGstTotal)}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold', borderTop: '1px solid #e2e8f0', paddingTop: '4px', fontSize: '12px' }}>
-                <span>Total Bill:</span>
+                <span>{t('purchases.totalBillLabel', 'Total Bill:')}</span>
                 <span>{formatINR(modalGrandTotal)}</span>
               </div>
             </div>
@@ -448,7 +449,7 @@ export const Purchases: React.FC = () => {
               setShowAttachmentPreview(false);
               setActivePreviewPurchase(null);
             }}>
-              Close Preview
+              {t('purchases.closePreview', 'Close Preview')}
             </button>
           </div>
         </div>
@@ -461,11 +462,11 @@ export const Purchases: React.FC = () => {
   const handlePrint = async () => {
     const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!originalEl) {
-      showToast('Could not find layout element.', 'error');
+      showToast(t('purchases.layoutError', 'Could not find layout element.'), 'error');
       return;
     }
 
-    showToast('Preparing document for printing...', 'info');
+    showToast(t('purchases.preparingPrint', 'Preparing document for printing...'), 'info');
 
     // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
@@ -501,7 +502,7 @@ export const Purchases: React.FC = () => {
           }
           
           const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
-          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
+          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory") || kid.innerText.includes(t('purchases.receiversSignature', "Receiver's Signature"));
           const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
           
           if (isSvgIllustration || isSignatureRow || isFooterMessage) {
@@ -636,7 +637,7 @@ export const Purchases: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
-      showToast('Error preparing document for printing.', 'error');
+      showToast(t('purchases.printError', 'Error preparing document for printing.'), 'error');
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
@@ -652,7 +653,7 @@ export const Purchases: React.FC = () => {
       return;
     }
 
-    showToast('Compiling high-definition PDF document...', 'info');
+    showToast(t('purchases.compilingPdf', 'Compiling high-definition PDF document...'), 'info');
 
     // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
@@ -784,10 +785,10 @@ export const Purchases: React.FC = () => {
 
       doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
       doc.save(fileName);
-      showToast('PDF downloaded successfully!');
+      showToast(t('purchases.pdfDownloaded', 'PDF downloaded successfully!'));
     } catch (err) {
       console.error(err);
-      showToast('Error exporting PDF document.', 'error');
+      showToast(t('purchases.pdfError', 'Error exporting PDF document.'), 'error');
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
@@ -804,7 +805,7 @@ export const Purchases: React.FC = () => {
       return;
     }
 
-    showToast('Compiling PDF for sharing...', 'info');
+    showToast(t('purchases.compilingSharePdf', 'Compiling PDF for sharing...'), 'info');
 
     // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
@@ -944,7 +945,7 @@ export const Purchases: React.FC = () => {
           title: `Purchase Bill ${selectedPurchase.purchaseNumber}`,
           text: `Purchase Bill from ${settings.businessName}`
         });
-        showToast('Document shared successfully!');
+        showToast(t('purchases.docSharedSuccess', 'Document shared successfully!'));
       } else {
         const downloadUrl = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
@@ -977,11 +978,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           : `https://api.whatsapp.com/send?text=${encoded}`;
           
         window.open(url, '_blank');
-        showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
+        showToast(t('purchases.pdfDownloadRedirect', 'PDF downloaded! Redirecting to WhatsApp...'), 'info');
       }
     } catch (err) {
       console.error(err);
-      showToast('Error generating PDF for WhatsApp sharing.', 'error');
+      showToast(t('purchases.whatsappShareError', 'Error generating PDF for WhatsApp sharing.'), 'error');
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
@@ -991,13 +992,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
   // --- Purchase Calculations ---
   const getProductUnit = (product: Product | undefined) => {
-    if (!product) return 'Units';
+    if (!product) return t('purchases.unitsUnit', 'Units');
     const cat = (product.category || '').toLowerCase();
-    if (cat === 'seeds') return 'Bags (10kg)';
-    if (cat.includes('fertil') || cat.includes('nutri')) return 'Bags (50kg)';
-    if (cat.includes('pest') || cat.includes('chem') || cat.includes('liquid')) return 'Liters';
-    if (cat.includes('irrig') || cat.includes('pipe')) return 'Meters';
-    return 'Pieces';
+    if (cat === 'seeds') return t('purchases.bags10kgUnit', 'Bags (10kg)');
+    if (cat.includes('fertil') || cat.includes('nutri')) return t('purchases.bags50kgUnit', 'Bags (50kg)');
+    if (cat.includes('pest') || cat.includes('chem') || cat.includes('liquid')) return t('purchases.litersUnit', 'Liters');
+    if (cat.includes('irrig') || cat.includes('pipe')) return t('purchases.metersUnit', 'Meters');
+    return t('purchases.piecesUnit', 'Pieces');
   };
 
   const calculateRowTotal = (productId: string, qty: number | string, costPrice: number, discountPercent: number) => {
@@ -1299,11 +1300,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     // Validations
     if (!selectedSupplierId) {
-      showToast('Please select a supplier to log stock purchase.', 'error');
+      showToast(t('purchases.selectSupplierError', 'Please select a supplier to log stock purchase.'), 'error');
       return;
     }
     if (items.length === 0 || !items[0].productId) {
-      showToast('Please add at least one product line item to voucher.', 'error');
+      showToast(t('purchases.selectProductError', 'Please add at least one product line item to voucher.'), 'error');
       return;
     }
 
@@ -1364,7 +1365,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         notes: serializedNotes,
       });
 
-      showToast(`Purchase bill ${originalPurchase.purchaseNumber} updated successfully!`);
+      showToast(t('purchases.billUpdatedMsg', 'Purchase bill {{number}} updated successfully!', { number: originalPurchase.purchaseNumber }));
       clearAllDirtyForms();
       handleResetForm(false);
       if (!keepOpen) {
@@ -1386,7 +1387,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         notes: serializedNotes,
       });
 
-      showToast(`Purchase bill ${supplierInvoiceNumber.trim() || (newPurchase ? newPurchase.purchaseNumber : '')} saved successfully!`);
+      showToast(t('purchases.billSavedMsg', 'Purchase bill {{number}} saved successfully!', { number: supplierInvoiceNumber.trim() || (newPurchase ? newPurchase.purchaseNumber : '') }));
       clearAllDirtyForms();
       handleResetForm(false);
       if (!keepOpen && newPurchase) {
@@ -1526,13 +1527,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
           </div>
           <div className="action-buttons-grid">
             <button className="btn btn-secondary" onClick={() => handleDownload(selectedPurchase.purchaseNumber)} title="Export bill as PDF">
-              <Download size={16} /> Save as PDF
+              <Download size={16} /> {t('purchases.saveAsPdf', 'Save as PDF')}
             </button>
             <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share bill details on WhatsApp">
-              <Share2 size={16} /> Share on WhatsApp
+              <Share2 size={16} /> {t('purchases.shareWhatsApp', 'Share on WhatsApp')}
             </button>
             <button className="btn btn-primary" onClick={handlePrint} title="Print paper receipt">
-              <Printer size={16} /> Print Receipt
+              <Printer size={16} /> {t('purchases.printReceipt', 'Print Receipt')}
             </button>
           </div>
         </div>
@@ -1579,18 +1580,18 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   {settings.showAddress && <p className="invoice-company-sub">{getFullAddress(settings)}</p>}
                   {settings.showContact && (
                     <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                      {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                      {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{t('purchases.emailLabel', 'Email:')} {settings.email}</span>}
                       {settings.email && settings.phone && <span style={{ opacity: 0.5 }}>|</span>}
-                      {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                      {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{t('purchases.mobLabel', 'Mob:')} {settings.phone}</span>}
                     </p>
                   )}
-                  {settings.showGstin && settings.gstin && <p className="invoice-company-gst">GSTIN: {settings.gstin} (Recipient)</p>}
+                  {settings.showGstin && settings.gstin && <p className="invoice-company-gst">{t('purchases.gstinRecipient', 'GSTIN: {{gstin}} (Recipient)', { gstin: settings.gstin })}</p>}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <h1 className="invoice-main-title">{t("purchases.purchaseVoucher", "PURCHASE")}</h1>
                 <p className="invoice-number-text">#{selectedPurchase.purchaseNumber}</p>
-                <p className="invoice-date-text">Date: {formatDate(selectedPurchase.date)}</p>
+                <p className="invoice-date-text">{t('purchases.dateLabel', 'Date:')} {formatDate(selectedPurchase.date)}</p>
               </div>
             </div>
 
@@ -1622,8 +1623,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 {supplierDetail ? (
                   <>
                     <p className="invoice-customer-sub">{supplierDetail.phone}</p>
-                    <p className="invoice-customer-sub">{supplierDetail.address || "Address: N/A"}</p>
-                    {supplierDetail.gstin && <p className="invoice-customer-gst">GSTIN: {supplierDetail.gstin}</p>}
+                    <p className="invoice-customer-sub">{supplierDetail.address || t('purchases.addressNa', 'Address: N/A')}</p>
+                    {supplierDetail.gstin && <p className="invoice-customer-gst">{t('purchases.gstinLabel', 'GSTIN:')} {supplierDetail.gstin}</p>}
                   </>
                 ) : (
                   <p className="invoice-customer-sub">{t('purchases.generalVendor', 'General Vendor')}</p>
@@ -1634,7 +1635,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <span className={`invoice-payment-badge ${
                   selectedPurchase.paymentStatus === 'Paid' ? 'paid' : selectedPurchase.paymentStatus === 'Partial' ? 'partial' : 'unpaid'
                 }`}>
-                  {selectedPurchase.paymentStatus.toUpperCase()}
+                  {translateStatus(t, selectedPurchase.paymentStatus).toUpperCase()}
                 </span>
                 {selectedPurchase.paymentMethod && (
                   <p className="invoice-customer-sub" style={{ marginTop: '6px' }}>Mode: {selectedPurchase.paymentMethod}</p>
@@ -1647,12 +1648,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <thead>
                 <tr>
                   <th style={{ width: '40px', textAlign: 'center' }}>{t('purchases.srNo', 'Sr')}</th>
-                  <th style={{ textAlign: 'left' }}>Product / Description</th>
+                  <th style={{ textAlign: 'left' }}>{t('purchases.productDescription', 'Product / Description')}</th>
                   <th style={{ width: '80px', textAlign: 'center' }}>{t('purchases.gst', 'GST')}</th>
-                  <th style={{ width: '90px', textAlign: 'right' }}>Price (₹)</th>
+                  <th style={{ width: '90px', textAlign: 'right' }}>{t('purchases.priceHeader', 'Price (₹)')}</th>
                   <th style={{ width: '60px', textAlign: 'center' }}>{t('purchases.qty', 'Qty')}</th>
                   <th style={{ width: '70px', textAlign: 'right' }}>{t('purchases.discPercent', 'Disc (%)')}</th>
-                  <th style={{ width: '100px', textAlign: 'right' }}>Total (₹)</th>
+                  <th style={{ width: '100px', textAlign: 'right' }}>{t('purchases.totalHeader', 'Total (₹)')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1675,7 +1676,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <div style={{ flex: 1, maxWidth: '55%' }}>
                 {selectedPurchase.notes && (
                   <div style={{ marginBottom: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
-                    <h4 className="invoice-terms-title" style={{ borderBottom: '1px dashed rgba(78, 108, 80, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>VOUCHER DETAILS:</h4>
+                    <h4 className="invoice-terms-title" style={{ borderBottom: '1px dashed rgba(78, 108, 80, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>{t('purchases.voucherDetailsCaps', 'VOUCHER DETAILS:')}</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: selectedPurchase.items.length > 3 ? '9px' : '10.5px' }}>
                       {supplierInvoiceNo && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
@@ -1685,8 +1686,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       )}
                       {purchaseTypeVal && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>Type | Status:</span>
-                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{purchaseTypeVal} | {purchaseStatusVal}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.typeStatusLabel', 'Type | Status:')}</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{purchaseTypeVal} | {translateStatus(t, purchaseStatusVal)}</span>
                         </div>
                       )}
                       {dueDtVal && purchaseTypeVal === 'Credit' && (
@@ -1918,10 +1919,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Bill No: <strong>{selectedPurchase.purchaseNumber}</strong></span>
-                  <span>Date: {formatDate(selectedPurchase.date)}</span>
+                  <span>{t('purchases.billNoLabel', 'Bill No:')} <strong>{selectedPurchase.purchaseNumber}</strong></span>
+                  <span>{t('purchases.dateLabel', 'Date:')} {formatDate(selectedPurchase.date)}</span>
                 </div>
-                <div>Supplier:{' '}
+                <div>{t('purchases.supplierLabel', 'Supplier:')}{' '}
                   {selectedPurchase.supplierId ? (
                     <>
                       <button
@@ -1939,25 +1940,25 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       <strong className="print-only">{supplierDetail?.name || selectedPurchase.supplierName}</strong>
                     </>
                   ) : (
-                    <strong>{selectedPurchase.supplierName || "Walk-in Supplier"}</strong>
+                    <strong>{selectedPurchase.supplierName || "{t('purchases.walkInSupplier', 'Walk-in Supplier')}"}</strong>
                   )}
                 </div>
-                {supplierDetail?.phone && <div>Phone: {supplierDetail.phone}</div>}
-                {supplierInvoiceNo && <div>Supplier Inv: <strong>{supplierInvoiceNo}</strong> ({supplierInvoiceDt})</div>}
+                {supplierDetail?.phone && <div>{t('purchases.phoneLabel', 'Phone:')} {supplierDetail.phone}</div>}
+                {supplierInvoiceNo && <div>{t('purchases.supplierInvLabel', 'Supplier Inv:')} <strong>{supplierInvoiceNo}</strong> ({supplierInvoiceDt})</div>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px" }}>
                 <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
-                  <span>ITEM</span>
-                  <span style={{ textAlign: "center" }}>QTY</span>
-                  <span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span>
+                  <span>{t('purchases.itemHeaderCaps', 'ITEM')}</span>
+                  <span style={{ textAlign: "center" }}>{t('purchases.qtyHeaderCaps', 'QTY')}</span>
+                  <span style={{ textAlign: "right" }}>{t('purchases.amtHeaderCaps', 'AMT')}({settings.currencySymbol || "₹"})</span>
                 </div>
                 <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
                 {selectedPurchase.items.map((item, index) => (
                   <div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}>
                     <div>
                       <span style={{ fontWeight: "bold" }}>{item.productName}</span>
-                      <div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div>
+                      <div style={{ fontSize: "10px", color: "#555" }}>{t('purchases.rateLabel', 'Rate:')} {settings.currencySymbol || "₹"}{item.price} | {t('purchases.gstLabel', 'GST:')} {item.gstRate}%</div>
                     </div>
                     <span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
                     <span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span>
@@ -1972,13 +1973,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 </div>
                 {totals.cgst > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Input CGST</span>
+                    <span>{t('purchases.inputCgstLabel', 'Input CGST')}</span>
                     <span>{settings.currencySymbol || "₹"}{totals.cgst.toFixed(2)}</span>
                   </div>
                 )}
                 {totals.sgst > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>Input SGST</span>
+                    <span>{t('purchases.inputSgstLabel', 'Input SGST')}</span>
                     <span>{settings.currencySymbol || "₹"}{totals.sgst.toFixed(2)}</span>
                   </div>
                 )}
@@ -1993,25 +1994,25 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
-                  <span>GRAND TOTAL (INCL. CHARGES)</span>
+                  <span>{t('purchases.grandTotalCaps', 'GRAND TOTAL (INCL. CHARGES)')}</span>
                   <span>{settings.currencySymbol || "₹"}{totals.grandTotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}>
-                  <span>AMOUNT PAID</span>
+                  <span>{t('purchases.amountPaidCaps', 'AMOUNT PAID')}</span>
                   <span>{settings.currencySymbol || "₹"}{totals.amountPaid.toFixed(2)}</span>
                 </div>
                 {totals.balanceDue > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}>
-                    <span>BALANCE DUE</span>
+                    <span>{t('purchases.balanceDueCaps', 'BALANCE DUE')}</span>
                     <span>{settings.currencySymbol || "₹"}{totals.balanceDue.toFixed(2)}</span>
                   </div>
                 )}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div>{settings.footerMessage || "THANK YOU! VISIT AGAIN."}</div>
+                <div>{settings.footerMessage || t('purchases.thankYouVisitAgain', 'THANK YOU! VISIT AGAIN.')}</div>
                 {selectedPurchase.notes && <div style={{ fontStyle: "italic" }}>"{remarksVal || selectedPurchase.notes}"</div>}
-                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div>
+                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t('purchases.poweredBy', 'Powered by {{businessName}} POS software', { businessName: settings.businessName || "AgriBiz" })}</div>
               </div>
             </div>
           </div>
@@ -2024,14 +2025,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               setActivePreviewPurchase(selectedPurchase);
               setShowAttachmentPreview(true);
             }}>
-              <FileText size={16} /> View Invoice File
+              <FileText size={16} /> {t('purchases.viewInvoiceFile', 'View Invoice File')}
             </button>
           )}
           <button className="btn btn-secondary" onClick={() => handleStartEditPurchase(selectedPurchase)}>
-            <Edit2 size={16} /> Edit Purchase
+            <Edit2 size={16} /> {t('purchases.editPurchaseBtn', 'Edit Purchase')}
           </button>
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeletePurchase(selectedPurchase.id, selectedPurchase.purchaseNumber)}>
-            <Trash2 size={16} /> Delete Purchase
+            <Trash2 size={16} /> {t('purchases.deletePurchaseBtn', 'Delete Purchase')}
           </button>
         </div>
       </div>
@@ -2089,14 +2090,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 height: '42px',
               }}
             >
-              <ArrowLeft size={16} /> Exit Editor
+              <ArrowLeft size={16} /> {t('purchases.exitEditor', 'Exit Editor')}
             </button>
             <div>
               <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                {editingPurchaseId ? 'Edit Entry' : 'New Entry'}
+                {editingPurchaseId ? t('purchases.editEntryTag', 'Edit Entry') : t('purchases.newEntryTag', 'New Entry')}
               </span>
               <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
-                {editingPurchaseId ? 'Edit Inward Purchase Bill' : 'Log Inward Purchase Entry'}
+                {editingPurchaseId ? t('purchases.editInwardBill', 'Edit Inward Purchase Bill') : t('purchases.logInwardEntry', 'Log Inward Purchase Entry')}
               </h1>
             </div>
           </div>
@@ -2133,13 +2134,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 }}>1</div>
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Purchase & Voucher Details</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Enter inward references and dates</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.purchaseVoucherDetailsSub', 'Enter inward references and dates')}</div>
                 </div>
               </div>
 
               <div className="form-grid-3">
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Purchase Bill No. *</label>
+                  <label className="form-label">{t('purchases.purchaseBillNoRequired', 'Purchase Bill No. *')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -2149,7 +2150,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Purchase Date *</label>
+                  <label className="form-label">{t('purchases.purchaseDateRequired', 'Purchase Date *')}</label>
                   <input
                     type="date"
                     className="form-control"
@@ -2159,7 +2160,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">GST Type *</label>
+                  <label className="form-label">{t('purchases.gstTypeRequired', 'GST Type *')}</label>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <select
                       className="form-control"
@@ -2182,7 +2183,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
               <div className="form-grid-2">
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Select Supplier *</label>
+                  <label className="form-label">{t('purchases.selectSupplierRequired', 'Select Supplier *')}</label>
                   <div style={{ display: 'flex', gap: '10px' }}>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', flex: 1 }}>
                       <select
@@ -2192,7 +2193,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                         onChange={(e) => setSelectedSupplierId(e.target.value)}
                         required
                       >
-                        <option value="">-- Choose Supplier --</option>
+                        <option value="">{t('purchases.chooseSupplierOption', '-- Choose Supplier --')}</option>
                         {suppliers.map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name} {s.phone ? `(${s.phone})` : ''}
@@ -2211,7 +2212,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       onClick={() => setIsSupplierModalOpen(true)}
                       style={{ height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', flexShrink: 0 }}
                     >
-                      <Plus size={16} /> Add Supplier
+                      <Plus size={16} /> {t('purchases.addSupplierBtn', 'Add Supplier')}
                     </button>
                   </div>
                 </div>
@@ -2222,7 +2223,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="e.g. INWARD-9842"
+                      placeholder={t('purchases.supplierInvoicePlaceholder', 'e.g. INWARD-9842')}
                       value={supplierInvoiceNumber}
                       onChange={(e) => setSupplierInvoiceNumber(e.target.value)}
                     />
@@ -2241,7 +2242,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
               <div className="form-grid-3">
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Purchase Status *</label>
+                  <label className="form-label">{t('purchases.purchaseStatusRequired', 'Purchase Status *')}</label>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <select
                       className="form-control"
@@ -2263,7 +2264,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 </div>
 
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Purchase Type *</label>
+                  <label className="form-label">{t('purchases.purchaseTypeRequired', 'Purchase Type *')}</label>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <select
                       className="form-control"
@@ -2296,7 +2297,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', background: 'rgba(var(--primary-rgb), 0.05)', borderRadius: '10px', padding: '10px 14px', border: '1px solid var(--border-color)', height: '40px', marginTop: '22px' }}>
                     <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Voucher value settles automatically under Cash accounts.
+                      {t('purchases.cashSettleNote', 'Voucher value settles automatically under Cash accounts.')}
                     </span>
                   </div>
                 )}
@@ -2308,7 +2309,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', border: '1px dashed var(--primary-dark)', backgroundColor: 'var(--card-bg)', display: 'flex', flexDirection: 'column', gap: '14px', animation: 'fadeIn 0.25s ease-out' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--primary-dark)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <CheckCircle2 size={15} /> Active Supplier Ledger Profile
+                    <CheckCircle2 size={15} /> {t('purchases.activeSupplierLedger', 'Active Supplier Ledger Profile')}
                   </div>
                   <span className="badge badge-info" style={{ fontSize: '10px' }}>ID: {supplierDetail.id}</span>
                 </div>
@@ -2317,13 +2318,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   <div>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>{t('purchases.supplierName', 'Supplier Name')}</span>
                     <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{supplierDetail.name}</strong>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>{supplierDetail.address || 'No Address Logged'}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', marginTop: '2px' }}>{supplierDetail.address || t('purchases.noAddressLogged', 'No Address Logged')}</span>
                   </div>
                   <div>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block' }}>{t('purchases.contactPhone', 'Contact Phone')}</span>
                     <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{supplierDetail.phone || 'N/A'}</span>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>{t('purchases.gstin', 'GSTIN')}</span>
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{supplierDetail.gstin || 'Unregistered'}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{supplierDetail.gstin || t('purchases.unregisteredGstin', 'Unregistered')}</span>
                   </div>
                   <div style={{ textAlign: 'right', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('purchases.outstandingBalance', 'Outstanding Balance')}</span>
@@ -2346,8 +2347,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     color: '#fff', fontSize: '13px', fontWeight: 800,
                   }}>2</div>
                   <div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Agricultural Stock Inward Items</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Specify item lines, cost prices and trade discounts</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('purchases.inwardItemsHeader', 'Agricultural Stock Inward Items')}</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.inwardItemsSub', 'Specify item lines, cost prices and trade discounts')}</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '8px' }}>
@@ -2355,17 +2356,17 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     setActiveProductRowIndex(null);
                     setIsProductModalOpen(true);
                   }} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Plus size={13} /> New Product
+                    <Plus size={13} /> {t('purchases.newProductBtn', 'New Product')}
                   </button>
                   <button type="button" className="btn btn-primary btn-sm" onClick={handleAddItemRow} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Plus size={13} /> Add Row
+                    <Plus size={13} /> {t('purchases.addRowBtn', 'Add Row')}
                   </button>
                 </div>
               </div>
 
               {items.length === 0 ? (
                 <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '40px 20px', border: '2px dashed var(--border-color)', borderRadius: '12px', background: 'var(--bg-app)' }}>
-                  No products added to purchase draft. Click 'Add Row' to record items.
+                  {t('purchases.noProductsDraftText', 'No products added to purchase draft. Click "Add Row" to record items.')}
                 </div>
               ) : (
                 <>
@@ -2374,14 +2375,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     <table className="data-table" style={{ width: '100%', minWidth: '950px' }}>
                       <thead>
                         <tr>
-                          <th>Product *</th>
+                          <th>{t('purchases.productRequiredHeader', 'Product *')}</th>
                           <th style={{ width: '100px' }}>{t('purchases.category', 'Category')}</th>
                           <th style={{ width: '80px', textAlign: 'center' }}>{t('purchases.unit', 'Unit')}</th>
-                          <th style={{ width: '85px', textAlign: 'center' }}>Qty *</th>
-                          <th style={{ width: '115px', textAlign: 'right' }}>Cost Price (₹) *</th>
+                          <th style={{ width: '85px', textAlign: 'center' }}>{t('purchases.qtyRequiredHeader', 'Qty *')}</th>
+                          <th style={{ width: '115px', textAlign: 'right' }}>{t('purchases.costPriceRequiredHeader', 'Cost Price (₹) *')}</th>
                           <th style={{ width: '85px', textAlign: 'center' }}>{t('purchases.discount', 'Discount (%)')}</th>
                           <th style={{ width: '70px', textAlign: 'center' }}>{t('purchases.gst', 'GST')}</th>
-                          <th style={{ width: '100px', textAlign: 'right' }}>Tax Amt (₹)</th>
+                          <th style={{ width: '100px', textAlign: 'right' }}>{t('purchases.taxAmtHeader', 'Tax Amt (₹)')}</th>
                           <th style={{ width: '110px', textAlign: 'right' }}>Total (₹)</th>
                           <th style={{ width: '40px' }}></th>
                         </tr>
@@ -2404,7 +2405,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                     onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
                                     required
                                   >
-                                    <option value="">-- Choose --</option>
+                                    <option value="">{t('purchases.chooseProductOption', '-- Choose --')}</option>
                                     {products.map((p) => (
                                       <option key={p.id} value={p.id}>
                                         {p.name}
@@ -2492,7 +2493,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                   type="button"
                                   className="btn-icon danger"
                                   onClick={() => handleRemoveItemRow(index)}
-                                  title="Remove product line"
+                                  title={t('purchases.removeProductLine', 'Remove product line')}
                                 >
                                   <Trash size={14} />
                                 </button>
@@ -2513,7 +2514,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       return (
                         <div key={index} className="mobile-item-card">
                           <div className="mobile-item-card-header">
-                            <span className="mobile-item-card-title">Item #{index + 1}</span>
+                            <span className="mobile-item-card-title">{t('purchases.itemNumberTag', 'Item #{{number}}', { number: index + 1 })}</span>
                             <button
                               type="button"
                               className="btn-icon danger"
@@ -2525,7 +2526,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                           </div>
                           
                           <div className="form-group" style={{ margin: 0 }}>
-                            <label className="form-label">Product *</label>
+                            <label className="form-label">{t('purchases.productRequiredLabel', 'Product *')}</label>
                             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                               <select
                                 className="form-control"
@@ -2534,7 +2535,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                 onChange={(e) => handleUpdateItemRow(index, 'productId', e.target.value)}
                                 required
                               >
-                                <option value="">-- Choose Product --</option>
+                                <option value="">{t('purchases.chooseProductOption', '-- Choose Product --')}</option>
                                 {products.map((p) => (
                                   <option key={p.id} value={p.id}>
                                     {p.name}
@@ -2546,13 +2547,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                               setActiveProductRowIndex(index);
                               setIsProductModalOpen(true);
                             }}>
-                              + Create New Product
+                              {t('purchases.createNewProductLink', '+ Create New Product')}
                             </button>
                           </div>
 
                           <div className="mobile-item-card-grid">
                             <div className="form-group" style={{ margin: 0 }}>
-                              <label className="form-label">Qty *</label>
+                              <label className="form-label">{t('purchases.qtyRequiredLabel', 'Qty *')}</label>
                               <input
                                 type="number"
                                 className="form-control"
@@ -2568,7 +2569,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                               />
                             </div>
                             <div className="form-group" style={{ margin: 0 }}>
-                              <label className="form-label">Cost (₹) *</label>
+                              <label className="form-label">{t('purchases.costPriceRequiredLabel', 'Cost (₹) *')}</label>
                               <input
                                 type="number"
                                 className="form-control"
@@ -2596,10 +2597,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                           </div>
 
                           <div className="mobile-item-card-summary">
-                            <span>Unit: <strong>{unitLabel}</strong></span>
-                            <span>GST: <strong>{calc.gstRate}%</strong></span>
-                            <span>Tax: <strong>{formatINR(calc.gstAmount)}</strong></span>
-                            <span>Total: <strong>{formatINR(calc.total)}</strong></span>
+                            <span>{t('purchases.unitLabel', 'Unit:')} <strong>{unitLabel}</strong></span>
+                            <span>{t('purchases.gstLabel', 'GST:')} <strong>{calc.gstRate}%</strong></span>
+                            <span>{t('purchases.taxLabel', 'Tax:')} <strong>{formatINR(calc.gstAmount)}</strong></span>
+                            <span>{t('purchases.totalLabel', 'Total:')} <strong>{formatINR(calc.total)}</strong></span>
                           </div>
                         </div>
                       );
@@ -2620,14 +2621,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 }}>3</div>
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Additional Charges & Transit Remarks</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Input logistics costs and notes</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.additionalChargesSub', 'Input logistics costs and notes')}</div>
                 </div>
               </div>
 
               <div className="form-grid-3">
                 <div className="form-group" style={{ margin: 0 }}>
                   <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Truck size={14} /> Transport Charges (₹)
+                    <Truck size={14} /> {t('purchases.transportCharges', 'Transport Charges (₹)')}
                   </label>
                   <input
                     type="number"
@@ -2639,7 +2640,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Loading/Unloading Charges (₹)</label>
+                  <label className="form-label">{t('purchases.loadingCharges', 'Loading/Unloading Charges (₹)')}</label>
                   <input
                     type="number"
                     className="form-control"
@@ -2650,7 +2651,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   />
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Other Extra Charges (₹)</label>
+                  <label className="form-label">{t('purchases.otherExtraCharges', 'Other Extra Charges (₹)')}</label>
                   <input
                     type="number"
                     className="form-control"
@@ -2663,10 +2664,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label className="form-label">Transit Notes / General Remarks</label>
+                <label className="form-label">{t('purchases.transitNotesRemarks', 'Transit Notes / General Remarks')}</label>
                 <textarea
                   className="form-control"
-                  placeholder="e.g. Weighbridge details, transport agent, freight receipt details"
+                  placeholder={t('purchases.transitNotesPlaceholder', 'e.g. Weighbridge details, transport agent, freight receipt details')}
                   rows={2}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
@@ -2686,13 +2687,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 }}>4</div>
                 <div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Payment & Settlements</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Enter paid amounts and payment modes</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.paymentSettlementsSub', 'Enter paid amounts and payment modes')}</div>
                 </div>
               </div>
 
               <div className="form-grid-2">
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Payment Mode *</label>
+                  <label className="form-label">{t('purchases.paymentModeRequired', 'Payment Mode *')}</label>
                   <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                     <select
                       className="form-control"
@@ -2714,11 +2715,11 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
                 </div>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Transaction Reference No. (Optional)</label>
+                  <label className="form-label">{t('purchases.txnReferenceOptional', 'Transaction Reference No. (Optional)')}</label>
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="e.g. UTR-9824874523"
+                    placeholder={t('purchases.txnRefPlaceholder', 'e.g. UTR-9824874523')}
                     value={transactionReference}
                     onChange={(e) => setTransactionReference(e.target.value)}
                   />
@@ -2727,7 +2728,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
               <div className="form-grid-2" style={{ alignItems: 'center' }}>
                 <div className="form-group" style={{ margin: 0 }}>
-                  <label className="form-label">Amount Paid to Supplier (₹) *</label>
+                  <label className="form-label">{t('purchases.amountPaidRequired', 'Amount Paid to Supplier (₹) *')}</label>
                   <input
                     type="number"
                     className="form-control"
@@ -2764,15 +2765,15 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', background: 'var(--bg-app)', padding: '12px 18px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Remaining Due:</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{t('purchases.remainingDueLabel', 'Remaining Due:')}</span>
                     <strong style={{ fontSize: '15px', color: totals.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
                       {formatINR(totals.balanceDue)}
                     </strong>
                   </div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>Clearance Status:</span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{t('purchases.clearanceStatusLabel', 'Clearance Status:')}</span>
                     <span className={`badge ${totals.balanceDue === 0 ? 'badge-success' : (Number(amountPaid) || 0) > 0 ? 'badge-warning' : 'badge-danger'}`} style={{ fontSize: '10px', padding: '2px 8px' }}>
-                      {totals.balanceDue === 0 ? 'FULLY PAID' : (Number(amountPaid) || 0) > 0 ? 'PARTIAL' : 'UNPAID'}
+                      {totals.balanceDue === 0 ? t('purchases.fullyPaidCaps', 'FULLY PAID') : (Number(amountPaid) || 0) > 0 ? t('purchases.partialCaps', 'PARTIAL') : t('purchases.unpaidCaps', 'UNPAID')}
                     </span>
                   </div>
                 </div>
@@ -2789,8 +2790,8 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   color: '#fff', fontSize: '13px', fontWeight: 800,
                 }}>5</div>
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Supplier Invoice Attachment</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Upload scans of purchase bills for document audits</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('purchases.supplierInvoiceAttachment', 'Supplier Invoice Attachment')}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.supplierInvoiceAttachmentSub', 'Upload scans of purchase bills for document audits')}</div>
                 </div>
               </div>
 
@@ -2806,12 +2807,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       if (file) {
                         setAttachedFile(file);
                         setAttachedFileName(file.name);
-                        showToast(`Document "${file.name}" uploaded successfully!`, 'success');
+                        showToast(t('purchases.docUploadedMsg', 'Document "{{name}}" uploaded successfully!', { name: file.name }), 'success');
                       }
                     }}
                   />
                   <label htmlFor="bill-attachment-upload" className="btn btn-secondary" style={{ width: '100%', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer', border: '1px dashed var(--primary-dark)' }}>
-                    <Upload size={16} /> Choose File
+                    <Upload size={16} /> {t('purchases.chooseFile', 'Choose File')}
                   </label>
                 </div>
 
@@ -2826,12 +2827,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       </div>
                       <div style={{ display: 'flex', gap: '6px' }}>
                         <button type="button" className="btn btn-secondary btn-sm" style={{ padding: '3px 8px', fontSize: '10px' }} onClick={() => setShowAttachmentPreview(true)}>
-                          <Eye size={12} /> View
+                          <Eye size={12} /> {t('purchases.view', 'View')}
                         </button>
                         <button type="button" className="btn-icon danger" style={{ padding: '4px' }} onClick={() => {
                           setAttachedFileName('');
                           setAttachedFile(null);
-                          showToast('Attachment removed.', 'info');
+                          showToast(t('purchases.attachmentRemoved', 'Attachment removed.'), 'info');
                         }}>
                           <X size={14} />
                         </button>
@@ -2839,7 +2840,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     </div>
                   ) : (
                     <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                      No bill attachment uploaded yet. PDF or image receipts supported.
+                      {t('purchases.noAttachmentUploaded', 'No bill attachment uploaded yet. PDF or image receipts supported.')}
                     </span>
                   )}
                 </div>
@@ -2856,45 +2857,45 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   color: '#fff', fontSize: '13px', fontWeight: 800,
                 }}>6</div>
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Voucher Value Summary</div>
-                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Review complete financial invoice calculations</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('purchases.voucherValueSummary', 'Voucher Value Summary')}</div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.voucherValueSummarySub', 'Review complete financial invoice calculations')}</div>
                 </div>
               </div>
 
               <div className="form-grid-3" style={{ fontSize: '13px', gap: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-app)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Product Subtotal</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('purchases.productSubtotal', 'Product Subtotal')}</span>
                   <span style={{ fontWeight: 700 }}>{formatINR(totals.subtotal)}</span>
                 </div>
 
                 {totals.discountTotal > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'rgba(16,185,129,0.05)', borderRadius: '10px', border: '1px solid rgba(16,185,129,0.1)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Trade Discounts</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{t('purchases.tradeDiscounts', 'Trade Discounts')}</span>
                     <span style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>-{formatINR(totals.discountTotal)}</span>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-app)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Taxable Value</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('purchases.taxableValue', 'Taxable Value')}</span>
                   <span style={{ fontWeight: 700 }}>{formatINR(totals.taxableAmount)}</span>
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-app)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>
-                    {gstType === 'IntraState' ? 'CGST + SGST (Intrastate)' : 'IGST (Interstate)'}
+                    {gstType === 'IntraState' ? t('purchases.cgstSgstIntrastate', 'CGST + SGST (Intrastate)') : t('purchases.igstInterstate', 'IGST (Interstate)')}
                   </span>
                   <span style={{ fontWeight: 700 }}>{formatINR(totals.gstTotal)}</span>
                 </div>
 
                 {totals.additionalCharges > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-app)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                    <span style={{ color: 'var(--text-secondary)' }}>Logistics Charges</span>
+                    <span style={{ color: 'var(--text-secondary)' }}>{t('purchases.logisticsCharges', 'Logistics Charges')}</span>
                     <span style={{ fontWeight: 700 }}>{formatINR(totals.additionalCharges)}</span>
                   </div>
                 )}
 
                 <div style={{ display: 'flex', justifyContent: 'space-between', padding: '10px 14px', background: 'var(--bg-app)', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Paid Amount</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('purchases.paidAmount', 'Paid Amount')}</span>
                   <span style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>{formatINR(Number(amountPaid) || 0)}</span>
                 </div>
               </div>
@@ -2912,7 +2913,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 600 }}>
-                    {totals.balanceDue > 0 ? 'Due Balance' : '✓ Full Settlement'}
+                    {totals.balanceDue > 0 ? t('purchases.dueBalance', 'Due Balance') : t('purchases.fullSettlement', '✓ Full Settlement')}
                   </span>
                   <span style={{ color: totals.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', fontSize: '20px' }}>
                     {formatINR(totals.balanceDue)}
@@ -2933,7 +2934,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   className="btn btn-secondary discard-btn"
                   onClick={() => handleResetForm()}
                 >
-                  Discard Draft
+                  {t('purchases.discardDraft', 'Discard Draft')}
                 </button>
                 <button
                   type="button"
@@ -2941,14 +2942,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   onClick={(e) => handleSavePurchaseWrapper(e, true)}
                   disabled={items.length === 0 || !items[0].productId}
                 >
-                  Save & Add New
+                  {t('purchases.saveAddNew', 'Save & Add New')}
                 </button>
                 <button
                   type="submit"
                   className="btn btn-primary submit-btn"
                   disabled={items.length === 0 || !items[0].productId}
                 >
-                  {editingPurchaseId ? '✓ Update Purchase' : '✓ Save Purchase'}
+                  {editingPurchaseId ? t('purchases.updatePurchaseBtn', '✓ Update Purchase') : t('purchases.savePurchaseBtn', '✓ Save Purchase')}
                 </button>
               </div>
             </div>
@@ -3000,7 +3001,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             }
             setIsProductModalOpen(false);
             setActiveProductRowIndex(null);
-            showToast(`Product "${newProd.name}" added to list!`, 'success');
+            showToast(t('purchases.productAddedMsg', 'Product "{{name}}" added to list!', { name: newProd.name }), 'success');
           }}
         />
 
@@ -3015,30 +3016,30 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
       {/* Purchases KPI Cards */}
       <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
         <KpiCard
-          label="Total Purchases"
+          label={t('purchases.kpiTotalPurchases', 'Total Purchases')}
           value={formatINR(totalPurchases)}
-          subtext="Total billing outlays"
+          subtext={t('purchases.kpiTotalPurchasesSub', 'Total billing outlays')}
           icon={<TrendingUp size={20} />}
           variant="success"
         />
         <KpiCard
-          label="Total Paid"
+          label={t('purchases.kpiTotalPaid', 'Total Paid')}
           value={formatINR(totalPaid)}
-          subtext="Cash and bank payouts"
+          subtext={t('purchases.kpiTotalPaidSub', 'Cash and bank payouts')}
           icon={<CheckCircle2 size={20} />}
           variant="success"
         />
         <KpiCard
-          label="Pending Owed"
+          label={t('purchases.kpiPendingOwed', 'Pending Owed')}
           value={formatINR(totalOwed)}
-          subtext="Accounts payable balance"
+          subtext={t('purchases.kpiPendingOwedSub', 'Accounts payable balance')}
           icon={<AlertTriangle size={20} />}
           variant="danger"
         />
         <KpiCard
-          label="Bill Count"
-          value={`${purchaseCount} bills`}
-          subtext="Total purchase transactions"
+          label={t('purchases.kpiBillCount', 'Bill Count')}
+          value={t('purchases.kpiBillsCount', '{{count}} bills', { count: purchaseCount })}
+          subtext={t('purchases.kpiBillCountSub', 'Total purchase transactions')}
           icon={<FileText size={20} />}
           variant="info"
         />
@@ -3051,7 +3052,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <Search size={16} className="search-input-icon" />
             <input
               type="text"
-              placeholder="Search bill number or supplier..."
+              placeholder={t('purchases.searchPlaceholder', 'Search bill number or supplier...')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -3063,7 +3064,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               const isActive = statusFilter === status;
               return (
                 <button
-                  key={status}
+                  key={translateStatus(t, status)}
                   className="btn-sm"
                   type="button"
                   style={{
@@ -3121,16 +3122,16 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
-              <option value="date-desc">Newest Date first</option>
-              <option value="date-asc">Oldest Date first</option>
-              <option value="amount-desc">Highest Bill amount</option>
-              <option value="amount-asc">Lowest Bill amount</option>
-              <option value="number-desc">Bill number desc</option>
+              <option value="date-desc">{t('purchases.sortNewestDate', 'Newest Date first')}</option>
+              <option value="date-asc">{t('purchases.sortOldestDate', 'Oldest Date first')}</option>
+              <option value="amount-desc">{t('purchases.sortHighestAmount', 'Highest Bill amount')}</option>
+              <option value="amount-asc">{t('purchases.sortLowestAmount', 'Lowest Bill amount')}</option>
+              <option value="number-desc">{t('purchases.sortBillNumberDesc', 'Bill number desc')}</option>
             </select>
           </div>
 
           <button className="btn btn-primary" onClick={handleStartNewPurchase}>
-            <Plus size={16} /> Enter Purchase
+            <Plus size={16} /> {t('purchases.enterPurchaseBtn', 'Enter Purchase')}
           </button>
         </div>
       </div>
@@ -3140,12 +3141,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         {sortedPurchases.length === 0 ? (
           <div className="empty-state">
             <FileSpreadsheet size={48} className="empty-state-icon" />
-            <h4 className="empty-state-title">No Purchase Records</h4>
+            <h4 className="empty-state-title">{t('purchases.noRecordsTitle', 'No Purchase Records')}</h4>
             <p className="empty-state-desc">
               No supplier purchases match your filters or searching criteria.
             </p>
             <button className="btn btn-primary" onClick={handleStartNewPurchase}>
-              Log New Purchase
+              {t('purchases.logNewPurchase', 'Log New Purchase')}
             </button>
           </div>
         ) : (
@@ -3156,11 +3157,11 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <table className="data-table">
                   <thead>
                     <tr>
-                      <th className="text-nowrap">Bill Number</th>
-                      <th>Supplier Name</th>
-                      <th className="text-nowrap">Receipt Date</th>
-                      <th className="text-nowrap">Total Bill (₹)</th>
-                      <th className="text-nowrap">Balance Owed (₹)</th>
+                      <th className="text-nowrap">{t('purchases.billNumberHeader', 'Bill Number')}</th>
+                      <th>{t('purchases.supplierNameHeader', 'Supplier Name')}</th>
+                      <th className="text-nowrap">{t('purchases.receiptDateHeader', 'Receipt Date')}</th>
+                      <th className="text-nowrap">{t('purchases.totalBillHeader', 'Total Bill (₹)')}</th>
+                      <th className="text-nowrap">{t('purchases.balanceOwedHeader', 'Balance Owed (₹)')}</th>
                       <th>{t('purchases.status', 'Status')}</th>
                       <th style={{ textAlign: 'center', width: '100px' }}>{t('purchases.actions', 'Actions')}</th>
                     </tr>
@@ -3277,7 +3278,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                 >
-                                  <Eye size={14} /> View Details
+                                  <Eye size={14} /> {t('purchases.viewDetails', 'View Details')}
                                 </button>
                                 
                                 <button 
@@ -3303,7 +3304,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                 >
-                                  <Edit2 size={14} /> Edit Purchase
+                                  <Edit2 size={14} /> {t('purchases.editPurchase', 'Edit Purchase')}
                                 </button>
 
                                 {getAttachmentName(pur.notes) && (
@@ -3331,7 +3332,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <FileText size={14} /> View Invoice File
+                                    <FileText size={14} /> {t('purchases.viewInvoiceFile', 'View Invoice File')}
                                   </button>
                                 )}
 
@@ -3358,7 +3359,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                   onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
                                   onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                 >
-                                  <Trash size={14} style={{ color: 'var(--color-danger)' }} /> Delete
+                                  <Trash size={14} style={{ color: 'var(--color-danger)' }} /> {t('purchases.delete', 'Delete')}
                                 </button>
                               </div>
                             </>
@@ -3448,7 +3449,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Receipt Date</span>
+                    <span className="mobile-list-card-label">{t('purchases.receiptDateLabel', 'Receipt Date')}</span>
                     <span className="mobile-list-card-val">{formatDate(pur.date)}</span>
                   </div>
 
@@ -3462,14 +3463,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Bill</span>
+                    <span className="mobile-list-card-label">{t('purchases.totalBillLabel', 'Total Bill')}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>
                       {formatINR(pur.grandTotal)}
                     </span>
                   </div>
 
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Balance Owed</span>
+                    <span className="mobile-list-card-label">{t('purchases.balanceOwedLabel', 'Balance Owed')}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700, color: pur.balanceDue > 0 ? 'var(--color-danger)' : 'var(--text-secondary)' }}>
                       {formatINR(pur.balanceDue)}
                     </span>
@@ -3519,21 +3520,21 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             const purchaseNo = deletingPurchase.purchaseNumber;
             try {
               await deletePurchase(idToDelete);
-              showToast(`Purchase bill ${purchaseNo} deleted successfully.`, 'info');
+              showToast(t('purchases.billDeletedMsg', 'Purchase bill {{number}} deleted successfully.', { number: purchaseNo }), 'info');
               setDeletingPurchase(null);
               setViewPurchase(null);
             } catch (error: any) {
               console.error("Delete purchase error:", error);
-              showToast(`Failed to delete: ${error.message || error}`, 'error');
+              showToast(t('purchases.deleteFailedMsg', 'Failed to delete: {{error}}', { error: error.message || error }), 'error');
             } finally {
               setIsDeletingPurchase(false);
             }
           }}
-          title="Delete Purchase Bill"
-          itemName={deletingPurchase?.purchaseNumber ? `Purchase ${deletingPurchase.purchaseNumber}` : undefined}
+          title={t('purchases.deleteBillTitle', 'Delete Purchase Bill')}
+          itemName={deletingPurchase?.purchaseNumber ? t('purchases.purchaseItemName', 'Purchase {{number}}', { number: deletingPurchase.purchaseNumber }) : undefined}
           description={deletingPurchase ? (
             <>
-              Are you sure you want to delete purchase bill <strong>{deletingPurchase.purchaseNumber}</strong>? This will deduct the added stock levels and adjust supplier balance.
+              {t('purchases.confirmDeleteDesc', 'Are you sure you want to delete purchase bill {{number}}? This will deduct the added stock levels and adjust supplier balance.', { number: deletingPurchase.purchaseNumber })}
             </>
           ) : ''}
           isLoading={isDeletingPurchase}

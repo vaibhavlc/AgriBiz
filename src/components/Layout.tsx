@@ -906,7 +906,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         </div>
                         <div className="profile-menu-text">
                           <span className="title">{t('settings.businessProfile', 'Profile & Settings')}</span>
-                          <span className="desc">Manage business profile & team</span>
+                          <span className="desc">{t('nav.manageBusinessProfile', 'Manage business profile & team')}</span>
                         </div>
                         <ChevronRight size={14} className="chevron" />
                       </button>
@@ -926,7 +926,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       </div>
                       <div className="profile-menu-text">
                         <span className="title">{t('nav.switchStaff', 'Switch Staff')}</span>
-                        <span className="desc">Switch active user session</span>
+                        <span className="desc">{t('nav.switchUserSession', 'Switch active user session')}</span>
                       </div>
                       <ChevronRight size={14} className="chevron" />
                     </button>
@@ -954,7 +954,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                     onClick={async () => {
                       setIsProfileDropdownOpen(false);
                       await forgetDevice();
-                      showToast('Device forgotten — mobile & password required next time', 'info');
+                      showToast(t('auth.deviceForgotten', 'Device forgotten — mobile & password required next time'), 'info');
                     }}
                   >
                     <Smartphone size={15} />
@@ -984,7 +984,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '13px', color: 'var(--text-primary,#0f172a)' }}>
                 <Mail size={18} style={{ color: '#d97706', flexShrink: 0 }} />
                 <span>
-                  <strong>Email Verification Pending:</strong> A verification email was sent to <strong>{currentUser.email}</strong>. Please check your inbox and verify your email address.
+                  <strong>{t('auth.emailVerificationPending', 'Email Verification Pending:')}</strong> {t('auth.verificationSentTo', 'A verification email was sent to')} <strong>{currentUser.email}</strong>{t('auth.checkInboxVerify', '. Please check your inbox and verify your email address.')}
                 </span>
               </div>
               <button
@@ -1006,7 +1006,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   whiteSpace: 'nowrap',
                 }}
               >
-                Resend Verification Email
+                {t('auth.resendVerificationEmail', 'Resend Verification Email')}
               </button>
             </div>
           )}

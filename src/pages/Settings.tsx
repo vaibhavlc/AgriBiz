@@ -130,7 +130,7 @@ export const Settings: React.FC = () => {
 
   const handleExecuteEraseMode = async () => {
     if (eraseConfirmText !== 'ERASE') {
-      setEraseErrorMsg('You must type ERASE exactly to confirm erasure.');
+      setEraseErrorMsg(t('settings.errorTypeErase', 'You must type ERASE exactly to confirm erasure.'));
       return;
     }
 
@@ -143,18 +143,18 @@ export const Settings: React.FC = () => {
       setIsExecutingErase(false);
 
       if (res.data.success) {
-        if (showToast) showToast(res.data.message || 'Business data erased successfully.', 'success');
+        if (showToast) showToast(res.data.message || t('settings.businessDataErasedSuccess', 'Business data erased successfully.'), 'success');
         setEraseConfirmText('');
         fetchEraseSummary();
         setTimeout(() => {
           window.location.reload();
         }, 1200);
       } else {
-        setEraseErrorMsg(res.data.message || 'Erase operation failed.');
+        setEraseErrorMsg(res.data.message || t('settings.eraseOperationFailed', 'Erase operation failed.'));
       }
     } catch (err: any) {
       setIsExecutingErase(false);
-      setEraseErrorMsg(err.response?.data?.message || err.message || 'Erase operation failed safely. Existing data remains intact.');
+      setEraseErrorMsg(err.response?.data?.message || err.message || t('settings.eraseFailedSafely', 'Erase operation failed safely. Existing data remains intact.'));
     }
   };
 
@@ -167,17 +167,17 @@ export const Settings: React.FC = () => {
       setIsUndoingErase(false);
 
       if (res.data.success) {
-        if (showToast) showToast('Previous business data restored successfully! Refreshing...', 'success');
+        if (showToast) showToast(t('settings.previousDataRestoredSuccess', 'Previous business data restored successfully! Refreshing...'), 'success');
         fetchEraseSummary();
         setTimeout(() => {
           window.location.reload();
         }, 1200);
       } else {
-        setEraseErrorMsg(res.data.message || 'Undo operation failed.');
+        setEraseErrorMsg(res.data.message || t('settings.undoFailed', 'Undo operation failed.'));
       }
     } catch (err: any) {
       setIsUndoingErase(false);
-      setEraseErrorMsg(err.response?.data?.message || err.message || 'Undo operation failed safely.');
+      setEraseErrorMsg(err.response?.data?.message || err.message || t('settings.undoFailedSafely', 'Undo operation failed safely.'));
     }
   };
 
@@ -251,7 +251,7 @@ export const Settings: React.FC = () => {
           element.scrollIntoView({ behavior: 'smooth' });
         }
       } else {
-        if (showToast) showToast(res.data.message || 'Cloud backup validation failed.', 'error');
+        if (showToast) showToast(res.data.message || t('settings.cloudValidationFailed', 'Cloud backup validation failed.'), 'error');
         fetchGoogleDriveAndHistory();
       }
     } catch (err: any) {
@@ -259,7 +259,7 @@ export const Settings: React.FC = () => {
       const msg = err.response?.data?.message || err.message || 'Failed to preview cloud backup.';
       if (showToast) {
         if (msg.includes('Unavailable') || msg.includes('not be found')) {
-          showToast('Backup File Unavailable: This file was removed from your Google Drive. Click "Backup Now" to create a fresh cloud backup!', 'error');
+          showToast(t('settings.backupFileUnavailableMsg', 'Backup File Unavailable: This file was removed from your Google Drive. Click "Backup Now" to create a fresh cloud backup!'), 'error');
         } else {
           showToast(msg, 'error');
         }
@@ -281,12 +281,12 @@ export const Settings: React.FC = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      if (showToast) showToast('Cloud backup downloaded successfully!', 'success');
+      if (showToast) showToast(t('settings.cloudBackupDownloadedSuccess', 'Cloud backup downloaded successfully!'), 'success');
     } catch (err: any) {
       const msg = err.response?.data?.message || 'Failed to download cloud backup file.';
       if (showToast) {
         if (msg.includes('Unavailable') || msg.includes('not be found')) {
-          showToast('Backup File Unavailable: This file was removed from your Google Drive. Click "Backup Now" to create a fresh cloud backup!', 'error');
+          showToast(t('settings.backupFileUnavailableMsg', 'Backup File Unavailable: This file was removed from your Google Drive. Click "Backup Now" to create a fresh cloud backup!'), 'error');
         } else {
           showToast(msg, 'error');
         }
@@ -300,7 +300,7 @@ export const Settings: React.FC = () => {
   const handleExecuteCloudRestore = async () => {
     if (!selectedCloudHistory) return;
     if (cloudConfirmInput !== 'RESTORE') {
-      setCloudRestoreErrorMsg('You must type RESTORE exactly to confirm data restoration.');
+      setCloudRestoreErrorMsg(t('settings.errorTypeRestore', 'You must type RESTORE exactly to confirm data restoration.'));
       return;
     }
 
@@ -314,7 +314,7 @@ export const Settings: React.FC = () => {
       setIsRestoringCloud(false);
 
       if (res.data.success) {
-        if (showToast) showToast('Company data restored cleanly from Google Drive! Refreshing...', 'success');
+        if (showToast) showToast(t('settings.companyDataRestoredGdriveSuccess', 'Company data restored cleanly from Google Drive! Refreshing...'), 'success');
         setSelectedCloudHistory(null);
         setCloudValidationResult(null);
         setCloudConfirmInput('');
@@ -322,11 +322,11 @@ export const Settings: React.FC = () => {
           window.location.reload();
         }, 1200);
       } else {
-        setCloudRestoreErrorMsg(res.data.message || 'Cloud restoration failed.');
+        setCloudRestoreErrorMsg(res.data.message || t('settings.cloudRestorationFailed', 'Cloud restoration failed.'));
       }
     } catch (err: any) {
       setIsRestoringCloud(false);
-      setCloudRestoreErrorMsg(err.response?.data?.message || err.message || 'Cloud data restoration failed safely. Current data remains intact.');
+      setCloudRestoreErrorMsg(err.response?.data?.message || err.message || t('settings.cloudRestorationFailedSafely', 'Cloud data restoration failed safely. Current data remains intact.'));
     }
   };
 
@@ -370,11 +370,11 @@ export const Settings: React.FC = () => {
 
     if (gdriveStatus === 'connected') {
       setActiveTab('backup');
-      if (showToast) showToast('Google Drive connected successfully! 🟢', 'success');
+      if (showToast) showToast(t('settings.gdriveConnectedSuccess', 'Google Drive connected successfully! 🟢'), 'success');
       window.history.replaceState({}, '', window.location.pathname + '#settings');
     } else if (gdriveStatus === 'error') {
       setActiveTab('backup');
-      if (showToast) showToast(`Google Drive connection failed: ${msg || 'Authorization error'}`, 'error');
+      if (showToast) showToast(t('settings.gdriveConnectFailed', 'Google Drive connection failed: {{msg}}', { msg: msg || 'Authorization error' }), 'error');
       window.history.replaceState({}, '', window.location.pathname + '#settings');
     }
   }, []);
@@ -387,18 +387,18 @@ export const Settings: React.FC = () => {
       if (res.data.success && res.data.url) {
         window.location.href = res.data.url;
       } else {
-        if (showToast) showToast(res.data.message || 'Failed to generate Google auth link.', 'error');
+        if (showToast) showToast(res.data.message || t('settings.failedGenerateAuthLink', 'Failed to generate Google auth link.'), 'error');
       }
     } catch (err: any) {
       setIsConnectingDrive(false);
-      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to generate Google auth link.', 'error');
+      if (showToast) showToast(err.response?.data?.message || err.message || t('settings.failedGenerateAuthLink', 'Failed to generate Google auth link.'), 'error');
     }
   };
 
   const handleSaveOAuthCredentials = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!oauthClientId.trim() || !oauthClientSecret.trim()) {
-      setOauthErrorMsg('Please fill in both Client ID and Client Secret.');
+      setOauthErrorMsg(t('settings.errorFillOAuthKeys', 'Please fill in both Client ID and Client Secret.'));
       return;
     }
 
@@ -412,14 +412,14 @@ export const Settings: React.FC = () => {
       setIsSavingOAuthCredentials(false);
       if (res.data.success) {
         setShowOAuthSetupModal(false);
-        if (showToast) showToast('Credentials saved! Requesting Google OAuth connection...', 'success');
+        if (showToast) showToast(t('settings.credentialsSavedSuccess', 'Credentials saved! Requesting Google OAuth connection...'), 'success');
         handleConnectGoogleDrive();
       } else {
-        setOauthErrorMsg(res.data.message || 'Failed to save credentials.');
+        setOauthErrorMsg(res.data.message || t('settings.failedSaveCredentials', 'Failed to save credentials.'));
       }
     } catch (err: any) {
       setIsSavingOAuthCredentials(false);
-      setOauthErrorMsg(err.response?.data?.message || err.message || 'Failed to save credentials.');
+      setOauthErrorMsg(err.response?.data?.message || err.message || t('settings.failedSaveCredentials', 'Failed to save credentials.'));
     }
   };
 
@@ -433,14 +433,14 @@ export const Settings: React.FC = () => {
         setShowOAuthSetupModal(false);
         setOauthClientId('');
         setOauthClientSecret('');
-        if (showToast) showToast('Custom credentials cleared. Retrying connection...', 'info');
+        if (showToast) showToast(t('settings.credentialsClearedInfo', 'Custom credentials cleared. Retrying connection...'), 'info');
         handleConnectGoogleDrive();
       } else {
-        setOauthErrorMsg(res.data.message || 'Failed to reset credentials.');
+        setOauthErrorMsg(res.data.message || t('settings.failedResetCredentials', 'Failed to reset credentials.'));
       }
     } catch (err: any) {
       setIsSavingOAuthCredentials(false);
-      setOauthErrorMsg(err.response?.data?.message || err.message || 'Failed to reset credentials.');
+      setOauthErrorMsg(err.response?.data?.message || err.message || t('settings.failedResetCredentials', 'Failed to reset credentials.'));
     }
   };
 
@@ -450,12 +450,12 @@ export const Settings: React.FC = () => {
       const res = await api.post('/settings/backup/google/disconnect');
       setIsDisconnectingDrive(false);
       if (res.data.success) {
-        if (showToast) showToast(res.data.message || 'Google Drive disconnected.', 'info');
+        if (showToast) showToast(res.data.message || t('settings.gdriveDisconnected', 'Google Drive disconnected.'), 'info');
         fetchGoogleDriveAndHistory();
       }
     } catch (err: any) {
       setIsDisconnectingDrive(false);
-      if (showToast) showToast(err.response?.data?.message || err.message || 'Failed to disconnect Google Drive.', 'error');
+      if (showToast) showToast(err.response?.data?.message || err.message || t('settings.gdriveConnectFailed', 'Failed to disconnect Google Drive.'), 'error');
     }
   };
 
@@ -465,16 +465,16 @@ export const Settings: React.FC = () => {
       const res = await api.post('/settings/backup/google/trigger');
       setIsTriggeringBackupNow(false);
       if (res.data.success) {
-        if (showToast) showToast('Backup successfully generated and verified on Google Drive!', 'success');
+        if (showToast) showToast(t('settings.backupVerifiedGdriveSuccess', 'Backup successfully generated and verified on Google Drive!'), 'success');
         fetchGoogleDriveAndHistory();
         fetchLastBackupInfo();
       } else {
-        if (showToast) showToast(res.data.message || 'Backup pipeline failed.', 'error');
+        if (showToast) showToast(res.data.message || t('settings.backupPipelineFailed', 'Backup pipeline failed.'), 'error');
         fetchGoogleDriveAndHistory();
       }
     } catch (err: any) {
       setIsTriggeringBackupNow(false);
-      if (showToast) showToast(err.response?.data?.message || err.message || 'Manual Google Drive backup failed.', 'error');
+      if (showToast) showToast(err.response?.data?.message || err.message || t('settings.manualBackupFailed', 'Manual Google Drive backup failed.'), 'error');
       fetchGoogleDriveAndHistory();
     }
   };
@@ -505,10 +505,10 @@ export const Settings: React.FC = () => {
       link.click();
       link.remove();
       window.URL.revokeObjectURL(url);
-      if (showToast) showToast('Backup created and downloaded successfully!', 'success');
+      if (showToast) showToast(t('settings.backupCreatedDownloadedSuccess', 'Backup created and downloaded successfully!'), 'success');
       fetchLastBackupInfo();
     } catch (err: any) {
-      if (showToast) showToast(err.response?.data?.message || 'Failed to generate backup file.', 'error');
+      if (showToast) showToast(err.response?.data?.message || t('settings.failedGenerateBackupFile', 'Failed to generate backup file.'), 'error');
     } finally {
       setIsExportingBackup(false);
     }
@@ -524,7 +524,7 @@ export const Settings: React.FC = () => {
     if (!file.name.toLowerCase().endsWith('.json')) {
       setValidationResult({
         valid: false,
-        message: 'Invalid file format: Backup file must be a .json file.',
+        message: t('settings.invalidFormatJson', 'Invalid file format: Backup file must be a .json file.'),
       });
       return;
     }
@@ -548,14 +548,14 @@ export const Settings: React.FC = () => {
         } else {
           setValidationResult({
             valid: false,
-            message: res.data.message || 'Backup file validation failed.',
+            message: res.data.message || t('settings.backupValidationFailed', 'Backup file validation failed.'),
           });
         }
       } catch (err: any) {
         setIsValidatingBackup(false);
         setValidationResult({
           valid: false,
-          message: err.response?.data?.message || 'Corrupted or malformed JSON backup file.',
+          message: err.response?.data?.message || t('settings.corruptedJsonBackup', 'Corrupted or malformed JSON backup file.'),
         });
       }
     };
@@ -563,7 +563,7 @@ export const Settings: React.FC = () => {
       setIsValidatingBackup(false);
       setValidationResult({
         valid: false,
-        message: 'Failed to read the selected backup file.',
+        message: t('settings.failedReadBackupFile', 'Failed to read the selected backup file.'),
       });
     };
     reader.readAsText(file);
@@ -571,11 +571,11 @@ export const Settings: React.FC = () => {
 
   const handleExecuteRestore = async () => {
     if (restoreConfirmText !== 'RESTORE') {
-      setRestoreErrorMsg('You must type RESTORE exactly to confirm data restoration.');
+      setRestoreErrorMsg(t('settings.errorTypeRestore', 'You must type RESTORE exactly to confirm data restoration.'));
       return;
     }
     if (!parsedBackupData || !validationResult?.valid) {
-      setRestoreErrorMsg('No valid backup payload available to restore.');
+      setRestoreErrorMsg(t('settings.noValidBackupPayload', 'No valid backup payload available to restore.'));
       return;
     }
 
@@ -590,7 +590,7 @@ export const Settings: React.FC = () => {
       setIsRestoring(false);
 
       if (res.data.success) {
-        if (showToast) showToast('Company data restored successfully! Refreshing...', 'success');
+        if (showToast) showToast(t('settings.companyDataRestoredSuccess', 'Company data restored successfully! Refreshing...'), 'success');
         setSelectedBackupFile(null);
         setParsedBackupData(null);
         setValidationResult(null);
@@ -599,11 +599,11 @@ export const Settings: React.FC = () => {
           window.location.reload();
         }, 1200);
       } else {
-        setRestoreErrorMsg(res.data.message || 'Restoration failed.');
+        setRestoreErrorMsg(res.data.message || t('settings.restorationFailed', 'Restoration failed.'));
       }
     } catch (err: any) {
       setIsRestoring(false);
-      setRestoreErrorMsg(err.response?.data?.message || err.message || 'Data restoration failed safely. Previous company data remains intact.');
+      setRestoreErrorMsg(err.response?.data?.message || err.message || t('settings.restorationFailedSafely', 'Data restoration failed safely. Previous company data remains intact.'));
     }
   };
 
@@ -668,11 +668,11 @@ export const Settings: React.FC = () => {
   const handleDeleteBusinessAccount = async (e: React.FormEvent) => {
     e.preventDefault();
     if (deleteConfirmText !== 'DELETE') {
-      setDeleteErrorMsg('You must type DELETE exactly to confirm.');
+      setDeleteErrorMsg(t('settings.errorTypeDelete', 'You must type DELETE exactly to confirm.'));
       return;
     }
     if (!deletePasswordOrPin.trim()) {
-      setDeleteErrorMsg('Please enter your Owner Password or 4-digit PIN.');
+      setDeleteErrorMsg(t('settings.errorEnterPasswordOrPin', 'Please enter your Owner Password or 4-digit PIN.'));
       return;
     }
 
@@ -684,14 +684,14 @@ export const Settings: React.FC = () => {
       setDeleteLoading(false);
       if (res.success) {
         setIsDeleteCompanyModalOpen(false);
-        showToast('Business account permanently deleted.', 'info');
+        showToast(t('settings.businessAccountDeleted', 'Business account permanently deleted.'), 'info');
         window.location.href = '/';
       } else {
         setDeleteErrorMsg(res.message);
       }
     } catch (err: any) {
       setDeleteLoading(false);
-      setDeleteErrorMsg(err.message || 'Deletion failed. Please try again.');
+      setDeleteErrorMsg(err.message || t('settings.deletionFailed', 'Deletion failed. Please try again.'));
     }
   };
 
@@ -778,22 +778,22 @@ export const Settings: React.FC = () => {
         }
         if (staffPin.trim()) {
           if (!/^\d{4}$/.test(staffPin.trim())) {
-            showToast('PIN must be exactly 4 digits.', 'error');
+            showToast(t('settings.errorPinLength', 'PIN must be exactly 4 digits.'), 'error');
             return;
           }
           payload.pin = staffPin.trim();
         }
         const res = await api.put(`/users/${editingStaffUser.id}`, payload);
         if (res.data.success) {
-          showToast(`Staff member ${payload.name} details & permissions updated!`, 'success');
+          showToast(t('settings.staffUpdatedSuccess', 'Staff member {{name}} details & permissions updated!', { name: payload.name }), 'success');
         }
       } else {
         if (!staffName || !staffPin) {
-          showToast('Please enter Staff Name and 4-digit PIN.', 'error');
+          showToast(t('settings.errorStaffNamePinRequired', 'Please enter Staff Name and 4-digit PIN.'), 'error');
           return;
         }
         if (!/^\d{4}$/.test(staffPin.trim())) {
-          showToast('Security PIN must be exactly 4 numeric digits.', 'error');
+          showToast(t('settings.errorSecurityPin4Digits', 'Security PIN must be exactly 4 numeric digits.'), 'error');
           return;
         }
         const payload: any = {
@@ -807,7 +807,7 @@ export const Settings: React.FC = () => {
         };
         const res = await api.post('/users', payload);
         if (res.data.success) {
-          showToast(`Staff member ${payload.name} added successfully as ${payload.role}!`, 'success');
+          showToast(t('settings.staffAddedSuccess', 'Staff member {{name}} added successfully as {{role}}!', { name: payload.name, role: translateRole(t, payload.role) }), 'success');
         }
       }
 
@@ -822,24 +822,24 @@ export const Settings: React.FC = () => {
       setStaffCustomPermissions([]);
       refreshUsersList();
     } catch (err: any) {
-      showToast(err.response?.data?.message || 'Operation failed. Please try again.', 'error');
+      showToast(err.response?.data?.message || t('common.operationFailed', 'Operation failed. Please try again.'), 'error');
     }
   };
 
   const handleToggleUserStatus = async (u: User) => {
     if (u.role === 'Owner') {
-      showToast('The Owner account is the primary administrator and cannot be disabled.', 'info');
+      showToast(t('settings.ownerAccountCannotBeDisabled', 'The Owner account is the primary administrator and cannot be disabled.'), 'info');
       return;
     }
     const newStatus = u.status === 'Active' ? 'Inactive' : 'Active';
     try {
       const res = await api.put(`/users/${u.id}`, { status: newStatus });
       if (res.data.success) {
-        showToast(`${u.name} status set to ${newStatus}`, 'info');
+        showToast(t('settings.userStatusSet', '{{name}} status set to {{status}}', { name: u.name, status: newStatus === 'Active' ? t('settings.statusActive', 'Active') : t('settings.statusDisabled', 'Disabled') }), 'info');
         refreshUsersList();
       }
     } catch (err: any) {
-      showToast(err.response?.data?.message || 'Failed to update user status.', 'error');
+      showToast(err.response?.data?.message || t('settings.failedUpdateUserStatus', 'Failed to update user status.'), 'error');
     }
   };
 
@@ -849,15 +849,15 @@ export const Settings: React.FC = () => {
 
     if (resetStaffUser.role === 'Owner') {
       if (!newResetPass.trim() && !newResetPin.trim()) {
-        showToast('Please enter a new password or a new 4-digit PIN to reset.', 'error');
+        showToast(t('settings.errorEnterNewPasswordOrPin', 'Please enter a new password or a new 4-digit PIN to reset.'), 'error');
         return;
       }
       if (newResetPass.trim() && newResetPass.trim().length < 6) {
-        showToast('Password must be at least 6 characters long.', 'error');
+        showToast(t('settings.errorPasswordLength', 'Password must be at least 6 characters long.'), 'error');
         return;
       }
       if (newResetPin.trim() && !/^\d{4}$/.test(newResetPin.trim())) {
-        showToast('PIN must be exactly 4 numeric digits.', 'error');
+        showToast(t('settings.errorSecurityPin4Digits', 'Security PIN must be exactly 4 numeric digits.'), 'error');
         return;
       }
       try {
@@ -867,30 +867,30 @@ export const Settings: React.FC = () => {
 
         const res = await api.put(`/users/${resetStaffUser.id}`, payload);
         if (res.data.success) {
-          showToast(`Owner credentials updated successfully for ${resetStaffUser.name}!`, 'success');
+          showToast(t('settings.ownerCredentialsUpdatedSuccess', 'Owner credentials updated successfully for {{name}}!', { name: resetStaffUser.name }), 'success');
           setResetStaffUser(null);
           setNewResetPass('');
           setNewResetPin('');
           refreshUsersList();
         }
       } catch (err: any) {
-        showToast(err.response?.data?.message || 'Failed to update credentials.', 'error');
+        showToast(err.response?.data?.message || t('settings.failedUpdateCredentials', 'Failed to update credentials.'), 'error');
       }
     } else {
       if (!newResetPin.trim() || !/^\d{4}$/.test(newResetPin.trim())) {
-        showToast('Security PIN must be exactly 4 numeric digits.', 'error');
+        showToast(t('settings.errorSecurityPin4Digits', 'Security PIN must be exactly 4 numeric digits.'), 'error');
         return;
       }
       try {
         const res = await api.put(`/users/${resetStaffUser.id}`, { pin: newResetPin.trim() });
         if (res.data.success) {
-          showToast(`Security PIN for ${resetStaffUser.name} reset successfully!`, 'success');
+          showToast(t('settings.pinResetSuccess', 'Security PIN for {{name}} reset successfully!', { name: resetStaffUser.name }), 'success');
           setResetStaffUser(null);
           setNewResetPin('');
           refreshUsersList();
         }
       } catch (err: any) {
-        showToast(err.response?.data?.message || 'Failed to reset PIN.', 'error');
+        showToast(err.response?.data?.message || t('settings.failedResetPin', 'Failed to reset PIN.'), 'error');
       }
     }
   };
@@ -1184,7 +1184,7 @@ export const Settings: React.FC = () => {
 
     setSavedSuccess(true);
     if (showToast) {
-      showToast('Preferences saved successfully!');
+      showToast(t('settings.preferencesSavedSuccess', 'Preferences saved successfully!'));
     }
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -1195,7 +1195,7 @@ export const Settings: React.FC = () => {
     if (!file) return;
 
     if (file.size > 1.5 * 1024 * 1024) {
-      alert('Selected logo size exceeds 1.5MB limit. Please upload a smaller compressed image.');
+      alert(t('settings.logoSizeExceedsLimit', 'Selected logo size exceeds 1.5MB limit. Please upload a smaller compressed image.'));
       return;
     }
 
@@ -1215,7 +1215,7 @@ export const Settings: React.FC = () => {
     if (!file) return;
 
     if (file.size > 1.5 * 1024 * 1024) {
-      alert('Selected watermark logo size exceeds 1.5MB limit. Please upload a smaller compressed image.');
+      alert(t('settings.watermarkSizeExceedsLimit', 'Selected watermark logo size exceeds 1.5MB limit. Please upload a smaller compressed image.'));
       return;
     }
 
@@ -1432,7 +1432,7 @@ export const Settings: React.FC = () => {
       signature: base64Data
     });
     if (showToast) {
-      showToast('Signature saved successfully!');
+      showToast(t('settings.signatureSavedSuccess', 'Signature saved successfully!'));
     }
   };
 
@@ -1444,7 +1444,7 @@ export const Settings: React.FC = () => {
       signature: undefined
     });
     if (showToast) {
-      showToast('Signature removed successfully!');
+      showToast(t('settings.signatureRemovedSuccess', 'Signature removed successfully!'));
     }
   };
 
@@ -1453,7 +1453,7 @@ export const Settings: React.FC = () => {
     if (!file) return;
 
     if (file.size > 1.5 * 1024 * 1024) {
-      alert('Selected signature image size exceeds 1.5MB limit. Please upload a smaller compressed image.');
+      alert(t('settings.signatureSizeExceedsLimit', 'Selected signature image size exceeds 1.5MB limit. Please upload a smaller compressed image.'));
       return;
     }
 
@@ -1466,7 +1466,7 @@ export const Settings: React.FC = () => {
         signature: base64Data
       });
       if (showToast) {
-        showToast('Signature image uploaded successfully!');
+        showToast(t('settings.signatureUploadedSuccess', 'Signature image uploaded successfully!'));
       }
     };
     reader.readAsDataURL(file);
@@ -1483,7 +1483,7 @@ export const Settings: React.FC = () => {
     setIsResettingDb(true);
     try {
       resetToDefault();
-      showToast('AgriBiz database reset to initial mock states successfully.', 'info');
+      showToast(t('settings.databaseResetSuccess', 'AgriBiz database reset to initial mock states successfully.'), 'info');
       setTimeout(() => {
         window.location.reload();
       }, 300);
@@ -1507,7 +1507,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'profile' ? 'active' : ''}`}
           data-active={activeTab === 'profile'}
         >
-          <Store size={15} /> Business Profile
+          <Store size={15} /> {t('settings.businessProfile', 'Business Profile')}
         </button>
         <button
           type="button"
@@ -1515,7 +1515,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'banking' ? 'active' : ''}`}
           data-active={activeTab === 'banking'}
         >
-          <CreditCard size={15} /> Bank Details
+          <CreditCard size={15} /> {t('settings.bankDetails', 'Bank Details')}
         </button>
         <button
           type="button"
@@ -1523,7 +1523,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'branding' ? 'active' : ''}`}
           data-active={activeTab === 'branding'}
         >
-          <ImageIcon size={15} /> Logos & Signature
+          <ImageIcon size={15} /> {t('settings.logosAndSignature', 'Logos & Signature')}
         </button>
         <button
           type="button"
@@ -1531,7 +1531,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'prefixes' ? 'active' : ''}`}
           data-active={activeTab === 'prefixes'}
         >
-          <FileText size={15} /> Vouchers & Terms
+          <FileText size={15} /> {t('settings.vouchersAndTerms', 'Vouchers & Terms')}
         </button>
         <button
           type="button"
@@ -1539,7 +1539,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'system' ? 'active' : ''}`}
           data-active={activeTab === 'system'}
         >
-          <Sliders size={15} /> Print & System
+          <Sliders size={15} /> {t('settings.printAndSystem', 'Print & System')}
         </button>
         <button
           type="button"
@@ -1547,7 +1547,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'users' ? 'active' : ''}`}
           data-active={activeTab === 'users'}
         >
-          <Users size={15} /> Staff & Roles
+          <Users size={15} /> {t('settings.staffAndRoles', 'Staff & Roles')}
         </button>
         <button
           type="button"
@@ -1555,7 +1555,7 @@ export const Settings: React.FC = () => {
           className={`settings-tab-pill ${activeTab === 'backup' ? 'active' : ''}`}
           data-active={activeTab === 'backup'}
         >
-          <HardDrive size={15} /> Backup & Restore
+          <HardDrive size={15} /> {t('settings.backupAndRestore', 'Backup & Restore')}
         </button>
         <button
           type="button"
@@ -1564,7 +1564,7 @@ export const Settings: React.FC = () => {
           data-active={activeTab === 'erase'}
           style={activeTab === 'erase' ? { backgroundColor: '#dc2626', color: '#ffffff', borderColor: '#dc2626' } : undefined}
         >
-          <Trash2 size={15} /> Erase Business Data
+          <Trash2 size={15} /> {t('settings.eraseBusinessData', 'Erase Business Data')}
         </button>
       </div>
 
@@ -1582,13 +1582,13 @@ export const Settings: React.FC = () => {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.businessInformation', 'Business Information')}</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage firm names, PAN/GST registration, and contacts</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.manageFirmNames', 'Manage firm names, PAN/GST registration, and contacts')}</p>
                   </div>
                 </div>
 
                 <div className="form-grid-2" style={{ marginTop: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">Firm / Business Name *</label>
+                    <label className="form-label">{t('settings.firmBusinessName', 'Firm / Business Name')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1598,7 +1598,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Owner Name *</label>
+                    <label className="form-label">{t('settings.ownerName', 'Owner Name')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1611,7 +1611,7 @@ export const Settings: React.FC = () => {
 
                 <div className="form-grid-3">
                   <div className="form-group">
-                    <label className="form-label">GST Number (GSTIN) *</label>
+                    <label className="form-label">{t('settings.gstin', 'GST Number (GSTIN)')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1622,7 +1622,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">PAN Number *</label>
+                    <label className="form-label">{t('settings.panNumber', 'PAN Number')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1636,7 +1636,7 @@ export const Settings: React.FC = () => {
                     <label className="form-label">{t("settings.businessType", "Business Type")}</label>
                     <input
                       type="text"
-                      placeholder="e.g. Proprietorship, Partnership"
+                      placeholder={t('settings.businessTypePlaceholder', 'e.g. Proprietorship, Partnership')}
                       className="form-control"
                       value={businessType}
                       onChange={(e) => setBusinessType(e.target.value)}
@@ -1646,7 +1646,7 @@ export const Settings: React.FC = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Primary Phone *</label>
+                    <label className="form-label">{t('settings.primaryPhone', 'Primary Phone')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1668,7 +1668,7 @@ export const Settings: React.FC = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">Email Address *</label>
+                    <label className="form-label">{t('settings.emailAddress', 'Email Address')} *</label>
                     <input
                       type="email"
                       className="form-control"
@@ -1681,7 +1681,7 @@ export const Settings: React.FC = () => {
                     <label className="form-label">{t("settings.website", "Website")}</label>
                     <input
                       type="text"
-                      placeholder="e.g. www.agribizstore.com"
+                      placeholder={t('settings.websitePlaceholder', 'e.g. www.agribizstore.com')}
                       className="form-control"
                       value={website}
                       onChange={(e) => setWebsite(e.target.value)}
@@ -1698,12 +1698,12 @@ export const Settings: React.FC = () => {
                   </div>
                   <div>
                     <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.businessAddress', 'Business Address')}</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Set physical store billing addresses</p>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.setPhysicalStoreBillingAddresses', 'Set physical store billing addresses')}</p>
                   </div>
                 </div>
 
                 <div className="form-group" style={{ marginTop: '16px' }}>
-                  <label className="form-label">Address Line 1 *</label>
+                  <label className="form-label">{t('settings.addressLine1', 'Address Line 1')} *</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1714,7 +1714,7 @@ export const Settings: React.FC = () => {
                 </div>
 
                 <div className="form-group">
-                  <label className="form-label">Address Line 2</label>
+                  <label className="form-label">{t('settings.addressLine2', 'Address Line 2')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1725,25 +1725,25 @@ export const Settings: React.FC = () => {
 
                 <div className="form-grid-2">
                   <div className="form-group">
-                    <label className="form-label">State *</label>
+                    <label className="form-label">{t('settings.state', 'State')} *</label>
                     <select
                       className="form-control"
                       value={selectedState}
                       onChange={(e) => handleStateChange(e.target.value)}
                       required
                     >
-                      <option value="">Select State</option>
+                      <option value="">{t('settings.selectState', 'Select State')}</option>
                       {INDIAN_STATES.map((st) => (
                         <option key={st} value={st}>
                           {st}
                         </option>
                       ))}
-                      <option value="custom">-- Enter Manually --</option>
+                      <option value="custom">{t('settings.enterManually', '-- Enter Manually --')}</option>
                     </select>
                     {selectedState === 'custom' && (
                       <input
                         type="text"
-                        placeholder="Enter State Name"
+                        placeholder={t('settings.enterStateName', 'Enter State Name')}
                         className="form-control"
                         style={{ marginTop: '8px' }}
                         value={customState}
@@ -1758,25 +1758,25 @@ export const Settings: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">District *</label>
+                    <label className="form-label">{t('settings.district', 'District')} *</label>
                     <select
                       className="form-control"
                       value={selectedDistrict}
                       onChange={(e) => handleDistrictChange(e.target.value)}
                       required
                     >
-                      <option value="">Select District</option>
+                      <option value="">{t('settings.selectDistrict', 'Select District')}</option>
                       {getDistrictOptions(state).map((d) => (
                         <option key={d} value={d}>
                           {d}
                         </option>
                       ))}
-                      <option value="custom">-- Enter Manually --</option>
+                      <option value="custom">{t('settings.enterManually', '-- Enter Manually --')}</option>
                     </select>
                     {selectedDistrict === 'custom' && (
                       <input
                         type="text"
-                        placeholder="Enter District Name"
+                        placeholder={t('settings.enterDistrictName', 'Enter District Name')}
                         className="form-control"
                         style={{ marginTop: '8px' }}
                         value={customDistrict}
@@ -1793,30 +1793,30 @@ export const Settings: React.FC = () => {
 
                 <div className="form-grid-3">
                   <div className="form-group">
-                    <label className="form-label">Taluka (Tehsil)</label>
+                    <label className="form-label">{t('settings.taluka', 'Taluka (Tehsil)')}</label>
                     <input
                       type="text"
                       className="form-control"
                       value={taluka}
-                      placeholder="e.g. Pipariya"
+                      placeholder={t('settings.talukaPlaceholder', 'e.g. Pipariya')}
                       onChange={(e) => setTaluka(e.target.value)}
                     />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Village / City *</label>
+                    <label className="form-label">{t('settings.villageCity', 'Village / City')} *</label>
                     <input
                       type="text"
                       className="form-control"
                       value={city}
-                      placeholder="e.g. Pipariya"
+                      placeholder={t('settings.cityPlaceholder', 'e.g. Pipariya')}
                       onChange={(e) => setCity(e.target.value)}
                       required
                     />
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">Pincode *</label>
+                    <label className="form-label">{t('settings.pincode', 'Pincode')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -1841,13 +1841,13 @@ export const Settings: React.FC = () => {
                 </div>
                 <div>
                   <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.bankingDetails', 'Banking & Settlement Details')}</h3>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage bank account and UPI settlement options</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.manageBankOptions', 'Manage bank account and UPI settlement options')}</p>
                 </div>
               </div>
 
               <div className="form-grid-2" style={{ marginTop: '16px' }}>
                 <div className="form-group">
-                  <label className="form-label">Bank Name</label>
+                  <label className="form-label">{t('settings.bankName', 'Bank Name')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1856,7 +1856,7 @@ export const Settings: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Account Holder Name</label>
+                  <label className="form-label">{t('settings.accountHolderName', 'Account Holder Name')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1868,7 +1868,7 @@ export const Settings: React.FC = () => {
 
               <div className="form-grid-3">
                 <div className="form-group">
-                  <label className="form-label">Account Number</label>
+                  <label className="form-label">{t('settings.accountNumber', 'Account Number')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1877,7 +1877,7 @@ export const Settings: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">IFSC Code</label>
+                  <label className="form-label">{t('settings.ifscCode', 'IFSC Code')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1887,7 +1887,7 @@ export const Settings: React.FC = () => {
                   />
                 </div>
                 <div className="form-group">
-                  <label className="form-label">Branch Name</label>
+                  <label className="form-label">{t('settings.branchName', 'Branch Name')}</label>
                   <input
                     type="text"
                     className="form-control"
@@ -1898,10 +1898,10 @@ export const Settings: React.FC = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">UPI ID (for quick payments)</label>
+                <label className="form-label">{t('settings.upiId', 'UPI ID (for quick payments)')}</label>
                 <input
                   type="text"
-                  placeholder="e.g. storename@ybl"
+                  placeholder={t('settings.upiIdPlaceholder', 'e.g. storename@ybl')}
                   className="form-control"
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
@@ -1920,8 +1920,8 @@ export const Settings: React.FC = () => {
                     <ImageIcon size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Company Logo Branding</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure invoice logo brandings</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.companyLogoBranding', 'Company Logo Branding')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.configureInvoiceLogoBrandings', 'Configure invoice logo brandings')}</p>
                   </div>
                 </div>
 
@@ -1931,14 +1931,14 @@ export const Settings: React.FC = () => {
                       <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '14px', width: '130px', height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
                         <img src={logo} alt="Custom Branding Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                       </div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ Custom Business Logo Active</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ {t('settings.customBusinessLogoActive', 'Custom Business Logo Active')}</div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
-                          <Upload size={14} /> Change Logo
+                          <Upload size={14} /> {t('settings.changeLogo', 'Change Logo')}
                           <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
                         </label>
                         <button type="button" onClick={handleRemoveLogo} className="btn btn-danger btn-sm">
-                          <Trash2 size={14} /> Remove Logo
+                          <Trash2 size={14} /> {t('settings.removeLogo', 'Remove Logo')}
                         </button>
                       </div>
                     </div>
@@ -1954,15 +1954,15 @@ export const Settings: React.FC = () => {
                           <Store size={44} />
                         </div>
                         <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                          Default Business Logo (Visual Fallback)
+                          {t('settings.defaultBusinessLogoFallback', 'Default Business Logo (Visual Fallback)')}
                         </span>
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Upload Custom Business Logo</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>PNG, JPG, or SVG format up to 1.5MB</div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.uploadCustomBusinessLogo', 'Upload Custom Business Logo')}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '3px' }}>{t('settings.logoFileFormatHelp', 'PNG, JPG, or SVG format up to 1.5MB')}</div>
                       </div>
                       <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
-                        <Upload size={14} /> Choose Image File
+                        <Upload size={14} /> {t('settings.chooseImageFile', 'Choose Image File')}
                         <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
                       </label>
                     </div>
@@ -1977,8 +1977,8 @@ export const Settings: React.FC = () => {
                     <ImageIcon size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Dedicated Bill Watermark Logo</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure transparent bill background watermarks</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.dedicatedBillWatermarkLogo', 'Dedicated Bill Watermark Logo')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.configureWatermarks', 'Configure transparent bill background watermarks')}</p>
                   </div>
                 </div>
 
@@ -1990,11 +1990,11 @@ export const Settings: React.FC = () => {
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
-                          <Upload size={14} /> Change Watermark
+                          <Upload size={14} /> {t('settings.changeWatermark', 'Change Watermark')}
                           <input type="file" accept="image/*" onChange={handleWatermarkLogoUpload} style={{ display: 'none' }} />
                         </label>
                         <button type="button" onClick={handleRemoveWatermarkLogo} className="btn btn-danger btn-sm">
-                          <Trash2 size={14} /> Remove Watermark
+                          <Trash2 size={14} /> {t('settings.removeWatermark', 'Remove Watermark')}
                         </button>
                       </div>
                     </div>
@@ -2002,11 +2002,11 @@ export const Settings: React.FC = () => {
                     <div style={{ border: '2px dashed var(--border-color)', padding: '30px', borderRadius: '16px', textAlign: 'center', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                       <ImageIcon size={40} style={{ color: 'var(--text-muted)' }} />
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Upload Bill Watermark Logo</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>PNG, JPG, or SVG format up to 1.5MB (Defaults to Company Logo if empty)</div>
+                        <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.uploadBillWatermarkLogo', 'Upload Bill Watermark Logo')}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>{t('settings.watermarkFormatHelp', 'PNG, JPG, or SVG format up to 1.5MB (Defaults to Company Logo if empty)')}</div>
                       </div>
                       <label className="btn btn-primary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
-                        <Upload size={14} /> Choose Image File
+                        <Upload size={14} /> {t('settings.chooseImageFile', 'Choose Image File')}
                         <input type="file" accept="image/*" onChange={handleWatermarkLogoUpload} style={{ display: 'none' }} />
                       </label>
                     </div>
@@ -2027,10 +2027,10 @@ export const Settings: React.FC = () => {
                       />
                       <div>
                         <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
-                          Show Watermark Image As Is (Original Color)
+                          {t('settings.showWatermarkAsIs', 'Show Watermark Image As Is (Original Color)')}
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                          When checked, watermark on invoices renders in original colors. Uncheck to display in Black & White (Grayscale).
+                          {t('settings.watermarkAsIsHelp', 'When checked, watermark on invoices renders in original colors. Uncheck to display in Black & White (Grayscale).')}
                         </div>
                       </div>
                     </label>
@@ -2045,8 +2045,8 @@ export const Settings: React.FC = () => {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Authorized Signatory E-Signature</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Draw or manage electronic signature for invoices</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.authorizedSignatorySignature', 'Authorized Signatory E-Signature')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.drawSignatureSubtitle', 'Draw or manage electronic signature for invoices')}</p>
                   </div>
                 </div>
 
@@ -2056,7 +2056,7 @@ export const Settings: React.FC = () => {
                       <div style={{ border: '2px dashed var(--border-color)', padding: '12px 24px', borderRadius: '14px', width: '280px', height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
                         <img src={savedSignature} alt="E-Signature Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                       </div>
-                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ Authorized Signatory E-Signature Active</div>
+                      <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ {t('settings.authorizedSignatureActive', 'Authorized Signatory E-Signature Active')}</div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
                         <button
                           type="button"
@@ -2066,14 +2066,14 @@ export const Settings: React.FC = () => {
                           }}
                           className="btn btn-primary btn-sm"
                         >
-                          <Edit2 size={14} /> Draw / Re-sign with Cursor
+                          <Edit2 size={14} /> {t('settings.drawResignWithCursor', 'Draw / Re-sign with Cursor')}
                         </button>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
-                          <Upload size={14} /> Upload Image
+                          <Upload size={14} /> {t('settings.uploadImage', 'Upload Image')}
                           <input type="file" accept="image/*" onChange={handleSignatureFileUpload} style={{ display: 'none' }} />
                         </label>
                         <button type="button" onClick={handleRemoveSignature} className="btn btn-danger btn-sm">
-                          <Trash2 size={14} /> Remove Signature
+                          <Trash2 size={14} /> {t('settings.removeSignature', 'Remove Signature')}
                         </button>
                       </div>
                     </div>
@@ -2081,10 +2081,10 @@ export const Settings: React.FC = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'stretch' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
                         <span style={{ fontSize: '13px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                          Press and drag your mouse cursor inside the box below to sign like in MS Paint:
+                          {t('settings.drawSignatureInstructions', 'Press and drag your mouse cursor inside the box below to sign like in MS Paint:')}
                         </span>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer', margin: 0 }}>
-                          <Upload size={14} /> Upload Signature Image
+                          <Upload size={14} /> {t('settings.uploadSignatureImage', 'Upload Signature Image')}
                           <input type="file" accept="image/*" onChange={handleSignatureFileUpload} style={{ display: 'none' }} />
                         </label>
                       </div>
@@ -2108,14 +2108,14 @@ export const Settings: React.FC = () => {
                       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
                         {savedSignature && (
                           <button type="button" onClick={() => setIsPadEditing(false)} className="btn btn-secondary btn-sm" style={{ marginRight: 'auto' }}>
-                            Cancel
+                            {t('common.cancel', 'Cancel')}
                           </button>
                         )}
                         <button type="button" onClick={clearSignaturePad} className="btn btn-secondary btn-sm">
-                          Clear Pad
+                          {t('settings.clearPad', 'Clear Pad')}
                         </button>
                         <button type="button" onClick={handleSaveSignature} className="btn btn-primary btn-sm">
-                          Save Drawn Signature
+                          {t('settings.saveDrawnSignature', 'Save Drawn Signature')}
                         </button>
                       </div>
                     </div>
@@ -2135,14 +2135,14 @@ export const Settings: React.FC = () => {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Voucher & Document Prefixes</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure voucher prefix naming conventions</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.voucherPrefixes', 'Voucher & Document Prefixes')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.configureVoucherPrefixes', 'Configure voucher prefix naming conventions')}</p>
                   </div>
                 </div>
 
                 <div className="form-grid-3" style={{ marginTop: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">Invoice Prefix *</label>
+                    <label className="form-label">{t('settings.invoicePrefix', 'Invoice Prefix')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -2152,7 +2152,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Purchase Prefix *</label>
+                    <label className="form-label">{t('settings.purchasePrefix', 'Purchase Prefix')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -2162,7 +2162,7 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                   <div className="form-group">
-                    <label className="form-label">Quotation Prefix *</label>
+                    <label className="form-label">{t('settings.quotationPrefix', 'Quotation Prefix')} *</label>
                     <input
                       type="text"
                       className="form-control"
@@ -2175,7 +2175,7 @@ export const Settings: React.FC = () => {
 
                 <div className="form-row">
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label">Financial Year (F.Y.) *</label>
+                    <label className="form-label">{t('settings.financialYear', 'Financial Year (F.Y.)')} *</label>
                     <select
                       className="form-control"
                       value={financialYear}
@@ -2189,13 +2189,13 @@ export const Settings: React.FC = () => {
                 </div>
 
                 <div className="form-group" style={{ marginTop: '12px' }}>
-                  <label className="form-label">Invoice Footer Message</label>
+                  <label className="form-label">{t('settings.invoiceFooterMessage', 'Invoice Footer Message')}</label>
                   <input
                     type="text"
                     className="form-control"
                     value={footerMessage}
                     onChange={(e) => setFooterMessage(e.target.value)}
-                    placeholder="Thank you for your business!"
+                    placeholder={t('settings.footerMessagePlaceholder', 'Thank you for your business!')}
                   />
                 </div>
               </div>
@@ -2207,51 +2207,51 @@ export const Settings: React.FC = () => {
                     <FileText size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Terms & Conditions (per Bill Type)</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Customize default terms for invoices, quotations, and bills</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.termsPerBillType', 'Terms & Conditions (per Bill Type)')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.customizeDefaultTerms', 'Customize default terms for invoices, quotations, and bills')}</p>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 600 }}>📄 Sales Invoice Terms</label>
+                    <label className="form-label" style={{ fontWeight: 600 }}>📄 {t('settings.salesInvoiceTerms', 'Sales Invoice Terms')}</label>
                     <textarea
                       className="form-control"
                       rows={3}
                       value={invoiceTerms}
                       onChange={(e) => setInvoiceTerms(e.target.value)}
-                      placeholder="e.g. Goods once sold will not be taken back. Warranty as per manufacturer terms."
+                      placeholder={t('settings.invoiceTermsPlaceholder', 'e.g. Goods once sold will not be taken back. Warranty as per manufacturer terms.')}
                       style={{ fontSize: '13px' }}
                     />
                   </div>
 
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 600 }}>📋 Quotation / Estimate Terms</label>
+                    <label className="form-label" style={{ fontWeight: 600 }}>📋 {t('settings.quotationTerms', 'Quotation / Estimate Terms')}</label>
                     <textarea
                       className="form-control"
                       rows={3}
                       value={quotationTerms}
                       onChange={(e) => setQuotationTerms(e.target.value)}
-                      placeholder="e.g. This quotation is valid for 15 days. Prices are subject to change without notice."
+                      placeholder={t('settings.quotationTermsPlaceholder', 'e.g. This quotation is valid for 15 days. Prices are subject to change without notice.')}
                       style={{ fontSize: '13px' }}
                     />
                   </div>
 
                   <div className="form-group" style={{ margin: 0 }}>
-                    <label className="form-label" style={{ fontWeight: 600 }}>🧾 Purchase Bill Terms</label>
+                    <label className="form-label" style={{ fontWeight: 600 }}>🧾 {t('settings.purchaseBillTerms', 'Purchase Bill Terms')}</label>
                     <textarea
                       className="form-control"
                       rows={3}
                       value={purchaseTerms}
                       onChange={(e) => setPurchaseTerms(e.target.value)}
-                      placeholder="e.g. Payment due within 30 days. Goods received in good condition."
+                      placeholder={t('settings.purchaseTermsPlaceholder', 'e.g. Payment due within 30 days. Goods received in good condition.')}
                       style={{ fontSize: '13px' }}
                     />
                   </div>
                 </div>
 
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px' }}>
-                  These terms will automatically appear on their respective bill printouts.
+                  {t('settings.termsNotice', 'These terms will automatically appear on their respective bill printouts.')}
                 </div>
               </div>
             </>
@@ -2287,7 +2287,7 @@ export const Settings: React.FC = () => {
                       localStorage.setItem('agribiz_language', 'en');
                     }}
                   >
-                    English
+                    {t('common.english', 'English')}
                   </button>
                   <button
                     type="button"
@@ -2298,7 +2298,7 @@ export const Settings: React.FC = () => {
                       localStorage.setItem('agribiz_language', 'mr');
                     }}
                   >
-                    मराठी (Marathi)
+                    {t('common.marathi', 'मराठी')} (Marathi)
                   </button>
                   <button
                     type="button"
@@ -2309,7 +2309,7 @@ export const Settings: React.FC = () => {
                       localStorage.setItem('agribiz_language', 'hi');
                     }}
                   >
-                    हिन्दी (Hindi)
+                    {t('common.hindi', 'हिन्दी')} (Hindi)
                   </button>
                 </div>
               </div>
@@ -2321,8 +2321,8 @@ export const Settings: React.FC = () => {
                     <Sun size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Color Palette Selection</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Choose your color palette mode preference</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.colorPaletteSelection', 'Color Palette Selection')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.chooseColorPalette', 'Choose your color palette mode preference')}</p>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: '16px', marginTop: '20px', flexWrap: 'wrap' }}>
@@ -2333,7 +2333,7 @@ export const Settings: React.FC = () => {
                     onClick={() => handleThemeChange('light')}
                   >
                     <Sun size={18} />
-                    <span>Light Theme Mode</span>
+                    <span>{t('settings.lightThemeMode', 'Light Theme Mode')}</span>
                   </button>
                   <button
                     type="button"
@@ -2342,7 +2342,7 @@ export const Settings: React.FC = () => {
                     onClick={() => handleThemeChange('dark')}
                   >
                     <Moon size={18} />
-                    <span>Dark Theme Mode</span>
+                    <span>{t('settings.darkThemeMode', 'Dark Theme Mode')}</span>
                   </button>
                   <button
                     type="button"
@@ -2351,7 +2351,7 @@ export const Settings: React.FC = () => {
                     onClick={() => handleThemeChange('system')}
                   >
                     <Sliders size={18} />
-                    <span>Follow System Theme</span>
+                    <span>{t('settings.followSystemTheme', 'Follow System Theme')}</span>
                   </button>
                 </div>
               </div>
@@ -2363,8 +2363,8 @@ export const Settings: React.FC = () => {
                     <Smartphone size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Progressive Web App (PWA) Installation</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Install AgriBiz as a standalone desktop/mobile app with custom app name</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.pwaInstallation', 'Progressive Web App (PWA) Installation')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.pwaInstallationDesc', 'Install AgriBiz as a standalone desktop/mobile app with custom app name')}</p>
                   </div>
                 </div>
 
@@ -2372,10 +2372,10 @@ export const Settings: React.FC = () => {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', padding: '14px', borderRadius: '12px', backgroundColor: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
                     <div>
                       <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                        Configured PWA App Name
+                        {t('settings.configuredPwaAppName', 'Configured PWA App Name')}
                       </div>
                       <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                        Current display name: <strong>{customPwaName || 'AgriBiz'}</strong>
+                        {t('settings.currentDisplayName', 'Current display name:')} <strong>{customPwaName || 'AgriBiz'}</strong>
                       </div>
                     </div>
                     <button
@@ -2385,7 +2385,7 @@ export const Settings: React.FC = () => {
                       style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '10px', fontSize: '13px', fontWeight: 600 }}
                     >
                       <Download size={15} />
-                      <span>{isPwaInstalled ? 'Reconfigure / Install App' : 'Install App'}</span>
+                      <span>{isPwaInstalled ? t('settings.reconfigureInstallApp', 'Reconfigure / Install App') : t('pwa.installApp', 'Install App')}</span>
                     </button>
                   </div>
                 </div>
@@ -2398,8 +2398,8 @@ export const Settings: React.FC = () => {
                     <Eye size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Print preferences</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Customize visibility elements on printed A5 invoices</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.printPreferences', 'Print preferences')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.customizePrintVisibility', 'Customize visibility elements on printed A5 invoices')}</p>
                   </div>
                 </div>
 
@@ -2407,48 +2407,48 @@ export const Settings: React.FC = () => {
                   <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={showLogo} onChange={(e) => setShowLogo(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show Company Logo</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Displays branding logo on A5 invoice & print templates</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.showCompanyLogo', 'Show Company Logo')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.showLogoSubtext', 'Displays branding logo on A5 invoice & print templates')}</div>
                     </div>
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={showGstin} onChange={(e) => setShowGstin(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show GSTIN (GST Number)</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prints your GSTIN number on document receipts</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.showGstin', 'Show GSTIN (GST Number)')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.showGstinSubtext', 'Prints your GSTIN number on document receipts')}</div>
                     </div>
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={showAddress} onChange={(e) => setShowAddress(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show Business Address</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prints physical address details under headers</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.showBusinessAddress', 'Show Business Address')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.showAddressSubtext', 'Prints physical address details under headers')}</div>
                     </div>
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={showContact} onChange={(e) => setShowContact(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show Contact Information</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prints phone numbers, emails, and website fields</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.showContactInfo', 'Show Contact Information')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.showContactSubtext', 'Prints phone numbers, emails, and website fields')}</div>
                     </div>
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={showBankDetails} onChange={(e) => setShowBankDetails(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show Banking Details</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prints Bank Name, Account, IFSC, and UPI details</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.showBankingDetails', 'Show Banking Details')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.showBankSubtext', 'Prints Bank Name, Account, IFSC, and UPI details')}</div>
                     </div>
                   </label>
 
                   <label style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}>
                     <input type="checkbox" checked={showTerms} onChange={(e) => setShowTerms(e.target.checked)} style={{ width: '18px', height: '18px', cursor: 'pointer' }} />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Show Terms & Conditions</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Prints default terms on invoice footer segments</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.showTermsAndConditions', 'Show Terms & Conditions')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.showTermsSubtext', 'Prints default terms on invoice footer segments')}</div>
                     </div>
                   </label>
                 </div>
@@ -2461,8 +2461,8 @@ export const Settings: React.FC = () => {
                     <Eye size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Dashboard Alert Settings</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Toggle low stock and safety limit warnings</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.dashboardAlertSettings', 'Dashboard Alert Settings')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.toggleStockWarnings', 'Toggle low stock and safety limit warnings')}</p>
                   </div>
                 </div>
 
@@ -2475,8 +2475,8 @@ export const Settings: React.FC = () => {
                       style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
                     />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Below Safety Limit Warning</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Displays an alert when products fall below their minimum safety stock level</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.belowSafetyLimitWarning', 'Below Safety Limit Warning')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.belowSafetyLimitSubtext', 'Displays an alert when products fall below their minimum safety stock level')}</div>
                     </div>
                   </label>
 
@@ -2488,8 +2488,8 @@ export const Settings: React.FC = () => {
                       style={{ width: '18px', height: '18px', cursor: 'pointer' }} 
                     />
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>Completely Out of Stock Warning</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Displays an alert when products reach a stock count of zero</div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>{t('settings.outOfStockWarning', 'Completely Out of Stock Warning')}</div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.outOfStockSubtext', 'Displays an alert when products reach a stock count of zero')}</div>
                     </div>
                   </label>
                 </div>
@@ -2502,14 +2502,14 @@ export const Settings: React.FC = () => {
                     <Sliders size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Format Preferences</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Configure system date and local currency formats</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.formatPreferences', 'Format Preferences')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.configureDateFormat', 'Configure system date and local currency formats')}</p>
                   </div>
                 </div>
 
                 <div className="form-grid-2" style={{ marginTop: '16px' }}>
                   <div className="form-group">
-                    <label className="form-label">Local Currency Symbol</label>
+                    <label className="form-label">{t('settings.localCurrencySymbol', 'Local Currency Symbol')}</label>
                     <select 
                       className="form-control" 
                       value={currencySymbol} 
@@ -2524,7 +2524,7 @@ export const Settings: React.FC = () => {
                   </div>
 
                   <div className="form-group">
-                    <label className="form-label">System Date Format</label>
+                    <label className="form-label">{t('settings.systemDateFormat', 'System Date Format')}</label>
                     <select 
                       className="form-control" 
                       value={dateFormat} 
@@ -2546,18 +2546,18 @@ export const Settings: React.FC = () => {
                     <Smartphone size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Remembered Device & Security</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Manage device authentication memory and session revocation</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.rememberedDeviceSecurity', 'Remembered Device & Security')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.manageDeviceMemory', 'Manage device authentication memory and session revocation')}</p>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
                   <div style={{ flex: 1, minWidth: '240px' }}>
                     <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px' }}>
-                      Device Session Status: <span style={{ color: '#10b981', fontWeight: 800 }}>Remembered</span>
+                      {t('settings.deviceSessionStatus', 'Device Session Status:')} <span style={{ color: '#10b981', fontWeight: 800 }}>{t('settings.remembered', 'Remembered')}</span>
                     </div>
                     <div style={{ fontSize: '12px', color: 'var(--text-muted)', lineHeight: 1.4 }}>
-                      This device is currently recognized. Subsequent logins require only 4-digit PIN authentication. Clicking <strong>Forget This Device</strong> will remove remembered credentials and require full Mobile Number + Password verification on the next login.
+                      {t('settings.rememberedHelpText', 'This device is currently recognized. Subsequent logins require only 4-digit PIN authentication. Clicking Forget This Device will remove remembered credentials and require full Mobile Number + Password verification on the next login.')}
                     </div>
                   </div>
 
@@ -2566,7 +2566,7 @@ export const Settings: React.FC = () => {
                     className="btn btn-secondary"
                     onClick={async () => {
                       await forgetDevice();
-                      showToast('Device forgotten — mobile & password required next time', 'info');
+                      showToast(t('auth.deviceForgottenInfo', 'Device forgotten — mobile & password required next time'), 'info');
                     }}
                     style={{
                       borderRadius: '10px',
@@ -2581,7 +2581,7 @@ export const Settings: React.FC = () => {
                       gap: '8px',
                     }}
                   >
-                    <Smartphone size={15} /> Forget This Device
+                    <Smartphone size={15} /> {t('auth.forgetDevice', 'Forget This Device')}
                   </button>
                 </div>
               </div>
@@ -2593,13 +2593,13 @@ export const Settings: React.FC = () => {
                     <RefreshCw size={18} />
                   </div>
                   <div>
-                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-danger)', margin: 0 }}>Database Maintenance</h3>
-                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>Perform database reset and factory default operations</p>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--color-danger)', margin: 0 }}>{t('settings.databaseMaintenance', 'Database Maintenance')}</h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('settings.performDatabaseReset', 'Perform database reset and factory default operations')}</p>
                   </div>
                 </div>
                 <div style={{ marginTop: '16px' }}>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '16px' }}>
-                    Wipe out all local operational modifications (new invoices, custom stock rates) and restore to initial database seeding.
+                    {t('settings.databaseResetWarning', 'Wipe out all local operational modifications (new invoices, custom stock rates) and restore to initial database seeding.')}
                   </p>
                   <button
                     type="button"
@@ -2608,7 +2608,7 @@ export const Settings: React.FC = () => {
                     onClick={handleReset}
                   >
                     <RefreshCw size={16} />
-                    <span>Reset Store Database</span>
+                    <span>{t('settings.resetStoreDatabase', 'Reset Store Database')}</span>
                   </button>
                 </div>
               </div>
@@ -2621,9 +2621,9 @@ export const Settings: React.FC = () => {
               {currentUser?.role !== 'Owner' ? (
                 <div className="card" style={{ padding: '32px 24px', textAlign: 'center', backgroundColor: 'rgba(239, 68, 68, 0.04)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: '16px' }}>
                   <ShieldAlert size={42} style={{ color: 'var(--color-danger)', margin: '0 auto 14px auto' }} />
-                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>Restricted Access</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>{t('settings.restrictedAccess', 'Restricted Access')}</h3>
                   <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '8px', maxWidth: '440px', marginLeft: 'auto', marginRight: 'auto' }}>
-                    Staff & Employee Management is restricted exclusively to the Business Owner. Please contact your administrator for permission updates.
+                    {t('settings.restrictedAccessNotice', 'Staff & Employee Management is restricted exclusively to the Business Owner. Please contact your administrator for permission updates.')}
                   </p>
                 </div>
               ) : (
@@ -2632,10 +2632,10 @@ export const Settings: React.FC = () => {
                   <div className="card staff-header-card" style={{ padding: '20px 24px', borderRadius: '16px' }}>
                     <div>
                       <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        Staff & Roles Management
+                        {t('settings.staffManagementTitle', 'Staff & Roles Management')}
                       </h3>
                       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>
-                        Control team access permissions, role assignments, and account security
+                        {t('settings.staffManagementSub', 'Control team access permissions, role assignments, and account security')}
                       </p>
                     </div>
 
@@ -2643,10 +2643,10 @@ export const Settings: React.FC = () => {
                       {/* Metric Badges */}
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)', border: '1px solid var(--border-color)' }}>
-                          Total: {usersList.length}
+                          {t('settings.totalCount', 'Total:')} {usersList.length}
                         </span>
                         <span style={{ fontSize: '12px', fontWeight: 700, padding: '4px 10px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.12)', color: 'var(--primary)' }}>
-                          Active: {usersList.filter((u) => u.status === 'Active').length}
+                          {t('settings.activeCount', 'Active:')} {usersList.filter((u) => u.status === 'Active').length}
                         </span>
                       </div>
 
@@ -2666,7 +2666,7 @@ export const Settings: React.FC = () => {
                         }}
                         style={{ borderRadius: '10px', padding: '9px 18px', fontWeight: 700, boxShadow: '0 4px 12px rgba(16, 185, 129, 0.2)' }}
                       >
-                        <UserPlus size={16} /> Add Staff Member
+                        <UserPlus size={16} /> {t('settings.addStaffMember', 'Add Staff Member')}
                       </button>
                     </div>
                   </div>
@@ -2678,7 +2678,7 @@ export const Settings: React.FC = () => {
                       <input
                         type="text"
                         className="form-control"
-                        placeholder="Search staff by name or mobile number..."
+                        placeholder={t('settings.searchStaffPlaceholder', 'Search staff by name or mobile number...')}
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
                         style={{ paddingLeft: '36px', height: '40px', borderRadius: '10px', fontSize: '13px', width: '100%' }}
@@ -2692,10 +2692,10 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setUserRoleFilter(e.target.value as any)}
                         style={{ height: '40px', borderRadius: '10px', fontSize: '13px' }}
                       >
-                        <option value="All">All Roles</option>
-                        <option value="Owner">Owner</option>
-                        <option value="Accounts">Accounts</option>
-                        <option value="Cashier">Cashier</option>
+                        <option value="All">{t('settings.allRoles', 'All Roles')}</option>
+                        <option value="Owner">{t('nav.owner', 'Owner')}</option>
+                        <option value="Accounts">{t('settings.roleAccounts', 'Accounts')}</option>
+                        <option value="Cashier">{t('settings.roleCashier', 'Cashier')}</option>
                       </select>
 
                       <select
@@ -2704,9 +2704,9 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setUserStatusFilter(e.target.value as any)}
                         style={{ height: '40px', borderRadius: '10px', fontSize: '13px' }}
                       >
-                        <option value="All">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Disabled</option>
+                        <option value="All">{t('settings.allStatuses', 'All Statuses')}</option>
+                        <option value="Active">{t('settings.statusActive', 'Active')}</option>
+                        <option value="Inactive">{t('settings.statusDisabled', 'Disabled')}</option>
                       </select>
                     </div>
                   </div>
@@ -2722,7 +2722,7 @@ export const Settings: React.FC = () => {
                             <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.systemRole", "System Role")}</th>
                             <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.accountStatus", "Account Status")}</th>
                             <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t("settings.lastLogin", "Last Login")}</th>
-                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>Actions</th>
+                            <th style={{ padding: '14px 20px', fontSize: '11px', fontWeight: 800, textTransform: 'uppercase', color: 'var(--text-muted)', textAlign: 'center' }}>{t('common.actions', 'Actions')}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2768,16 +2768,16 @@ export const Settings: React.FC = () => {
                                 <td style={{ padding: '16px 20px', textAlign: 'center' }}>
                                   {u.status === 'Inactive' ? (
                                     <span className="badge badge-danger" style={{ fontSize: '11px', padding: '3px 8px' }}>
-                                      Disabled
+                                      {t('settings.statusDisabled', 'Disabled')}
                                     </span>
                                   ) : (
                                     <span className="badge badge-success" style={{ fontSize: '11px', padding: '3px 8px' }}>
-                                      Active
+                                      {t('settings.statusActive', 'Active')}
                                     </span>
                                   )}
                                 </td>
                                 <td style={{ padding: '16px 20px', fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center' }}>
-                                  {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : 'Never'}
+                                  {u.lastLogin ? new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) : t('settings.never', 'Never')}
                                 </td>
                                 <td style={{ padding: '16px 20px', textAlign: 'center' }}>
                                   <div style={{ display: 'inline-flex', gap: '6px', justifyContent: 'center' }}>
@@ -2797,7 +2797,7 @@ export const Settings: React.FC = () => {
                                         setIsAddUserModalOpen(true);
                                       }}
                                     >
-                                      <Edit2 size={13} /> Edit
+                                      <Edit2 size={13} /> {t('common.edit', 'Edit')}
                                     </button>
                                     <button
                                       type="button"
@@ -2808,7 +2808,7 @@ export const Settings: React.FC = () => {
                                       style={{ opacity: u.role === 'Owner' ? 0.5 : 1, cursor: u.role === 'Owner' ? 'not-allowed' : 'pointer' }}
                                     >
                                       {u.status === 'Active' ? <UserX size={13} /> : <UserCheck size={13} />}
-                                      {u.status === 'Active' ? 'Disable' : 'Enable'}
+                                      {u.status === 'Active' ? t('settings.disable', 'Disable') : t('settings.enable', 'Enable')}
                                     </button>
                                     <button
                                       type="button"
@@ -2820,7 +2820,7 @@ export const Settings: React.FC = () => {
                                         setNewResetPin('');
                                       }}
                                     >
-                                      <KeyRound size={13} /> Reset
+                                      <KeyRound size={13} /> {t('settings.reset', 'Reset')}
                                     </button>
                                   </div>
                                 </td>
@@ -2860,11 +2860,11 @@ export const Settings: React.FC = () => {
                             </div>
                             {u.status === 'Inactive' ? (
                               <span className="badge badge-danger" style={{ fontSize: '11px', flexShrink: 0 }}>
-                                Disabled
+                                {t('settings.statusDisabled', 'Disabled')}
                               </span>
                             ) : (
                               <span className="badge badge-success" style={{ fontSize: '11px', flexShrink: 0 }}>
-                                Active
+                                {t('settings.statusActive', 'Active')}
                               </span>
                             )}
                           </div>
@@ -2872,7 +2872,7 @@ export const Settings: React.FC = () => {
                           {/* Meta Row: Role & Last Login */}
                           <div className="staff-mobile-meta-row">
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Role:</span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>{t('settings.roleLabel', 'Role:')}</span>
                               <span style={{
                                 fontSize: '11px', fontWeight: 800, padding: '2px 8px', borderRadius: '8px',
                                 backgroundColor: u.role === 'Owner' ? 'rgba(16, 185, 129, 0.15)' : u.role === 'Accounts' ? 'rgba(99, 102, 241, 0.15)' : 'rgba(245, 158, 11, 0.15)',
@@ -2883,7 +2883,7 @@ export const Settings: React.FC = () => {
                             </div>
                             {u.lastLogin && (
                               <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
-                                Last login: {new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                                {t('settings.lastLoginLabel', 'Last login:')} {new Date(u.lastLogin).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
                               </span>
                             )}
                           </div>
@@ -2905,7 +2905,7 @@ export const Settings: React.FC = () => {
                                 setIsAddUserModalOpen(true);
                               }}
                             >
-                              <Edit2 size={12} /> Edit
+                              <Edit2 size={12} /> {t('common.edit', 'Edit')}
                             </button>
 
                             <button
@@ -2916,7 +2916,7 @@ export const Settings: React.FC = () => {
                               style={{ opacity: u.role === 'Owner' ? 0.5 : 1, cursor: u.role === 'Owner' ? 'not-allowed' : 'pointer' }}
                             >
                               {u.status === 'Active' ? <UserX size={12} /> : <UserCheck size={12} />}
-                              {u.status === 'Active' ? 'Disable' : 'Enable'}
+                              {u.status === 'Active' ? t('settings.disable', 'Disable') : t('settings.enable', 'Enable')}
                             </button>
 
                             <button
@@ -2928,7 +2928,7 @@ export const Settings: React.FC = () => {
                                 setNewResetPin('');
                               }}
                             >
-                              <KeyRound size={12} /> Reset
+                              <KeyRound size={12} /> {t('settings.reset', 'Reset')}
                             </button>
                           </div>
                         </div>

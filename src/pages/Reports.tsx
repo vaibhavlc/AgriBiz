@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { translateCategory } from '../utils/statusTranslation';
+import { translateCategory, translateStatus, translatePaymentMethod } from '../utils/statusTranslation';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import { useApp } from '../context/AppContext';
@@ -682,7 +682,7 @@ export const Reports: React.FC = () => {
   };
 
   const handleExportGstr3B = () => {
-    const headers = ['GSTR-3B Table Section', 'Nature of Supplies / Credit', 'Total Taxable Value (₹)', 'Integrated Tax (₹)', 'Central Tax (₹)', 'State/UT Tax (₹)', 'Cess (₹)'];
+    const headers = ['GSTR-3B Table Section', 'Nature of Supplies / Credit', 'Total {t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}', '{t("reports.gstr3b.integratedTaxRs", "Integrated Tax (₹)")}', '{t("reports.gstr3b.centralTaxRs", "Central Tax (₹)")}', '{t("reports.gstr3b.stateUtTaxRs", "State/UT Tax (₹)")}', '{t("reports.gstr3b.cessRs", "Cess (₹)")}'];
     const rows = [
       ['Table 3.1(a)', 'Outward Taxable Supplies (other than zero rated, nil rated and exempted)', gstr3BData.outward.taxable.toFixed(2), gstr3BData.outward.igst.toFixed(2), gstr3BData.outward.cgst.toFixed(2), gstr3BData.outward.sgst.toFixed(2), '0.00'],
       ['Table 3.1(d)', 'Inward Supplies Liable to Reverse Charge', '0.00', '0.00', '0.00', '0.00', '0.00'],
@@ -959,7 +959,7 @@ export const Reports: React.FC = () => {
         inv.grandTotal.toFixed(2),
         inv.paymentStatus
       ]);
-      rows.push(['Report Summary Total', '', '', totalSalesBase.toFixed(2), totalSalesTax.toFixed(2), totalSalesVal.toFixed(2), '']);
+      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', totalSalesBase.toFixed(2), totalSalesTax.toFixed(2), totalSalesVal.toFixed(2), '']);
     } else if (activeReport === 'purchase') {
       headers = ['Bill Number', 'Supplier Name', 'Receipt Date', 'Base Cost (INR)', 'Tax Paid (INR)', 'Total Cost (INR)', 'Status'];
       rows = filteredPurchases.map(pur => [
@@ -971,7 +971,7 @@ export const Reports: React.FC = () => {
         pur.grandTotal.toFixed(2),
         pur.paymentStatus
       ]);
-      rows.push(['Report Summary Total', '', '', totalPurchasesBase.toFixed(2), totalPurchasesTax.toFixed(2), totalPurchasesVal.toFixed(2), '']);
+      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', totalPurchasesBase.toFixed(2), totalPurchasesTax.toFixed(2), totalPurchasesVal.toFixed(2), '']);
     } else if (activeReport === 'profit') {
       headers = ['Invoice No', 'Date', 'Customer', 'Taxable Sales (INR)', 'Cost Price (INR)', 'Net Profit (INR)', 'Margin (%)'];
       rows = filteredInvoices.map(inv => {
@@ -991,7 +991,7 @@ export const Reports: React.FC = () => {
           `${invMargin.toFixed(1)}%`
         ];
       });
-      rows.push(['Report Summary Total', '', '', totalSalesBase.toFixed(2), coGS.toFixed(2), grossProfit.toFixed(2), `${profitMarginPercent.toFixed(1)}%`]);
+      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', totalSalesBase.toFixed(2), coGS.toFixed(2), grossProfit.toFixed(2), `${profitMarginPercent.toFixed(1)}%`]);
     } else if (activeReport === 'stock') {
       headers = ['SKU Code', 'Product Name', 'Category', 'Available Qty', 'Cost Price (INR)', 'Asset Valuation (INR)', 'Retail Rate (INR)', 'Retail Valuation (INR)'];
       rows = products.map(p => [
@@ -1006,10 +1006,10 @@ export const Reports: React.FC = () => {
       ]);
       rows.push(['Stock Summary Total', '', '', totalStockQty.toString(), '', totalAssetVal.toFixed(2), '', totalRetailVal.toFixed(2)]);
     } else if (activeReport === 'gst') {
-      headers = ['Transaction Type', 'Document Count', 'Goods Value (INR)', 'Central GST (CGST) (INR)', 'State GST (SGST) (INR)', 'Total Tax Liability (INR)'];
+      headers = ['Transaction Type', 'Document Count', 'Goods Value (INR)', 'Central GST (CGST) (INR)', 'State GST (SGST) (INR)', '{t("reports.purchase.totalTax", "Total Tax")} Liability (INR)'];
       rows = [
-        ['Outward Supply (Sales Invoices)', filteredInvoices.length.toString(), totalSalesBase.toFixed(2), totalCGSTCollected.toFixed(2), totalSGSTCollected.toFixed(2), totalSalesTax.toFixed(2)],
-        ['Inward Supply (Supplier Bills)', filteredPurchases.length.toString(), totalPurchasesBase.toFixed(2), totalCGSTPaid.toFixed(2), totalSGSTPaid.toFixed(2), totalPurchasesTax.toFixed(2)],
+        ['{t("reports.gst.outwardSupplySales", "Outward Supply (Sales Invoices)")}', filteredInvoices.length.toString(), totalSalesBase.toFixed(2), totalCGSTCollected.toFixed(2), totalSGSTCollected.toFixed(2), totalSalesTax.toFixed(2)],
+        ['{t("reports.gst.inwardSupplyBills", "Inward Supply (Supplier Bills)")}', filteredPurchases.length.toString(), totalPurchasesBase.toFixed(2), totalCGSTPaid.toFixed(2), totalSGSTPaid.toFixed(2), totalPurchasesTax.toFixed(2)],
         ['Net Payable Tax Dues', '', (totalSalesBase - totalPurchasesBase).toFixed(2), (totalCGSTCollected - totalCGSTPaid).toFixed(2), (totalSGSTCollected - totalSGSTPaid).toFixed(2), netGSTDue.toFixed(2)]
       ];
     } else if (activeReport === 'custLedger') {
@@ -1047,7 +1047,7 @@ export const Reports: React.FC = () => {
         exp.status === 'Due' ? '—' : (exp.referenceNumber || '—'),
         exp.notes || '—'
       ]);
-      rows.push(['Report Summary Total', '', '', '', totalExpenses.toFixed(2), '', '', '', '']);
+      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', '', totalExpenses.toFixed(2), '', '', '', '']);
     }
 
     downloadCSVFile(headers, rows, filename);
@@ -1193,28 +1193,28 @@ export const Reports: React.FC = () => {
         {/* KPI Cards */}
         <div style={kpiGridStyle}>
           <KpiCard
-            label="Total Taxable Sales"
+            label={t("reports.gstr3b.totalTaxableSales", "Total Taxable Sales")}
             value={formatINR(gstr3BData.outward.taxable)}
             subtext="Outward taxable supplies"
             icon={<FileText size={20} />}
             variant="success"
           />
           <KpiCard
-            label="Total GST Liability"
+            label={t("reports.gstr3b.totalGstLiability", "Total GST Liability")}
             value={formatINR(outwardTaxTotal)}
             subtext="CGST + SGST + IGST"
             icon={<Percent size={20} />}
             variant="danger"
           />
           <KpiCard
-            label="Eligible ITC"
+            label={t("reports.gstr3b.eligibleItcCard", "Eligible ITC")}
             value={formatINR(itcTotal)}
             subtext="Input Tax Credit available"
             icon={<TrendingDown size={20} />}
             variant="info"
           />
           <KpiCard
-            label="Net GST Payable"
+            label={t("reports.gstr3b.netGstPayableCard", "Net GST Payable")}
             value={formatINR(netGstPayable)}
             subtext={remainingItc > 0 ? `₹${remainingItc.toFixed(0)} carry forward` : 'Cash payment due'}
             icon={<Briefcase size={20} />}
@@ -1233,7 +1233,7 @@ export const Reports: React.FC = () => {
             <>
               <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309' }}>Reconciliation Warning</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309' }}>{t("reports.gstr3b.reconciliationWarning", "Reconciliation Warning")}</div>
                 <div style={{ fontSize: '12px', color: '#b45309' }}>
                   Discrepancy of {formatINR(gstDiff)} found between Sales Invoice Register ({formatINR(totalSalesTax)}) and Outward Tax ({formatINR(outwardTaxTotal)}). Please verify your tax configurations.
                 </div>
@@ -1243,8 +1243,8 @@ export const Reports: React.FC = () => {
             <>
               <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>Ledger Reconciled</div>
-                <div style={{ fontSize: '12px', color: '#15803d' }}>Outward tax matches Sales Invoice Register perfectly. No discrepancy found.</div>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: '#15803d' }}>{t("reports.gstr3b.ledgerReconciled", "Ledger Reconciled")}</div>
+                <div style={{ fontSize: '12px', color: '#15803d' }}>{t("reports.gstr3b.reconciledDesc", "Outward tax matches Sales Invoice Register perfectly. No discrepancy found.")}</div>
               </div>
             </>
           )}
@@ -1282,7 +1282,7 @@ export const Reports: React.FC = () => {
                 </thead>
                 <tbody>
                   <tr>
-                    <td>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
+                    <td>{t("reports.gstr3b.sec31a", "(a) Outward taxable supplies (other than zero rated, nil rated and exempted)")}</td>
                     <td className="align-right">{formatINR(gstr3BData.outward.taxable)}</td>
                     <td className="align-right">{formatINR(gstr3BData.outward.igst)}</td>
                     <td className="align-right">{formatINR(gstr3BData.outward.cgst)}</td>
@@ -1290,7 +1290,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>(b) Outward taxable supplies (Zero Rated)</td>
+                    <td>{t("reports.gstr3b.sec31b", "(b) Outward taxable supplies (Zero Rated)")}</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1298,7 +1298,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>(c) Other Outward Supplies (Nil Rated / Exempted)</td>
+                    <td>{t("reports.gstr3b.sec31c", "(c) Other Outward Supplies (Nil Rated / Exempted)")}</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1306,7 +1306,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>(d) Inward Supplies liable to Reverse Charge</td>
+                    <td>{t("reports.gstr3b.sec31d", "(d) Inward Supplies liable to Reverse Charge)")}</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1314,7 +1314,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td>(e) Non GST Outward Supplies</td>
+                    <td>{t("reports.gstr3b.sec31e", "(e) Non GST Outward Supplies)")}</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1350,7 +1350,7 @@ export const Reports: React.FC = () => {
                 <thead>
                   <tr>
                     <th className="text-nowrap">{t("reports.recipientType", "Recipient Type")}</th>
-                    <th className="text-nowrap align-right">{t("reports.totalTaxableValue", "Total Taxable Value")}</th>
+                    <th className="text-nowrap align-right">t("reports.taxableValue", "Taxable Value")</th>
                     <th className="text-nowrap align-right">{t("reports.integratedTaxIgst", "Integrated Tax (IGST)")}</th>
                   </tr>
                 </thead>
@@ -1435,14 +1435,14 @@ export const Reports: React.FC = () => {
                     <td className="align-right">₹0.00</td>
                   </tr>
                   <tr>
-                    <td style={{ paddingLeft: '16px', fontWeight: 600 }}>All other ITC – Registered purchases (4A.5)</td>
+                    <td style={{ paddingLeft: '16px', fontWeight: 600 }}>{t("reports.gstr3b.allOtherItc", "All other ITC – Registered purchases (4A.5)")}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)' }}>{formatINR(gstr3BData.itc.igst)}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)' }}>{formatINR(gstr3BData.itc.cgst)}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)' }}>{formatINR(gstr3BData.itc.sgst)}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)', fontWeight: 700 }}>{formatINR(gstr3BData.itc.igst + gstr3BData.itc.cgst + gstr3BData.itc.sgst)}</td>
                   </tr>
                   <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-secondary, #f9fafb)' }}>
-                    <td>Net ITC Available (A – B)</td>
+                    <td>{t("reports.gstr3b.netItcAvailable", "Net ITC Available (A – B)")}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)' }}>{formatINR(gstr3BData.itc.igst)}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)' }}>{formatINR(gstr3BData.itc.cgst)}</td>
                     <td className="align-right" style={{ color: 'var(--color-success-dark)' }}>{formatINR(gstr3BData.itc.sgst)}</td>
@@ -1494,7 +1494,7 @@ export const Reports: React.FC = () => {
                     <td className="align-right" style={{ color: sgstCashPaid > 0 ? 'var(--color-danger-dark)' : 'inherit' }}>{formatINR(sgstCashPaid)}</td>
                   </tr>
                   <tr>
-                    <td>Cess</td>
+                    <td>{t("reports.cess", "Cess")}</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
                     <td className="align-right">₹0.00</td>
@@ -1642,57 +1642,57 @@ export const Reports: React.FC = () => {
           {/* SUMMARY SECTION */}
           <div className="gstr3b-summary-grid">
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Total Taxable Sales</div>
+            <div className="gstr3b-summary-card-label">t("reports.taxableValue", "Taxable Value")</div>
             <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.outward.taxable)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Total GST Liability</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.totalGstLiability", "Total GST Liability")}</div>
             <div className="gstr3b-summary-card-value" style={{ color: '#be3144' }}>{formatINR(outwardTaxTotal)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Eligible ITC</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.eligibleItc", "Eligible ITC")}</div>
             <div className="gstr3b-summary-card-value" style={{ color: '#10b981' }}>{formatINR(itcTotal)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Net GST Payable</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.netGstPayable", "Net GST Payable")}</div>
             <div className="gstr3b-summary-card-value" style={{ color: netGstPayable > 0 ? '#be3144' : '#1a2e1d' }}>{formatINR(netGstPayable)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Remaining ITC</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.remainingItc", "Remaining ITC")}</div>
             <div className="gstr3b-summary-card-value" style={{ color: '#10b981' }}>{formatINR(remainingItc)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Total Purchase Value</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.totalPurchaseValue", "Total Purchase Value")}</div>
             <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.itc.taxable)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Total Sales Value</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.totalSalesValue", "Total Sales Value")}</div>
             <div className="gstr3b-summary-card-value">{formatINR(gstr3BData.outward.taxable + outwardTaxTotal)}</div>
           </div>
           <div className="gstr3b-summary-card">
-            <div className="gstr3b-summary-card-label">Total GST Collected</div>
+            <div className="gstr3b-summary-card-label">{t("reports.gstr3b.totalGstCollected", "Total GST Collected")}</div>
             <div className="gstr3b-summary-card-value">{formatINR(totalSalesTax)}</div>
           </div>
         </div>
 
         {/* TABLE 3.1 */}
         <div className="gstr3b-print-section">
-          <div className="gstr3b-section-title">Table 3.1: Details of Outward Supplies and Inward Supplies Liable to Reverse Charge</div>
+          <div className="gstr3b-section-title">{t("reports.gstr3b.table31PrintTitle", "Table 3.1: Details of Outward Supplies and Inward Supplies Liable to Reverse Charge")}</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
               <thead>
                 <tr>
                   <th style={{ width: '40%' }}>{t("reports.natureOfSupplies", "Nature of Supplies")}</th>
-                  <th style={{ textAlign: 'right' }}>Taxable Value (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Integrated Tax (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Central Tax (₹)</th>
-                  <th style={{ textAlign: 'right' }}>State/UT Tax (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Cess (₹)</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.integratedTaxRs", "Integrated Tax (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.centralTaxRs", "Central Tax (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.stateUtTaxRs", "State/UT Tax (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.cessRs", "Cess (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>(a) Outward taxable supplies (other than zero rated, nil rated and exempted)</td>
+                  <td>{t("reports.gstr3b.sec31a", "(a) Outward taxable supplies (other than zero rated, nil rated and exempted)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.taxable).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.igst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.outward.cgst).replace('₹', '')}</td>
@@ -1700,7 +1700,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>(b) Outward taxable supplies (Zero Rated)</td>
+                  <td>{t("reports.gstr3b.sec31b", "(b) Outward taxable supplies (Zero Rated)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1708,7 +1708,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>(c) Other Outward Supplies (Nil Rated / Exempted)</td>
+                  <td>{t("reports.gstr3b.sec31c", "(c) Other Outward Supplies (Nil Rated / Exempted)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1716,7 +1716,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>(d) Inward Supplies liable to Reverse Charge</td>
+                  <td>{t("reports.gstr3b.sec31d", "(d) Inward Supplies liable to Reverse Charge)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1724,7 +1724,7 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>(e) Non GST Outward Supplies</td>
+                  <td>{t("reports.gstr3b.sec31e", "(e) Non GST Outward Supplies)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
@@ -1746,36 +1746,36 @@ export const Reports: React.FC = () => {
 
         {/* TABLE 3.2 */}
         <div className="gstr3b-print-section">
-          <div className="gstr3b-section-title">Table 3.2: Details of Inter-State Supplies Made To (Unregistered/Composition/UIN)</div>
+          <div className="gstr3b-section-title">{t("reports.gstr3b.table32PrintTitle", "Table 3.2: Details of Inter-State Supplies Made To (Unregistered/Composition/UIN)")}</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
               <thead>
                 <tr>
-                  <th style={{ width: '50%' }}>Place of Supply (Recipient State Type)</th>
-                  <th style={{ textAlign: 'right' }}>Total Taxable Value (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Integrated Tax (₹)</th>
+                  <th style={{ width: '50%' }}>{t("reports.gstr3b.posRecipientStateType", "Place of Supply (Recipient State Type)")}</th>
+                  <th style={{ textAlign: 'right' }}>Total {t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.integratedTaxRs", "Integrated Tax (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 {hasInterstateSupplies ? (
                   <>
                     <tr>
-                      <td>Supplies made to Unregistered Persons</td>
+                      <td>{t("reports.gstr3b.suppliesUnregistered", "Supplies made to Unregistered Persons")}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredTaxable).replace('₹', '')}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredIGST).replace('₹', '')}</td>
                     </tr>
                     <tr>
-                      <td>Supplies made to Composition Taxable Persons</td>
+                      <td>{t("reports.gstr3b.suppliesComposition", "Supplies made to Composition Taxable Persons")}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                     </tr>
                     <tr>
-                      <td>Supplies made to UIN Holders</td>
+                      <td>{t("reports.gstr3b.suppliesUinHolders", "Supplies made to UIN Holders")}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                     </tr>
                     <tr className="total-row">
-                      <td>Total Interstate Supplies (Table 3.2)</td>
+                      <td>{t("reports.gstr3b.totalInterstateSuppliesTable32", "Total Interstate Supplies (Table 3.2)")}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredTaxable).replace('₹', '')}</td>
                       <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(interstateUnregisteredIGST).replace('₹', '')}</td>
                     </tr>
@@ -1783,7 +1783,7 @@ export const Reports: React.FC = () => {
                 ) : (
                   <tr>
                     <td colSpan={3} style={{ textAlign: 'center', color: '#5d6b5e', padding: '12px', fontStyle: 'italic' }}>
-                      No Interstate Supplies
+                      {t("reports.gstr3b.noInterstateSupplies", "No Interstate Supplies")}
                     </td>
                   </tr>
                 )}
@@ -1804,76 +1804,76 @@ export const Reports: React.FC = () => {
 
           {/* TABLE 4 */}
           <div className="gstr3b-print-section">
-          <div className="gstr3b-section-title">Table 4: Eligible Input Tax Credit (ITC) Details</div>
+          <div className="gstr3b-section-title">{t("reports.gstr3b.table4PrintTitle", "Table 4: Eligible Input Tax Credit (ITC) Details")}</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
               <thead>
                 <tr>
                   <th style={{ width: '40%' }}>{t("reports.detailsOfItc", "Details of Input Tax Credit (ITC)")}</th>
-                  <th style={{ textAlign: 'right' }}>Integrated Tax (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Central Tax (₹)</th>
-                  <th style={{ textAlign: 'right' }}>State/UT Tax (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Cess (₹)</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.integratedTaxRs", "Integrated Tax (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.centralTaxRs", "Central Tax (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.stateUtTaxRs", "State/UT Tax (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.cessRs", "Cess (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style={{ backgroundColor: '#fafbfa', fontWeight: 'bold' }}>
-                  <td colSpan={5} style={{ textTransform: 'uppercase', fontSize: '9px', color: '#2f3e33' }}>(A) ITC Available (whether in full or part)</td>
+                  <td colSpan={5} style={{ textTransform: 'uppercase', fontSize: '9px', color: '#2f3e33' }}>{t("reports.gstr3b.itcAvailableHeader", "(A) ITC Available (whether in full or part)")}</td>
                 </tr>
                 <tr>
-                  <td style={{ paddingLeft: '16px' }}>1. Import of goods</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
-                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
-                </tr>
-                <tr>
-                  <td style={{ paddingLeft: '16px' }}>2. Import of services</td>
+                  <td style={{ paddingLeft: '16px' }}>{t("reports.gstr3b.importGoods", "1. Import of goods")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td style={{ paddingLeft: '16px' }}>3. Inward supplies liable to reverse charge (other than 1 & 2 above)</td>
+                  <td style={{ paddingLeft: '16px' }}>{t("reports.gstr3b.importServices", "2. Import of services")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td style={{ paddingLeft: '16px' }}>4. Inward supplies from ISD</td>
+                  <td style={{ paddingLeft: '16px' }}>{t("reports.gstr3b.inwardReverseCharge", "3. Inward supplies liable to reverse charge (other than 1 & 2 above)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td style={{ paddingLeft: '16px', fontWeight: 600 }}>5. All other ITC (Registered purchases)</td>
+                  <td style={{ paddingLeft: '16px' }}>{t("reports.gstr3b.inwardIsd", "4. Inward supplies from ISD")}</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                  <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
+                </tr>
+                <tr>
+                  <td style={{ paddingLeft: '16px', fontWeight: 600 }}>{t("reports.gstr3b.allOtherItcPrint", "5. All other ITC (Registered purchases)")}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontWeight: 600, fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr style={{ backgroundColor: '#fafbfa', fontWeight: 'bold' }}>
-                  <td colSpan={5} style={{ textTransform: 'uppercase', fontSize: '9px', color: '#2f3e33' }}>(B) ITC Reversed</td>
+                  <td colSpan={5} style={{ textTransform: 'uppercase', fontSize: '9px', color: '#2f3e33' }}>{t("reports.gstr3b.itcReversedHeader", "(B) ITC Reversed")}</td>
                 </tr>
                 <tr>
-                  <td style={{ paddingLeft: '16px' }}>1. As per rules 42 & 43 of CGST Rules</td>
+                  <td style={{ paddingLeft: '16px' }}>{t("reports.gstr3b.rules4243", "1. As per rules 42 & 43 of CGST Rules")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td style={{ paddingLeft: '16px' }}>2. Others</td>
+                  <td style={{ paddingLeft: '16px' }}>{t("reports.gstr3b.others", "2. Others")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr className="total-row">
-                  <td>(C) Net ITC Available (A - B)</td>
+                  <td>{t("reports.gstr3b.netItcAvailablePrint", "(C) Net ITC Available (A - B)")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.igst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.cgst).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(gstr3BData.itc.sgst).replace('₹', '')}</td>
@@ -1886,24 +1886,24 @@ export const Reports: React.FC = () => {
 
         {/* TABLE 5 */}
         <div className="gstr3b-print-section">
-          <div className="gstr3b-section-title">Table 5: Values of Exempt, Nil Rated and Non GST Inward Supplies</div>
+          <div className="gstr3b-section-title">{t("reports.gstr3b.table5PrintTitle", "Table 5: Values of Exempt, Nil Rated and Non GST Inward Supplies")}</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
               <thead>
                 <tr>
                   <th style={{ width: '50%' }}>{t("reports.natureOfInwardSupplies", "Nature of Inward Supplies")}</th>
-                  <th style={{ textAlign: 'right' }}>Inter-State Supplies (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Intra-State Supplies (₹)</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.interStateSuppliesRs", "Inter-State Supplies (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.intraStateSuppliesRs", "Intra-State Supplies (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td>From a supplier under composition scheme, Exempt and Nil rated inward supplies</td>
+                  <td>{t("reports.gstr3b.compositionExemptInward", "From a supplier under composition scheme, Exempt and Nil rated inward supplies")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr>
-                  <td>Non GST inward supplies</td>
+                  <td>{t("reports.gstr3b.nonGstInward", "Non GST inward supplies")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
@@ -1914,16 +1914,16 @@ export const Reports: React.FC = () => {
 
         {/* TAX PAYMENT SUMMARY */}
         <div className="gstr3b-print-section">
-          <div className="gstr3b-section-title">Tax Payment and Settlement Ledger</div>
+          <div className="gstr3b-section-title">{t("reports.gstr3b.taxPaymentLedgerTitle", "Tax Payment and Settlement Ledger")}</div>
           <div className="gstr3b-table-scroll-wrapper">
             <table className="gstr3b-ca-table">
               <thead>
                 <tr>
                   <th>{t("reports.taxComponent", "Tax Component")}</th>
-                  <th style={{ textAlign: 'right' }}>Tax Liability (₹)</th>
-                  <th style={{ textAlign: 'right' }}>ITC Utilized (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Paid in Cash (₹)</th>
-                  <th style={{ textAlign: 'right' }}>Balance Credit (₹)</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.taxLiabilityRs", "Tax Liability (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.itcUtilizedRs", "ITC Utilized (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.paidInCashRs", "Paid in Cash (₹)")}</th>
+                  <th style={{ textAlign: 'right' }}>{t("reports.gstr3b.balanceCreditRs", "Balance Credit (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1949,14 +1949,14 @@ export const Reports: React.FC = () => {
                   <td style={{ textAlign: 'right', fontFamily: 'monospace', color: '#10b981' }}>{formatINR(sgstRemainingCredit).replace('₹', '')}</td>
                 </tr>
                 <tr>
-                  <td style={{ fontWeight: 600 }}>Cess</td>
+                  <td style={{ fontWeight: 600 }}>{t("reports.gstr3b.cess", "Cess")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>0.00</td>
                 </tr>
                 <tr className="total-row">
-                  <td>Total Settlement Summary</td>
+                  <td>{t("reports.totalSettlementSummary", "Total Settlement Summary")}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalLiability).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalItcUtilized).replace('₹', '')}</td>
                   <td style={{ textAlign: 'right', fontFamily: 'monospace' }}>{formatINR(totalCashPaid).replace('₹', '')}</td>
@@ -1979,7 +1979,7 @@ export const Reports: React.FC = () => {
 
           {/* GST RECONCILIATION SUMMARY */}
           <div className="gstr3b-print-section">
-          <div className="gstr3b-section-title">GST Reconciliation Audit Summary</div>
+          <div className="gstr3b-section-title">{t("reports.gstr3b.reconciliationAuditTitle", "GST Reconciliation Audit Summary")}</div>
           <div className="gstr3b-reconciliation-container">
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px', fontSize: '12px' }}>
               <div>
@@ -2024,7 +2024,7 @@ export const Reports: React.FC = () => {
                 <>
                   <CheckCircle2 size={18} style={{ color: '#16a34a', flexShrink: 0 }} />
                   <span style={{ fontSize: '11px', color: '#15803d', fontWeight: 600 }}>
-                    Ledger Reconciled Perfectly: Outward tax matches Sales Invoice Register perfectly. No discrepancy found.
+                    {t("reports.gstr3b.ledgerReconciled", "Ledger Reconciled")} Perfectly: {t("reports.gstr3b.reconciledDesc", "Outward tax matches Sales Invoice Register perfectly. No discrepancy found.")}
                   </span>
                 </>
               )}
@@ -2035,7 +2035,7 @@ export const Reports: React.FC = () => {
 
 
         <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '9px', color: '#5d6b5e', borderTop: '1px dashed #e2e9e0', paddingTop: '16px' }}>
-          <div>System Generated Report • AgriBiz Financial Modules</div>
+          <div>{t("reports.systemGeneratedFooter", "System Generated Report • AgriBiz Financial Modules")}</div>
           <div style={{ marginTop: '4px', fontStyle: 'italic', maxWidth: '600px', margin: '4px auto 0 auto' }}>
             Disclaimer: This report is generated from accounting entries and is intended for GST reconciliation and Chartered Accountant working purposes. It is not a substitute for the official GSTR-3B return filed on the GST Portal.
           </div>
@@ -2054,28 +2054,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Sales Invoices Count"
+                label={t("reports.sales.invoicesCountCard", "Sales Invoices Count")}
                 value={filteredInvoices.length}
                 subtext="Tax bills generated"
                 icon={<BookOpen size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Total Taxable Sales"
+                label={t("reports.sales.totalTaxableSales", "Total Taxable Sales")}
                 value={formatINR(totalSalesBase)}
                 subtext="Excludes GST tax"
                 icon={<DollarSign size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Total GST Collected"
+                label={t("reports.sales.totalGstCollectedCard", "Total GST Collected")}
                 value={formatINR(totalSalesTax)}
                 subtext="GST tax liability"
                 icon={<Percent size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Total Invoice Value"
+                label={t("reports.sales.totalInvoiceValueCard", "Total Invoice Value")}
                 value={formatINR(totalSalesVal)}
                 subtext="Inclusive of GST"
                 icon={<TrendingUp size={20} />}
@@ -2102,11 +2102,11 @@ export const Reports: React.FC = () => {
                       <tr>
                         <th>{t("sales.invoiceNo", "Invoice No")}</th>
                         <th>{t("sales.customerName", "Customer Name")}</th>
-                        <th>Date</th>
-                        <th style={{ textAlign: 'right' }}>Taxable Amt (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Tax collected (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Grand Total (₹)</th>
-                        <th>Status</th>
+                        <th>{t("reports.date", "Date")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.sales.taxableAmtRs", "Taxable Amt (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.sales.taxCollectedRs", "Tax collected (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.sales.grandTotalRs", "Grand Total (₹)")}</th>
+                        <th>{t("reports.custLedger.status", "Status")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2126,7 +2126,7 @@ export const Reports: React.FC = () => {
                         </tr>
                       ))}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={3}>Report Summary Total:</td>
+                        <td colSpan={3}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalSalesVal).replace('₹', '')}</td>
@@ -2151,36 +2151,36 @@ export const Reports: React.FC = () => {
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Date</span>
+                      <span className="mobile-list-card-label">{t("common.date", "Date")}</span>
                       <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Taxable Amt</span>
+                      <span className="mobile-list-card-label">{t("reports.sales.taxableAmt", "Taxable Amt")}</span>
                       <span className="mobile-list-card-val">{formatINR(inv.subtotal - inv.discountTotal)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Tax Collected</span>
+                      <span className="mobile-list-card-label">{t("reports.sales.taxCollected", "Tax Collected")}</span>
                       <span className="mobile-list-card-val">{formatINR(inv.gstTotal)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Grand Total</span>
+                      <span className="mobile-list-card-label">{t("sales.grandTotal", "Grand Total")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(inv.grandTotal)}</span>
                     </div>
                   </div>
                 ))}
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>{t("reports.summaryTotal", "Report Summary Total")}</div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Taxable</span>
+                    <span className="mobile-list-card-label">t("reports.taxableValue", "Taxable Value")</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesBase)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Tax</span>
+                    <span className="mobile-list-card-label">{t("reports.purchase.totalTax", "Total Tax")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesTax)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Value</span>
+                    <span className="mobile-list-card-label">{t("reports.sales.totalValue", "Total Value")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)', fontSize: '15px' }}>{formatINR(totalSalesVal)}</span>
                   </div>
                 </div>
@@ -2194,28 +2194,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Bills logged"
+                label={t("reports.purchase.billsLoggedCard", "Bills logged")}
                 value={filteredPurchases.length}
                 subtext="Supplier inward vouchers"
                 icon={<BookOpen size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Total Base Purchases"
+                label={t("reports.purchase.totalBasePurchasesCard", "Total Base Purchases")}
                 value={formatINR(totalPurchasesBase)}
                 subtext="Taxable raw cost"
                 icon={<DollarSign size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Total GST Paid"
+                label={t("reports.purchase.totalGstPaidCard", "Total GST Paid")}
                 value={formatINR(totalPurchasesTax)}
                 subtext="Input tax credit"
                 icon={<Percent size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Total Outward Cost"
+                label={t("reports.purchase.totalOutwardCostCard", "Total Outward Cost")}
                 value={formatINR(totalPurchasesVal)}
                 subtext="Inclusive of GST"
                 icon={<TrendingDown size={20} />}
@@ -2243,10 +2243,10 @@ export const Reports: React.FC = () => {
                         <th>{t("purchases.billNumber", "Bill Number")}</th>
                         <th>{t("purchases.supplierName", "Supplier Name")}</th>
                         <th>{t("reports.receiptDate", "Receipt Date")}</th>
-                        <th style={{ textAlign: 'right' }}>Base Cost (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Tax paid (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Total Cost (₹)</th>
-                        <th>Status</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.purchase.baseCostRs", "Base Cost (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.purchase.taxPaidRs", "Tax paid (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.purchase.totalCostRs", "Total Cost (₹)")}</th>
+                        <th>{t("reports.custLedger.status", "Status")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2266,7 +2266,7 @@ export const Reports: React.FC = () => {
                         </tr>
                       ))}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={3}>Report Summary Total:</td>
+                        <td colSpan={3}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesVal).replace('₹', '')}</td>
@@ -2291,36 +2291,36 @@ export const Reports: React.FC = () => {
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Receipt Date</span>
+                      <span className="mobile-list-card-label">{t("reports.receiptDate", "Receipt Date")}</span>
                       <span className="mobile-list-card-val">{formatDate(pur.date)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Base Cost</span>
+                      <span className="mobile-list-card-label">{t("reports.purchase.baseCost", "Base Cost")}</span>
                       <span className="mobile-list-card-val">{formatINR(pur.subtotal)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Tax Paid</span>
+                      <span className="mobile-list-card-label">{t("reports.purchase.taxPaid", "Tax Paid")}</span>
                       <span className="mobile-list-card-val">{formatINR(pur.gstTotal)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Total Cost</span>
+                      <span className="mobile-list-card-label">{t("reports.purchase.totalCost", "Total Cost")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(pur.grandTotal)}</span>
                     </div>
                   </div>
                 ))}
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info)', background: 'var(--bg-app)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>{t("reports.summaryTotal", "Report Summary Total")}</div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Base</span>
+                    <span className="mobile-list-card-label">{t("reports.purchase.totalBase", "Total Base")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalPurchasesBase)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Tax</span>
+                    <span className="mobile-list-card-label">{t("reports.purchase.totalTax", "Total Tax")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalPurchasesTax)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Cost</span>
+                    <span className="mobile-list-card-label">{t("reports.totalCost", "Total Cost")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)', fontSize: '15px' }}>{formatINR(totalPurchasesVal)}</span>
                   </div>
                 </div>
@@ -2334,28 +2334,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Total Expenses Spends"
+                label={t("reports.expense.totalExpensesSpendsCard", "Total Expenses Spends")}
                 value={formatINR(totalExpenses)}
                 subtext="Cumulative operational spends"
                 icon={<TrendingDown size={20} />}
                 variant="danger"
               />
               <KpiCard
-                label="Settled / Paid Expenses"
+                label={t("reports.expense.settledPaidExpensesCard", "Settled / Paid Expenses")}
                 value={formatINR(totalPaidExpensesVal)}
                 subtext="Fully paid invoices"
                 icon={<TrendingUp size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Outstanding / Due Dues"
+                label={t("reports.expense.outstandingDueDuesCard", "Outstanding / Due Dues")}
                 value={formatINR(totalDueExpensesVal)}
                 subtext="Unsettled accounts due"
                 icon={<DollarSign size={20} />}
                 variant="warning"
               />
               <KpiCard
-                label="Top Category"
+                label={t("reports.expense.topCategoryCard", "Top Category")}
                 value={topExpenseCategory.name}
                 subtext={`Total: ${formatINR(topExpenseCategory.amount)}`}
                 icon={<Layers size={20} />}
@@ -2379,15 +2379,15 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Voucher ID</th>
-                        <th>Category</th>
-                        <th>Payee (Paid To)</th>
-                        <th style={{ textAlign: 'right' }}>Amount (₹)</th>
-                        <th>Status</th>
-                        <th>Method</th>
-                        <th>Ref Number</th>
-                        <th>Notes</th>
+                        <th>{t("reports.date", "Date")}</th>
+                        <th>{t("reports.expense.voucherId", "Voucher ID")}</th>
+                        <th>{t("reports.stock.category", "Category")}</th>
+                        <th>{t("reports.expense.payeePaidTo", "Payee (Paid To)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.expense.amountRs", "Amount (₹)")}</th>
+                        <th>{t("reports.custLedger.status", "Status")}</th>
+                        <th>{t("reports.expense.method", "Method")}</th>
+                        <th>{t("reports.expense.refNumber", "Ref Number")}</th>
+                        <th>{t("reports.expense.notes", "Notes")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2396,7 +2396,7 @@ export const Reports: React.FC = () => {
                           <td>{formatDate(exp.date)}</td>
                           <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{exp.id}</td>
                           <td style={{ fontWeight: 700 }}>{translateCategory(t, exp.category)}</td>
-                          <td>{exp.payee || 'General'}</td>
+                          <td>{exp.payee || t("categories.general", "General")}</td>
                           <td style={{ textAlign: 'right', fontWeight: 800, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>{formatINR(exp.amount)}</td>
                           <td>
                             <span className="badge" style={{
@@ -2408,16 +2408,16 @@ export const Reports: React.FC = () => {
                               color: exp.status === 'Due' ? '#D97706' : 'var(--primary)',
                               border: exp.status === 'Due' ? '1px solid rgba(217, 119, 6, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)'
                             }}>
-                              {exp.status || 'Paid'}
+                              {translateStatus(t, exp.status || 'Paid')}
                             </span>
                           </td>
-                          <td>{exp.status === 'Due' ? '—' : exp.paymentMethod}</td>
+                          <td>{exp.status === 'Due' ? '—' : translatePaymentMethod(t, exp.paymentMethod)}</td>
                           <td style={{ fontFamily: 'monospace' }}>{exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}</td>
                           <td style={{ fontStyle: 'italic', maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exp.notes || '—'}</td>
                         </tr>
                       ))}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={4}>Report Summary Total:</td>
+                        <td colSpan={4}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                         <td style={{ textAlign: 'right', color: 'var(--color-danger-dark)' }}>{formatINR(totalExpenses).replace('₹', '')}</td>
                         <td colSpan={4}></td>
                       </tr>
@@ -2448,30 +2448,30 @@ export const Reports: React.FC = () => {
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Payee</span>
-                      <span className="mobile-list-card-val">{exp.payee || 'General'}</span>
+                      <span className="mobile-list-card-label">{t("reports.expense.payeeLabel", "Payee")}</span>
+                      <span className="mobile-list-card-val">{exp.payee || t("categories.general", "General")}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Amount</span>
+                      <span className="mobile-list-card-label">{t("common.amount", "Amount")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700, color: exp.status === 'Due' ? '#D97706' : 'var(--color-danger-dark)' }}>{formatINR(exp.amount)}</span>
                     </div>
                     {exp.status !== 'Due' && (
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Method</span>
-                        <span className="mobile-list-card-val">{exp.paymentMethod}</span>
+                        <span className="mobile-list-card-label">{t("reports.expense.method", "Method")}</span>
+                        <span className="mobile-list-card-val">{translatePaymentMethod(t, exp.paymentMethod)}</span>
                       </div>
                     )}
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Remarks</span>
+                      <span className="mobile-list-card-label">{t("reports.expense.remarks", "Remarks")}</span>
                       <span className="mobile-list-card-val" style={{ fontStyle: 'italic' }}>{exp.notes || '—'}</span>
                     </div>
                   </div>
                 ))}
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info)', background: 'var(--bg-app)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>{t("reports.summaryTotal", "Report Summary Total")}</div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Expense</span>
+                    <span className="mobile-list-card-label">{t("reports.expense.totalExpense", "Total Expense")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger-dark)', fontSize: '15px' }}>{formatINR(totalExpenses)}</span>
                   </div>
                 </div>
@@ -2485,28 +2485,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Sales Revenue (Taxable)"
+                label={t("reports.profit.salesRevenueTaxable", "Sales Revenue (Taxable)")}
                 value={formatINR(totalSalesBase)}
                 subtext="Goods value dispatched"
                 icon={<TrendingUp size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Cost of Goods Sold (COGS)"
+                label={t("reports.profit.cogsLabel", "Cost of Goods Sold (COGS)")}
                 value={formatINR(coGS)}
                 subtext="Original inventory purchase cost"
                 icon={<TrendingDown size={20} />}
                 variant="danger"
               />
               <KpiCard
-                label="Operational Expenses"
+                label={t("reports.profit.operationalExpensesLabel", "Operational Expenses")}
                 value={formatINR(totalExpenses)}
                 subtext="Rent, utility bills, salary, etc."
                 icon={<TrendingDown size={20} />}
                 variant="danger"
               />
               <KpiCard
-                label="Net Profit (Loss)"
+                label={t("reports.profit.netProfitLossLabel", "Net Profit (Loss)")}
                 value={formatINR(netProfit)}
                 subtext={`Margin percentage: ${profitMarginPercent.toFixed(1)}%`}
                 icon={<Percent size={20} />}
@@ -2515,7 +2515,7 @@ export const Reports: React.FC = () => {
             </div>
 
             <div className="card" style={{ padding: '20px', border: '1px solid var(--border-color)', boxShadow: 'none' }}>
-              <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>Sales Profit Breakdown by Invoices</h4>
+              <h4 style={{ fontWeight: 700, marginBottom: '14px' }}>{t("reports.profit.tableTitle", "Sales Profit Breakdown by Invoices")}</h4>
               {/* Desktop View */}
               <div className="desktop-only-table">
                 <div className="table-wrapper">
@@ -2523,12 +2523,12 @@ export const Reports: React.FC = () => {
                     <thead>
                       <tr>
                         <th>{t("sales.invoiceNo", "Invoice No")}</th>
-                        <th>Date</th>
-                        <th>Customer</th>
-                        <th style={{ textAlign: 'right' }}>Taxable Sales (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Net Profit (₹)</th>
-                        <th style={{ textAlign: 'center' }}>Margin (%)</th>
+                        <th>{t("reports.date", "Date")}</th>
+                        <th>{t("reports.profit.customer", "Customer")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.profit.taxableSalesRs", "Taxable Sales (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.profit.costPriceRs", "Cost Price (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.profit.netProfitRs", "Net Profit (₹)")}</th>
+                        <th style={{ textAlign: 'center' }}>{t("reports.profit.marginPercent", "Margin (%)")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2555,7 +2555,7 @@ export const Reports: React.FC = () => {
                         );
                       })}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={3}>Report Summary Total:</td>
+                        <td colSpan={3}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                         <td style={{ textAlign: 'right' }}>{formatINR(coGS).replace('₹', '')}</td>
                         <td style={{ textAlign: 'right', color: 'var(--primary-dark)' }}>{formatINR(grossProfit).replace('₹', '')}</td>
@@ -2583,22 +2583,22 @@ export const Reports: React.FC = () => {
                           <h4 className="mobile-list-card-title">{inv.invoiceNumber}</h4>
                           <span className="mobile-list-card-subtitle">{inv.customerName}</span>
                         </div>
-                        <span className="badge" style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>{invMargin.toFixed(1)}% Margin</span>
+                        <span className="badge" style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)', color: 'var(--text-primary)' }}>{t("reports.profit.marginBadge", "{{margin}}% Margin", { margin: invMargin.toFixed(1) })}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Date</span>
+                        <span className="mobile-list-card-label">{t("reports.date", "Date")}</span>
                         <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Taxable Sales</span>
+                        <span className="mobile-list-card-label">{t("reports.profit.taxableSales", "Taxable Sales")}</span>
                         <span className="mobile-list-card-val">{formatINR(inv.subtotal)}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Cost Price</span>
+                        <span className="mobile-list-card-label">{t("reports.profit.costPrice", "Cost Price")}</span>
                         <span className="mobile-list-card-val">{formatINR(invoiceCOGS)}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Net Profit</span>
+                        <span className="mobile-list-card-label">{t("reports.profit.netProfit", "Net Profit")}</span>
                         <span className="mobile-list-card-val" style={{ fontWeight: 700, color: invProfit >= 0 ? 'var(--color-success-dark)' : 'var(--color-danger-dark)' }}>{formatINR(invProfit)}</span>
                       </div>
                     </div>
@@ -2606,21 +2606,21 @@ export const Reports: React.FC = () => {
                 })}
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Report Summary Total</div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>{t("reports.summaryTotal", "Report Summary Total")}</div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Sales</span>
+                    <span className="mobile-list-card-label">{t("reports.profit.totalSales", "Total Sales")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(totalSalesBase)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Cost</span>
+                    <span className="mobile-list-card-label">{t("reports.totalCost", "Total Cost")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{formatINR(coGS)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Profit</span>
+                    <span className="mobile-list-card-label">{t("reports.profit.totalProfit", "Total Profit")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)', fontSize: '15px' }}>{formatINR(grossProfit)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Average Margin</span>
+                    <span className="mobile-list-card-label">{t("reports.profit.averageMargin", "Average Margin")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800 }}>{profitMarginPercent.toFixed(1)}%</span>
                   </div>
                 </div>
@@ -2634,28 +2634,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Total Stock Quantity"
+                label={t("reports.stock.totalStockQty", "Total Stock Quantity")}
                 value={`${totalStockQty} items`}
                 subtext="Available in warehouse"
                 icon={<Layers size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Stock Valuation (Asset Cost)"
+                label={t("reports.stock.stockValuationAssetCost", "Stock Valuation (Asset Cost)")}
                 value={formatINR(totalAssetVal)}
                 subtext="Valued at base purchase price"
                 icon={<DollarSign size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Potential Value (Retail)"
+                label={t("reports.stock.potentialValueRetail", "Potential Value (Retail)")}
                 value={formatINR(totalRetailVal)}
                 subtext="Valued at sales retail price"
                 icon={<TrendingUp size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Potential Markup Margin"
+                label={t("reports.stock.potentialMarkupMargin", "Potential Markup Margin")}
                 value={formatINR(totalRetailVal - totalAssetVal)}
                 subtext="Valued at sales markup profit"
                 icon={<Briefcase size={20} />}
@@ -2680,14 +2680,14 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>SKU Code</th>
-                        <th>Product Name</th>
-                        <th>Category</th>
-                        <th style={{ textAlign: 'center' }}>Available Qty</th>
-                        <th style={{ textAlign: 'right' }}>Cost Price (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Asset Valuation (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Retail Rate (₹)</th>
-                        <th style={{ textAlign: 'right' }}>Retail Valuation (₹)</th>
+                        <th>{t("reports.stock.skuCode", "SKU Code")}</th>
+                        <th>{t("reports.stock.productName", "Product Name")}</th>
+                        <th>{t("reports.stock.category", "Category")}</th>
+                        <th style={{ textAlign: 'center' }}>{t("reports.stock.availableQty", "Available Qty")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.profit.costPriceRs", "Cost Price (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.stock.assetValuationRs", "Asset Valuation (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.stock.retailRateRs", "Retail Rate (₹)")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.stock.retailValuationRs", "Retail Valuation (₹)")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -2698,7 +2698,7 @@ export const Reports: React.FC = () => {
                           <tr key={p.id}>
                             <td style={{ fontFamily: 'monospace' }}>{p.sku}</td>
                             <td style={{ fontWeight: 600 }}>{p.name}</td>
-                            <td>{p.category}</td>
+                            <td>{translateCategory(t, p.category)}</td>
                             <td style={{ textAlign: 'center', fontWeight: 700 }}>{p.stock}</td>
                             <td style={{ textAlign: 'right' }}>{formatINR(p.purchasePrice).replace('₹', '')}</td>
                             <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(itemAssetVal).replace('₹', '')}</td>
@@ -2708,7 +2708,7 @@ export const Reports: React.FC = () => {
                         );
                       })}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={3}>Stock Summary Total:</td>
+                        <td colSpan={3}>{t("reports.stock.stockSummaryTotalColon", "Stock Summary Total:")}</td>
                         <td style={{ textAlign: 'center' }}>{totalStockQty}</td>
                         <td></td>
                         <td style={{ textAlign: 'right' }}>{formatINR(totalAssetVal).replace('₹', '')}</td>
@@ -2730,20 +2730,20 @@ export const Reports: React.FC = () => {
                       <div className="mobile-list-card-header">
                         <div>
                           <h4 className="mobile-list-card-title">{p.name}</h4>
-                          <span className="mobile-list-card-subtitle">{p.category} • SKU: {p.sku}</span>
+                          <span className="mobile-list-card-subtitle">{translateCategory(t, p.category)} • SKU: {p.sku}</span>
                         </div>
-                        <span className="badge badge-info" style={{ fontWeight: 700 }}>{p.stock} Units</span>
+                        <span className="badge badge-info" style={{ fontWeight: 700 }}>{t("reports.stock.unitsBadge", "{{count}} Units", { count: p.stock })}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Cost / Retail Rate</span>
+                        <span className="mobile-list-card-label">{t("reports.stock.costRetailRate", "Cost / Retail Rate")}</span>
                         <span className="mobile-list-card-val">{formatINR(p.purchasePrice)} / {formatINR(p.sellingPrice)}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Asset Valuation</span>
+                        <span className="mobile-list-card-label">{t("reports.stock.assetValuation", "Asset Valuation")}</span>
                         <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(itemAssetVal)}</span>
                       </div>
                       <div className="mobile-list-card-row">
-                        <span className="mobile-list-card-label">Retail Valuation</span>
+                        <span className="mobile-list-card-label">{t("reports.stock.retailValuation", "Retail Valuation")}</span>
                         <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(itemRetailVal)}</span>
                       </div>
                     </div>
@@ -2751,17 +2751,17 @@ export const Reports: React.FC = () => {
                 })}
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--primary-dark)', background: 'var(--bg-app)' }}>
-                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Stock Summary Total</div>
+                  <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>{t("reports.stock.stockSummaryTotal", "Stock Summary Total")}</div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Qty</span>
-                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{totalStockQty} items</span>
+                    <span className="mobile-list-card-label">{t("reports.stock.totalQtyLabel", "Total Qty")}</span>
+                    <span className="mobile-list-card-val" style={{ fontWeight: 700 }}>{t("reports.stock.itemsValue", "{{count}} items", { count: totalStockQty })}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Asset Value</span>
+                    <span className="mobile-list-card-label">{t("reports.stock.totalAssetValue", "Total Asset Value")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--primary-dark)' }}>{formatINR(totalAssetVal)}</span>
                   </div>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label">Total Retail Value</span>
+                    <span className="mobile-list-card-label">{t("reports.stock.totalRetailValue", "Total Retail Value")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800 }}>{formatINR(totalRetailVal)}</span>
                   </div>
                 </div>
@@ -2776,28 +2776,28 @@ export const Reports: React.FC = () => {
             {/* GST Summary metrics */}
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Gross Taxable Turnover"
+                label={t("reports.gst.grossTaxableTurnover", "Gross Taxable Turnover")}
                 value={formatINR(totalSalesBase)}
                 subtext="Excluding tax value"
                 icon={<DollarSign size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Output GST (Collected)"
+                label={t("reports.gst.outputGstCollectedLabel", "Output GST (Collected)")}
                 value={formatINR(totalSalesTax)}
                 subtext={`CGST: ${formatINR(totalCGSTCollected)} | SGST: ${formatINR(totalSGSTCollected)}`}
                 icon={<TrendingUp size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="Input GST (ITC Paid)"
+                label={t("reports.gst.inputGstItcPaidLabel", "Input GST (ITC Paid)")}
                 value={formatINR(totalPurchasesTax)}
                 subtext={`CGST: ${formatINR(totalCGSTPaid)} | SGST: ${formatINR(totalSGSTPaid)}`}
                 icon={<TrendingDown size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Net GST Liability"
+                label={t("reports.gst.netGstLiability", "Net GST Liability")}
                 value={formatINR(netGSTDue)}
                 subtext={netGSTDue >= 0 ? 'Cash Payable to Govt' : 'Carry Forward Credit'}
                 icon={<Percent size={20} />}
@@ -2821,17 +2821,17 @@ export const Reports: React.FC = () => {
                     <table className="data-table">
                       <thead>
                         <tr>
-                          <th>Transaction Type</th>
-                          <th>Document Count</th>
-                          <th style={{ textAlign: 'right' }}>Goods Value (Base cost)</th>
-                          <th style={{ textAlign: 'right' }}>Central GST (CGST)</th>
-                          <th style={{ textAlign: 'right' }}>State GST (SGST)</th>
-                          <th style={{ textAlign: 'right' }}>Total Tax Liability (₹)</th>
+                          <th>{t("reports.gst.transactionType", "Transaction Type")}</th>
+                          <th>{t("reports.gst.documentCount", "Document Count")}</th>
+                          <th style={{ textAlign: 'right' }}>{t("reports.gst.goodsValueBase", "Goods Value (Base cost)")}</th>
+                          <th style={{ textAlign: 'right' }}>{t("reports.gst.cgstHeader", "Central GST (CGST)")}</th>
+                          <th style={{ textAlign: 'right' }}>{t("reports.gst.sgstHeader", "State GST (SGST)")}</th>
+                          <th style={{ textAlign: 'right' }}>Total {t("reports.gstr3b.taxLiabilityRs", "Tax Liability (₹)")}</th>
                         </tr>
                       </thead>
                       <tbody>
                         <tr>
-                          <td style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>Outward Supply (Sales Invoices)</td>
+                          <td style={{ fontWeight: 600, color: 'var(--color-success-dark)' }}>{t("reports.gst.outwardSupplyInvoices", "Outward Supply (Sales Invoices)")}</td>
                           <td>{filteredInvoices.length}</td>
                           <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                           <td style={{ textAlign: 'right' }}>{formatINR(totalCGSTCollected).replace('₹', '')}</td>
@@ -2841,7 +2841,7 @@ export const Reports: React.FC = () => {
                           </td>
                         </tr>
                         <tr style={{ borderBottom: '2px solid var(--border-color)' }}>
-                          <td style={{ fontWeight: 600, color: 'var(--color-info-dark)' }}>Inward Supply (Supplier Bills)</td>
+                          <td style={{ fontWeight: 600, color: 'var(--color-info-dark)' }}>{t("reports.gst.inwardSupplyBills", "Inward Supply (Supplier Bills)")}</td>
                           <td>{filteredPurchases.length}</td>
                           <td style={{ textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
                           <td style={{ textAlign: 'right' }}>{formatINR(totalCGSTPaid).replace('₹', '')}</td>
@@ -2851,7 +2851,7 @@ export const Reports: React.FC = () => {
                           </td>
                         </tr>
                         <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                          <td colSpan={2}>Net Payable Tax Dues:</td>
+                          <td colSpan={2}>{t("reports.gst.netPayableDues", "Net Payable Tax Dues:")}</td>
                           <td style={{ textAlign: 'right' }}>{formatINR(totalSalesBase - totalPurchasesBase).replace('₹', '')}</td>
                           <td style={{ textAlign: 'right' , color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
                             {formatINR(totalCGSTCollected - totalCGSTPaid).replace('₹', '')}
@@ -2871,69 +2871,69 @@ export const Reports: React.FC = () => {
                 {/* Mobile View */}
                 <div className="mobile-card-list">
                   <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-success-dark)' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-success-dark)' }}>Outward Supply (Sales)</div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-success-dark)' }}>{t("reports.gst.outwardSupplyHeader", "Outward Supply (Sales)")}</div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Document Count</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.documentCount", "Document Count")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{filteredInvoices.length}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Goods Value (Base)</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.goodsValueBaseLabel", "Goods Value (Base)")}</span>
                       <span className="mobile-list-card-val">{formatINR(totalSalesBase)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">CGST collected</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.cgstCollected", "CGST collected")}</span>
                       <span className="mobile-list-card-val">{formatINR(totalCGSTCollected)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">SGST collected</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.sgstCollected", "SGST collected")}</span>
                       <span className="mobile-list-card-val">{formatINR(totalSGSTCollected)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Total Output GST</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.totalOutputGst", "Total Output GST")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700, color: 'var(--color-success-dark)' }}>{formatINR(totalSalesTax)}</span>
                     </div>
                   </div>
 
                   <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-info-dark)' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-info-dark)' }}>Inward Supply (Purchases)</div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--color-info-dark)' }}>{t("reports.gst.inwardSupplyHeader", "Inward Supply (Purchases)")}</div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Document Count</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.documentCount", "Document Count")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{filteredPurchases.length}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Goods Value (Base)</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.goodsValueBaseLabel", "Goods Value (Base)")}</span>
                       <span className="mobile-list-card-val">{formatINR(totalPurchasesBase)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">CGST Paid</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.cgstPaid", "CGST Paid")}</span>
                       <span className="mobile-list-card-val">{formatINR(totalCGSTPaid)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">SGST Paid</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.sgstPaid", "SGST Paid")}</span>
                       <span className="mobile-list-card-val">{formatINR(totalSGSTPaid)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Total Input ITC</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.totalInputItc", "Total Input ITC")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700, color: 'var(--color-info-dark)' }}>{formatINR(totalPurchasesTax)}</span>
                     </div>
                   </div>
 
                   <div className="mobile-list-card" style={{ borderLeftColor: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', background: 'var(--bg-app)' }}>
-                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>Net Payable Tax Dues</div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', marginBottom: '8px', color: 'var(--text-primary)' }}>{t("reports.gst.netPayableDuesNoColon", "Net Payable Tax Dues")}</div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Net Goods Difference</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.netGoodsDiff", "Net Goods Difference")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 600 }}>{formatINR(totalSalesBase - totalPurchasesBase)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Net CGST</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.netCgst", "Net CGST")}</span>
                       <span className="mobile-list-card-val" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>{formatINR(totalCGSTCollected - totalCGSTPaid)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Net SGST</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.netSgst", "Net SGST")}</span>
                       <span className="mobile-list-card-val" style={{ color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>{formatINR(totalSGSTCollected - totalSGSTPaid)}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Net Liability</span>
+                      <span className="mobile-list-card-label">{t("reports.gst.netLiability", "Net Liability")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 800, color: netGSTDue >= 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', fontSize: '15px' }}>{formatINR(netGSTDue)}</span>
                     </div>
                   </div>
@@ -2947,28 +2947,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Registered Customers"
+                label={t("reports.custLedger.registeredCustomers", "Registered Customers")}
                 value={totalCustomers}
                 subtext="Active accounts"
                 icon={<Users size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Accounts with Dues"
+                label={t("reports.custLedger.accountsWithDues", "Accounts with Dues")}
                 value={`${customersWithDues} accounts`}
                 subtext="Customers owing payments"
                 icon={<Users size={20} />}
                 variant="warning"
               />
               <KpiCard
-                label="Total Outstanding Dues"
+                label={t("reports.custLedger.totalOutstandingDues", "Total Outstanding Dues")}
                 value={formatINR(pendingReceivables)}
                 subtext="Collectable assets"
                 icon={<TrendingUp size={20} />}
                 variant="danger"
               />
               <KpiCard
-                label="Average Outstanding"
+                label={t("reports.custLedger.averageOutstanding", "Average Outstanding")}
                 value={formatINR(averageReceivable)}
                 subtext="Per active customer account"
                 icon={<DollarSign size={20} />}
@@ -2993,12 +2993,12 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Customer ID</th>
+                        <th>{t("reports.custLedger.customerId", "Customer ID")}</th>
                         <th>{t("sales.customerName", "Customer Name")}</th>
-                        <th>Phone Number</th>
-                        <th>GSTIN Identification</th>
-                        <th style={{ textAlign: 'right' }}>Outstanding Balance (₹)</th>
-                        <th>Status</th>
+                        <th>{t("reports.custLedger.phoneNumber", "Phone Number")}</th>
+                        <th>{t("reports.custLedger.gstinIdentification", "GSTIN Identification")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.custLedger.outstandingBalanceRs", "Outstanding Balance (₹)")}</th>
+                        <th>{t("reports.custLedger.status", "Status")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3019,13 +3019,13 @@ export const Reports: React.FC = () => {
                           </td>
                           <td>
                             <span className={`badge ${c.outstanding === 0 ? 'badge-success' : c.outstanding > 0 ? 'badge-warning' : 'badge-info'}`}>
-                              {c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'}
+                              {c.outstanding === 0 ? t('status.settled', 'Settled') : c.outstanding > 0 ? t('status.duesPending', 'Dues Pending') : t('status.advanceCredit', 'Advance Credit')}
                             </span>
                           </td>
                         </tr>
                       ))}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={4}>Accumulated Customer Dues:</td>
+                        <td colSpan={4}>{t("reports.custLedger.accumulatedDuesTotal", "Accumulated Customer Dues:")}</td>
                         <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
                           {formatINR(pendingReceivables)}
                         </td>
@@ -3050,11 +3050,11 @@ export const Reports: React.FC = () => {
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">GSTIN</span>
+                      <span className="mobile-list-card-label">{t("reports.print.gstin", "GSTIN")}</span>
                       <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{c.gstin || '—'}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Outstanding Balance</span>
+                      <span className="mobile-list-card-label">{t("reports.custLedger.outstandingBalance", "Outstanding Balance")}</span>
                       <span className="mobile-list-card-val" style={{
                         fontWeight: 700,
                         color: c.outstanding > 0 ? 'var(--color-danger)' : c.outstanding < 0 ? 'var(--color-success-dark)' : 'inherit',
@@ -3065,7 +3065,7 @@ export const Reports: React.FC = () => {
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-danger)', background: 'var(--bg-app)' }}>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Customer Dues</span>
+                    <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>{t("reports.custLedger.accumulatedDuesTotalNoColon", "Accumulated Customer Dues")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
                       {formatINR(pendingReceivables)}
                     </span>
@@ -3081,28 +3081,28 @@ export const Reports: React.FC = () => {
           <div style={{ animation: 'fadeIn 0.2s ease-out' }}>
             <div style={kpiGridStyle}>
               <KpiCard
-                label="Registered Suppliers"
+                label={t("reports.suppLedger.registeredSuppliers", "Registered Suppliers")}
                 value={totalSuppliers}
                 subtext="Active accounts"
                 icon={<Truck size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Accounts with Balance"
+                label={t("reports.suppLedger.accountsWithBalance", "Accounts with Balance")}
                 value={`${suppliersWithDues} accounts`}
                 subtext="Suppliers we owe money"
                 icon={<Truck size={20} />}
                 variant="warning"
               />
               <KpiCard
-                label="Total Balance Owed"
+                label={t("reports.suppLedger.totalBalanceOwed", "Total Balance Owed")}
                 value={formatINR(pendingPayables)}
                 subtext="Accounts payable cost"
                 icon={<TrendingDown size={20} />}
                 variant="danger"
               />
               <KpiCard
-                label="Average Payable"
+                label={t("reports.suppLedger.averagePayable", "Average Payable")}
                 value={formatINR(averagePayable)}
                 subtext="Per active supplier account"
                 icon={<DollarSign size={20} />}
@@ -3127,12 +3127,12 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th>Supplier ID</th>
-                        <th>Company / Supplier Name</th>
-                        <th>Phone / Contact</th>
-                        <th>GSTIN Identification</th>
-                        <th style={{ textAlign: 'right' }}>Balance Owed (₹)</th>
-                        <th>Status</th>
+                        <th>{t("reports.suppLedger.supplierId", "Supplier ID")}</th>
+                        <th>{t("reports.suppLedger.companySupplierName", "Company / Supplier Name")}</th>
+                        <th>{t("reports.suppLedger.phoneContact", "Phone / Contact")}</th>
+                        <th>{t("reports.custLedger.gstinIdentification", "GSTIN Identification")}</th>
+                        <th style={{ textAlign: 'right' }}>{t("reports.suppLedger.balanceOwedRs", "Balance Owed (₹)")}</th>
+                        <th>{t("reports.custLedger.status", "Status")}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -3153,13 +3153,13 @@ export const Reports: React.FC = () => {
                           </td>
                           <td>
                             <span className={`badge ${s.outstanding === 0 ? 'badge-success' : 'badge-warning'}`}>
-                              {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
+                              {s.outstanding === 0 ? t('status.settled', 'Settled') : t('status.payablePending', 'Payable Pending')}
                             </span>
                           </td>
                         </tr>
                       ))}
                       <tr style={{ fontWeight: 700, backgroundColor: 'var(--bg-app)' }}>
-                        <td colSpan={4}>Accumulated We Owe Suppliers:</td>
+                        <td colSpan={4}>{t("reports.suppLedger.accumulatedOwedTotal", "Accumulated We Owe Suppliers:")}</td>
                         <td style={{ textAlign: 'right', color: 'var(--color-danger)' }}>
                           {formatINR(pendingPayables)}
                         </td>
@@ -3184,11 +3184,11 @@ export const Reports: React.FC = () => {
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">GSTIN</span>
+                      <span className="mobile-list-card-label">{t("reports.print.gstin", "GSTIN")}</span>
                       <span className="mobile-list-card-val" style={{ fontFamily: 'monospace' }}>{s.gstin || '—'}</span>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Balance Owed</span>
+                      <span className="mobile-list-card-label">{t("reports.suppLedger.balanceOwed", "Balance Owed")}</span>
                       <span className="mobile-list-card-val" style={{
                         fontWeight: 700,
                         color: s.outstanding > 0 ? 'var(--color-danger)' : 'inherit',
@@ -3199,7 +3199,7 @@ export const Reports: React.FC = () => {
                 
                 <div className="mobile-list-card" style={{ borderLeftColor: 'var(--color-danger)', background: 'var(--bg-app)' }}>
                   <div className="mobile-list-card-row">
-                    <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>Accumulated Owed Balance</span>
+                    <span className="mobile-list-card-label" style={{ fontWeight: 700 }}>{t("reports.suppLedger.accumulatedOwedTotalNoColon", "Accumulated Owed Balance")}</span>
                     <span className="mobile-list-card-val" style={{ fontWeight: 800, color: 'var(--color-danger)', fontSize: '15px' }}>
                       {formatINR(pendingPayables)}
                     </span>
@@ -3216,28 +3216,28 @@ export const Reports: React.FC = () => {
             {/* GSTR-1 Header Dashboard Cards */}
             <div style={kpiGridStyle}>
               <KpiCard
-                label="B2B Invoices (Registered)"
+                label={t("reports.gstr1.b2bInvoicesCard", "B2B Invoices (Registered)")}
                 value={`${gstr1B2BList.length} Rows`}
                 subtext={`Taxable: ${formatINR(gstr1B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}`}
                 icon={<BookOpen size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="B2CS (Unregistered OE)"
+                label={t("reports.gstr1.b2csCard", "B2CS (Unregistered OE)")}
                 value={`${gstr1B2CSList.length} Groups`}
                 subtext={`Taxable: ${formatINR(gstr1B2CSList.reduce((acc, x) => acc + x.taxable, 0))}`}
                 icon={<Users size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="HSN Summary (Table 12)"
+                label={t("reports.gstr1.hsnCard", "HSN Summary (Table 12)")}
                 value={`${gstr1HSNList.length} Categories`}
                 subtext={`Taxable: ${formatINR(gstr1HSNList.reduce((acc, x) => acc + x.taxable, 0))}`}
                 icon={<Layers size={20} />}
                 variant="warning"
               />
               <KpiCard
-                label="Documents Issued (Table 13)"
+                label={t("reports.gstr1.docsCard", "Documents Issued (Table 13)")}
                 value={`${gstr1DocsSummary.total} Invoices`}
                 subtext={`Range: ${gstr1DocsSummary.from} - ${gstr1DocsSummary.to}`}
                 icon={<FileText size={20} />}
@@ -3268,16 +3268,16 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">Recipient GSTIN</th>
-                        <th className="text-nowrap">Recipient Name</th>
-                        <th className="text-nowrap">Invoice No</th>
-                        <th className="text-nowrap">Invoice Date</th>
-                        <th className="text-nowrap align-right">Total Value</th>
-                        <th className="text-nowrap">POS</th>
-                        <th className="text-nowrap align-center">Rate</th>
+                        <th className="text-nowrap">{t("reports.gstr1.recipientGstin", "Recipient GSTIN")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.recipientName", "Recipient Name")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.invoiceNo", "Invoice No")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.invoiceDate", "Invoice Date")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.totalValue", "Total Value")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.pos", "POS")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.rate", "Rate")}</th>
                         <th className="text-nowrap align-right">{t("reports.taxableValue", "Taxable Value")}</th>
                         <th className="text-nowrap align-right">{t("reports.cgst", "CGST")}</th>
-                        <th className="text-nowrap align-right">SGST</th>
+                        <th className="text-nowrap align-right">{t("reports.sgst", "SGST")}</th>
                         <th className="text-nowrap align-right">{t("reports.igst", "IGST")}</th>
                       </tr>
                     </thead>
@@ -3285,7 +3285,7 @@ export const Reports: React.FC = () => {
                       {gstr1B2BList.length === 0 ? (
                         <tr>
                           <td colSpan={11} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No registered B2B supplies found in this period.
+                            {t("reports.gstr1.noB2bSupplies", "No registered B2B supplies found in this period.")}
                           </td>
                         </tr>
                       ) : (
@@ -3330,26 +3330,26 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">Type</th>
-                        <th className="text-nowrap">Place of Supply (POS)</th>
-                        <th className="text-nowrap align-center">GST Rate</th>
-                        <th className="text-nowrap align-right">{t("reports.totalTaxableValue", "Total Taxable Value")}</th>
-                        <th className="text-nowrap align-right">CGST Amount</th>
-                        <th className="text-nowrap align-right">SGST Amount</th>
-                        <th className="text-nowrap align-right">IGST Amount</th>
+                        <th className="text-nowrap">{t("reports.gstr1.type", "Type")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.placeOfSupply", "Place of Supply (POS)")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.gstRate", "GST Rate")}</th>
+                        <th className="text-nowrap align-right">t("reports.taxableValue", "Taxable Value")</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.cgstAmount", "CGST Amount")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.sgstAmount", "SGST Amount")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.igstAmount", "IGST Amount")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {gstr1B2CSList.length === 0 ? (
                         <tr>
                           <td colSpan={7} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No unregistered B2C supplies found in this period.
+                            {t("reports.gstr1.noB2csSupplies", "No unregistered B2C supplies found in this period.")}
                           </td>
                         </tr>
                       ) : (
                         gstr1B2CSList.map((item, idx) => (
                           <tr key={idx}>
-                            <td className="text-nowrap">OE (Other)</td>
+                            <td className="text-nowrap">{t("reports.gstr1.oeOther", "OE (Other)")}</td>
                             <td className="text-nowrap" style={{ fontWeight: 600 }}>{item.pos}</td>
                             <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{item.rate}%</td>
                             <td className="text-nowrap align-right" style={{ fontWeight: 600 }}>{formatINR(item.taxable).replace('₹', '')}</td>
@@ -3369,7 +3369,7 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      3. HSN Summary of Outward Supplies (Table 12)
+                      {t("reports.gstr1.hsnPrintTitle", "3. HSN Summary of Outward Supplies (Table 12)")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       HSN-code summary of agricultural goods supplied. Required for return filing.
@@ -3384,22 +3384,22 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">HSN/SAC</th>
-                        <th className="text-nowrap">Product Description</th>
-                        <th className="text-nowrap">Unit (UQC)</th>
-                        <th className="text-nowrap align-center">Total Qty</th>
-                        <th className="text-nowrap align-right">Total Value</th>
+                        <th className="text-nowrap">{t("reports.gstr1.hsnSac", "HSN/SAC")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.productDescription", "Product Description")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.unitUqc", "Unit (UQC)")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.totalQty", "Total Qty")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.totalValue", "Total Value")}</th>
                         <th className="text-nowrap align-right">{t("reports.taxableValue", "Taxable Value")}</th>
-                        <th className="text-nowrap align-right">CGST Paid</th>
-                        <th className="text-nowrap align-right">SGST Paid</th>
-                        <th className="text-nowrap align-right">IGST Paid</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.cgstPaid", "CGST Paid")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.sgstPaid", "SGST Paid")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.igstPaid", "IGST Paid")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {gstr1HSNList.length === 0 ? (
                         <tr>
                           <td colSpan={9} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No items found in this period.
+                            {t("reports.gstr1.noHsnItems", "No items found in this period.")}
                           </td>
                         </tr>
                       ) : (
@@ -3442,24 +3442,24 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">Nature of Document</th>
-                        <th className="text-nowrap">Sr. No. From</th>
-                        <th className="text-nowrap">Sr. No. To</th>
-                        <th className="text-nowrap align-center">Total Count</th>
-                        <th className="text-nowrap align-center">Cancelled</th>
-                        <th className="text-nowrap align-center">Net Issued</th>
+                        <th className="text-nowrap">{t("reports.gstr1.natureOfDocument", "Nature of Document")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.srNoFrom", "Sr. No. From")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.srNoTo", "Sr. No. To")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.totalCount", "Total Count")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.cancelled", "Cancelled")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.netIssued", "Net Issued")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {gstr1DocsSummary.total === 0 ? (
                         <tr>
                           <td colSpan={6} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No invoice documents issued in this period.
+                            {t("reports.gstr1.noDocsIssued", "No invoice documents issued in this period.")}
                           </td>
                         </tr>
                       ) : (
                         <tr>
-                          <td className="text-nowrap" style={{ fontWeight: 600 }}>Invoices for outward supply</td>
+                          <td className="text-nowrap" style={{ fontWeight: 600 }}>{t("reports.gstr1.invOutwardSupply", "Invoices for outward supply")}</td>
                           <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.from}</td>
                           <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr1DocsSummary.to}</td>
                           <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{gstr1DocsSummary.total}</td>
@@ -3482,28 +3482,28 @@ export const Reports: React.FC = () => {
             {/* GSTR-2 Header Dashboard Cards */}
             <div style={kpiGridStyle}>
               <KpiCard
-                label="B2B Purchases (Registered)"
+                label={t("reports.gstr2.b2bPurchasesCard", "B2B Purchases (Registered)")}
                 value={`${gstr2B2BList.length} Rows`}
                 subtext={`Taxable: ${formatINR(gstr2B2BList.reduce((acc, x) => acc + x.taxableValue, 0))}`}
                 icon={<Briefcase size={20} />}
                 variant="success"
               />
               <KpiCard
-                label="HSN Inward Summary (Table 13)"
+                label={t("reports.gstr2.hsnInwardCard", "HSN Inward Summary (Table 13)")}
                 value={`${gstr2HSNList.length} Categories`}
                 subtext={`Taxable: ${formatINR(gstr2HSNList.reduce((acc, x) => acc + x.taxable, 0))}`}
                 icon={<Layers size={20} />}
                 variant="warning"
               />
               <KpiCard
-                label="Eligible Input Tax Credit"
+                label={t("reports.gstr2.eligibleItcCard", "Eligible Input Tax Credit")}
                 value={formatINR(totalGstr2ITC)}
                 subtext="Claimable CGST+SGST+IGST"
                 icon={<Percent size={20} />}
                 variant="info"
               />
               <KpiCard
-                label="Documents Received"
+                label={t("reports.gstr2.docsReceivedCard", "Documents Received")}
                 value={`${gstr2DocsSummary.total} Invoices`}
                 subtext={`Range: ${gstr2DocsSummary.from} - ${gstr2DocsSummary.to}`}
                 icon={<FileText size={20} />}
@@ -3534,25 +3534,25 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">Supplier GSTIN</th>
-                        <th className="text-nowrap">Supplier Name</th>
-                        <th className="text-nowrap">Bill No</th>
-                        <th className="text-nowrap">Bill Date</th>
-                        <th className="text-nowrap align-right">Total Value</th>
-                        <th className="text-nowrap">POS</th>
-                        <th className="text-nowrap align-center">Rate</th>
+                        <th className="text-nowrap">{t("reports.gstr2.supplierGstin", "Supplier GSTIN")}</th>
+                        <th className="text-nowrap">{t("reports.gstr2.supplierName", "Supplier Name")}</th>
+                        <th className="text-nowrap">{t("reports.gstr2.billNo", "Bill No")}</th>
+                        <th className="text-nowrap">{t("reports.gstr2.billDate", "Bill Date")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.totalValue", "Total Value")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.pos", "POS")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.rate", "Rate")}</th>
                         <th className="text-nowrap align-right">{t("reports.taxableValue", "Taxable Value")}</th>
                         <th className="text-nowrap align-right">{t("reports.cgst", "CGST")}</th>
-                        <th className="text-nowrap align-right">SGST</th>
+                        <th className="text-nowrap align-right">{t("reports.sgst", "SGST")}</th>
                         <th className="text-nowrap align-right">{t("reports.igst", "IGST")}</th>
-                        <th className="text-nowrap align-center">ITC Eligible</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr2.itcEligible", "ITC Eligible")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {gstr2B2BList.length === 0 ? (
                         <tr>
                           <td colSpan={12} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No registered inward supplies found in this period.
+                            {t("reports.gstr2.noB2bSupplies", "No registered inward supplies found in this period.")}
                           </td>
                         </tr>
                       ) : (
@@ -3583,7 +3583,7 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      2. HSN Summary of Inward Supplies (Table 13)
+                      {t("reports.gstr2.hsnPrintTitle", "2. HSN Summary of Inward Supplies (Table 13)")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       HSN-code summary of goods received (purchases). Required to audit input tax credit.
@@ -3598,22 +3598,22 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">HSN/SAC</th>
-                        <th className="text-nowrap">Product Description</th>
-                        <th className="text-nowrap">Unit (UQC)</th>
-                        <th className="text-nowrap align-center">Total Qty</th>
-                        <th className="text-nowrap align-right">Total Value</th>
+                        <th className="text-nowrap">{t("reports.gstr1.hsnSac", "HSN/SAC")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.productDescription", "Product Description")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.unitUqc", "Unit (UQC)")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.totalQty", "Total Qty")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.totalValue", "Total Value")}</th>
                         <th className="text-nowrap align-right">{t("reports.taxableValue", "Taxable Value")}</th>
-                        <th className="text-nowrap align-right">CGST Paid</th>
-                        <th className="text-nowrap align-right">SGST Paid</th>
-                        <th className="text-nowrap align-right">IGST Paid</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.cgstPaid", "CGST Paid")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.sgstPaid", "SGST Paid")}</th>
+                        <th className="text-nowrap align-right">{t("reports.gstr1.igstPaid", "IGST Paid")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {gstr2HSNList.length === 0 ? (
                         <tr>
                           <td colSpan={9} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No inward items found in this period.
+                            {t("reports.gstr2.noHsnItems", "No inward items found in this period.")}
                           </td>
                         </tr>
                       ) : (
@@ -3641,7 +3641,7 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      3. Summary of Documents Received
+                      {t("reports.gstr2.docsPrintTitle", "3. Summary of Documents Received")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       Serial numbers and counts of supplier inward bills received during the period.
@@ -3656,24 +3656,24 @@ export const Reports: React.FC = () => {
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className="text-nowrap">Nature of Document</th>
-                        <th className="text-nowrap">Sr. No. From</th>
-                        <th className="text-nowrap">Sr. No. To</th>
-                        <th className="text-nowrap align-center">Total Count</th>
-                        <th className="text-nowrap align-center">Cancelled</th>
-                        <th className="text-nowrap align-center">Net Received</th>
+                        <th className="text-nowrap">{t("reports.gstr1.natureOfDocument", "Nature of Document")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.srNoFrom", "Sr. No. From")}</th>
+                        <th className="text-nowrap">{t("reports.gstr1.srNoTo", "Sr. No. To")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.totalCount", "Total Count")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr1.cancelled", "Cancelled")}</th>
+                        <th className="text-nowrap align-center">{t("reports.gstr2.netReceived", "Net Received")}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {gstr2DocsSummary.total === 0 ? (
                         <tr>
                           <td colSpan={6} style={{ textAlign: 'center', padding: '16px', color: 'var(--text-secondary)' }}>
-                            No invoice documents received in this period.
+                            {t("reports.gstr2.noDocsReceived", "No invoice documents received in this period.")}
                           </td>
                         </tr>
                       ) : (
                         <tr>
-                          <td className="text-nowrap" style={{ fontWeight: 600 }}>Invoices for inward supply</td>
+                          <td className="text-nowrap" style={{ fontWeight: 600 }}>{t("reports.gstr2.invInwardSupply", "Invoices for inward supply")}</td>
                           <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr2DocsSummary.from}</td>
                           <td className="text-nowrap" style={{ fontFamily: 'monospace' }}>{gstr2DocsSummary.to}</td>
                           <td className="text-nowrap align-center" style={{ fontWeight: 'bold' }}>{gstr2DocsSummary.total}</td>
@@ -3705,28 +3705,28 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Sales Transaction Statement
+              {t("reports.print.salesStatementTitle", "Sales Transaction Statement")}
             </h2>
             
             {/* Summary metrics block */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-              <div><strong>Invoices count:</strong> {filteredInvoices.length} bills</div>
-              <div><strong>Taxable Amount:</strong> {formatINR(totalSalesBase)}</div>
-              <div><strong>GST Tax Collected:</strong> {formatINR(totalSalesTax)}</div>
-              <div><strong>Total Sales (Inc. GST):</strong> {formatINR(totalSalesVal)}</div>
+              <div><strong>{t("reports.print.invoicesCount", "Invoices count:")}</strong> {filteredInvoices.length} {t("reports.invoicesCountLabel", "bills")}</div>
+              <div><strong>{t("reports.print.taxableAmount", "Taxable Amount:")}</strong> {formatINR(totalSalesBase)}</div>
+              <div><strong>{t("reports.print.gstTaxCollected", "GST Tax Collected:")}</strong> {formatINR(totalSalesTax)}</div>
+              <div><strong>{t("reports.print.totalSalesIncGst", "Total Sales (Inc. GST):")}</strong> {formatINR(totalSalesVal)}</div>
             </div>
 
             {/* Print Grid Table */}
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Invoice No</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer Name</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Taxable Amt (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Tax (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Grand Total (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.invoiceNo", "Invoice No")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.customerName", "Customer Name")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.date", "Date")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.taxableAmtRs", "Taxable Amt (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.taxRs", "Tax (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.grandTotalRs", "Grand Total (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.status", "Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3738,11 +3738,11 @@ export const Reports: React.FC = () => {
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(inv.subtotal - inv.discountTotal).replace('₹', '')}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(inv.gstTotal).replace('₹', '')}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{inv.paymentStatus}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{translateStatus(t, inv.paymentStatus)}</td>
                   </tr>
                 ))}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesVal).replace('₹', '')}</td>
@@ -3757,26 +3757,26 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Purchase Transaction Statement
+              {t("reports.print.purchaseStatementTitle", "Purchase Transaction Statement")}
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-              <div><strong>Bills Logged:</strong> {filteredPurchases.length} invoices</div>
-              <div><strong>Taxable Purchases:</strong> {formatINR(totalPurchasesBase)}</div>
-              <div><strong>GST Tax Paid:</strong> {formatINR(totalPurchasesTax)}</div>
-              <div><strong>Total Cost (Inc. GST):</strong> {formatINR(totalPurchasesVal)}</div>
+              <div><strong>{t("reports.print.billsLogged", "Bills Logged:")}</strong> {filteredPurchases.length} {t("reports.invoicesCountLabel", "invoices")}</div>
+              <div><strong>{t("reports.print.taxablePurchases", "Taxable Purchases:")}</strong> {formatINR(totalPurchasesBase)}</div>
+              <div><strong>{t("reports.print.gstTaxPaid", "GST Tax Paid:")}</strong> {formatINR(totalPurchasesTax)}</div>
+              <div><strong>{t("reports.print.totalCostIncGst", "Total Cost (Inc. GST):")}</strong> {formatINR(totalPurchasesVal)}</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Bill Number</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Supplier Name</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Base Cost (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Tax Paid (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Total Cost (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.billNumber", "Bill Number")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.supplierName", "Supplier Name")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.date", "Date")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.purchase.baseCostRs", "Base Cost (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.taxPaidRs", "Tax Paid (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.purchase.totalCostRs", "Total Cost (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.status", "Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3788,11 +3788,11 @@ export const Reports: React.FC = () => {
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(pur.subtotal).replace('₹', '')}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(pur.gstTotal).replace('₹', '')}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{pur.paymentStatus}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{translateStatus(t, pur.paymentStatus)}</td>
                   </tr>
                 ))}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalPurchasesVal).replace('₹', '')}</td>
@@ -3807,29 +3807,29 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Operational Expense Statement
+              {t("reports.print.expenseStatementTitle", "Operational Expense Statement")}
             </h2>
             
             {/* Summary metrics block */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
-              <div><strong>Total Operational Spends:</strong> {formatINR(totalExpenses)}</div>
-              <div><strong>Settled Spends:</strong> {formatINR(totalPaidExpensesVal)}</div>
-              <div><strong>Outstanding Dues:</strong> {formatINR(totalDueExpensesVal)}</div>
-              <div><strong>Top Category:</strong> {topExpenseCategory.name}</div>
+              <div><strong>{t("reports.print.totalOperationalSpends", "Total Operational Spends:")}</strong> {formatINR(totalExpenses)}</div>
+              <div><strong>{t("reports.print.settledSpends", "Settled Spends:")}</strong> {formatINR(totalPaidExpensesVal)}</div>
+              <div><strong>{t("reports.print.outstandingDues", "Outstanding Dues:")}</strong> {formatINR(totalDueExpensesVal)}</div>
+              <div><strong>{t("reports.print.topCategory", "Top Category:")}</strong> {topExpenseCategory.name}</div>
             </div>
 
             {/* Print Grid Table */}
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Voucher ID</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Category</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Payee (Paid To)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Amount (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Method</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Ref Number</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.date", "Date")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.voucherId", "Voucher ID")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.category", "Category")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.expense.payeePaidTo", "Payee (Paid To)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.amountRs", "Amount (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.status", "Status")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.method", "Method")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.expense.refNumber", "Ref Number")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3838,15 +3838,15 @@ export const Reports: React.FC = () => {
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{formatDate(exp.date)}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.id}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{translateCategory(t, exp.category)}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.payee || 'General'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.payee || t("categories.general", "General")}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(exp.amount).replace('₹', '')}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold', color: exp.status === 'Due' ? '#D97706' : 'var(--primary)' }}>{exp.status || 'Paid'}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.status === 'Due' ? '—' : exp.paymentMethod}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center', fontWeight: 'bold', color: exp.status === 'Due' ? '#D97706' : 'var(--primary)' }}>{translateStatus(t, exp.status || 'Paid')}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{exp.status === 'Due' ? '—' : translatePaymentMethod(t, exp.paymentMethod)}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{exp.status === 'Due' ? '—' : (exp.referenceNumber || '—')}</td>
                   </tr>
                 ))}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary Total:</td>
+                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.summaryTotal", "Report Summary Total")}:</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: 'var(--color-danger-dark)' }}>{formatINR(totalExpenses).replace('₹', '')}</td>
                   <td colSpan={3} style={{ border: '1px solid #C8D3C5' }}></td>
                 </tr>
@@ -3859,27 +3859,27 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Sales Profit & Loss Statement
+              {t("reports.print.profitStatementTitle", "Sales Profit & Loss Statement")}
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '9px' }}>
-              <div><strong>Sales Revenue:</strong> {formatINR(totalSalesBase)}</div>
-              <div><strong>Cost of Goods:</strong> {formatINR(coGS)}</div>
-              <div><strong>Gross Profit:</strong> {formatINR(grossProfit)}</div>
-              <div><strong>Operating Expenses:</strong> {formatINR(totalExpenses)}</div>
-              <div><strong>Net Profit (Loss):</strong> {formatINR(netProfit)} ({profitMarginPercent.toFixed(1)}%)</div>
+              <div><strong>{t("reports.print.salesRevenue", "Sales Revenue:")}</strong> {formatINR(totalSalesBase)}</div>
+              <div><strong>{t("reports.print.costOfGoods", "Cost of Goods:")}</strong> {formatINR(coGS)}</div>
+              <div><strong>{t("reports.print.grossProfit", "Gross Profit:")}</strong> {formatINR(grossProfit)}</div>
+              <div><strong>{t("reports.print.operatingExpenses", "Operating Expenses:")}</strong> {formatINR(totalExpenses)}</div>
+              <div><strong>{t("reports.print.netProfitLoss", "Net Profit (Loss):")}</strong> {formatINR(netProfit)} ({profitMarginPercent.toFixed(1)}%</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Invoice No</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Date</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Taxable Sales (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Cost Price (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Net Profit (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Margin</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.invoiceNo", "Invoice No")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.date", "Date")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.profit.customer", "Customer")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.profit.taxableSalesRs", "Taxable Sales (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.profit.costPriceRs", "Cost Price (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.profit.netProfitRs", "Net Profit (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.margin", "Margin")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3903,7 +3903,7 @@ export const Reports: React.FC = () => {
                   );
                 })}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Report Summary (Net Profit):</td>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.profit.summaryNetProfitPrint", "Report Summary (Net Profit):")}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(coGS).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: netProfit >= 0 ? '#27AE60' : '#BE3144' }}>{formatINR(netProfit).replace('₹', '')}</td>
@@ -3918,27 +3918,27 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Stock Inventory Asset Valuation
+              {t("reports.print.stockStatementTitle", "Stock Inventory Asset Valuation")}
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-              <div><strong>Total Items:</strong> {totalStockQty} units</div>
-              <div><strong>Asset Value (Cost):</strong> {formatINR(totalAssetVal)}</div>
-              <div><strong>Retail Value (Potential):</strong> {formatINR(totalRetailVal)}</div>
-              <div><strong>Potential Margin:</strong> {formatINR(totalRetailVal - totalAssetVal)}</div>
+              <div><strong>{t("reports.print.totalItems", "Total Items:")}</strong> {totalStockQty}</div>
+              <div><strong>{t("reports.print.assetValueCost", "Asset Value (Cost):")}</strong> {formatINR(totalAssetVal)}</div>
+              <div><strong>{t("reports.print.retailValuePotential", "Retail Value (Potential):")}</strong> {formatINR(totalRetailVal)}</div>
+              <div><strong>{t("reports.print.potentialMargin", "Potential Margin:")}</strong> {formatINR(totalRetailVal - totalAssetVal)}</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>SKU</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Product Name</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Category</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Qty</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Cost Price (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Asset Value (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Retail Price (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Retail Value (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.sku", "SKU")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.productName", "Product Name")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.category", "Category")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.qty", "Qty")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.profit.costPriceRs", "Cost Price (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.assetValueRs", "Asset Value (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.retailPriceRs", "Retail Price (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.retailValueRs", "Retail Value (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -3959,7 +3959,7 @@ export const Reports: React.FC = () => {
                   );
                 })}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Stock Summary Total:</td>
+                  <td colSpan={3} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.print.stockSummaryTotal", "Stock Summary Total:")}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{totalStockQty}</td>
                   <td style={{ border: '1px solid #C8D3C5' }}></td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalAssetVal).replace('₹', '')}</td>
@@ -3975,30 +3975,30 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              GST Tax Ledger Summary
+              {t("reports.print.gstStatementTitle", "GST Tax Ledger Summary")}
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-              <div><strong>Taxable Turnover:</strong> {formatINR(totalSalesBase)}</div>
-              <div><strong>Output GST Collected:</strong> {formatINR(totalSalesTax)}</div>
-              <div><strong>Input GST ITC Paid:</strong> {formatINR(totalPurchasesTax)}</div>
-              <div><strong>Net GST Payable:</strong> {formatINR(netGSTDue)}</div>
+              <div><strong>{t("reports.print.taxableTurnover", "Taxable Turnover:")}</strong> {formatINR(totalSalesBase)}</div>
+              <div><strong>{t("reports.print.outputGstCollected", "Output GST Collected:")}</strong> {formatINR(totalSalesTax)}</div>
+              <div><strong>{t("reports.print.inputGstItcPaid", "Input GST ITC Paid:")}</strong> {formatINR(totalPurchasesTax)}</div>
+              <div><strong>{t("reports.print.netGstPayable", "Net GST Payable:")}</strong> {formatINR(netGSTDue)}</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Transaction Supply Type</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Doc Count</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Base Goods Value (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Central GST (CGST) (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>State GST (SGST) (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Total Tax Liability (₹)</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.transactionSupplyType", "Transaction Supply Type")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.docCount", "Doc Count")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.baseGoodsValueRs", "Base Goods Value (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.cgstRs", "Central GST (CGST) (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.sgstRs", "State GST (SGST) (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Total {t("reports.gstr3b.taxLiabilityRs", "Tax Liability (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr style={{ backgroundColor: '#ffffff' }}>
-                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Outward Supply (Sales Invoices)</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{t("reports.gst.outwardSupplyInvoices", "Outward Supply (Sales Invoices)")}</td>
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{filteredInvoices.length}</td>
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalSalesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalCGSTCollected).replace('₹', '')}</td>
@@ -4006,7 +4006,7 @@ export const Reports: React.FC = () => {
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(totalSalesTax).replace('₹', '')}</td>
                 </tr>
                 <tr style={{ backgroundColor: '#F9FAF9' }}>
-                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Inward Supply (Supplier Bills)</td>
+                  <td style={{ padding: '8px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{t("reports.gst.inwardSupplyBills", "Inward Supply (Supplier Bills)")}</td>
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{filteredPurchases.length}</td>
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalPurchasesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right' }}>{formatINR(totalCGSTPaid).replace('₹', '')}</td>
@@ -4014,7 +4014,7 @@ export const Reports: React.FC = () => {
                   <td style={{ padding: '8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold' }}>{formatINR(totalPurchasesTax).replace('₹', '')}</td>
                 </tr>
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Net Payable Tax Dues:</td>
+                  <td style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.gst.netPayableDues", "Net Payable Tax Dues:")}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'center' }}></td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalSalesBase - totalPurchasesBase).replace('₹', '')}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{formatINR(totalCGSTCollected - totalCGSTPaid).replace('₹', '')}</td>
@@ -4030,25 +4030,25 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Customer Outstanding Balances Statement
+              {t("reports.print.custLedgerStatementTitle", "Customer Outstanding Balances Statement")}
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-              <div><strong>Registered Customers:</strong> {totalCustomers} accounts</div>
-              <div><strong>Accounts with Dues:</strong> {customersWithDues} accounts</div>
-              <div><strong>Accumulated Dues:</strong> {formatINR(pendingReceivables)}</div>
-              <div><strong>Average Dues:</strong> {formatINR(averageReceivable)}</div>
+              <div><strong>{t("reports.print.registeredCustomers", "Registered Customers:")}</strong> {totalCustomers} {t("reports.accounts", "accounts")}</div>
+              <div><strong>{t("reports.print.accountsWithDues", "Accounts with Dues:")}</strong> {customersWithDues} {t("reports.accounts", "accounts")}</div>
+              <div><strong>{t("reports.print.accumulatedDues", "Accumulated Dues:")}</strong> {formatINR(pendingReceivables)}</div>
+              <div><strong>{t("reports.print.averageDues", "Average Dues:")}</strong> {formatINR(averageReceivable)}</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer ID</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Customer Name</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Phone Number</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>GSTIN</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Outstanding (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.custLedger.customerId", "Customer ID")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.customerName", "Customer Name")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.custLedger.phoneNumber", "Phone Number")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.gstin", "GSTIN")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.print.outstandingRs", "Outstanding (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.status", "Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -4059,11 +4059,11 @@ export const Reports: React.FC = () => {
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{c.phone}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{c.gstin || '—'}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold', color: c.outstanding > 0 ? '#BE3144' : c.outstanding < 0 ? '#27AE60' : 'inherit' }}>{formatINR(c.outstanding).replace('₹', '')}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues' : 'Advance'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{c.outstanding === 0 ? t('status.settled', 'Settled') : c.outstanding > 0 ? t('status.duesPending', 'Dues') : t('status.advanceCredit', 'Advance')}</td>
                   </tr>
                 ))}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Accumulated Outstanding Dues Total:</td>
+                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.custLedger.accumulatedDuesTotal", "Accumulated Outstanding Dues Total:")}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: '#BE3144' }}>{formatINR(pendingReceivables).replace('₹', '')}</td>
                   <td style={{ border: '1px solid #C8D3C5' }}></td>
                 </tr>
@@ -4076,25 +4076,25 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '15px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33' }}>
-              Supplier Account Payables Statement
+              {t("reports.print.suppLedgerStatementTitle", "Supplier Account Payables Statement")}
             </h2>
             
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '15px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '11px' }}>
-              <div><strong>Registered Suppliers:</strong> {totalSuppliers} accounts</div>
-              <div><strong>Accounts Owed:</strong> {suppliersWithDues} accounts</div>
-              <div><strong>Accumulated Owed:</strong> {formatINR(pendingPayables)}</div>
-              <div><strong>Average Payables:</strong> {formatINR(averagePayable)}</div>
+              <div><strong>{t("reports.print.registeredSuppliers", "Registered Suppliers:")}</strong> {totalSuppliers} {t("reports.accounts", "accounts")}</div>
+              <div><strong>{t("reports.print.accountsOwed", "Accounts Owed:")}</strong> {suppliersWithDues} {t("reports.accounts", "accounts")}</div>
+              <div><strong>{t("reports.print.accumulatedOwed", "Accumulated Owed:")}</strong> {formatINR(pendingPayables)}</div>
+              <div><strong>{t("reports.print.averagePayables", "Average Payables:")}</strong> {formatINR(averagePayable)}</div>
             </div>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '10px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#2F3E33', color: '#ffffff' }}>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Supplier ID</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Company / Supplier Name</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>Phone Number</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>GSTIN</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>Balance Owed (₹)</th>
-                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>Status</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.suppLedger.supplierId", "Supplier ID")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.suppLedger.companySupplierName", "Company / Supplier Name")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.custLedger.phoneNumber", "Phone Number")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'left', border: '1px solid #2F3E33' }}>{t("reports.print.gstin", "GSTIN")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'right', border: '1px solid #2F3E33' }}>{t("reports.suppLedger.balanceOwedRs", "Balance Owed (₹)")}</th>
+                  <th style={{ padding: '6px 8px', textAlign: 'center', border: '1px solid #2F3E33' }}>{t("reports.print.status", "Status")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -4105,11 +4105,11 @@ export const Reports: React.FC = () => {
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0' }}>{s.phone}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{s.gstin || '—'}</td>
                     <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'right', fontWeight: 'bold', color: s.outstanding > 0 ? '#BE3144' : 'inherit' }}>{formatINR(s.outstanding).replace('₹', '')}</td>
-                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{s.outstanding === 0 ? 'Settled' : 'Payable'}</td>
+                    <td style={{ padding: '6px 8px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{s.outstanding === 0 ? t('status.settled', 'Settled') : t('status.payablePending', 'Payable')}</td>
                   </tr>
                 ))}
                 <tr style={{ fontWeight: 'bold', backgroundColor: '#E2E9E0' }}>
-                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>Accumulated Supplier Payables Total:</td>
+                  <td colSpan={4} style={{ padding: '8px', border: '1px solid #C8D3C5' }}>{t("reports.suppLedger.accumulatedOwedTotal", "Accumulated Supplier Payables Total:")}</td>
                   <td style={{ padding: '8px', border: '1px solid #C8D3C5', textAlign: 'right', color: '#BE3144' }}>{formatINR(pendingPayables).replace('₹', '')}</td>
                   <td style={{ border: '1px solid #C8D3C5' }}></td>
                 </tr>
@@ -4122,40 +4122,40 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '14px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33', borderBottom: '1px solid #E2E9E0', paddingBottom: '6px' }}>
-              GSTR-1 Outward Supplies Audit Summary (CA-Ready)
+              {t("reports.print.gstr1StatementTitle", "GSTR-1 Outward Supplies Audit Summary (CA-Ready)")}
             </h2>
 
             {/* Overall summary block */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
-              <div><strong>B2B Invoices:</strong> {gstr1B2BList.length} Rows</div>
-              <div><strong>B2CS Groups:</strong> {gstr1B2CSList.length} Groups</div>
-              <div><strong>HSN Categories:</strong> {gstr1HSNList.length} Codes</div>
-              <div><strong>Docs Issued:</strong> {gstr1DocsSummary.total} Bills</div>
+              <div><strong>{t("reports.print.b2bInvoices", "B2B Invoices:")}</strong> {gstr1B2BList.length} {t("reports.rows", "Rows")}</div>
+              <div><strong>{t("reports.print.b2csGroups", "B2CS Groups:")}</strong> {gstr1B2CSList.length} {t("reports.groups", "Groups")}</div>
+              <div><strong>{t("reports.print.hsnCategories", "HSN Categories:")}</strong> {gstr1HSNList.length} {t("reports.categories", "Codes")}</div>
+              <div><strong>{t("reports.print.docsIssued", "Docs Issued:")}</strong> {gstr1DocsSummary.total} {t("reports.invoicesCountLabel", "Bills")}</div>
             </div>
 
             {/* 1. B2B Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              1. B2B Registered Supplies (4A, 4B, 4C, 6B, 6C)
+              {t("reports.gstr1.b2bPrintTitle", "1. B2B Registered Supplies (4A, 4B, 4C, 6B, 6C)")}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>GSTIN</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Name</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Inv No</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>POS</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Rate</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Amt (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.gstin", "GSTIN")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.name", "Name")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.invNo", "Inv No")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.date", "Date")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.gstr1.pos", "POS")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.gstr1.rate", "Rate")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.taxableAmtRs", "Taxable Amt (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.cgstRsShort", "CGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.sgstRsShort", "SGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.igstRsShort", "IGST (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr1B2BList.length === 0 ? (
                   <tr>
-                    <td colSpan={10} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No registered B2B supplies found.</td>
+                    <td colSpan={10} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr1.noB2bSuppliesPrint", "No registered B2B supplies found.")}</td>
                   </tr>
                 ) : (
                   gstr1B2BList.map((item, idx) => (
@@ -4178,23 +4178,23 @@ export const Reports: React.FC = () => {
 
             {/* 2. B2CS Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              2. B2C Small Supplies (7 - Consolidated)
+              {t("reports.gstr1.b2csPrintTitle", "2. B2C Small Supplies (7 - Consolidated)")}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Place of Supply (POS)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>GST Rate</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Value (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST Amount (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST Amount (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST Amount (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.gstr1.placeOfSupply", "Place of Supply (POS)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.gstr1.gstRate", "GST Rate")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.cgstAmountRs", "CGST Amount (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.sgstAmountRs", "SGST Amount (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.igstAmountRs", "IGST Amount (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr1B2CSList.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No unregistered B2C supplies found.</td>
+                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr1.noB2csSuppliesPrint", "No unregistered B2C supplies found.")}</td>
                   </tr>
                 ) : (
                   gstr1B2CSList.map((item, idx) => (
@@ -4218,21 +4218,21 @@ export const Reports: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>HSN</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>UQC</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Total Value (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Value (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.hsn", "HSN")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.description", "Description")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.uqc", "UQC")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.print.qty", "Qty")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.totalValueRs", "Total Value (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.cgstRsShort", "CGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.sgstRsShort", "SGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.igstRsShort", "IGST (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr1HSNList.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No HSN details found.</td>
+                    <td colSpan={9} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr1.noHsnItemsPrint", "No HSN details found.")}</td>
                   </tr>
                 ) : (
                   gstr1HSNList.map((item, idx) => (
@@ -4254,27 +4254,27 @@ export const Reports: React.FC = () => {
 
             {/* 4. Docs Summary Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              4. Documents Issued Summary (Table 13)
+              {t("reports.gstr1.docsPrintTitle", "4. Documents Issued Summary (Table 13)")}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Nature of Document</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>From</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>To</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Total Number</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Cancelled</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Net Issued</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.gstr1.natureOfDocument", "Nature of Document")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.from", "From")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.to", "To")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.print.totalNumber", "Total Number")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.gstr1.cancelled", "Cancelled")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.gstr1.netIssued", "Net Issued")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr1DocsSummary.total === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No document summary found.</td>
+                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr1.noDocsIssuedPrint", "No document summary found.")}</td>
                   </tr>
                 ) : (
                   <tr>
-                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Invoices for outward supply</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{t("reports.gstr1.invOutwardSupply", "Invoices for outward supply")}</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr1DocsSummary.from}</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr1DocsSummary.to}</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{gstr1DocsSummary.total}</td>
@@ -4291,40 +4291,40 @@ export const Reports: React.FC = () => {
         return (
           <div>
             <h2 style={{ textAlign: 'center', fontSize: '14px', textTransform: 'uppercase', marginBottom: '16px', color: '#2F3E33', borderBottom: '1px solid #E2E9E0', paddingBottom: '6px' }}>
-              GSTR-2 Inward Supplies Audit Summary (CA-Ready)
+              {t("reports.print.gstr2StatementTitle", "GSTR-2 Inward Supplies Audit Summary (CA-Ready)")}
             </h2>
 
             {/* Overall summary block */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', padding: '10px', border: '1px solid #C8D3C5', borderRadius: '4px', marginBottom: '16px', backgroundColor: '#F9FAF9', fontSize: '10px' }}>
-              <div><strong>B2B Purchases:</strong> {gstr2B2BList.length} Rows</div>
-              <div><strong>HSN Categories:</strong> {gstr2HSNList.length} Codes</div>
-              <div><strong>Eligible ITC:</strong> {formatINR(totalGstr2ITC)}</div>
-              <div><strong>Docs Received:</strong> {gstr2DocsSummary.total} Bills</div>
+              <div><strong>{t("reports.print.b2bPurchases", "B2B Purchases:")}</strong> {gstr2B2BList.length} {t("reports.rows", "Rows")}</div>
+              <div><strong>{t("reports.print.hsnCategories", "HSN Categories:")}</strong> {gstr2HSNList.length} {t("reports.categories", "Codes")}</div>
+              <div><strong>{t("reports.print.eligibleItc", "Eligible ITC:")}</strong> {formatINR(totalGstr2ITC)}</div>
+              <div><strong>{t("reports.print.docsReceived", "Docs Received:")}</strong> {gstr2DocsSummary.total} {t("reports.invoicesCountLabel", "Bills")}</div>
             </div>
 
             {/* 1. B2B Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              1. B2B Inward Supplies (3, 4A)
+              {t("reports.gstr2.b2bPrintTitle", "1. B2B Inward Supplies (3, 4A)")}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>GSTIN</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Supplier Name</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Bill No</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Rate</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Amt (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>ITC</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.gstin", "GSTIN")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.gstr2.supplierName", "Supplier Name")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.gstr2.billNo", "Bill No")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.date", "Date")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.gstr2.rate", "Rate")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.taxableAmtRs", "Taxable Amt (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.cgstRsShort", "CGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.sgstRsShort", "SGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.igstRsShort", "IGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.print.itc", "ITC")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr2B2BList.length === 0 ? (
                   <tr>
-                    <td colSpan={10} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No registered inward supplies found.</td>
+                    <td colSpan={10} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr2.noB2bSuppliesPrint", "No registered inward supplies found.")}</td>
                   </tr>
                 ) : (
                   gstr2B2BList.map((item, idx) => (
@@ -4352,21 +4352,21 @@ export const Reports: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>HSN</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Description</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>UQC</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Qty</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Total Value (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>Taxable Value (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>CGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>SGST (₹)</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>IGST (₹)</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.hsn", "HSN")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.description", "Description")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.uqc", "UQC")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.print.qty", "Qty")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.totalValueRs", "Total Value (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.cgstRsShort", "CGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.sgstRsShort", "SGST (₹)")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'right' }}>{t("reports.print.igstRsShort", "IGST (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr2HSNList.length === 0 ? (
                   <tr>
-                    <td colSpan={9} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No HSN details found.</td>
+                    <td colSpan={9} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr1.noHsnItemsPrint", "No HSN details found.")}</td>
                   </tr>
                 ) : (
                   gstr2HSNList.map((item, idx) => (
@@ -4393,22 +4393,22 @@ export const Reports: React.FC = () => {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
               <thead>
                 <tr style={{ backgroundColor: '#F0F4F1', fontWeight: 'bold' }}>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>Nature of Document</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>From</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>To</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Total Number</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Cancelled</th>
-                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>Net Received</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.gstr1.natureOfDocument", "Nature of Document")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.from", "From")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'left' }}>{t("reports.print.to", "To")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.print.totalNumber", "Total Number")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.gstr1.cancelled", "Cancelled")}</th>
+                  <th style={{ padding: '4px 6px', border: '1px solid #C8D3C5', textAlign: 'center' }}>{t("reports.gstr2.netReceived", "Net Received")}</th>
                 </tr>
               </thead>
               <tbody>
                 {gstr2DocsSummary.total === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>No document summary found.</td>
+                    <td colSpan={6} style={{ padding: '8px', textAlign: 'center', border: '1px solid #C8D3C5' }}>{t("reports.gstr1.noDocsIssuedPrint", "No document summary found.")}</td>
                   </tr>
                 ) : (
                   <tr>
-                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>Invoices for inward supply</td>
+                    <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontWeight: 'bold' }}>{t("reports.gstr2.invInwardSupply", "Invoices for inward supply")}</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr2DocsSummary.from}</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', fontFamily: 'monospace' }}>{gstr2DocsSummary.to}</td>
                     <td style={{ padding: '4px 6px', border: '1px solid #E2E9E0', textAlign: 'center' }}>{gstr2DocsSummary.total}</td>
@@ -4451,8 +4451,8 @@ export const Reports: React.FC = () => {
           {/* Preset Ranges */}
           <div className="reports-preset-select-wrapper" style={{ minWidth: '160px' }}>
             <select className="filter-select" value={dateRange} onChange={(e) => setDateRange(e.target.value)}>
-              <option value="All">All Historical Records</option>
-              <option value="Custom">Custom Date Range</option>
+              <option value="All">{t("reports.allHistoricalRecords", "All Historical Records")}</option>
+              <option value="Custom">{t("reports.customDateRange", "Custom Date Range")}</option>
             </select>
           </div>
 
@@ -4465,7 +4465,7 @@ export const Reports: React.FC = () => {
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
               />
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>to</span>
+              <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{t("reports.to", "to")}</span>
               <input
                 type="date"
                 className="filter-select"
@@ -4584,8 +4584,8 @@ export const Reports: React.FC = () => {
           {/* Signatory Blocks */}
           {activeReport !== 'gstr3b' && (
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '48px', fontSize: '10px', color: '#555555' }}>
-              <div>Prepared By: ___________________________</div>
-              <div>Authorized Signatory: ___________________________</div>
+              <div>{t("reports.preparedBy", "Prepared By: ___________________________")}</div>
+              <div>{t("reports.authorizedSignatory", "Authorized Signatory: ___________________________")}</div>
             </div>
           )}
         </div>

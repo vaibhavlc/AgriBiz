@@ -7,7 +7,7 @@ import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
-import { translatePaymentMethod } from '../utils/statusTranslation';
+import { translatePaymentMethod, translateStatus } from '../utils/statusTranslation';
 import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
 import {
@@ -205,11 +205,11 @@ export const Sales: React.FC = () => {
   const handlePrint = async () => {
     const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!originalEl) {
-      showToast('Could not find layout element.', 'error');
+      showToast(t('sales.layoutError', 'Could not find layout element.'), 'error');
       return;
     }
 
-    showToast('Preparing document for printing...', 'info');
+    showToast(t('sales.preparingPrint', 'Preparing document for printing...'), 'info');
 
     // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
@@ -245,8 +245,8 @@ export const Sales: React.FC = () => {
           }
           
           const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
-          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
-          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
+          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory") || kid.innerText.includes(t('sales.receiversSignature', "Receiver's Signature"));
+          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!") || kid.innerText.includes(t('sales.thankYouBusiness', 'Thank you for your business!'));
           
           if (isSvgIllustration || isSignatureRow || isFooterMessage) {
             bottomKids.push(kid);
@@ -380,7 +380,7 @@ export const Sales: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
-      showToast('Error preparing document for printing.', 'error');
+      showToast(t('sales.printError', 'Error preparing document for printing.'), 'error');
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
@@ -395,7 +395,7 @@ export const Sales: React.FC = () => {
       return;
     }
 
-    showToast('Compiling high-definition PDF document...', 'info');
+    showToast(t('sales.compilingPdf', 'Compiling high-definition PDF document...'), 'info');
 
     // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
@@ -529,10 +529,10 @@ export const Sales: React.FC = () => {
 
       doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
       doc.save(fileName);
-      showToast('PDF downloaded successfully!');
+      showToast(t('sales.pdfDownloaded', 'PDF downloaded successfully!'));
     } catch (err) {
       console.error(err);
-      showToast('Error exporting PDF document.', 'error');
+      showToast(t('sales.pdfError', 'Error exporting PDF document.'), 'error');
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
@@ -585,7 +585,7 @@ export const Sales: React.FC = () => {
       return;
     }
 
-    showToast('Compiling PDF for sharing...', 'info');
+    showToast(t('sales.compilingSharePdf', 'Compiling PDF for sharing...'), 'info');
 
     // 1. Create the temporary layout clone, positioned vertically far below the page to stay invisible
     const tempEl = originalEl.cloneNode(true) as HTMLElement;
@@ -725,7 +725,7 @@ export const Sales: React.FC = () => {
           title: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} ${activeDoc.number}`,
           text: `${activeDoc.isQuotation ? 'Quotation' : 'Invoice'} from ${settings.businessName}`
         });
-        showToast('Document shared successfully!');
+        showToast(t('sales.docSharedSuccess', 'Document shared successfully!'));
       } else {
         const downloadUrl = URL.createObjectURL(pdfBlob);
         const link = document.createElement('a');
@@ -751,11 +751,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           : `https://api.whatsapp.com/send?text=${encoded}`;
           
         window.open(url, '_blank');
-        showToast('PDF downloaded! Redirecting to WhatsApp...', 'info');
+        showToast(t('sales.pdfDownloadRedirect', 'PDF downloaded! Redirecting to WhatsApp...'), 'info');
       }
     } catch (err) {
       console.error(err);
-      showToast('Error generating PDF for WhatsApp sharing.', 'error');
+      showToast(t('sales.whatsappShareError', 'Error generating PDF for WhatsApp sharing.'), 'error');
     } finally {
       if (tempEl.parentNode) {
         document.body.removeChild(tempEl);
@@ -911,7 +911,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   const handleRemoveItemRow = (index: number) => {
     if (items.length === 1) {
       setItems([{ productId: '', quantity: 1, price: 0, totalPrice: 0, discount: 0 }]);
-      showToast('Reset product row instead of deleting to keep inputs visible.', 'info');
+      showToast(t('sales.resetProductRow', 'Reset product row instead of deleting to keep inputs visible.'), 'info');
       return;
     }
     setItems((prev) => prev.filter((_, idx) => idx !== index));
@@ -1008,18 +1008,18 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     e.preventDefault();
 
     if (!selectedCustomerId) {
-      showToast('Please select a customer to generate billing invoice.', 'error');
+      showToast(t('sales.selectCustomerError', 'Please select a customer to generate billing invoice.'), 'error');
       return;
     }
     if (items.length === 0 || !items[0].productId) {
-      showToast('Please select at least one product line item to bill.', 'error');
+      showToast(t('sales.selectProductError', 'Please select at least one product line item to bill.'), 'error');
       return;
     }
 
     // Double check item selections
     const hasEmptyItem = items.some((item) => !item.productId || item.quantity <= 0 || item.price < 0);
     if (hasEmptyItem) {
-      showToast('Please ensure all product rows have valid selections, prices, and quantities.', 'error');
+      showToast(t('sales.ensureValidRowsError', 'Please ensure all product rows have valid selections, prices, and quantities.'), 'error');
       return;
     }
 
@@ -1035,7 +1035,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         const availableStock = product.stock + originalQty;
 
         if (availableStock < item.quantity) {
-          showToast(`Insufficient stock for ${product.name}! Available: ${availableStock}`, 'error');
+          showToast(t('sales.insufficientStockError', 'Insufficient stock for {{name}}! Available: {{stock}}', { name: product.name, stock: availableStock }), 'error');
           return;
         }
       }
@@ -1091,7 +1091,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         showSignature,
       });
 
-      showToast(`Invoice ${originalInvoice.invoiceNumber} updated successfully!`);
+      showToast(t('sales.invoiceUpdatedMsg', 'Invoice {{number}} updated successfully!', { number: originalInvoice.invoiceNumber }));
 
       // Reset states
       clearAllDirtyForms();
@@ -1125,7 +1125,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         showSignature,
       });
 
-      showToast(`Invoice created successfully for ${customer.name}!`);
+      showToast(t('sales.invoiceCreatedMsg', 'Invoice created successfully for {{name}}!', { name: customer.name }));
 
       // Reset states and redirect directly to details print view
       clearAllDirtyForms();
@@ -1153,12 +1153,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
     e.preventDefault();
 
     if (!selectedCustomerId) {
-      showToast('Please select a customer first.', 'error');
+      showToast(t('sales.selectCustomerFirstError', 'Please select a customer first.'), 'error');
       return;
     }
 
     if (items.some((item) => !item.productId || item.quantity <= 0 || item.price < 0)) {
-      showToast('Please ensure all items have valid products, quantities, and prices.', 'error');
+      showToast(t('sales.ensureValidQuoteItemsError', 'Please ensure all items have valid products, quantities, and prices.'), 'error');
       return;
     }
 
@@ -1199,7 +1199,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         notes: notes.trim() || undefined,
       });
 
-      showToast(`Quotation ${originalQuotation.quotationNumber} updated successfully!`);
+      showToast(t('sales.quotationUpdatedMsg', 'Quotation {{number}} updated successfully!', { number: originalQuotation.quotationNumber }));
 
       // Reset states
       clearAllDirtyForms();
@@ -1224,7 +1224,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
         notes: notes.trim() || undefined,
       });
 
-      showToast(`Quotation created successfully for ${customer.name}!`);
+      showToast(t('sales.quotationCreatedMsg', 'Quotation created successfully for {{name}}!', { name: customer.name }));
 
       // Reset states
       clearAllDirtyForms();
@@ -1399,21 +1399,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             const invoiceNo = deletingInvoice.invoiceNumber;
             try {
               await deleteInvoice(idToDelete);
-              showToast(`Invoice ${invoiceNo} deleted successfully.`, 'info');
+              showToast(t('sales.invoiceDeletedMsg', 'Invoice {{number}} deleted successfully.', { number: invoiceNo }), 'info');
               setDeletingInvoice(null);
               setViewInvoice(null);
             } catch (error: any) {
               console.error("Delete invoice error:", error);
-              showToast(`Failed to delete: ${error.message || error}`, 'error');
+              showToast(t('sales.deleteFailedMsg', 'Failed to delete: {{error}}', { error: error.message || error }), 'error');
             } finally {
               setIsDeletingInvoice(false);
             }
           }}
-          title="Delete Invoice"
+          title={t("sales.deleteInvoiceTitle", "Delete Invoice")}
           itemName={deletingInvoice?.invoiceNumber ? `Invoice ${deletingInvoice.invoiceNumber}` : undefined}
           description={deletingInvoice ? (
             <>
-              Are you sure you want to delete invoice <strong>{deletingInvoice.invoiceNumber}</strong>? This action will restore stock levels and adjust the customer balance.
+              {t("sales.confirmDeleteInvoiceDesc", "Are you sure you want to delete invoice {{number}}? This action will restore stock levels and adjust the customer balance.", { number: deletingInvoice.invoiceNumber })}
             </>
           ) : ''}
           isLoading={isDeletingInvoice}
@@ -1430,7 +1430,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             setIsDeletingQuotation(true);
             try {
               await deleteQuotation(deletingQuotation.id);
-              showToast(`Quotation ${deletingQuotation.quotationNumber} deleted successfully.`, 'info');
+              showToast(t('sales.quotationDeletedMsg', 'Quotation {{number}} deleted successfully.', { number: deletingQuotation.quotationNumber }), 'info');
               setDeletingQuotation(null);
               setViewQuotation(null);
             } catch (error: any) {
@@ -1440,11 +1440,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               setIsDeletingQuotation(false);
             }
           }}
-          title="Delete Quotation"
+          title={t("sales.deleteQuotationTitle", "Delete Quotation")}
           itemName={deletingQuotation?.quotationNumber ? `Quotation ${deletingQuotation.quotationNumber}` : undefined}
           description={deletingQuotation ? (
             <>
-              Are you sure you want to delete quotation <strong>{deletingQuotation.quotationNumber}</strong>? This action will permanently remove this estimate record.
+              {t("sales.confirmDeleteQuotationDesc", "Are you sure you want to delete quotation {{number}}? This action will permanently remove this estimate record.", { number: deletingQuotation.quotationNumber })}
             </>
           ) : ''}
           isLoading={isDeletingQuotation}
@@ -1556,13 +1556,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           </div>
           <div className="action-buttons-grid">
             <button className="btn btn-secondary" onClick={handleDownload} title="Export invoice as PDF">
-              <Download size={16} /> Save as PDF
+              <Download size={16} /> {t("sales.saveAsPdf", "Save as PDF")}
             </button>
             <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share invoice details on WhatsApp">
-              <Share2 size={16} /> Share on WhatsApp
+              <Share2 size={16} /> {t("sales.shareWhatsApp", "Share on WhatsApp")}
             </button>
             <button className="btn btn-primary" onClick={handlePrint} title="Print paper voucher">
-              <Printer size={16} /> Print Receipt
+              <Printer size={16} /> {t("sales.printReceipt", "Print Receipt")}
             </button>
           </div>
         </div>
@@ -1605,22 +1605,22 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     )}
                     {settings.showContact && (
                       <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{t("sales.emailLabel", "Email:")} {settings.email}</span>}
                         {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
-                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{t("sales.mobLabel", "Mob:")} {settings.phone}</span>}
                         {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
-                        {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                        {settings.website && <span style={{ whiteSpace: 'nowrap' }}>{t("sales.webLabel", "Web:")} {settings.website}</span>}
                       </p>
                     )}
                     {settings.showGstin && settings.gstin && (
-                      <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
+                      <p className="invoice-company-gst">{t("sales.gstinLabel", "GSTIN:")} {settings.gstin}</p>
                     )}
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <h1 className="invoice-main-title">{t("sales.taxInvoice", "INVOICE")}</h1>
                   <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
-                  <p className="invoice-date-text">Date: {formatDate(selectedInvoice.date)}</p>
+                  <p className="invoice-date-text">{t("sales.dateLabel", "Date:")} {formatDate(selectedInvoice.date)}</p>
                 </div>
               </div>
 
@@ -1645,10 +1645,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       </button>
                       <span className="print-only">{customerDetail.name}</span>
                     </h3>
-                    <p className="invoice-customer-sub">{customerDetail.address || "Address: N/A"}</p>
-                    <p className="invoice-customer-sub">Phone: {customerDetail.phone}</p>
+                    <p className="invoice-customer-sub">{customerDetail.address || t("sales.addressNa", "Address: N/A")}</p>
+                    <p className="invoice-customer-sub">{t("sales.phoneLabel", "Phone:")} {customerDetail.phone}</p>
                     {customerDetail.gstin && (
-                      <p className="invoice-customer-gst">GSTIN: {customerDetail.gstin}</p>
+                      <p className="invoice-customer-gst">{t("sales.gstinLabel", "GSTIN:")} {customerDetail.gstin}</p>
                     )}
                   </>
                 ) : (
@@ -1658,21 +1658,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
                 <h4 className="invoice-detail-header">{t("sales.paymentInfo", "Payment Info:")}</h4>
                 <span className={`invoice-payment-badge ${selectedInvoice.paymentStatus.toLowerCase()}`}>
-                  {selectedInvoice.paymentStatus.toUpperCase()}
+                  {translateStatus(t, selectedInvoice.paymentStatus).toUpperCase()}
                 </span>
                 {selectedInvoice.paymentMethod && (
                   <p className="invoice-customer-sub" style={{ marginTop: "6px", fontWeight: 600 }}>
-                    Method: {translatePaymentMethod(t, selectedInvoice.paymentMethod)}
+                    {t("sales.methodLabel", "Method:")} {translatePaymentMethod(t, selectedInvoice.paymentMethod)}
                   </p>
                 )}
                 {selectedInvoice.referenceNumber && (
                   <p className="invoice-customer-sub" style={{ marginTop: "3px", fontWeight: 600 }}>
-                    {selectedInvoice.paymentMethod === 'Cheque' ? 'Cheque No.' : 'Txn / UTR No.'}: {selectedInvoice.referenceNumber}
+                    {selectedInvoice.paymentMethod === 'Cheque' ? t('sales.chequeNo', 'Cheque No.') : t('sales.txnRefNo', 'Txn / UTR No.')}: {selectedInvoice.referenceNumber}
                   </p>
                 )}
                 {selectedInvoice.dueDate && selectedInvoice.balanceDue > 0 && (
                   <p className="invoice-customer-sub" style={{ marginTop: "3px", fontWeight: 600, color: 'var(--color-danger)' }}>
-                    Due By: {formatDate(selectedInvoice.dueDate)}
+                    {t("sales.dueBy", "Due By:")} {formatDate(selectedInvoice.dueDate)}
                   </p>
                 )}
               </div>
@@ -1685,10 +1685,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <th style={{ width: "40px", textAlign: "center" }}>{t('sales.srNo', 'Sr')}</th>
                   <th style={{ textAlign: "left" }}>{t('sales.productDescription', 'Product / Description')}</th>
                   <th style={{ width: "80px", textAlign: "center" }}>{t('sales.gst', 'GST')}</th>
-                  <th style={{ width: "90px", textAlign: "right" }}>Price (₹)</th>
+                  <th style={{ width: "90px", textAlign: "right" }}>{t("sales.priceHeader", "Price (₹)")}</th>
                   <th style={{ width: "60px", textAlign: "center" }}>{t('sales.qty', 'Qty')}</th>
                   <th style={{ width: "70px", textAlign: "right" }}>{t('sales.discPercent', 'Disc (%)')}</th>
-                  <th style={{ width: "100px", textAlign: "right" }}>Total (₹)</th>
+                  <th style={{ width: "100px", textAlign: "right" }}>{t("sales.totalHeader", "Total (₹)")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1763,17 +1763,17 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     )}
                     {isInterState ? (
                       <tr>
-                        <td>IGST ({selectedInvoice.items[0]?.gstRate || 18}%)</td>
+                        <td>{t("sales.igst", "IGST")} ({selectedInvoice.items[0]?.gstRate || 18}%)</td>
                         <td>{formatINR(invoiceTotals.gstTotal)}</td>
                       </tr>
                     ) : (
                       <>
                         <tr>
-                          <td>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
+                          <td>{t("sales.cgst", "CGST")} ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
                           <td>{formatINR(invoiceTotals.gstTotal / 2)}</td>
                         </tr>
                         <tr>
-                          <td>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
+                          <td>{t("sales.sgst", "SGST")} ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
                           <td>{formatINR(invoiceTotals.gstTotal / 2)}</td>
                         </tr>
                       </>
@@ -1909,7 +1909,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>Bill No: <strong>{selectedInvoice.invoiceNumber}</strong></span><span>Date: {formatDate(selectedInvoice.date)}</span></div>                <div>Customer:{' '}
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t("sales.billNoLabel", "Bill No:")} <strong>{selectedInvoice.invoiceNumber}</strong></span><span>{t("sales.dateLabel", "Date:")} {formatDate(selectedInvoice.date)}</span></div>                <div>Customer:{' '}
                   {customerDetail ? (
                     <>
                       <button
@@ -1929,19 +1929,19 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   ) : (
                     <strong>Walk-in</strong>
                   )}
-                </div>{customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}</div>
+                </div>{customerDetail?.phone && <div>{t("sales.phoneLabel", "Phone:")} {customerDetail.phone}</div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{t('sales.item', 'ITEM')}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>Rate: {settings.currencySymbol || "₹"}{item.price} | GST: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
+              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{t('sales.item', 'ITEM')}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>{t("sales.rateLabel", "Rate:")} {settings.currencySymbol || "₹"}{item.price} | {t("sales.gstLabel", "GST:")} {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.totalTaxable', 'Total Taxable')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.discountMinus', 'Discount (-)')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>GRAND TOTAL</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>CASH COLLECTED</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>BALANCE DUE</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
+              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.totalTaxable', 'Total Taxable')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.discountMinus', 'Discount (-)')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>{t("sales.grandTotalCaps", "GRAND TOTAL")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>{t("sales.cashCollectedCaps", "CASH COLLECTED")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>{t("sales.balanceDueCaps", "BALANCE DUE")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || "THANK YOU! VISIT AGAIN."}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div></div>
+              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || t("sales.thankYouVisitAgain", "THANK YOU! VISIT AGAIN.")}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div></div>
             </div>
           </div>
         )}
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteInvoice(selectedInvoice.id || selectedInvoice.invoiceNumber, selectedInvoice.invoiceNumber)}>
-            <Trash2 size={16} /> Delete & Reset Stock
+            <Trash2 size={16} /> {t("sales.deleteResetStock", "Delete & Reset Stock")}
           </button>
         </div>
         {renderPortalModals()}
@@ -1983,7 +1983,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <Share2 size={16} /> Share on WhatsApp
             </button>
             <button className="btn btn-primary" onClick={handlePrint} title="Print paper voucher">
-              <Printer size={16} /> Print Estimate
+              <Printer size={16} /> {t("sales.printEstimate", "Print Estimate")}
             </button>
           </div>
         </div>
@@ -2041,7 +2041,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ textAlign: "right" }}>
                   <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>{t('sales.estimate', 'ESTIMATE')}</h1>
                   <h3 className="invoice-number-text">#{selectedQuotation.quotationNumber}</h3>
-                  <p className="invoice-date-text">Date: {formatDate(selectedQuotation.date)}</p>
+                  <p className="invoice-date-text">{t("sales.dateLabel", "Date:")} {formatDate(selectedQuotation.date)}</p>
                 </div>
               </div>
 
@@ -2079,7 +2079,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
                   <h4 className="invoice-detail-header">{t('sales.validityInfo', 'Validity Info:')}</h4>
                   <span className="invoice-payment-badge paid" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}>
-                    VALID UNTIL: {formatDate(selectedQuotation.validUntil)}
+                    {t("sales.validUntilCaps", "VALID UNTIL:")} {formatDate(selectedQuotation.validUntil)}
                   </span>
                 </div>
               </div>
@@ -2408,12 +2408,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 setIsConvertModalOpen(true);
               }}
             >
-              <Store size={15} /> Convert to Invoice
+              <Store size={15} /> {t("sales.convertToInvoice", "Convert to Invoice")}
             </button>
           )}
           {selectedQuotation.status !== 'Converted' && (
             <button className="btn btn-secondary" onClick={() => handleStartEditQuotation(selectedQuotation)}>
-              <Edit2 size={15} /> Edit Quotation
+              <Edit2 size={15} /> {t("sales.editQuotation", "Edit Quotation")}
             </button>
           )}
           
@@ -2424,17 +2424,17 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 className="btn btn-secondary"
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Sent' });
-                  showToast('Quotation marked as Sent', 'success');
+                  showToast(t('sales.quotationMarkedSent', 'Quotation marked as Sent'), 'success');
                 }}
               >
-                Mark as Sent
+                {t("sales.markAsSent", "Mark as Sent")}
               </button>
               <button 
                 className="btn btn-secondary"
                 style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Approved' });
-                  showToast('Quotation Approved successfully', 'success');
+                  showToast(t('sales.quotationApproved', 'Quotation Approved successfully'), 'success');
                 }}
               >
                 Approve
@@ -2459,7 +2459,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Declined' });
-                  showToast('Quotation marked as Declined', 'info');
+                  showToast(t('sales.quotationMarkedDeclined', 'Quotation marked as Declined'), 'info');
                 }}
               >
                 Decline
@@ -2483,10 +2483,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 className="btn btn-secondary"
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Draft' });
-                  showToast('Quotation reverted to Draft', 'info');
+                  showToast(t('sales.quotationRevertedDraft', 'Quotation reverted to Draft'), 'info');
                 }}
               >
-                Revert to Draft
+                {t("sales.revertToDraft", "Revert to Draft")}
               </button>
             </>
           )}
@@ -2516,7 +2516,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           )}
 
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteQuotation(selectedQuotation.id, selectedQuotation.quotationNumber)}>
-            <Trash2 size={16} /> Delete Quotation
+            <Trash2 size={16} /> {t("sales.deleteQuotation", "Delete Quotation")}
           </button>
         </div>
         {renderPortalModals()}
@@ -2581,7 +2581,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   New Invoice
                 </span>
                 <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
-                  Create Sales Invoice
+                  {editingInvoiceId ? t("sales.editSalesInvoice", "Edit Sales Invoice") : t("sales.createSalesInvoice", "Create Sales Invoice")}
                 </h1>
               </div>
             </div>
@@ -2596,7 +2596,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               zIndex: 1,
             }} className="voucher-section-box">
               <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                Voucher Number
+                {t("sales.voucherNumber", "Voucher Number")}
               </span>
               <span style={{ color: '#fff', fontSize: '16px', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginTop: '2px' }}>
                 {invoiceNumber}
@@ -2608,13 +2608,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
               <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>1</span>
-              Customer &amp; Date
+              {t("sales.customerAndDate", "Customer & Date")}
             </h3>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
               {/* Customer Dropdown */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Customer *</label>
+                <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.customerLabelRequired", "Customer *")}</label>
                 <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                   <select
                     className="form-control"
@@ -2643,7 +2643,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
               {/* Billing Date */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Billing Date *</label>
+                <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.billingDateRequired", "Billing Date *")}</label>
                 <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                   <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                     <Calendar size={15} />
@@ -2672,7 +2672,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
                 {activeCustomer.outstanding > 0 && (
                   <div style={{ backgroundColor: 'rgba(239,68,68,0.08)', color: 'var(--color-danger)', border: '1px solid rgba(239,68,68,0.15)', borderRadius: '6px', padding: '4px 10px', fontSize: '11px', fontWeight: 700 }}>
-                    Outstanding: {formatINR(activeCustomer.outstanding)}
+                    {t("sales.outstandingLabel", "Outstanding:")} {formatINR(activeCustomer.outstanding)}
                   </div>
                 )}
               </div>
@@ -2685,7 +2685,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div className="billed-products-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flex: 1 }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>2</span>
-                  Billed Products
+                  {t("sales.billedProducts", "Billed Products")}
                 </h3>
                 <button
                   type="button"
@@ -2693,7 +2693,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   onClick={handleAddItemRow}
                   style={{ padding: '8px 14px', height: '36px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
-                  <Plus size={14} /> Add Row
+                  <Plus size={14} /> {t("sales.addRow", "Add Row")}
                 </button>
               </div>
 
@@ -2705,7 +2705,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     className={`price-mode-btn ${pricingMode === 'selling' ? 'active' : ''}`}
                     onClick={() => handlePricingModeChange('selling')}
                   >
-                    Selling Price
+                    {t("sales.sellingPrice", "Selling Price")}
                   </button>
                   <button
                     type="button"
@@ -2725,7 +2725,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <th style={{ width: '32px' }}>#</th>
                     <th>{t("sales.product", "Product")}</th>
                     <th className="col-center" style={{ width: '70px' }}>{t("sales.stock", "Stock")}</th>
-                    <th className="col-right" style={{ width: '125px' }}>Unit SP (₹)</th>
+                    <th className="col-right" style={{ width: '125px' }}>{t("sales.unitSpHeader", "Unit SP (₹)")}</th>
                     <th className="col-right" style={{ width: '140px' }}>{t("sales.totalPriceInclGst", "Total Price (Incl. GST)")}</th>
                     <th className="col-center" style={{ width: '75px' }}>{t('sales.qty', 'Qty')}</th>
                     <th className="col-center" style={{ width: '75px' }}>{t("sales.discPercentShort", "Disc %")}</th>
@@ -2883,12 +2883,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                 <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(16,185,129,0.1)', color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>3</span>
-                Payment &amp; Notes
+                {t("sales.paymentAndNotes", "Payment & Notes")}
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Amount Collected (₹)</label>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.amountCollected", "Amount Collected (₹)")}</label>
                   <input
                     type="number"
                     className="form-control"
@@ -2925,7 +2925,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
                 {(Number(amountPaid) || 0) > 0 && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Payment Method *</label>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.paymentMethodRequired", "Payment Method *")}</label>
                     <select
                       className="form-control"
                       value={paymentMethod}
@@ -2943,12 +2943,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {(Number(amountPaid) || 0) > 0 && paymentMethod !== 'Cash' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
-                      {paymentMethod === 'Cheque' ? 'Cheque No.' : paymentMethod === 'UPI' ? 'Transaction / UTR No.' : 'Transfer Reference No.'}
+                      {paymentMethod === 'Cheque' ? t('sales.chequeNo', 'Cheque No.') : paymentMethod === 'UPI' ? t('sales.txnUtrNo', 'Transaction / UTR No.') : t('sales.transferRefNo', 'Transfer Reference No.')}
                     </label>
                     <input
                       type="text"
                       className="form-control"
-                      placeholder={paymentMethod === 'Cheque' ? 'Enter cheque number...' : 'Enter transaction / reference number...'}
+                      placeholder={paymentMethod === 'Cheque' ? t('sales.enterChequePlaceholder', 'Enter cheque number...') : t('sales.enterTxnPlaceholder', 'Enter transaction / reference number...')}
                       value={referenceNumber}
                       onChange={(e) => setReferenceNumber(e.target.value)}
                       style={{ height: '42px', fontSize: '13px' }}
@@ -2959,7 +2959,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {(Number(amountPaid) || 0) > 0 && (Number(amountPaid) || 0) < totals.grandTotal && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
-                      Due Date <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '11px' }}>(Expected date to clear balance)</span>
+                      Due Date <span style={{ fontWeight: 400, color: 'var(--text-muted)', fontSize: '11px' }}>{t("sales.expectedDateHelp", "(Expected date to clear balance)")}</span>
                     </label>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', width: '100%' }}>
                       <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
@@ -2998,14 +2998,14 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       style={{ width: '18px', height: '18px', cursor: 'pointer', margin: 0 }}
                     />
                     <label htmlFor="invoice-show-signature" style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer', margin: 0, userSelect: 'none' }}>
-                      Include Authorized Signatory E-Signature on Printed Invoice
+                      {t("sales.includeESignature", "Include Authorized Signatory E-Signature on Printed Invoice")}
                     </label>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Section 6: Billing Summary */}
+            {/* Section 6: {t("sales.billingSummary", "Billing Summary")} */}
             <div style={{
               borderRadius: '12px',
               background: 'linear-gradient(145deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 90%, var(--primary) 10%) 100%)',
@@ -3073,7 +3073,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 color: balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)',
                 border: `1px solid ${balanceDue > 0 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`,
               }}>
-                <span>{balanceDue > 0 ? 'Balance Due' : '✓ Fully Paid'}</span>
+                <span>{balanceDue > 0 ? t("sales.balanceDue", "Balance Due") : t("sales.fullyPaid", "✓ Fully Paid")}</span>
                 <span>{formatINR(balanceDue)}</span>
               </div>
 
@@ -3133,7 +3133,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   }}
                   disabled={items.length === 0 || !items[0].productId}
                 >
-                  {editingInvoiceId ? '✓ Update Invoice' : '✓ Save & Print Invoice'}
+                  {editingInvoiceId ? t("sales.updateInvoiceBtn", "✓ Update Invoice") : t("sales.savePrintInvoiceBtn", "✓ Save & Print Invoice")}
                 </button>
                 <button
                   type="button"
@@ -3154,7 +3154,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     justifyContent: 'center'
                   }}
                 >
-                  Discard Draft
+                  {t("sales.discardDraft", "Discard Draft")}
                 </button>
               </div>
             </div>
@@ -3220,10 +3220,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </button>
               <div>
                 <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '11px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                  {editingQuotationId ? 'Edit Quotation' : 'New Quotation'}
+                  {editingQuotationId ? t("sales.editQuotationTag", "Edit Quotation") : t("sales.newQuotationTag", "New Quotation")}
                 </span>
                 <h1 style={{ color: '#fff', fontSize: '20px', fontWeight: 800, lineHeight: 1.2, margin: 0 }}>
-                  {editingQuotationId ? 'Update Quotation' : 'Create Sales Estimate'}
+                  {editingQuotationId ? t("sales.updateQuotationHeader", "Update Quotation") : t("sales.createSalesEstimateHeader", "Create Sales Estimate")}
                 </h1>
               </div>
             </div>
@@ -3238,7 +3238,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               zIndex: 1,
             }} className="voucher-section-box">
               <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '10px', fontWeight: 600, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
-                Estimate Number
+                {t("sales.estimateNumber", "Estimate Number")}
               </span>
               <span style={{ color: '#fff', fontSize: '16px', fontWeight: 800, letterSpacing: '0.5px', display: 'block', marginTop: '2px' }}>
                 {quotationNumber}
@@ -3252,7 +3252,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                 <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>1</span>
-                Customer &amp; Dates
+                {t("sales.customerAndDates", "Customer & Dates")}
               </h3>
 
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
@@ -3288,7 +3288,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 {/* Dates grid */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Quote Date *</label>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.quoteDateRequired", "Quote Date *")}</label>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                         <Calendar size={15} />
@@ -3304,7 +3304,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Valid Until *</label>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.validUntilRequired", "Valid Until *")}</label>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                       <span style={{ position: 'absolute', left: '12px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                         <Calendar size={15} />
@@ -3341,7 +3341,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               )}
             </div>
 
-            {/* Step 2: Quoted Products */}
+            {/* Step 2: {t("sales.quotedProducts", "Quoted Products")} */}
             <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
               <div className="billed-products-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                 <div className="billed-products-header-top" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flex: 1 }}>
@@ -3543,10 +3543,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div className="card" style={{ padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', display: 'flex', flexDirection: 'column', gap: '16px', width: '100%', boxSizing: 'border-box' }}>
                 <h3 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid var(--border-color)', paddingBottom: '10px' }}>
                   <span style={{ width: '24px', height: '24px', borderRadius: '6px', backgroundColor: 'rgba(139,92,246,0.1)', color: 'var(--primary-dark)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 800 }}>3</span>
-                  Remarks &amp; Terms
+                  {t("sales.remarksAndTerms", "Remarks & Terms")}
                 </h3>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Internal Remarks / Terms</label>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.internalRemarksTerms", "Internal Remarks / Terms")}</label>
                   <textarea
                     className="form-control"
                     style={{ fontSize: '13px', resize: 'vertical', minHeight: '130px' }}
@@ -3557,7 +3557,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
               </div>
 
-              {/* Estimate Summary card */}
+              {/* {t("sales.estimateSummary", "Estimate Summary")} card */}
               <div style={{
                 borderRadius: '12px',
                 background: 'linear-gradient(145deg, var(--bg-card) 0%, color-mix(in srgb, var(--bg-card) 90%, var(--primary) 10%) 100%)',
@@ -3628,7 +3628,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       justifyContent: 'center',
                     }}
                   >
-                    {editingQuotationId ? '✓ Update Quotation' : '✓ Save Quotation'}
+                    {editingQuotationId ? t("sales.updateQuotationBtn", "✓ Update Quotation") : t("sales.saveQuotationBtn", "✓ Save Quotation")}
                   </button>
                   <button
                     type="button"
@@ -3699,7 +3699,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             gap: '8px'
           }}
         >
-          <FileText size={16} /> Sales Invoices
+          <FileText size={16} /> {t("sales.salesInvoicesTab", "Sales Invoices")}
         </button>
         <button
           type="button"
@@ -3725,7 +3725,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             gap: '8px'
           }}
         >
-          <Calendar size={16} /> Estimates & Quotations
+          <Calendar size={16} /> {t("sales.estimatesQuotationsTab", "Estimates & Quotations")}
         </button>
       </div>
 
@@ -3733,30 +3733,30 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       {salesActiveTab === 'invoices' ? (
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
           <KpiCard
-            label="Total Sales"
+            label={t("sales.kpiTotalSales", "Total Sales")}
             value={formatINR(totalSales)}
-            subtext="Total billing revenue"
+            subtext={t("sales.kpiTotalSalesSub", "Total billing revenue")}
             icon={<TrendingUp size={20} />}
             variant="success"
           />
           <KpiCard
-            label="Total Collected"
+            label={t("sales.kpiTotalCollected", "Total Collected")}
             value={formatINR(totalCollected)}
-            subtext="Cash and digital collection"
+            subtext={t("sales.kpiTotalCollectedSub", "Cash and digital collection")}
             icon={<Plus size={20} />}
             variant="success"
           />
           <KpiCard
-            label="Outstanding Dues"
+            label={t("sales.kpiOutstandingDues", "Outstanding Dues")}
             value={formatINR(totalOutstanding)}
-            subtext="Accounts receivable dues"
+            subtext={t("sales.kpiOutstandingDuesSub", "Accounts receivable dues")}
             icon={<AlertTriangle size={20} />}
             variant="danger"
           />
           <KpiCard
-            label="Voucher Count"
-            value={`${invoiceCount} invoices`}
-            subtext="Total sales transactions"
+            label={t("sales.kpiVoucherCount", "Voucher Count")}
+            value={t("sales.kpiInvoicesCount", "{{count}} invoices", { count: invoiceCount })}
+            subtext={t("sales.kpiVoucherCountSub", "Total sales transactions")}
             icon={<FileText size={20} />}
             variant="info"
           />
@@ -3764,30 +3764,30 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       ) : (
         <div className="grid-cols-4" style={{ marginBottom: '24px' }}>
           <KpiCard
-            label="Total Estimates"
+            label={t("sales.kpiTotalEstimates", "Total Estimates")}
             value={formatINR(totalQuoted)}
-            subtext="Active quoted value"
+            subtext={t("sales.kpiTotalEstimatesSub", "Active quoted value")}
             icon={<FileText size={20} />}
             variant="info"
           />
           <KpiCard
-            label="Approved Value"
+            label={t("sales.kpiApprovedValue", "Approved Value")}
             value={formatINR(approvedQuoted)}
-            subtext="Estimates won or converted"
+            subtext={t("sales.kpiApprovedValueSub", "Estimates won or converted")}
             icon={<TrendingUp size={20} />}
             variant="success"
           />
           <KpiCard
-            label="Open Quotations"
-            value={`${openQuotedCount} drafts`}
-            subtext="Drafts and sent estimates"
+            label={t("sales.kpiOpenQuotations", "Open Quotations")}
+            value={t("sales.kpiDraftsCount", "{{count}} drafts", { count: openQuotedCount })}
+            subtext={t("sales.kpiOpenQuotationsSub", "Drafts and sent estimates")}
             icon={<Calendar size={20} />}
             variant="warning"
           />
           <KpiCard
-            label="Estimate Count"
-            value={`${totalQuotedCount} estimates`}
-            subtext="Total quotations logged"
+            label={t("sales.kpiEstimateCount", "Estimate Count")}
+            value={t("sales.kpiEstimatesCount", "{{count}} estimates", { count: totalQuotedCount })}
+            subtext={t("sales.kpiEstimateCountSub", "Total quotations logged")}
             icon={<TrendingUp size={20} />}
             variant="info"
           />
@@ -3816,7 +3816,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               const isActive = statusFilter === status;
               return (
                 <button
-                  key={status}
+                  key={translateStatus(t, status)}
                   className="btn-sm"
                   style={{
                     padding: '5px 10px',
@@ -3876,21 +3876,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
-              <option value="date-desc">Newest First</option>
-              <option value="date-asc">Oldest First</option>
-              <option value="amount-desc">Amount: High to Low</option>
-              <option value="amount-asc">Amount: Low to High</option>
+              <option value="date-desc">{t("sales.sortNewest", "Newest First")}</option>
+              <option value="date-asc">{t("sales.sortOldest", "Oldest First")}</option>
+              <option value="amount-desc">{t("sales.sortAmountHighToLow", "Amount: High to Low")}</option>
+              <option value="amount-asc">{t("sales.sortAmountLowToHigh", "Amount: Low to High")}</option>
             </select>
           </div>
 
           {/* Action button */}
           {salesActiveTab === 'invoices' ? (
             <button className="btn btn-primary" onClick={handleStartNewInvoice}>
-              <Plus size={16} /> New Invoice
+              <Plus size={16} /> {t("sales.newInvoiceBtn", "New Invoice")}
             </button>
           ) : (
             <button className="btn btn-primary" style={{ background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)' }} onClick={handleStartNewQuotation}>
-              <Plus size={16} /> New Quotation
+              <Plus size={16} /> {t("sales.newQuotationBtn", "New Quotation")}
             </button>
           )}
         </div>
@@ -3902,9 +3902,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           sortedInvoices.length === 0 ? (
             <div className="empty-state">
               <FileText size={48} className="empty-state-icon" />
-              <h4 className="empty-state-title">No Invoices Found</h4>
+              <h4 className="empty-state-title">{t("sales.noInvoicesTitle", "No Invoices Found")}</h4>
               <p className="empty-state-text" style={{ maxWidth: '320px', margin: '8px auto 0 auto' }}>
-                Create a billing voucher by clicking 'New Invoice' to sell implements and parts.
+                {t("sales.noInvoicesText", "Create a billing voucher by clicking 'New Invoice' to sell implements and parts.")}
               </p>
             </div>
           ) : (
@@ -3915,7 +3915,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <table className="data-table" style={{ width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ whiteSpace: 'nowrap' }}>Inv No</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t("sales.invNoHeader", "Inv No")}</th>
                         <th>{t('sales.customer', 'Customer')}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.date', 'Date')}</th>
                         <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
@@ -3985,7 +3985,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <Eye size={14} /> View
+                                    <Eye size={14} /> {t("sales.view", "View")}
                                   </button>
                                   <button 
                                     className="dropdown-item" 
@@ -3994,7 +3994,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <Edit2 size={14} /> Edit
+                                    <Edit2 size={14} /> {t("sales.edit", "Edit")}
                                   </button>
                                   <button 
                                     className="dropdown-item danger" 
@@ -4003,7 +4003,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                                     onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#fee2e2')}
                                     onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                   >
-                                    <Trash2 size={14} /> Delete
+                                    <Trash2 size={14} /> {t("sales.delete", "Delete")}
                                   </button>
                                 </div>
                               </>
@@ -4088,7 +4088,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       </div>
                     </div>
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Billing Date</span>
+                      <span className="mobile-list-card-label">{t("sales.billingDateLabel", "Billing Date")}</span>
                       <span className="mobile-list-card-val">{formatDate(inv.date)}</span>
                     </div>
 
@@ -4102,7 +4102,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Items</span>
+                      <span className="mobile-list-card-label">{t("sales.itemsLabel", "Items")}</span>
                       <span className="mobile-list-card-val">
                         {inv.items && inv.items.length > 0 ? (
                           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -4110,7 +4110,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             {inv.items.length > 1 ? ` +${inv.items.length - 1}` : ''}
                           </span>
                         ) : (
-                          <span>No items</span>
+                          <span>{t("sales.noItems", "No items")}</span>
                         )}
                       </span>
                     </div>
@@ -4123,7 +4123,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Due Amount</span>
+                      <span className="mobile-list-card-label">{t("sales.dueAmountLabel", "Due Amount")}</span>
                       <span className="mobile-list-card-val" style={{ fontWeight: 700, color: inv.balanceDue > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)' }}>
                         {formatINR(inv.balanceDue)}
                       </span>
@@ -4156,9 +4156,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           sortedQuotations.length === 0 ? (
             <div className="empty-state">
               <Calendar size={48} className="empty-state-icon" />
-              <h4 className="empty-state-title">No Quotations Found</h4>
+              <h4 className="empty-state-title">{t("sales.noQuotationsTitle", "No Quotations Found")}</h4>
               <p className="empty-state-text" style={{ maxWidth: '320px', margin: '8px auto 0 auto' }}>
-                Log commercial sales estimates and quotations by clicking 'New Quotation'.
+                {t("sales.noQuotationsText", "Log commercial sales estimates and quotations by clicking 'New Quotation'.")}
               </p>
             </div>
           ) : (
@@ -4169,10 +4169,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   <table className="data-table" style={{ width: '100%' }}>
                     <thead>
                       <tr>
-                        <th style={{ whiteSpace: 'nowrap' }}>Est No</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t("sales.estNoHeader", "Est No")}</th>
                         <th>{t('sales.customer', 'Customer')}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.date', 'Date')}</th>
-                        <th style={{ whiteSpace: 'nowrap' }}>{t('sales.validUntil', 'Valid Until')}</th>
+                        <th style={{ whiteSpace: 'nowrap' }}>{t("sales.validUntilHeader", "Valid Until")}</th>
                         <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.status', 'Status')}</th>
                         <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>{t('sales.actions', 'Actions')}</th>
@@ -4266,7 +4266,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                                       onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--bg-app)')}
                                       onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
                                     >
-                                      <Store size={14} /> Convert
+                                      <Store size={14} /> {t("sales.convert", "Convert")}
                                     </button>
                                   )}
                                   <button 

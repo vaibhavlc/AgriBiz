@@ -42,7 +42,7 @@ export const PWAInstallModal: React.FC = () => {
     const trimmedName = appNameInput.trim();
 
     if (!trimmedName) {
-      setErrorMsg('Application name cannot be empty.');
+      setErrorMsg(t('pwa.errorAppNameEmpty', 'Application name cannot be empty.'));
       return;
     }
 
@@ -139,7 +139,7 @@ export const PWAInstallModal: React.FC = () => {
               padding: '6px',
               borderRadius: '50%'
             }}
-            title="Cancel"
+            title={t('common.cancel', 'Cancel')}
           >
             <X size={20} />
           </button>
@@ -186,7 +186,7 @@ export const PWAInstallModal: React.FC = () => {
                 {appNameInput.trim() || 'AgriBiz'}
               </div>
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                Standalone Web Application (PWA)
+                {t('pwa.standaloneApp', 'Standalone Web Application (PWA)')}
               </div>
             </div>
           </div>
@@ -203,14 +203,14 @@ export const PWAInstallModal: React.FC = () => {
                 marginBottom: '8px'
               }}
             >
-              App Name
+              {t('pwa.appNameLabel', 'App Name')}
             </label>
             <input
               id="pwa-app-name-input"
               type="text"
               value={appNameInput}
               onChange={handleInputChange}
-              placeholder="AgriBiz"
+              placeholder={t('pwa.appNamePlaceholder', 'AgriBiz')}
               className="form-control"
               style={{
                 width: '100%',
@@ -232,7 +232,7 @@ export const PWAInstallModal: React.FC = () => {
               </div>
             ) : (
               <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>
-                Default: <strong>AgriBiz</strong>. Enter custom name (e.g. <em>Daivyayog</em>).
+                {t('pwa.defaultHelpText', 'Default: AgriBiz. Enter custom name (e.g. Daivyayog).')}
               </div>
             )}
           </div>
@@ -255,7 +255,7 @@ export const PWAInstallModal: React.FC = () => {
             >
               <Smartphone size={18} style={{ color: '#3b82f6', flexShrink: 0, marginTop: '2px' }} />
               <div>
-                <strong>iOS Safari Instructions:</strong> Tap the <strong>Share</strong> icon in Safari, scroll down, and select <strong>Add to Home Screen</strong>. You can customize the icon name directly on your device screen.
+                <strong>{t('pwa.iosTitle', 'iOS Safari Instructions:')}</strong> {t('pwa.iosBody', 'Tap the Share icon in Safari, scroll down, and select Add to Home Screen. You can customize the icon name directly on your device screen.')}
               </div>
             </div>
           ) : !deferredPrompt ? (
@@ -276,8 +276,8 @@ export const PWAInstallModal: React.FC = () => {
               <Info size={18} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '2px' }} />
               <div>
                 {isPwaInstalled
-                  ? 'AgriBiz is already installed on your device as a PWA.'
-                  : 'Your browser controls the native install prompt. Dynamic manifest title applied for installation.'}
+                  ? t('pwa.alreadyInstalled', 'AgriBiz is already installed on your device as a PWA.')
+                  : t('pwa.browserControlNotice', 'Your browser controls the native install prompt. Dynamic manifest title applied for installation.')}
               </div>
             </div>
           ) : (
@@ -297,7 +297,7 @@ export const PWAInstallModal: React.FC = () => {
             >
               <Sparkles size={18} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
               <div>
-                Clicking <strong>Install App</strong> will update the Web App Manifest name to <strong>"{appNameInput.trim() || 'AgriBiz'}"</strong> and trigger the browser installation prompt.
+                {t('pwa.installNoticePrefix', 'Clicking')} <strong>{t('pwa.installApp', 'Install App')}</strong> {t('pwa.installNoticeMiddle', 'will update the Web App Manifest name to')} <strong>"{appNameInput.trim() || 'AgriBiz'}"</strong> {t('pwa.installNoticeSuffix', 'and trigger the browser installation prompt.')}
               </div>
             </div>
           )}
@@ -317,7 +317,7 @@ export const PWAInstallModal: React.FC = () => {
                 cursor: 'pointer'
               }}
             >
-              Cancel
+              {t('common.cancel', 'Cancel')}
             </button>
             <button
               type="submit"
@@ -335,7 +335,7 @@ export const PWAInstallModal: React.FC = () => {
               }}
             >
               <Download size={16} />
-              <span>{isSubmitting ? 'Installing...' : 'Install App'}</span>
+              <span>{isSubmitting ? t('pwa.installing', 'Installing...') : t('pwa.installApp', 'Install App')}</span>
             </button>
           </div>
         </form>

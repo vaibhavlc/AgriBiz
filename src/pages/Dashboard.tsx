@@ -673,7 +673,7 @@ export const Dashboard: React.FC = () => {
               {isAlertSettingsOpen && (
                 <div className="alert-settings-popover">
                   <div className="alert-settings-header">
-                    <span>Warning Settings</span>
+                    <span>{t('dashboard.warningSettings', 'Warning Settings')}</span>
                     <button type="button" onClick={() => setIsAlertSettingsOpen(false)}>×</button>
                   </div>
                   <div className="alert-settings-body">
@@ -686,7 +686,7 @@ export const Dashboard: React.FC = () => {
                           showLowStockAlert: e.target.checked
                         })}
                       />
-                      <span>Safety Limit Warning ({stats.lowStockCount})</span>
+                      <span>{t('dashboard.safetyLimitWarning', 'Safety Limit Warning ({{count}})', { count: stats.lowStockCount })}</span>
                     </label>
                     <label className="alert-settings-option">
                       <input 
@@ -697,7 +697,7 @@ export const Dashboard: React.FC = () => {
                           showOutOfStockAlert: e.target.checked
                         })}
                       />
-                      <span>Out of Stock Warning ({stats.outOfStockCount})</span>
+                      <span>{t('dashboard.outOfStockWarning', 'Out of Stock Warning ({{count}})', { count: stats.outOfStockCount })}</span>
                     </label>
                   </div>
                 </div>
@@ -1276,7 +1276,7 @@ export const Dashboard: React.FC = () => {
               >
                 <div style={{ marginBottom: '16px' }}>
                   <h4 style={{ fontSize: '15px', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>{t('dashboard.salesVsPurchaseTrend', 'Sales Billing vs Purchase Billing Trend')}</h4>
-                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>Latest active periods</p>
+                  <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '4px 0 0 0' }}>{t('dashboard.latestActivePeriods', 'Latest active periods')}</p>
                 </div>
                 <div style={{ width: '100%', minWidth: 0 }}>
                   <BarChart 
