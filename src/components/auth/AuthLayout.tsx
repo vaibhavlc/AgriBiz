@@ -1,13 +1,13 @@
 import { useTranslation } from 'react-i18next';
 import React from 'react';
-import { ShieldCheck, Lock, Award } from 'lucide-react';
+import { ShieldCheck, Lock, Award, Globe } from 'lucide-react';
 
 interface AuthLayoutProps {
   children: React.ReactNode;
 }
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   return (
     <div className="auth-outer-container">
       <style>{`
@@ -126,6 +126,35 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
       <div className="auth-bg-glow-2" />
 
       <div className="auth-wrapper">
+        {/* Language Selector for Auth / Login Pages */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', width: '100%', marginBottom: '8px', zIndex: 20 }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '6px',
+            background: 'var(--card-bg, #ffffff)', border: '1.5px solid var(--border-color, #e2e8f0)',
+            borderRadius: '20px', padding: '3px 10px', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+          }}>
+            <Globe size={14} style={{ color: 'var(--primary, #10b981)' }} />
+            <select
+              value={i18n.language || 'en'}
+              onChange={(e) => {
+                const newLang = e.target.value;
+                i18n.changeLanguage(newLang);
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('agribiz_language', newLang);
+                }
+              }}
+              style={{
+                background: 'none', border: 'none', fontSize: '11px',
+                fontWeight: 700, color: 'var(--text-primary, #0f172a)', cursor: 'pointer', outline: 'none'
+              }}
+            >
+              <option value="en">English</option>
+              <option value="mr">मराठी (Marathi)</option>
+              <option value="hi">हिन्दी (Hindi)</option>
+            </select>
+          </div>
+        </div>
+
         <div className="auth-card-main">
           {children}
         </div>
