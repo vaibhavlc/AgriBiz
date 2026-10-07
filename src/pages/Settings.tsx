@@ -3797,9 +3797,7 @@ export const Settings: React.FC = () => {
                   <div className="card" style={{ padding: '24px', borderRadius: '16px', border: '1px solid var(--border-color)', backgroundColor: 'var(--card-bg)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
                       <div>
-                        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.3px' }}>
-                          Erase Business Data
-                        </h2>
+                        <h2 style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.3px' }}>{t("settings.eraseBusinessData", "Erase Business Data")}</h2>
                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                           {t('settings.eraseBusinessDataSub', 'Remove your business records while keeping your company account and login access safe.')}
                         </p>
