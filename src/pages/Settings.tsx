@@ -2515,11 +2515,11 @@ export const Settings: React.FC = () => {
                       value={currencySymbol} 
                       onChange={(e) => setCurrencySymbol(e.target.value)}
                     >
-                      <option value="₹">₹ (INR Rupee)</option>
-                      <option value="$">$ (USD Dollar)</option>
-                      <option value="€">€ (Euro)</option>
-                      <option value="£">£ (Pound)</option>
-                      <option value="¥">¥ (Yen)</option>
+                      <option value="₹">{t('settings.currencyInr', '₹ (INR Rupee)')}</option>
+                      <option value="$">{t('settings.currencyUsd', '$ (USD Dollar)')}</option>
+                      <option value="€">{t('settings.currencyEur', '€ (Euro)')}</option>
+                      <option value="£">{t('settings.currencyGbp', '£ (Pound)')}</option>
+                      <option value="¥">{t('settings.currencyJpy', '¥ (Yen)')}</option>
                     </select>
                   </div>
 
@@ -2530,9 +2530,9 @@ export const Settings: React.FC = () => {
                       value={dateFormat} 
                       onChange={(e) => setDateFormat(e.target.value)}
                     >
-                      <option value="DD/MM/YYYY">DD/MM/YYYY (Standard)</option>
+                      <option value="DD/MM/YYYY">DD/MM/YYYY ({t('settings.formatStandard', 'Standard')})</option>
                       <option value="DD-MM-YYYY">DD-MM-YYYY</option>
-                      <option value="YYYY-MM-DD">YYYY-MM-DD (ISO)</option>
+                      <option value="YYYY-MM-DD">YYYY-MM-DD ({t('settings.formatIso', 'ISO')})</option>
                       <option value="MM/DD/YYYY">MM/DD/YYYY</option>
                     </select>
                   </div>
@@ -2784,7 +2784,7 @@ export const Settings: React.FC = () => {
                                     <button
                                       type="button"
                                       className="btn btn-secondary btn-sm"
-                                      title="Edit details & role"
+                                      title={t('settings.editDetailsAndRole', 'Edit details & role')}
                                       onClick={() => {
                                         setEditingStaffUser(u);
                                         setStaffName(u.name);
@@ -2802,7 +2802,7 @@ export const Settings: React.FC = () => {
                                     <button
                                       type="button"
                                       className={`btn btn-sm ${u.status === 'Active' ? 'btn-secondary danger' : 'btn-secondary'}`}
-                                      title={u.role === 'Owner' ? 'Owner account cannot be disabled' : u.status === 'Active' ? 'Disable Account' : 'Enable Account'}
+                                      title={u.role === 'Owner' ? t('settings.ownerAccountCannotBeDisabled', 'The Owner account is the primary administrator and cannot be disabled.') : u.status === 'Active' ? t('settings.disableAccount', 'Disable Account') : t('settings.enableAccount', 'Enable Account')}
                                       disabled={u.role === 'Owner'}
                                       onClick={() => handleToggleUserStatus(u)}
                                       style={{ opacity: u.role === 'Owner' ? 0.5 : 1, cursor: u.role === 'Owner' ? 'not-allowed' : 'pointer' }}
@@ -2813,7 +2813,7 @@ export const Settings: React.FC = () => {
                                     <button
                                       type="button"
                                       className="btn btn-secondary btn-sm"
-                                      title={u.role === 'Owner' ? 'Reset Owner Password & PIN' : 'Reset Staff Security PIN'}
+                                      title={u.role === 'Owner' ? t('settings.resetOwnerCredentialsTitle', 'Reset Owner Password & PIN') : t('settings.resetStaffPinTitle', 'Reset Staff Security PIN')}
                                       onClick={() => {
                                         setResetStaffUser(u);
                                         setNewResetPass('');
@@ -2945,9 +2945,9 @@ export const Settings: React.FC = () => {
               {currentUser?.role !== 'Owner' ? (
                 <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <ShieldAlert size={48} style={{ color: '#ef4444', margin: '0 auto 16px' }} />
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Access Restricted</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{t('settings.restrictedAccess', 'Access Restricted')}</h3>
                   <p style={{ color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', fontSize: '14px' }}>
-                    Only the registered Business Owner is authorized to generate or restore company data backups.
+                    {t('settings.restrictedBackupNotice', 'Only the registered Business Owner is authorized to generate or restore company data backups.')}
                   </p>
                 </div>
               ) : (
@@ -2958,7 +2958,7 @@ export const Settings: React.FC = () => {
                     <div className="backup-hero-header">
                       <div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                          <h2 className="backup-hero-title">Backup & Restore Control Center</h2>
+                          <h2 className="backup-hero-title">{t('settings.backupControlCenter', 'Backup & Restore Control Center')}</h2>
                           {backupHealth ? (
                             <span style={{
                               display: 'inline-flex',
@@ -2973,16 +2973,16 @@ export const Settings: React.FC = () => {
                               border: `1px solid ${backupHealth.healthState === 'HEALTHY' ? 'rgba(16, 185, 129, 0.3)' : backupHealth.healthState === 'OVERDUE' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
                             }}>
                               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: backupHealth.healthState === 'HEALTHY' ? '#10b981' : backupHealth.healthState === 'OVERDUE' ? '#f59e0b' : '#ef4444' }}></span>
-                              {backupHealth.healthState === 'HEALTHY' ? 'System Healthy' : backupHealth.healthState === 'OVERDUE' ? 'Backup Overdue' : 'Action Required'}
+                              {backupHealth.healthState === 'HEALTHY' ? t('settings.systemHealthy', 'System Healthy') : backupHealth.healthState === 'OVERDUE' ? t('settings.backupOverdue', 'Backup Overdue') : t('settings.actionRequired', 'Action Required')}
                             </span>
                           ) : (
                             <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
-                              <RefreshCw size={12} className="spin" /> Checking health...
+                              <RefreshCw size={12} className="spin" /> {t('settings.checkingHealth', 'Checking health...')}
                             </span>
                           )}
                         </div>
                         <p className="backup-hero-sub">
-                          Automated daily backups to Google Drive. Download or restore company records at any time.
+                          {t('settings.backupHeroSub', 'Automated daily backups to Google Drive. Download or restore company records at any time.')}
                         </p>
                       </div>
 
@@ -2993,9 +2993,9 @@ export const Settings: React.FC = () => {
                         disabled={isTriggeringBackupNow}
                       >
                         {isTriggeringBackupNow ? (
-                          <><RefreshCw size={16} className="spin" /> Uploading Backup...</>
+                          <><RefreshCw size={16} className="spin" /> {t('settings.uploadingBackup', 'Uploading Backup...')}</>
                         ) : (
-                          <><UploadCloud size={16} /> Backup Now</>
+                          <><UploadCloud size={16} /> {t('settings.backupNow', 'Backup Now')}</>
                         )}
                       </button>
                     </div>
@@ -3008,13 +3008,13 @@ export const Settings: React.FC = () => {
                         </div>
                         <div>
                           <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span>Google Drive Integration</span>
+                            <span>{t('settings.gdriveIntegration', 'Google Drive Integration')}</span>
                             <span style={{ fontSize: '11px', padding: '2px 8px', borderRadius: '12px', fontWeight: 700, backgroundColor: gdriveStatus?.connected ? 'rgba(16, 185, 129, 0.15)' : 'var(--card-bg)', color: gdriveStatus?.connected ? '#10b981' : 'var(--text-muted)', border: '1px solid var(--border-color)' }}>
-                              {gdriveStatus?.connected ? 'Connected' : 'Disconnected'}
+                              {gdriveStatus?.connected ? t('settings.connected', 'Connected') : t('settings.disconnected', 'Disconnected')}
                             </span>
                           </div>
                           <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
-                            {gdriveStatus?.connected ? (gdriveStatus.googleEmail || 'Auto backup active at 2:00 AM IST') : 'Connect your account for 2 AM daily automated cloud backups.'}
+                            {gdriveStatus?.connected ? (gdriveStatus.googleEmail || t('settings.autoBackupActiveSub', 'Auto backup active at 2:00 AM IST')) : t('settings.connectAccountSub', 'Connect your account for 2 AM daily automated cloud backups.')}
                           </div>
                         </div>
                       </div>
@@ -3027,7 +3027,7 @@ export const Settings: React.FC = () => {
                           disabled={isDisconnectingDrive}
                           style={{ fontSize: '12px', color: 'var(--text-muted)', fontWeight: 600, padding: '6px 14px', borderRadius: '8px' }}
                         >
-                          {isDisconnectingDrive ? <RefreshCw size={13} className="spin" /> : 'Disconnect'}
+                          {isDisconnectingDrive ? <RefreshCw size={13} className="spin" /> : t('settings.disconnect', 'Disconnect')}
                         </button>
                       ) : (
                         <button
@@ -3037,7 +3037,7 @@ export const Settings: React.FC = () => {
                           disabled={isConnectingDrive}
                           style={{ fontWeight: 700, fontSize: '12px', padding: '7px 14px', borderRadius: '8px' }}
                         >
-                          {isConnectingDrive ? <RefreshCw size={13} className="spin" /> : <HardDrive size={14} />} Connect Google Drive
+                          {isConnectingDrive ? <RefreshCw size={13} className="spin" /> : <HardDrive size={14} />} {t('settings.connectGoogleDrive', 'Connect Google Drive')}
                         </button>
                       )}
                     </div>
@@ -3046,7 +3046,7 @@ export const Settings: React.FC = () => {
                     <div className="backup-status-grid">
                       <div className="backup-status-card">
                         <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                          Last Backup
+                          {t('settings.lastBackupLabel', 'Last Backup')}
                         </div>
                         {backupHistoryData?.lastSuccessfulBackup ? (
                           <div>
@@ -3058,41 +3058,41 @@ export const Settings: React.FC = () => {
                             </div>
                           </div>
                         ) : (
-                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>No backups completed</div>
+                          <div style={{ fontSize: '13px', color: 'var(--text-muted)' }}>{t('settings.noBackupsCompleted', 'No backups completed')}</div>
                         )}
                       </div>
 
                       <div className="backup-status-card">
                         <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                          Auto Schedule
+                          {t('settings.autoScheduleLabel', 'Auto Schedule')}
                         </div>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>Daily at 02:00 AM</div>
-                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 600 }}>IST (Indian Standard Time)</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>{t('settings.dailyAt2am', 'Daily at 02:00 AM')}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 600 }}>{t('settings.istTimeZone', 'IST (Indian Standard Time)')}</div>
                       </div>
 
                       <div className="backup-status-card">
                         <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                          Cloud Sync
+                          {t('settings.cloudSyncLabel', 'Cloud Sync')}
                         </div>
                         <div style={{ fontSize: '14px', fontWeight: 800, color: gdriveStatus?.connected ? '#10b981' : 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '6px' }}>
                           <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: gdriveStatus?.connected ? '#10b981' : '#9ca3af' }}></span>
-                          {gdriveStatus?.connected ? 'Sync Ready' : 'Not Linked'}
+                          {gdriveStatus?.connected ? t('settings.syncReady', 'Sync Ready') : t('settings.notLinked', 'Not Linked')}
                         </div>
                         <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 600 }}>
-                          {gdriveStatus?.connected ? 'Auto upload active' : 'Manual exports available'}
+                          {gdriveStatus?.connected ? t('settings.autoUploadActive', 'Auto upload active') : t('settings.manualExportsAvailable', 'Manual exports available')}
                         </div>
                       </div>
 
                       <div className="backup-status-card">
                         <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
-                          Retention Policy
+                          {t('settings.retentionPolicyLabel', 'Retention Policy')}
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px', flexWrap: 'wrap' }}>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>7 Daily</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('settings.retentionDaily', '7 Daily')}</span>
                           <span style={{ color: 'var(--text-muted)' }}>•</span>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>4 Weekly</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('settings.retentionWeekly', '4 Weekly')}</span>
                           <span style={{ color: 'var(--text-muted)' }}>•</span>
-                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>12 Monthly</span>
+                          <span style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('settings.retentionMonthly', '12 Monthly')}</span>
                         </div>
                       </div>
                     </div>
@@ -3103,10 +3103,10 @@ export const Settings: React.FC = () => {
                     <div className="backup-history-header">
                       <div>
                         <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                          Backup History & Archives
+                          {t('settings.backupHistoryArchives', 'Backup History & Archives')}
                         </h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                          View, download, or restore rolling daily and monthly backups.
+                          {t('settings.backupHistorySub', 'View, download, or restore rolling daily and monthly backups.')}
                         </p>
                       </div>
 
@@ -3114,7 +3114,7 @@ export const Settings: React.FC = () => {
                         <div style={{ display: 'flex', gap: '4px', backgroundColor: 'var(--bg-secondary)', padding: '3px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                           {(['All', 'Daily', 'Monthly'] as const).map((type) => (
                             <button
-                              key={type}
+                              key={type === 'All' ? t('common.all', 'All') : type === 'Daily' ? t('settings.daily', 'Daily') : t('settings.monthly', 'Monthly')}
                               type="button"
                               className="btn"
                               style={{
@@ -3174,11 +3174,11 @@ export const Settings: React.FC = () => {
                           <table className="table" style={{ fontSize: '13px', margin: 0, width: '100%', borderCollapse: 'separate', borderSpacing: '0' }}>
                             <thead>
                               <tr style={{ borderBottom: '1.5px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)' }}>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '20%', textAlign: 'center', verticalAlign: 'middle' }}>Backup Type</th>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '25%', textAlign: 'center', verticalAlign: 'middle' }}>Date & Time</th>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '20%', textAlign: 'center', verticalAlign: 'middle' }}>Status</th>
-                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '10%', textAlign: 'center', verticalAlign: 'middle' }}>Size</th>
-                                <th style={{ padding: '12px 14px', textAlign: 'center', whiteSpace: 'nowrap', width: '25%', verticalAlign: 'middle' }}>Actions</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '20%', textAlign: 'center', verticalAlign: 'middle' }}>{t('settings.backupTypeCol', 'Backup Type')}</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '25%', textAlign: 'center', verticalAlign: 'middle' }}>{t('settings.dateTimeCol', 'Date & Time')}</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '20%', textAlign: 'center', verticalAlign: 'middle' }}>{t('settings.statusCol', 'Status')}</th>
+                                <th style={{ padding: '12px 14px', whiteSpace: 'nowrap', width: '10%', textAlign: 'center', verticalAlign: 'middle' }}>{t('settings.sizeCol', 'Size')}</th>
+                                <th style={{ padding: '12px 14px', textAlign: 'center', whiteSpace: 'nowrap', width: '25%', verticalAlign: 'middle' }}>{t('common.actions', 'Actions')}</th>
                               </tr>
                             </thead>
                             <tbody>
@@ -3191,7 +3191,7 @@ export const Settings: React.FC = () => {
                                 return (
                                   <tr key={item._id || item.historyId} style={{ borderBottom: '1px solid var(--border-color)' }}>
                                     <td style={{ padding: '12px 14px', fontWeight: 700, color: 'var(--text-primary)', whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle' }}>
-                                      📁 {item.backupType || 'Daily'} Backup
+                                      📁 {item.backupType === 'Monthly' ? t('settings.monthly', 'Monthly') : t('settings.daily', 'Daily')} {t('settings.backup', 'Backup')}
                                     </td>
                                     <td style={{ padding: '12px 14px', color: 'var(--text-secondary)', whiteSpace: 'nowrap', textAlign: 'center', verticalAlign: 'middle' }}>
                                       {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -3228,7 +3228,7 @@ export const Settings: React.FC = () => {
                                             onClick={() => handleCloudPreview(item)}
                                             disabled={cloudPreviewLoadingId === item.historyId}
                                           >
-                                            {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Eye size={12} />} Preview
+                                            {cloudPreviewLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Eye size={12} />} {t('settings.preview', 'Preview')}
                                           </button>
                                           <button
                                             type="button"
@@ -3237,7 +3237,7 @@ export const Settings: React.FC = () => {
                                             onClick={() => handleCloudDownload(item)}
                                             disabled={cloudDownloadLoadingId === item.historyId}
                                           >
-                                            {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Download size={12} />} Download
+                                            {cloudDownloadLoadingId === item.historyId ? <RefreshCw size={11} className="spin" /> : <Download size={12} />} {t('settings.download', 'Download')}
                                           </button>
                                           <button
                                             type="button"
@@ -3246,7 +3246,7 @@ export const Settings: React.FC = () => {
                                             onClick={() => handleCloudPreview(item)}
                                             disabled={cloudPreviewLoadingId === item.historyId}
                                           >
-                                            <RotateCcw size={12} /> Restore
+                                            <RotateCcw size={12} /> {t('settings.restore', 'Restore')}
                                           </button>
                                         </div>
                                       ) : (
@@ -3275,13 +3275,13 @@ export const Settings: React.FC = () => {
                                     📁 {item.backupType || 'Daily'} Backup
                                   </span>
                                   {isExpired ? (
-                                    <span className="badge badge-secondary" style={{ fontSize: '10px', padding: '3px 7px' }}>Expired</span>
+                                    <span className="badge badge-secondary" style={{ fontSize: '10px', padding: '3px 7px' }}>{t('settings.expired', 'Expired')}</span>
                                   ) : isUnavailable ? (
-                                    <span className="badge badge-danger" style={{ fontSize: '10px', padding: '3px 7px' }}>Unavailable</span>
+                                    <span className="badge badge-danger" style={{ fontSize: '10px', padding: '3px 7px' }}>{t('settings.unavailable', 'Unavailable')}</span>
                                   ) : isFailed ? (
-                                    <span className="badge badge-danger" style={{ fontSize: '10px', padding: '3px 7px' }}>Failed</span>
+                                    <span className="badge badge-danger" style={{ fontSize: '10px', padding: '3px 7px' }}>{t('status.failed', 'Failed')}</span>
                                   ) : (
-                                    <span className="badge badge-success" style={{ fontSize: '10px', padding: '3px 7px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>✓ Available</span>
+                                    <span className="badge badge-success" style={{ fontSize: '10px', padding: '3px 7px', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.3)' }}>✓ {t('settings.available', 'Available')}</span>
                                   )}
                                 </div>
 
@@ -3329,9 +3329,9 @@ export const Settings: React.FC = () => {
                     ) : (
                       <div style={{ textAlign: 'center', padding: '36px 16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '14px', border: '1px border-dashed var(--border-color)' }}>
                         <HardDrive size={36} style={{ color: 'var(--text-muted)', marginBottom: '12px' }} />
-                        <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>No backups yet</div>
+                        <div style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>{t('settings.noBackupsYet', 'No backups yet')}</div>
                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '380px', margin: '4px auto 16px' }}>
-                          Your backup history will appear here after your first successful backup.
+                          {t('settings.noBackupsSub', 'Your backup history will appear here after your first successful backup.')}
                         </p>
                         <button
                           type="button"
@@ -3350,10 +3350,10 @@ export const Settings: React.FC = () => {
                   <div className="backup-section-card">
                     <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
                       <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <RefreshCw size={18} style={{ color: 'var(--primary)' }} /> Data Export & Restoration
+                        <RefreshCw size={18} style={{ color: 'var(--primary)' }} /> {t('settings.dataExportRestoration', 'Data Export & Restoration')}
                       </h3>
                       <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                        Export an offline JSON copy of your data or restore your company records from a backup file.
+                        {t('settings.exportRestoreSub', 'Export an offline JSON copy of your data or restore your company records from a backup file.')}
                       </p>
                     </div>
 
@@ -3367,13 +3367,13 @@ export const Settings: React.FC = () => {
                             </div>
                             <div>
                               <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                                Download JSON Copy
+                                {t('settings.downloadJsonCopy', 'Download JSON Copy')}
                               </h4>
-                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Offline device backup</span>
+                              <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t('settings.offlineDeviceBackup', 'Offline device backup')}</span>
                             </div>
                           </div>
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 12px' }}>
-                            Save a complete JSON snapshot containing all customers, suppliers, inventory, invoices, and payment ledgers.
+                            {t('settings.downloadJsonSub', 'Save a complete JSON snapshot containing all customers, suppliers, inventory, invoices, and payment ledgers.')}
                           </p>
 
                           <button
@@ -3382,12 +3382,12 @@ export const Settings: React.FC = () => {
                             onClick={() => setShowManualBackupDetails(!showManualBackupDetails)}
                             style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)', display: 'inline-flex', alignItems: 'center', gap: '4px', padding: '0', backgroundColor: 'transparent', border: 'none', marginBottom: '12px' }}
                           >
-                            {showManualBackupDetails ? <ChevronUp size={13} /> : <ChevronDown size={13} />} What's Included?
+                            {showManualBackupDetails ? <ChevronUp size={13} /> : <ChevronDown size={13} />} {t('settings.whatsIncluded', "What's Included?")}
                           </button>
 
                           {showManualBackupDetails && (
                             <div style={{ backgroundColor: 'var(--card-bg)', padding: '10px 12px', borderRadius: '8px', marginBottom: '12px', fontSize: '11px', color: 'var(--text-secondary)', lineHeight: 1.5, border: '1px solid var(--border-color)' }}>
-                              Includes: Customers, Suppliers, Products, Invoices, Quotations, Purchases, Expenses, Payments, and Recycle Bin items. Excludes passwords/tokens.
+                              {t('settings.whatsIncludedSub', 'Includes: Customers, Suppliers, Products, Invoices, Quotations, Purchases, Expenses, Payments, and Recycle Bin items. Excludes passwords/tokens.')}
                             </div>
                           )}
 
@@ -3398,7 +3398,7 @@ export const Settings: React.FC = () => {
                                 <div style={{ backgroundColor: 'var(--card-bg)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '2px' }}>
                                     <Clock size={12} style={{ color: 'var(--primary)' }} />
-                                    <span>Last Manual Export</span>
+                                    <span>{t('settings.lastManualExportLabel', 'Last Manual Export')}</span>
                                   </div>
                                   <div style={{ color: 'var(--text-secondary)' }}>
                                     {new Date(lastBackupMeta.createdAt).toLocaleString()}
@@ -3410,7 +3410,7 @@ export const Settings: React.FC = () => {
                                 <div style={{ backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', borderRadius: '8px', padding: '8px 10px', fontSize: '11px' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontWeight: 700, color: '#10b981', marginBottom: '2px' }}>
                                     <FileCheck size={12} />
-                                    <span>Last Restored</span>
+                                    <span>{t('settings.lastRestoredLabel', 'Last Restored')}</span>
                                   </div>
                                   <div style={{ color: 'var(--text-secondary)' }}>
                                     {new Date(lastRestoreMeta.restoredAt).toLocaleString()}
@@ -3429,9 +3429,9 @@ export const Settings: React.FC = () => {
                           style={{ width: '100%', fontWeight: 700, padding: '10px', fontSize: '13px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
                         >
                           {isExportingBackup ? (
-                            <><RefreshCw size={15} className="spin" /> Generating Export...</>
+                            <><RefreshCw size={15} className="spin" /> {t('settings.generatingExport', 'Generating Export...')}</>
                           ) : (
-                            <><Download size={15} /> Export JSON Backup</>
+                            <><Download size={15} /> {t('settings.exportJsonBackup', 'Export JSON Backup')}</>
                           )}
                         </button>
                       </div>
@@ -3447,11 +3447,11 @@ export const Settings: React.FC = () => {
                               <h4 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
                                 Restore Business Data
                               </h4>
-                              <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>Replaces current database</span>
+                              <span style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>{t('settings.replacesCurrentDatabase', 'Replaces current database')}</span>
                             </div>
                           </div>
                           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: '0 0 12px' }}>
-                            Choose your backup source to restore company records.
+                            {t('settings.chooseBackupSourceSub', 'Choose your backup source to restore company records.')}
                           </p>
 
                           {/* Source Tabs */}
@@ -3474,7 +3474,7 @@ export const Settings: React.FC = () => {
                               }}
                               onClick={() => setRestoreSourceTab('device')}
                             >
-                              📱 From Device
+                              📱 {t('settings.fromDevice', 'From Device')}
                             </button>
                             <button
                               type="button"
@@ -3500,7 +3500,7 @@ export const Settings: React.FC = () => {
                                 }
                               }}
                             >
-                              ☁️ From Cloud
+                              ☁️ {t('settings.fromCloud', 'From Cloud')}
                             </button>
                           </div>
                         </div>
@@ -3537,7 +3537,7 @@ export const Settings: React.FC = () => {
                                   color: 'var(--text-primary)'
                                 }}
                               >
-                                <UploadCloud size={15} /> {selectedBackupFile ? selectedBackupFile.name : 'Choose Backup File (.json)'}
+                                <UploadCloud size={15} /> {selectedBackupFile ? selectedBackupFile.name : t('settings.chooseBackupFile', 'Choose Backup File (.json)')}
                               </label>
                             </div>
                           )}
@@ -3561,7 +3561,7 @@ export const Settings: React.FC = () => {
                                 border: '1px solid var(--border-color)'
                               }}
                             >
-                              <option value="">-- Select recorded cloud backup --</option>
+                              <option value="">{t('settings.selectRecordedCloudBackup', '-- Select recorded cloud backup --')}</option>
                               {backupHistoryData?.historyList?.filter((item: any) => item.status === 'SUCCESS').map((item: any) => (
                                 <option key={item._id || item.historyId} value={item.historyId || item._id}>
                                   📁 {item.backupType || 'Daily'} — {new Date(item.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
@@ -3579,7 +3579,7 @@ export const Settings: React.FC = () => {
                         {isValidatingBackup && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '12px', backgroundColor: 'var(--bg-secondary)', borderRadius: '10px', marginBottom: '16px', fontSize: '13px', border: '1px solid var(--border-color)' }}>
                             <RefreshCw size={15} className="spin" style={{ color: 'var(--primary)' }} />
-                            <span>Validating Backup File...</span>
+                            <span>{t('settings.validatingBackupFile', 'Validating Backup File...')}</span>
                           </div>
                         )}
 
@@ -3588,35 +3588,35 @@ export const Settings: React.FC = () => {
                             {!validationResult.valid ? (
                               <div style={{ padding: '14px', backgroundColor: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '12px', color: '#ef4444', fontSize: '13px' }}>
                                 <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                  <AlertCircle size={16} /> Backup File Invalid
+                                  <AlertCircle size={16} /> {t('settings.backupFileInvalid', 'Backup File Invalid')}
                                 </div>
                                 <div>{validationResult.message}</div>
                               </div>
                             ) : (
                               <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.08)', borderRadius: '14px', padding: '18px' }}>
                                 <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#10b981', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                  <FileCheck size={18} /> Backup Validated & Ready
+                                  <FileCheck size={18} /> {t('settings.backupValidatedReady', 'Backup Validated & Ready')}
                                 </h4>
 
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '16px' }}>
-                                  <div><strong>Company:</strong> {validationResult.metadata?.companyName}</div>
-                                  <div><strong>Backup Date:</strong> {new Date(validationResult.metadata?.createdAt).toLocaleString()}</div>
+                                  <div><strong>{t('settings.companyLabel', 'Company:')}</strong> {validationResult.metadata?.companyName}</div>
+                                  <div><strong>{t('settings.backupDateLabel', 'Backup Date:')}</strong> {new Date(validationResult.metadata?.createdAt).toLocaleString()}</div>
                                 </div>
 
                                 <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '14px', border: '1px solid var(--border-color)' }}>
                                   <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                                    Record Summary Preview:
+                                    {t('settings.recordSummaryPreview', 'Record Summary Preview:')}
                                   </div>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', fontSize: '12px' }}>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>👥 Customers: <strong>{validationResult.dataSummary?.customers || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>🏭 Suppliers: <strong>{validationResult.dataSummary?.suppliers || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>📦 Products: <strong>{validationResult.dataSummary?.products || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>📄 Invoices: <strong>{validationResult.dataSummary?.invoices || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>📋 Quotations: <strong>{validationResult.dataSummary?.quotations || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>🛒 Purchases: <strong>{validationResult.dataSummary?.purchases || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>💸 Expenses: <strong>{validationResult.dataSummary?.expenses || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>💳 Payments: <strong>{validationResult.dataSummary?.payments || 0}</strong></div>
-                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>🗑️ Recycle Bin: <strong>{validationResult.dataSummary?.recycleBin || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.customersLabel', '👥 Customers:')} <strong>{validationResult.dataSummary?.customers || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.suppliersLabel', '🏭 Suppliers:')} <strong>{validationResult.dataSummary?.suppliers || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.productsLabel', '📦 Products:')} <strong>{validationResult.dataSummary?.products || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.invoicesLabel', '📄 Invoices:')} <strong>{validationResult.dataSummary?.invoices || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.quotationsLabel', '📋 Quotations:')} <strong>{validationResult.dataSummary?.quotations || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.purchasesLabel', '🛒 Purchases:')} <strong>{validationResult.dataSummary?.purchases || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.expensesLabel', '💸 Expenses:')} <strong>{validationResult.dataSummary?.expenses || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.paymentsLabel', '💳 Payments:')} <strong>{validationResult.dataSummary?.payments || 0}</strong></div>
+                                    <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.recycleBinLabel', '🗑️ Recycle Bin:')} <strong>{validationResult.dataSummary?.recycleBin || 0}</strong></div>
                                   </div>
                                 </div>
                               </div>
@@ -3627,26 +3627,26 @@ export const Settings: React.FC = () => {
                         {validationResult?.valid && (
                           <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '14px', padding: '18px' }}>
                             <div style={{ fontSize: '15px', fontWeight: 800, color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <AlertTriangle size={18} /> ⚠ Confirm Business Data Restoration
+                              <AlertTriangle size={18} /> ⚠ {t('settings.confirmBusinessDataRestoration', 'Confirm Business Data Restoration')}
                             </div>
                             <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5, margin: '0 0 12px' }}>
-                              Restoring this backup file will replace your current business data records.
+                              {t('settings.restoreWarningNotice', 'Restoring this backup file will replace your current business data records.')}
                             </p>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '16px', backgroundColor: 'var(--card-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                              <div>✓ Company profile & business settings will remain untouched</div>
-                              <div>✓ Registered staff users & passwords will remain unchanged</div>
-                              <div>✓ Connected Google Drive integration will remain active</div>
+                              <div>✓ {t('settings.restoreSafetyPoint1', 'Company profile & business settings will remain untouched')}</div>
+                              <div>✓ {t('settings.restoreSafetyPoint2', 'Registered staff users & passwords will remain unchanged')}</div>
+                              <div>✓ {t('settings.restoreSafetyPoint3', 'Connected Google Drive integration will remain active')}</div>
                             </div>
 
                             <div style={{ marginBottom: '14px' }}>
                               <label className="form-label" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '12px' }}>
-                                Type <strong style={{ color: '#ef4444' }}>RESTORE</strong> to confirm:
+                                {t('settings.typeRestoreToConfirm', 'Type RESTORE to confirm:')}
                               </label>
                               <input
                                 type="text"
                                 className="form-control"
-                                placeholder="Type RESTORE to confirm"
+                                placeholder={t('settings.typeRestorePlaceholder', 'Type RESTORE to confirm')}
                                 value={restoreConfirmText}
                                 onChange={(e) => setRestoreConfirmText(e.target.value)}
                                 style={{ maxWidth: '280px', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', borderColor: restoreConfirmText === 'RESTORE' ? '#10b981' : 'var(--border-color)' }}
@@ -3675,9 +3675,9 @@ export const Settings: React.FC = () => {
                               }}
                             >
                               {isRestoring ? (
-                                <><RefreshCw size={15} className="spin" /> Restoring Data...</>
+                                <><RefreshCw size={15} className="spin" /> {t('settings.restoringData', 'Restoring Data...')}</>
                               ) : (
-                                'Restore Business Data'
+                                t('settings.restoreBusinessData', 'Restore Business Data')
                               )}
                             </button>
                           </div>
@@ -3690,54 +3690,54 @@ export const Settings: React.FC = () => {
                       <div>
                         <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: 'rgba(16, 185, 129, 0.08)', borderRadius: '14px', padding: '18px', marginBottom: '20px' }}>
                           <h4 style={{ fontSize: '15px', fontWeight: 800, color: '#10b981', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <FileCheck size={18} /> Cloud Backup Validated & Ready
+                            <FileCheck size={18} /> {t('settings.cloudBackupValidatedReady', 'Cloud Backup Validated & Ready')}
                           </h4>
 
                           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '13px', color: 'var(--text-primary)', marginBottom: '16px' }}>
-                            <div><strong>Selected File:</strong> {selectedCloudHistory.fileName}</div>
-                            <div><strong>Backup Date:</strong> {new Date(selectedCloudHistory.createdAt).toLocaleString()}</div>
+                            <div><strong>{t('settings.selectedFileLabel', 'Selected File:')}</strong> {selectedCloudHistory.fileName}</div>
+                            <div><strong>{t('settings.backupDateLabel', 'Backup Date:')}</strong> {new Date(selectedCloudHistory.createdAt).toLocaleString()}</div>
                           </div>
 
                           <div style={{ backgroundColor: 'var(--card-bg)', borderRadius: '12px', padding: '14px', border: '1px solid var(--border-color)' }}>
                             <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '10px' }}>
-                              Record Summary Preview:
+                              {t('settings.recordSummaryPreview', 'Record Summary Preview:')}
                             </div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '8px', fontSize: '12px' }}>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>👥 Customers: <strong>{cloudValidationResult.dataSummary?.customers || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>🏭 Suppliers: <strong>{cloudValidationResult.dataSummary?.suppliers || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>📦 Products: <strong>{cloudValidationResult.dataSummary?.products || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>📄 Invoices: <strong>{cloudValidationResult.dataSummary?.invoices || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>📋 Quotations: <strong>{cloudValidationResult.dataSummary?.quotations || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>🛒 Purchases: <strong>{cloudValidationResult.dataSummary?.purchases || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>💸 Expenses: <strong>{cloudValidationResult.dataSummary?.expenses || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>💳 Payments: <strong>{cloudValidationResult.dataSummary?.payments || 0}</strong></div>
-                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>🗑️ Recycle Bin: <strong>{cloudValidationResult.dataSummary?.recycleBin || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.customersLabel', '👥 Customers:')} <strong>{cloudValidationResult.dataSummary?.customers || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.suppliersLabel', '🏭 Suppliers:')} <strong>{cloudValidationResult.dataSummary?.suppliers || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.productsLabel', '📦 Products:')} <strong>{cloudValidationResult.dataSummary?.products || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.invoicesLabel', '📄 Invoices:')} <strong>{cloudValidationResult.dataSummary?.invoices || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.quotationsLabel', '📋 Quotations:')} <strong>{cloudValidationResult.dataSummary?.quotations || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.purchasesLabel', '🛒 Purchases:')} <strong>{cloudValidationResult.dataSummary?.purchases || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.expensesLabel', '💸 Expenses:')} <strong>{cloudValidationResult.dataSummary?.expenses || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.paymentsLabel', '💳 Payments:')} <strong>{cloudValidationResult.dataSummary?.payments || 0}</strong></div>
+                              <div style={{ backgroundColor: 'var(--bg-secondary)', padding: '8px 10px', borderRadius: '8px', color: 'var(--text-primary)' }}>{t('settings.recycleBinLabel', '🗑️ Recycle Bin:')} <strong>{cloudValidationResult.dataSummary?.recycleBin || 0}</strong></div>
                             </div>
                           </div>
                         </div>
 
                         <div style={{ backgroundColor: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: '14px', padding: '18px' }}>
                           <div style={{ fontSize: '15px', fontWeight: 800, color: '#ef4444', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <AlertTriangle size={18} /> ⚠ Confirm Cloud Backup Restoration
+                            <AlertTriangle size={18} /> ⚠ {t('settings.confirmCloudBackupRestoration', 'Confirm Cloud Backup Restoration')}
                           </div>
                           <p style={{ fontSize: '13px', color: 'var(--text-primary)', lineHeight: 1.5, margin: '0 0 12px' }}>
-                            Restoring this backup from Google Drive will replace your current business data records.
+                            {t('settings.restoreCloudWarningNotice', 'Restoring this backup from Google Drive will replace your current business data records.')}
                           </p>
 
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '16px', backgroundColor: 'var(--card-bg)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-                            <div>✓ Company profile & business settings will remain untouched</div>
-                            <div>✓ Registered staff users & passwords will remain unchanged</div>
-                            <div>✓ Connected Google Drive integration will remain active</div>
+                            <div>✓ {t('settings.restoreSafetyPoint1', 'Company profile & business settings will remain untouched')}</div>
+                            <div>✓ {t('settings.restoreSafetyPoint2', 'Registered staff users & passwords will remain unchanged')}</div>
+                            <div>✓ {t('settings.restoreSafetyPoint3', 'Connected Google Drive integration will remain active')}</div>
                           </div>
 
                           <div style={{ marginBottom: '14px' }}>
                             <label className="form-label" style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '12px' }}>
-                              Type <strong style={{ color: '#ef4444' }}>RESTORE</strong> to confirm:
+                              {t('settings.typeRestoreToConfirm', 'Type RESTORE to confirm:')}
                             </label>
                             <input
                               type="text"
                               className="form-control"
-                              placeholder="Type RESTORE to confirm"
+                              placeholder={t('settings.typeRestorePlaceholder', 'Type RESTORE to confirm')}
                               value={cloudConfirmInput}
                               onChange={(e) => setCloudConfirmInput(e.target.value)}
                               style={{ maxWidth: '280px', backgroundColor: 'var(--card-bg)', color: 'var(--text-primary)', borderColor: cloudConfirmInput === 'RESTORE' ? '#10b981' : 'var(--border-color)' }}
@@ -3766,9 +3766,9 @@ export const Settings: React.FC = () => {
                             }}
                           >
                             {isRestoringCloud ? (
-                              <><RefreshCw size={15} className="spin" /> Restoring Data...</>
+                              <><RefreshCw size={15} className="spin" /> {t('settings.restoringData', 'Restoring Data...')}</>
                             ) : (
-                              'Restore Selected Cloud Backup'
+                              t('settings.restoreSelectedCloudBackup', 'Restore Selected Cloud Backup')
                             )}
                           </button>
                         </div>
@@ -3786,9 +3786,9 @@ export const Settings: React.FC = () => {
               {currentUser?.role !== 'Owner' ? (
                 <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
                   <ShieldAlert size={48} style={{ color: '#ef4444', margin: '0 auto 16px' }} />
-                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>Access Restricted</h3>
+                  <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '8px' }}>{t('settings.restrictedAccess', 'Access Restricted')}</h3>
                   <p style={{ color: 'var(--text-secondary)', maxWidth: '480px', margin: '0 auto', fontSize: '14px' }}>
-                    Only the registered Business Owner is authorized to erase company business data.
+                    {t('settings.restrictedEraseNotice', 'Only the registered Business Owner is authorized to erase company business data.')}
                   </p>
                 </div>
               ) : (
@@ -3801,7 +3801,7 @@ export const Settings: React.FC = () => {
                           Erase Business Data
                         </h2>
                         <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
-                          Remove your business records while keeping your company account and login access safe.
+                          {t('settings.eraseBusinessDataSub', 'Remove your business records while keeping your company account and login access safe.')}
                         </p>
                       </div>
 
@@ -3812,7 +3812,7 @@ export const Settings: React.FC = () => {
                         disabled={isLoadingEraseSummary}
                         style={{ fontSize: '12px', padding: '6px 14px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '6px' }}
                       >
-                        <RefreshCw size={13} className={isLoadingEraseSummary ? 'spin' : ''} /> Refresh Counts
+                        <RefreshCw size={13} className={isLoadingEraseSummary ? 'spin' : ''} /> {t('settings.refreshCounts', 'Refresh Counts')}
                       </button>
                     </div>
                   </div>
@@ -3823,26 +3823,26 @@ export const Settings: React.FC = () => {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px', flexWrap: 'wrap', gap: '10px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#065f46' }}>
                           <RotateCcw size={20} />
-                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>Undo Last Erase Available</h3>
+                          <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>{t('settings.undoLastEraseAvailable', 'Undo Last Erase Available')}</h3>
                         </div>
                         <span className="badge badge-success" style={{ fontSize: '11px', padding: '5px 10px', fontWeight: 700 }}>
-                          UNDO AVAILABLE
+                          {t('settings.undoAvailable', 'UNDO AVAILABLE')}
                         </span>
                       </div>
 
                       <p style={{ fontSize: '13px', color: '#047857', margin: '0 0 14px', lineHeight: 1.5 }}>
-                        Restore the business data removed by your most recent temporary erase for <strong>{eraseSummaryData?.companyName}</strong>.
+                        {t('settings.restoreErasedDataNotice', 'Restore the business data removed by your most recent temporary erase for')} <strong>{eraseSummaryData?.companyName}</strong>.
                       </p>
 
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', fontSize: '12px', color: '#065f46', backgroundColor: '#ffffff', padding: '12px 14px', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)', marginBottom: '16px' }}>
-                        <div><strong>Last Erased:</strong> {new Date(eraseSummaryData.activeTemporaryErase.erasedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
-                        <div><strong>Performed By:</strong> {eraseSummaryData.activeTemporaryErase.erasedBy || 'Owner'}</div>
+                        <div><strong>{t('settings.lastErasedLabel', 'Last Erased:')}</strong> {new Date(eraseSummaryData.activeTemporaryErase.erasedAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}</div>
+                        <div><strong>{t('settings.performedByLabel', 'Performed By:')}</strong> {eraseSummaryData.activeTemporaryErase.erasedBy || 'Owner'}</div>
                       </div>
 
                       {eraseSummaryData.activeTemporaryErase.dataSummary && (
                         <div style={{ marginBottom: '16px' }}>
                           <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#047857', marginBottom: '8px' }}>
-                            Records Available to Restore:
+                            {t('settings.recordsAvailableToRestore', 'Records Available to Restore:')}
                           </div>
                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                             <span className="badge badge-secondary" style={{ backgroundColor: '#ffffff', color: '#047857', border: '1px solid rgba(16, 185, 129, 0.3)' }}>Customers: {eraseSummaryData.activeTemporaryErase.dataSummary.customers || 0}</span>
@@ -3866,11 +3866,11 @@ export const Settings: React.FC = () => {
                       >
                         {isUndoingErase ? (
                           <>
-                            <RefreshCw size={15} className="spin" /> Restoring Business Data...
+                            <RefreshCw size={15} className="spin" /> {t('settings.restoringBusinessData', 'Restoring Business Data...')}
                           </>
                         ) : (
                           <>
-                            <RotateCcw size={15} /> Undo Last Erase
+                            <RotateCcw size={15} /> {t('settings.undoLastErase', 'Undo Last Erase')}
                           </>
                         )}
                       </button>
@@ -3882,10 +3882,10 @@ export const Settings: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
                       <div>
                         <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                          Current Business Data
+                          {t('settings.currentBusinessData', 'Current Business Data')}
                         </h3>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                          Active operational records for <strong>{eraseSummaryData?.companyName || currentCompany?.businessName}</strong>
+                          {t('settings.activeOperationalRecordsFor', 'Active operational records for')} <strong>{eraseSummaryData?.companyName || currentCompany?.businessName}</strong>
                         </p>
                       </div>
                     </div>
@@ -3893,39 +3893,39 @@ export const Settings: React.FC = () => {
                     {/* Operational Record Statistic Cards Grid */}
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '20px' }}>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Customers</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('common.customers', 'Customers')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.customers || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Suppliers</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('common.suppliers', 'Suppliers')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.suppliers || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Products</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('common.products', 'Products')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.products || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sales Invoices</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('nav.sales', 'Sales Invoices')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.invoices || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Quotations</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('settings.quotations', 'Quotations')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.quotations || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Purchases</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('nav.purchases', 'Purchases')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.purchases || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Expenses</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('nav.expenses', 'Expenses')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.expenses || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Payments</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('nav.payments', 'Payments')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.payments || 0}</div>
                       </div>
                       <div style={{ padding: '14px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
-                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Recycle Bin</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('nav.recycleBin', 'Recycle Bin')}</div>
                         <div style={{ fontSize: '20px', fontWeight: 800, color: 'var(--text-primary)', marginTop: '4px' }}>{eraseSummaryData?.summary?.recycleBin || 0}</div>
                       </div>
                     </div>
@@ -3933,9 +3933,9 @@ export const Settings: React.FC = () => {
                     {/* 8. EMPTY STATE AFTER ERASURE */}
                     {eraseSummaryData?.summary && Object.values(eraseSummaryData.summary).every((val: any) => Number(val) === 0) && (
                       <div style={{ padding: '16px', backgroundColor: 'var(--bg-secondary)', borderRadius: '12px', border: '1px border-dashed var(--border-color)', textAlign: 'center', marginBottom: '20px' }}>
-                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>📁 No Business Records</div>
+                        <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>📁 {t('settings.noBusinessRecords', 'No Business Records')}</div>
                         <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                          Your business data has been erased. Your company account and login access are still active.
+                          {t('settings.businessDataErasedNotice', 'Your business data has been erased. Your company account and login access are still active.')}
                         </div>
                       </div>
                     )}
@@ -3943,12 +3943,12 @@ export const Settings: React.FC = () => {
                     {/* 3. YOUR ACCOUNT WILL STAY SAFE */}
                     <div style={{ border: '1px solid rgba(16, 185, 129, 0.3)', backgroundColor: '#ecfdf5', borderRadius: '14px', padding: '16px' }}>
                       <div style={{ fontSize: '12px', fontWeight: 800, color: '#065f46', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' }}>
-                        Your Account Will Stay Safe
+                        {t('settings.yourAccountWillStaySafe', 'Your Account Will Stay Safe')}
                       </div>
                       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', fontSize: '13px', color: '#047857', fontWeight: 700 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> Company Account: <strong>Will remain</strong></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> Users & Credentials: <strong>Will remain</strong></div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> Login & Access: <strong>Will remain</strong></div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> {t('settings.companyAccountWillRemain', 'Company Account: Will remain')}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> {t('settings.usersCredentialsWillRemain', 'Users & Credentials: Will remain')}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}><CheckCircle2 size={16} /> {t('settings.loginAccessWillRemain', 'Login & Access: Will remain')}</div>
                       </div>
                     </div>
                   </div>
@@ -3956,7 +3956,7 @@ export const Settings: React.FC = () => {
                   {/* 4. ERASE MODE SELECTION (CHOOSE WHAT YOU WANT TO DO) */}
                   <div className="card" style={{ padding: '24px', borderRadius: '16px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 16px' }}>
-                      Choose What You Want To Do
+                      {t('settings.chooseWhatYouWantToDo', 'Choose What You Want To Do')}
                     </h3>
 
                     {/* Two Large Selectable Mode Cards */}
@@ -3975,14 +3975,14 @@ export const Settings: React.FC = () => {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: selectedEraseMode === 'temporary' ? '#1e40af' : 'var(--text-primary)', fontSize: '16px' }}>
-                            <RotateCcw size={20} /> Temporary Erase
+                            <RotateCcw size={20} /> {t('settings.temporaryErase', 'Temporary Erase')}
                           </div>
                           <span className="badge badge-success" style={{ fontSize: '11px', padding: '4px 8px', fontWeight: 700 }}>
                             UNDO AVAILABLE
                           </span>
                         </div>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                          Temporarily remove your business data. Your latest erased data can be restored using Undo Last Erase.
+                          {t('settings.temporaryEraseSub', 'Temporarily remove your business data. Your latest erased data can be restored using Undo Last Erase.')}
                         </p>
                       </div>
 
@@ -4000,14 +4000,14 @@ export const Settings: React.FC = () => {
                       >
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 800, color: selectedEraseMode === 'permanent' ? '#991b1b' : 'var(--text-primary)', fontSize: '16px' }}>
-                            <Flame size={20} style={{ color: '#dc2626' }} /> Permanent Erase
+                            <Flame size={20} style={{ color: '#dc2626' }} /> {t('settings.permanentErase', 'Permanent Erase')}
                           </div>
                           <span className="badge badge-danger" style={{ fontSize: '11px', padding: '4px 8px', fontWeight: 700 }}>
-                            IRREVERSIBLE
+                            {t('settings.irreversible', 'IRREVERSIBLE')}
                           </span>
                         </div>
                         <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                          Permanently remove all business data. This action cannot be undone.
+                          {t('settings.permanentEraseSub', 'Permanently remove all business data. This action cannot be undone.')}
                         </p>
                       </div>
                     </div>
@@ -4021,17 +4021,17 @@ export const Settings: React.FC = () => {
                           <RotateCcw size={18} /> Temporary Erase
                         </div>
                         <p style={{ fontSize: '13px', color: '#b45309', lineHeight: 1.5, margin: '0 0 16px' }}>
-                          Your business records will be removed from the active company, but the latest erased data will be saved so you can undo this action.
+                          {t('settings.temporaryEraseNotice', 'Your business records will be removed from the active company, but the latest erased data will be saved so you can undo this action.')}
                         </p>
 
                         <div style={{ marginBottom: '16px' }}>
                           <label className="form-label" style={{ fontWeight: 700, color: '#78350f', fontSize: '12px' }}>
-                            Type <strong>ERASE</strong> to continue:
+                            {t('settings.typeEraseToContinue', 'Type ERASE to continue:')}
                           </label>
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="Type ERASE to confirm"
+                            placeholder={t('settings.typeErasePlaceholder', 'Type ERASE to confirm')}
                             value={eraseConfirmText}
                             onChange={(e) => setEraseConfirmText(e.target.value)}
                             style={{ maxWidth: '280px', borderColor: eraseConfirmText === 'ERASE' ? '#10b981' : '#f59e0b' }}
@@ -4061,10 +4061,10 @@ export const Settings: React.FC = () => {
                         >
                           {isExecutingErase ? (
                             <>
-                              <RefreshCw size={15} className="spin" /> Erasing Business Data...
+                              <RefreshCw size={15} className="spin" /> {t('settings.erasingBusinessData', 'Erasing Business Data...')}
                             </>
                           ) : (
-                            'Temporarily Erase Business Data'
+                            t('settings.temporarilyEraseBusinessData', 'Temporarily Erase Business Data')
                           )}
                         </button>
                       </div>
@@ -4074,23 +4074,23 @@ export const Settings: React.FC = () => {
                     {selectedEraseMode === 'permanent' && (
                       <div style={{ backgroundColor: '#fff1f2', border: '1px solid rgba(244, 63, 94, 0.4)', borderRadius: '14px', padding: '20px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#be123c', fontWeight: 800, fontSize: '15px', marginBottom: '8px' }}>
-                          <AlertTriangle size={20} style={{ color: '#dc2626' }} /> ⚠ Permanent Deletion
+                          <AlertTriangle size={20} style={{ color: '#dc2626' }} /> ⚠ {t('settings.permanentDeletion', 'Permanent Deletion')}
                         </div>
                         <p style={{ fontSize: '13px', color: '#9f1239', lineHeight: 1.5, margin: '0 0 4px', fontWeight: 700 }}>
-                          You are about to permanently delete all business data for {eraseSummaryData?.companyName || currentCompany?.businessName || 'your company'}.
+                          {t('settings.permanentDeletionNotice', 'You are about to permanently delete all business data for')} {eraseSummaryData?.companyName || currentCompany?.businessName || 'your company'}.
                         </p>
                         <p style={{ fontSize: '12px', color: '#be123c', margin: '0 0 16px' }}>
-                          This action cannot be undone.
+                          {t('settings.actionCannotBeUndone', 'This action cannot be undone.')}
                         </p>
 
                         <div style={{ marginBottom: '16px' }}>
                           <label className="form-label" style={{ fontWeight: 700, color: '#881337', fontSize: '12px' }}>
-                            Type <strong>ERASE</strong> to continue:
+                            {t('settings.typeEraseToContinue', 'Type ERASE to continue:')}
                           </label>
                           <input
                             type="text"
                             className="form-control"
-                            placeholder="Type ERASE to confirm"
+                            placeholder={t('settings.typeErasePlaceholder', 'Type ERASE to confirm')}
                             value={eraseConfirmText}
                             onChange={(e) => setEraseConfirmText(e.target.value)}
                             style={{ maxWidth: '280px', borderColor: eraseConfirmText === 'ERASE' ? '#10b981' : '#f43f5e' }}
@@ -4120,10 +4120,10 @@ export const Settings: React.FC = () => {
                         >
                           {isExecutingErase ? (
                             <>
-                              <RefreshCw size={15} className="spin" /> Deleting Permanently...
+                              <RefreshCw size={15} className="spin" /> {t('settings.deletingPermanently', 'Deleting Permanently...')}
                             </>
                           ) : (
-                            'Permanently Erase Business Data'
+                            t('settings.permanentlyEraseBusinessData', 'Permanently Erase Business Data')
                           )}
                         </button>
                       </div>
@@ -4147,11 +4147,11 @@ export const Settings: React.FC = () => {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
                           <AlertTriangle size={20} style={{ color: '#dc2626' }} />
                           <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 800, color: '#dc2626' }}>
-                            Danger Zone — Delete Business Account
+                            {t('settings.dangerZoneDeleteAccount', 'Danger Zone — Delete Business Account')}
                           </h4>
                         </div>
                         <p style={{ margin: 0, fontSize: '13px', color: 'var(--text-secondary,#475569)', lineHeight: '1.5' }}>
-                          Permanently delete this business account, all staff members, inventory, invoices, reports, customers, and all database records. <strong>This action cannot be undone.</strong>
+                          {t('settings.deleteBusinessAccountWarning', 'Permanently delete this business account, all staff members, inventory, invoices, reports, customers, and all database records. This action cannot be undone.')}
                         </p>
                       </div>
                       <button
@@ -4208,12 +4208,12 @@ export const Settings: React.FC = () => {
                     justifyContent: 'center'
                   }}>
                     <CheckCircle2 size={16} style={{ color: '#10b981' }} />
-                    <span>Preferences saved successfully!</span>
+                    <span>{t('settings.preferencesSavedSuccess', 'Preferences saved successfully!')}</span>
                   </div>
                 )}
               </div>
               <button type="submit" className="btn btn-primary" style={{ padding: '12px 28px', fontWeight: 700 }}>
-                Save Settings
+                {t('settings.saveSettings', 'Save Settings')}
               </button>
             </div>
           )}
@@ -4228,17 +4228,17 @@ export const Settings: React.FC = () => {
             setIsAddUserModalOpen(false);
             setEditingStaffUser(null);
           }}
-          title={editingStaffUser ? `Edit Staff Member - ${editingStaffUser.name}` : 'Add New Staff Employee'}
+          title={editingStaffUser ? t('settings.editStaffMemberTitle', 'Edit Staff Member - {{name}}', { name: editingStaffUser.name }) : t('settings.addNewStaffEmployee', 'Add New Staff Employee')}
         >
           <form onSubmit={handleSaveStaffUser} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                Full Name *
+                {t('settings.fullName', 'Full Name')} *
               </label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. Ramesh Sharma"
+                placeholder={t('settings.staffNamePlaceholder', 'e.g. Ramesh Sharma')}
                 value={staffName}
                 onChange={(e) => setStaffName(e.target.value)}
                 required
@@ -4248,12 +4248,12 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                Mobile Number <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Optional)</span>
+                {t('settings.mobileNumberOptional', 'Mobile Number (Optional)')}
               </label>
               <input
                 type="tel"
                 className="form-control"
-                placeholder="10-digit mobile number"
+                placeholder={t('settings.mobilePlaceholder', '10-digit mobile number')}
                 value={staffMobile}
                 onChange={(e) => setStaffMobile(e.target.value)}
                 disabled={!!editingStaffUser}
@@ -4263,7 +4263,7 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                Assigned System Role *
+                {t('settings.assignedSystemRole', 'Assigned System Role')} *
               </label>
               <select
                 className="form-control"
@@ -4271,20 +4271,20 @@ export const Settings: React.FC = () => {
                 onChange={(e) => handleStaffRoleChange(e.target.value as UserRole)}
                 required
               >
-                <option value="Accounts">Accounts (Purchases, Inventory, Expenses, Reports, GST)</option>
-                <option value="Cashier">Cashier (Billing, POS Invoices, Payments)</option>
-                <option value="Owner">Owner (Full System Access)</option>
+                <option value="Accounts">{t('settings.accountsRoleDesc', 'Accounts (Purchases, Inventory, Expenses, Reports, GST)')}</option>
+                <option value="Cashier">{t('settings.cashierRoleDesc', 'Cashier (Billing, POS Invoices, Payments)')}</option>
+                <option value="Owner">{t('settings.ownerRoleDesc', 'Owner (Full System Access)')}</option>
               </select>
             </div>
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                Email Address <span style={{ color: 'var(--text-muted)', fontWeight: 400 }}>(Optional)</span>
+                {t('settings.emailAddressOptional', 'Email Address (Optional)')}
               </label>
               <input
                 type="email"
                 className="form-control"
-                placeholder="e.g. staff@agribizstore.com"
+                placeholder={t('settings.staffEmailPlaceholder', 'e.g. staff@agribizstore.com')}
                 value={staffEmail}
                 onChange={(e) => setStaffEmail(e.target.value)}
               />
@@ -4292,13 +4292,13 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                {editingStaffUser ? 'Security PIN (leave blank to keep current)' : 'Security PIN (4 Digits) *'}
+                {editingStaffUser ? t('settings.securityPinLeaveBlank', 'Security PIN (leave blank to keep current)') : t('settings.securityPinRequired', 'Security PIN (4 Digits) *')}
               </label>
               <input
                 type="password"
                 inputMode="numeric"
                 className="form-control"
-                placeholder={editingStaffUser ? 'Enter new 4-digit PIN if changing' : 'Enter 4-digit numeric PIN (e.g. 1234)'}
+                placeholder={editingStaffUser ? t('settings.enterNewPinIfChanging', 'Enter new 4-digit PIN if changing') : t('settings.enter4DigitPinPlaceholder', 'Enter 4-digit numeric PIN (e.g. 1234)')}
                 value={staffPin}
                 onChange={(e) => setStaffPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                 maxLength={4}
@@ -4306,7 +4306,7 @@ export const Settings: React.FC = () => {
                 style={{ letterSpacing: '4px', fontWeight: 800, fontSize: '15px' }}
               />
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                Used for 4-digit PIN staff login and instant staff switching
+                {t('settings.pinUsageSub', 'Used for 4-digit PIN staff login and instant staff switching')}
               </span>
             </div>
 
@@ -4314,7 +4314,7 @@ export const Settings: React.FC = () => {
             <div className="form-group" style={{ marginTop: '4px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                 <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', margin: 0 }}>
-                  Custom Page Access Permissions
+                  {t('settings.customPagePermissions', 'Custom Page Access Permissions')}
                 </label>
                 {staffRole !== 'Owner' && (
                   <button
@@ -4323,17 +4323,17 @@ export const Settings: React.FC = () => {
                     style={{ fontSize: '11px', padding: '2px 8px' }}
                     onClick={() => setStaffCustomPermissions([...(ROLE_PERMISSIONS[staffRole] || [])])}
                   >
-                    Reset to {staffRole} Defaults
+                    {t('settings.resetToRoleDefaults', 'Reset to {{role}} Defaults', { role: staffRole })}
                   </button>
                 )}
               </div>
               <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>
-                Check individual pages to grant custom module permissions for this staff member:
+                {t('settings.customPermissionsSub', 'Check individual pages to grant custom module permissions for this staff member:')}
               </p>
 
               {staffRole === 'Owner' ? (
                 <div style={{ padding: '12px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', fontSize: '12px', fontWeight: 700 }}>
-                  👑 Owner role possesses full access to all system pages & administrative modules.
+                  {t('settings.ownerRoleAccessNotice', '👑 Owner role possesses full access to all system pages & administrative modules.')}
                 </div>
               ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(130px, 1fr))', gap: '8px', maxHeight: '200px', overflowY: 'auto', padding: '10px', border: '1px solid var(--border-color)', borderRadius: '10px', backgroundColor: 'var(--bg-app)' }}>
@@ -4387,7 +4387,7 @@ export const Settings: React.FC = () => {
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary">
-                {editingStaffUser ? 'Update Staff Member' : 'Create Staff Member'}
+                {editingStaffUser ? t('settings.updateStaffMember', 'Update Staff Member') : t('settings.createStaffMember', 'Create Staff Member')}
               </button>
             </div>
           </form>
@@ -4403,7 +4403,7 @@ export const Settings: React.FC = () => {
             setNewResetPass('');
             setNewResetPin('');
           }}
-          title={resetStaffUser.role === 'Owner' ? `👑 Reset Owner Credentials — ${resetStaffUser.name}` : `🔑 Reset Security PIN — ${resetStaffUser.name}`}
+          title={resetStaffUser.role === 'Owner' ? t('settings.resetOwnerCredentialsModalTitle', '👑 Reset Owner Credentials — {{name}}', { name: resetStaffUser.name }) : t('settings.resetSecurityPinModalTitle', '🔑 Reset Security PIN — {{name}}', { name: resetStaffUser.name })}
         >
           <form onSubmit={handleResetUserPassword} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {resetStaffUser.role === 'Owner' ? (
@@ -4413,17 +4413,17 @@ export const Settings: React.FC = () => {
                   background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.25)',
                   color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.4',
                 }}>
-                  As the <strong>Business Owner</strong>, you can update your login password and/or your 4-digit PIN below.
+                  {t('settings.ownerResetNotice', 'As the Business Owner, you can update your login password and/or your 4-digit PIN below.')}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                    New Login Password <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional, Min 6 chars)</span>
+                    {t('settings.newLoginPasswordOptional', 'New Login Password (Optional, Min 6 chars)')}
                   </label>
                   <input
                     type="password"
                     className="form-control"
-                    placeholder="Enter new login password"
+                    placeholder={t('settings.enterNewLoginPassword', 'Enter new login password')}
                     value={newResetPass}
                     onChange={(e) => setNewResetPass(e.target.value)}
                     autoFocus
@@ -4432,7 +4432,7 @@ export const Settings: React.FC = () => {
 
                 <div className="form-group">
                   <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                    New 4-Digit Owner PIN <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>(Optional)</span>
+                    {t('settings.new4DigitOwnerPinOptional', 'New 4-Digit Owner PIN (Optional)')}
                   </label>
                   <input
                     type="password"
@@ -4440,7 +4440,7 @@ export const Settings: React.FC = () => {
                     pattern="[0-9]*"
                     maxLength={4}
                     className="form-control"
-                    placeholder="Enter 4-digit numeric PIN"
+                    placeholder={t('settings.enter4DigitNumericPin', 'Enter 4-digit numeric PIN')}
                     value={newResetPin}
                     onChange={(e) => setNewResetPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     style={{ fontSize: '18px', letterSpacing: '4px', fontWeight: 800 }}
@@ -4454,12 +4454,12 @@ export const Settings: React.FC = () => {
                   background: 'rgba(99, 102, 241, 0.08)', border: '1px solid rgba(99, 102, 241, 0.25)',
                   color: 'var(--text-primary)', fontSize: '13px', lineHeight: '1.4',
                 }}>
-                  Set a new 4-digit security PIN for staff member <strong>{resetStaffUser.name}</strong> (+91 {resetStaffUser.mobile || 'Staff'}).
+                  {t('settings.setNewStaffPinNotice', 'Set a new 4-digit security PIN for staff member {{name}} (+91 {{mobile}}).', { name: resetStaffUser.name, mobile: resetStaffUser.mobile || 'Staff' })}
                 </div>
 
                 <div className="form-group">
                   <label className="form-label" style={{ fontWeight: 700, fontSize: '13px', marginBottom: '6px', display: 'block' }}>
-                    New 4-Digit Security PIN *
+                    {t('settings.new4DigitSecurityPinRequired', 'New 4-Digit Security PIN *')}
                   </label>
                   <input
                     type="password"
@@ -4467,7 +4467,7 @@ export const Settings: React.FC = () => {
                     pattern="[0-9]*"
                     maxLength={4}
                     className="form-control"
-                    placeholder="Enter 4-digit PIN (e.g. 1234)"
+                    placeholder={t('settings.enter4DigitPinPlaceholder', 'Enter 4-digit numeric PIN (e.g. 1234)')}
                     value={newResetPin}
                     onChange={(e) => setNewResetPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
                     style={{ fontSize: '20px', letterSpacing: '6px', fontWeight: 800 }}
@@ -4491,7 +4491,7 @@ export const Settings: React.FC = () => {
                 Cancel
               </button>
               <button type="submit" className="btn btn-primary" style={{ fontWeight: 800 }}>
-                {resetStaffUser.role === 'Owner' ? 'Save Owner Credentials' : 'Reset Security PIN'}
+                {resetStaffUser.role === 'Owner' ? t('settings.saveOwnerCredentials', 'Save Owner Credentials') : t('settings.resetSecurityPin', 'Reset Security PIN')}
               </button>
             </div>
           </form>
@@ -4507,7 +4507,7 @@ export const Settings: React.FC = () => {
               setIsDeleteCompanyModalOpen(false);
             }
           }}
-          title="🔥 Delete Business Account Permanently"
+          title={t('settings.deleteBusinessAccountModalTitle', '🔥 Delete Business Account Permanently')}
         >
           <form onSubmit={handleDeleteBusinessAccount} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{
@@ -4519,7 +4519,7 @@ export const Settings: React.FC = () => {
               fontSize: '13px',
               lineHeight: '1.5',
             }}>
-              <strong>⚠️ CRITICAL WARNING:</strong> This will permanently erase <strong>{currentCompany?.businessName}</strong> and ALL associated data from MongoDB (staff, sales, purchases, inventory, payments, reports, tokens) and clear all local offline caches.
+              <strong>{t('settings.criticalWarning', '⚠️ CRITICAL WARNING:')}</strong> {t('settings.deleteBusinessAccountWarningBody', 'This will permanently erase {{name}} and ALL associated data from MongoDB (staff, sales, purchases, inventory, payments, reports, tokens) and clear all local offline caches.', { name: currentCompany?.businessName })}
             </div>
 
             {deleteErrorMsg && (
@@ -4534,12 +4534,12 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
-                Type <span style={{ color: '#EF4444', background: 'rgba(239,68,68,0.1)', padding: '2px 6px', borderRadius: '4px', fontFamily: 'monospace' }}>DELETE</span> to confirm *
+                {t('settings.typeDeleteToConfirm', 'Type DELETE to confirm *')}
               </label>
               <input
                 type="text"
                 className="form-control"
-                placeholder="Type DELETE"
+                placeholder={t('settings.typeDeletePlaceholder', 'Type DELETE')}
                 value={deleteConfirmText}
                 onChange={(e) => setDeleteConfirmText(e.target.value)}
                 required
@@ -4550,12 +4550,12 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
-                Owner Password or 4-Digit PIN *
+                {t('settings.ownerPasswordOrPinLabel', 'Owner Password or 4-Digit PIN *')}
               </label>
               <input
                 type="password"
                 className="form-control"
-                placeholder="Enter your Owner Password or 4-digit PIN"
+                placeholder={t('settings.enterOwnerPasswordOrPinPlaceholder', 'Enter your Owner Password or 4-digit PIN')}
                 value={deletePasswordOrPin}
                 onChange={(e) => setDeletePasswordOrPin(e.target.value)}
                 required
@@ -4590,7 +4590,7 @@ export const Settings: React.FC = () => {
                   cursor: deleteConfirmText === 'DELETE' && deletePasswordOrPin.trim() ? 'pointer' : 'not-allowed',
                 }}
               >
-                {deleteLoading ? 'Deleting Account...' : '🔥 Permanently Delete'}
+                {deleteLoading ? t('settings.deletingAccount', 'Deleting Account...') : t('settings.permanentlyDeleteBtn', '🔥 Permanently Delete')}
               </button>
             </div>
           </form>
@@ -4602,7 +4602,7 @@ export const Settings: React.FC = () => {
         <Modal
           isOpen={showOAuthSetupModal}
           onClose={() => setShowOAuthSetupModal(false)}
-          title="🔑 Configure Google OAuth Credentials"
+          title={t('settings.configureOAuthTitle', '🔑 Configure Google OAuth Credentials')}
         >
           <form onSubmit={handleSaveOAuthCredentials} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div style={{
@@ -4614,8 +4614,8 @@ export const Settings: React.FC = () => {
               fontSize: '13px',
               lineHeight: '1.5',
             }}>
-              <strong>📌 Why are Google OAuth credentials needed?</strong><br />
-              Google Drive requires an official <strong>Client ID & Secret</strong> from the Google Cloud Console to allow your application to securely store backups in your Google Drive.
+              <strong>{t('settings.whyCredentialsNeeded', '📌 Why are Google OAuth credentials needed?')}</strong><br />
+              {t('settings.whyCredentialsNeededBody', 'Google Drive requires an official Client ID & Secret from the Google Cloud Console to allow your application to securely store backups in your Google Drive.')}
             </div>
 
             {oauthErrorMsg && (
@@ -4630,7 +4630,7 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
-                Google OAuth Client ID *
+                {t('settings.googleOAuthClientId', 'Google OAuth Client ID')} *
               </label>
               <input
                 type="text"
@@ -4645,7 +4645,7 @@ export const Settings: React.FC = () => {
 
             <div className="form-group">
               <label className="form-label" style={{ fontWeight: 800, fontSize: '13px', marginBottom: '6px', display: 'block', color: 'var(--text-primary)' }}>
-                Google OAuth Client Secret *
+                {t('settings.googleOAuthClientSecret', 'Google OAuth Client Secret')} *
               </label>
               <input
                 type="password"
@@ -4665,7 +4665,7 @@ export const Settings: React.FC = () => {
               color: 'var(--text-muted)',
               lineHeight: '1.4',
             }}>
-              💡 <strong>Quick Alternative:</strong> You don't need Google credentials to create backups! Click <strong>"Export Data Backup"</strong> on the Backup tab to instantly download a complete JSON backup file to your computer.
+              💡 <strong>{t('settings.quickAlternative', 'Quick Alternative:')}</strong> {t('settings.quickAlternativeBody', 'You don\'t need Google credentials to create backups! Click "Export Data Backup" on the Backup tab to instantly download a complete JSON backup file to your computer.')}
             </div>
 
             <div style={{ display: 'flex', gap: '8px', marginTop: '8px', flexWrap: 'wrap' }}>
@@ -4677,7 +4677,7 @@ export const Settings: React.FC = () => {
                 title="Clear saved database keys and use Render environment variables"
                 style={{ borderRadius: '10px', height: '44px', fontWeight: 600, fontSize: '12px' }}
               >
-                Clear Stored Keys
+                {t('settings.clearStoredKeys', 'Clear Stored Keys')}
               </button>
               <button
                 type="button"
@@ -4693,7 +4693,7 @@ export const Settings: React.FC = () => {
                 disabled={isSavingOAuthCredentials || !oauthClientId.trim() || !oauthClientSecret.trim()}
                 style={{ flex: 1, borderRadius: '10px', height: '44px', fontWeight: 800, justifyContent: 'center' }}
               >
-                {isSavingOAuthCredentials ? 'Saving Credentials...' : 'Save & Connect'}
+                {isSavingOAuthCredentials ? t('settings.savingCredentials', 'Saving Credentials...') : t('settings.saveAndConnect', 'Save & Connect')}
               </button>
             </div>
           </form>
@@ -4706,9 +4706,9 @@ export const Settings: React.FC = () => {
           if (!isResettingDb) setIsResetDbModalOpen(false);
         }}
         onConfirm={confirmResetDatabase}
-        title="Erase & Reset Business Data"
-        description="WARNING: Wiping database will delete all sales invoices, purchases, payments, and custom customer profiles. This resets AgriBiz to original sample data. Proceed?"
-        confirmText="Wipe & Reset Data"
+        title={t('settings.resetDbModalTitle', 'Erase & Reset Business Data')}
+        description={t('settings.resetDbModalDesc', 'WARNING: Wiping database will delete all sales invoices, purchases, payments, and custom customer profiles. This resets AgriBiz to original sample data. Proceed?')}
+        confirmText={t('settings.resetDbConfirmBtn', 'Wipe & Reset Data')}
         isLoading={isResettingDb}
       />
     </div>

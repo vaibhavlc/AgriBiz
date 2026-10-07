@@ -276,7 +276,7 @@ export const Purchases: React.FC = () => {
                   <FileText size={48} style={{ color: 'var(--text-secondary)', marginBottom: '12px' }} />
                   <p style={{ fontWeight: 600 }}>{t('purchases.previewNotSupported', 'Preview not supported for this file type.')}</p>
                   <a href={attachedFileUrl} download={attachedFile.name} className="btn btn-primary" style={{ marginTop: '12px' }}>
-                    Download File
+                    {t('common.downloadFile', 'Download File')}
                   </a>
                 </div>
               )}
@@ -649,7 +649,7 @@ export const Purchases: React.FC = () => {
   const handleDownload = async (purchaseNo: string) => {
     const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!originalEl) {
-      showToast('Could not find layout element.', 'error');
+      showToast(t('purchases.layoutError', 'Could not find layout element.'), 'error');
       return;
     }
 
@@ -801,7 +801,7 @@ export const Purchases: React.FC = () => {
     const supplierDetail = suppliers.find((s) => s.id === selectedPurchase.supplierId);
     const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!originalEl) {
-      showToast('Could not find layout element.', 'error');
+      showToast(t('purchases.layoutError', 'Could not find layout element.'), 'error');
       return;
     }
 
@@ -1526,13 +1526,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             </div>
           </div>
           <div className="action-buttons-grid">
-            <button className="btn btn-secondary" onClick={() => handleDownload(selectedPurchase.purchaseNumber)} title="Export bill as PDF">
+            <button className="btn btn-secondary" onClick={() => handleDownload(selectedPurchase.purchaseNumber)} title={t("purchases.exportPdfTitle", "Export bill as PDF")}>
               <Download size={16} /> {t('purchases.saveAsPdf', 'Save as PDF')}
             </button>
-            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share bill details on WhatsApp">
+            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title={t("purchases.shareWhatsAppTitle", "Share bill details on WhatsApp")}>
               <Share2 size={16} /> {t('purchases.shareWhatsApp', 'Share on WhatsApp')}
             </button>
-            <button className="btn btn-primary" onClick={handlePrint} title="Print paper receipt">
+            <button className="btn btn-primary" onClick={handlePrint} title={t("purchases.printReceiptTitle", "Print paper receipt")}>
               <Printer size={16} /> {t('purchases.printReceipt', 'Print Receipt')}
             </button>
           </div>
@@ -1872,7 +1872,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <div style={{ textAlign: 'center', minWidth: '110px' }}>
                   <div style={{ height: '25px' }}></div>
                   <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
-                    Receiver's Signature
+                    {t('purchases.receiversSignature', "Receiver's Signature")}
                   </p>
                 </div>
                 <div style={{ textAlign: 'center', minWidth: '110px' }}>
@@ -1882,7 +1882,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     ) : null}
                   </div>
                   <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
-                    Authorized Signatory
+                    {t('purchases.authorizedSignatory', 'Authorized Signatory')}
                   </p>
                 </div>
               </div>
@@ -2112,7 +2112,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             zIndex: 1,
           }}>
             <span style={{ display: 'block', fontSize: '10px', color: 'rgba(255,255,255,0.8)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-              Voucher Number
+              {t('purchases.voucherNumber', 'Voucher Number')}
             </span>
             <strong style={{ fontSize: '15px', fontWeight: 800, letterSpacing: '0.5px' }}>
               {generatedNo}
@@ -2133,7 +2133,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   color: '#fff', fontSize: '13px', fontWeight: 800,
                 }}>1</div>
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Purchase & Voucher Details</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('purchases.purchaseVoucherDetailsHeader', 'Purchase & Voucher Details')}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.purchaseVoucherDetailsSub', 'Enter inward references and dates')}</div>
                 </div>
               </div>
@@ -2383,7 +2383,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                           <th style={{ width: '85px', textAlign: 'center' }}>{t('purchases.discount', 'Discount (%)')}</th>
                           <th style={{ width: '70px', textAlign: 'center' }}>{t('purchases.gst', 'GST')}</th>
                           <th style={{ width: '100px', textAlign: 'right' }}>{t('purchases.taxAmtHeader', 'Tax Amt (₹)')}</th>
-                          <th style={{ width: '110px', textAlign: 'right' }}>Total (₹)</th>
+                          <th style={{ width: '110px', textAlign: 'right' }}>{t('purchases.totalHeader', 'Total (₹)')}</th>
                           <th style={{ width: '40px' }}></th>
                         </tr>
                       </thead>
@@ -2422,7 +2422,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                   setActiveProductRowIndex(index);
                                   setIsProductModalOpen(true);
                                 }}>
-                                  + Create New
+                                  {t('purchases.createNewProductLink', '+ Create New')}
                                 </button>
                               </td>
 
@@ -2620,7 +2620,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   color: '#fff', fontSize: '13px', fontWeight: 800,
                 }}>3</div>
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Additional Charges & Transit Remarks</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('purchases.additionalChargesHeader', 'Additional Charges & Transit Remarks')}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.additionalChargesSub', 'Input logistics costs and notes')}</div>
                 </div>
               </div>
@@ -2686,7 +2686,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   color: '#fff', fontSize: '13px', fontWeight: 800,
                 }}>4</div>
                 <div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>Payment & Settlements</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>{t('purchases.paymentSettlementsHeader', 'Payment & Settlements')}</div>
                   <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('purchases.paymentSettlementsSub', 'Enter paid amounts and payment modes')}</div>
                 </div>
               </div>
@@ -2702,10 +2702,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       onChange={(e) => setPaymentMethod(e.target.value as any)}
                       required
                     >
-                      <option value="Bank Transfer">Bank Transfer (RTGS/NEFT)</option>
-                      <option value="UPI">UPI / QR Scan</option>
-                      <option value="Cash">Cash Ledger</option>
-                      <option value="Cheque">Cheque Payment</option>
+                      <option value="Bank Transfer">{t("purchases.bankTransferOption", "Bank Transfer (RTGS/NEFT)")}</option>
+                      <option value="UPI">{t("purchases.upiOption", "UPI / QR Scan")}</option>
+                      <option value="Cash">{t("purchases.cashLedgerOption", "Cash Ledger")}</option>
+                      <option value="Cheque">{t("purchases.chequeOption", "Cheque Payment")}</option>
                     </select>
                     <span style={{ position: 'absolute', right: '14px', pointerEvents: 'none', color: 'var(--text-muted)', display: 'flex', alignItems: 'center' }}>
                       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -3143,7 +3143,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <FileSpreadsheet size={48} className="empty-state-icon" />
             <h4 className="empty-state-title">{t('purchases.noRecordsTitle', 'No Purchase Records')}</h4>
             <p className="empty-state-desc">
-              No supplier purchases match your filters or searching criteria.
+              {t('purchases.noPurchasesFound', 'No supplier purchases match your filters or searching criteria.')}
             </p>
             <button className="btn btn-primary" onClick={handleStartNewPurchase}>
               {t('purchases.logNewPurchase', 'Log New Purchase')}
@@ -3225,7 +3225,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                               e.stopPropagation();
                               setActiveMenuPurchaseId(activeMenuPurchaseId === pur.id ? null : pur.id);
                             }}
-                            title="Actions"
+                            title={t("common.actions", "Actions")}
                           >
                             <MoreVertical size={16} />
                           </button>
@@ -3491,14 +3491,14 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   <button
                     disabled={currentPage === 1}
                     onClick={() => setCurrentPage((c) => Math.max(1, c - 1))}
-                    title="Previous Page"
+                    title={t("common.previousPage", "Previous Page")}
                   >
                     <ChevronLeft size={16} />
                   </button>
                   <button
                     disabled={currentPage === totalPages}
                     onClick={() => setCurrentPage((c) => Math.min(totalPages, c + 1))}
-                    title="Next Page"
+                    title={t("common.nextPage", "Next Page")}
                   >
                     <ChevronRight size={16} />
                   </button>

@@ -391,7 +391,7 @@ export const Sales: React.FC = () => {
   const handleDownload = async () => {
     const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!originalEl) {
-      showToast('Could not find layout element.', 'error');
+      showToast(t('sales.layoutError', 'Could not find layout element.'), 'error');
       return;
     }
 
@@ -581,7 +581,7 @@ export const Sales: React.FC = () => {
     const customerDetail = customers.find((c) => c.id === activeDoc.customerId);
     const originalEl = document.querySelector('.print-invoice-layout') as HTMLElement;
     if (!originalEl) {
-      showToast('Could not find layout element.', 'error');
+      showToast(t('sales.layoutError', 'Could not find layout element.'), 'error');
       return;
     }
 
@@ -1435,7 +1435,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               setViewQuotation(null);
             } catch (error: any) {
               console.error("Delete quotation error:", error);
-              showToast(`Failed to delete: ${error.message || error}`, 'error');
+              showToast(t('sales.deleteFailedMsg', 'Failed to delete: {{error}}', { error: error.message || error }), 'error');
             } finally {
               setIsDeletingQuotation(false);
             }
@@ -1555,13 +1555,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
           </div>
           <div className="action-buttons-grid">
-            <button className="btn btn-secondary" onClick={handleDownload} title="Export invoice as PDF">
+            <button className="btn btn-secondary" onClick={handleDownload} title={t("sales.exportPdfTitle", "Export invoice as PDF")}>
               <Download size={16} /> {t("sales.saveAsPdf", "Save as PDF")}
             </button>
-            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share invoice details on WhatsApp">
+            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title={t("sales.shareWhatsAppTitle", "Share invoice details on WhatsApp")}>
               <Share2 size={16} /> {t("sales.shareWhatsApp", "Share on WhatsApp")}
             </button>
-            <button className="btn btn-primary" onClick={handlePrint} title="Print paper voucher">
+            <button className="btn btn-primary" onClick={handlePrint} title={t("sales.printPaperVoucherTitle", "Print paper voucher")}>
               <Printer size={16} /> {t("sales.printReceipt", "Print Receipt")}
             </button>
           </div>
@@ -1865,7 +1865,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ textAlign: "center", minWidth: "110px" }}>
                 <div style={{ height: "6px" }}></div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  Receiver's Signature
+                  {t('sales.receiversSignature', "Receiver's Signature")}
                 </p>
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
@@ -1875,7 +1875,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   ) : null}
                 </div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  Authorized Signatory
+                  {t('sales.authorizedSignatory', 'Authorized Signatory')}
                 </p>
               </div>
             </div>
@@ -1976,13 +1976,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
           </div>
           <div className="action-buttons-grid">
-            <button className="btn btn-secondary" onClick={handleDownload} title="Export quotation as PDF">
-              <Download size={16} /> Save as PDF
+            <button className="btn btn-secondary" onClick={handleDownload} title={t("sales.exportQuotationPdfTitle", "Export quotation as PDF")}>
+              <Download size={16} /> {t("sales.saveAsPdf", "Save as PDF")}
             </button>
-            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title="Share quotation details on WhatsApp">
-              <Share2 size={16} /> Share on WhatsApp
+            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title={t("sales.shareQuotationWhatsAppTitle", "Share quotation details on WhatsApp")}>
+              <Share2 size={16} /> {t("sales.shareWhatsApp", "Share on WhatsApp")}
             </button>
-            <button className="btn btn-primary" onClick={handlePrint} title="Print paper voucher">
+            <button className="btn btn-primary" onClick={handlePrint} title={t("sales.printPaperVoucherTitle", "Print paper voucher")}>
               <Printer size={16} /> {t("sales.printEstimate", "Print Estimate")}
             </button>
           </div>
@@ -2091,10 +2091,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     <th style={{ width: "40px", textAlign: "center" }}>{t('sales.srNo', 'Sr')}</th>
                     <th style={{ textAlign: "left" }}>{t('sales.productDescription', 'Product / Description')}</th>
                     <th style={{ width: "80px", textAlign: "center" }}>{t('sales.gst', 'GST')}</th>
-                    <th style={{ width: "90px", textAlign: "right" }}>Price (₹)</th>
+                    <th style={{ width: "90px", textAlign: "right" }}>{t("sales.priceHeader", "Price (₹)")}</th>
                     <th style={{ width: "60px", textAlign: "center" }}>{t('sales.qty', 'Qty')}</th>
                     <th style={{ width: "70px", textAlign: "right" }}>{t('sales.discPercent', 'Disc (%)')}</th>
-                    <th style={{ width: "100px", textAlign: "right" }}>Total (₹)</th>
+                    <th style={{ width: "100px", textAlign: "right" }}>{t("sales.totalHeader", "Total (₹)")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -2261,7 +2261,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ textAlign: "center", minWidth: "110px" }}>
                 <div style={{ height: "6px" }}></div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  Receiver's Signature
+                  {t('sales.receiversSignature', "Receiver's Signature")}
                 </p>
               </div>
               <div style={{ textAlign: "center", minWidth: "110px" }}>
@@ -2271,7 +2271,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   ) : null}
                 </div>
                 <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  Authorized Signatory
+                  {t('sales.authorizedSignatory', 'Authorized Signatory')}
                 </p>
               </div>
             </div>
@@ -2449,7 +2449,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Approved' });
-                  showToast('Quotation Approved successfully', 'success');
+                  showToast(t('sales.quotationApproved', 'Quotation Approved successfully'), 'success');
                 }}
               >
                 Approve
@@ -2474,7 +2474,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 style={{ borderColor: 'var(--color-danger)', color: 'var(--color-danger)' }}
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Declined' });
-                  showToast('Quotation marked as Declined', 'info');
+                  showToast(t('sales.quotationMarkedDeclined', 'Quotation marked as Declined'), 'info');
                 }}
               >
                 Decline
@@ -2498,7 +2498,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 style={{ borderColor: 'var(--primary)', color: 'var(--primary)' }}
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Approved' });
-                  showToast('Quotation Approved successfully', 'success');
+                  showToast(t('sales.quotationApproved', 'Quotation Approved successfully'), 'success');
                 }}
               >
                 Approve
@@ -2507,7 +2507,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 className="btn btn-secondary"
                 onClick={() => {
                   editQuotation({ ...selectedQuotation, status: 'Draft' });
-                  showToast('Quotation reverted to Draft', 'info');
+                  showToast(t('sales.quotationRevertedDraft', 'Quotation reverted to Draft'), 'info');
                 }}
               >
                 Revert to Draft
@@ -3029,7 +3029,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
               {totals.discountTotal > 0 && (
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--color-success-dark)' }}>
-                  <span>Discount (−)</span>
+                  <span>{t("sales.discountMinus", "Discount (−)")}</span>
                   <span style={{ fontWeight: 600 }}>−{formatINR(totals.discountTotal)}</span>
                 </div>
               )}
@@ -3258,7 +3258,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
                 {/* Customer selection */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>Customer *</label>
+                  <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.customer", "Customer")} *</label>
                   <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
                     <select
                       className="form-control"
@@ -3581,7 +3581,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
                 {totals.discountTotal > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'var(--color-success-dark)' }}>
-                    <span>Discount (−)</span>
+                    <span>{t("sales.discountMinus", "Discount (−)")}</span>
                     <span style={{ fontWeight: 600 }}>−{formatINR(totals.discountTotal)}</span>
                   </div>
                 )}
@@ -3918,9 +3918,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         <th style={{ whiteSpace: 'nowrap' }}>{t("sales.invNoHeader", "Inv No")}</th>
                         <th>{t('sales.customer', 'Customer')}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.date', 'Date')}</th>
-                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
-                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Paid (₹)</th>
-                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Due (₹)</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{t("sales.totalHeader", "Total (₹)")}</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{t("sales.paidHeader", "Paid (₹)")}</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{t("sales.dueHeader", "Due (₹)")}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.status', 'Status')}</th>
                         <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>{t('sales.actions', 'Actions')}</th>
                       </tr>
@@ -3931,7 +3931,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           <td 
                             style={{ fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap', cursor: 'pointer' }}
                             onClick={() => setViewInvoice(inv.id || inv.invoiceNumber)}
-                            title="View details"
+                            title={t("sales.viewDetailsTitle", "View details")}
                           >
                             {inv.invoiceNumber}
                           </td>
@@ -4173,7 +4173,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                         <th>{t('sales.customer', 'Customer')}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.date', 'Date')}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t("sales.validUntilHeader", "Valid Until")}</th>
-                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>Total (₹)</th>
+                        <th style={{ whiteSpace: 'nowrap', textAlign: 'right' }}>{t("sales.totalHeader", "Total (₹)")}</th>
                         <th style={{ whiteSpace: 'nowrap' }}>{t('sales.status', 'Status')}</th>
                         <th className="no-print" style={{ whiteSpace: 'nowrap', textAlign: 'center', width: '60px' }}>{t('sales.actions', 'Actions')}</th>
                       </tr>
@@ -4184,7 +4184,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           <td 
                             style={{ fontWeight: 700, color: 'var(--primary)', whiteSpace: 'nowrap', cursor: 'pointer' }}
                             onClick={() => setViewQuotation(q.id || q.quotationNumber)}
-                            title="View details"
+                            title={t("sales.viewDetailsTitle", "View details")}
                           >
                             {q.quotationNumber}
                           </td>
@@ -4361,7 +4361,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                                     setActiveMenuQuotationId(null);
                                   }}
                                 >
-                                  <Store size={14} /> Convert
+                                  <Store size={14} /> {t("sales.convert", "Convert")}
                                 </button>
                               )}
                               <button 
@@ -4394,7 +4394,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
 
                     <div className="mobile-list-card-row">
-                      <span className="mobile-list-card-label">Items</span>
+                      <span className="mobile-list-card-label">{t("sales.items", "Items")}</span>
                       <span className="mobile-list-card-val">
                         {q.items && q.items.length > 0 ? (
                           <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
@@ -4402,7 +4402,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             {q.items.length > 1 ? ` +${q.items.length - 1}` : ''}
                           </span>
                         ) : (
-                          <span>No items</span>
+                          <span>{t("sales.noItems", "No items")}</span>
                         )}
                       </span>
                     </div>

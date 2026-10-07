@@ -1235,7 +1235,7 @@ export const Reports: React.FC = () => {
               <div>
                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#b45309' }}>{t("reports.gstr3b.reconciliationWarning", "Reconciliation Warning")}</div>
                 <div style={{ fontSize: '12px', color: '#b45309' }}>
-                  Discrepancy of {formatINR(gstDiff)} found between Sales Invoice Register ({formatINR(totalSalesTax)}) and Outward Tax ({formatINR(outwardTaxTotal)}). Please verify your tax configurations.
+                  {t("reports.gstr3b.discrepancyDetected", "Discrepancy of {{diff}} found between Sales Invoice Register ({{salesTax}}) and Outward Tax ({{outwardTax}}). Please verify your tax configurations.", { diff: formatINR(gstDiff), salesTax: formatINR(totalSalesTax), outwardTax: formatINR(outwardTaxTotal) })}
                 </div>
               </div>
             </>
@@ -1257,14 +1257,14 @@ export const Reports: React.FC = () => {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                  Table 3.1: Outward Supplies Summary
+                  {t("reports.gstr3b.table31Title", "Table 3.1: Outward Supplies Summary")}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                  Details of outward taxable supplies and inward supplies liable to reverse charge.
+                  {t("reports.gstr3b.table31Subtitle", "Details of outward taxable supplies and inward supplies liable to reverse charge.")}
                 </p>
               </div>
               <button className="btn btn-secondary btn-sm" onClick={handleExportGstr3B}>
-                <Percent size={14} style={{ marginRight: '6px' }} /> Download GSTR-3B CSV
+                <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr3b.downloadGstr3bCsv", "Download GSTR-3B CSV")}
               </button>
             </div>
 
@@ -1338,10 +1338,10 @@ export const Reports: React.FC = () => {
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Table 3.2: Inter-State Supplies to Unregistered / Composition / UIN
+                {t("reports.gstr3b.table32Title", "Table 3.2: Inter-State Supplies to Unregistered / Composition / UIN")}
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                Details of inter-state supplies made to unregistered persons, composition dealers and UIN holders.
+                {t("reports.gstr3b.table32Subtitle", "Details of inter-state supplies made to unregistered persons, composition dealers and UIN holders.")}
               </p>
             </div>
 
@@ -1350,7 +1350,7 @@ export const Reports: React.FC = () => {
                 <thead>
                   <tr>
                     <th className="text-nowrap">{t("reports.recipientType", "Recipient Type")}</th>
-                    <th className="text-nowrap align-right">t("reports.taxableValue", "Taxable Value")</th>
+                    <th className="text-nowrap align-right">{t("reports.taxableValue", "Taxable Value")}</th>
                     <th className="text-nowrap align-right">{t("reports.integratedTaxIgst", "Integrated Tax (IGST)")}</th>
                   </tr>
                 </thead>
@@ -1381,7 +1381,7 @@ export const Reports: React.FC = () => {
                   ) : (
                     <tr>
                       <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-secondary)', padding: '20px', fontStyle: 'italic' }}>
-                        No inter-state supplies found in the selected period.
+                        {t("reports.gstr3b.noInterstateSuppliesPeriod", "No inter-state supplies found in the selected period.")}
                       </td>
                     </tr>
                   )}
@@ -1394,10 +1394,10 @@ export const Reports: React.FC = () => {
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Table 4: Eligible Input Tax Credit (ITC)
+                {t("reports.gstr3b.table4Title", "Table 4: Eligible Input Tax Credit (ITC)")}
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                ITC available from registered supplier invoices received during the period.
+                {t("reports.gstr3b.table4Subtitle", "ITC available from registered supplier invoices received during the period.")}
               </p>
             </div>
 
@@ -1457,10 +1457,10 @@ export const Reports: React.FC = () => {
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Tax Payment & Settlement Summary
+                {t("reports.gstr3b.taxPaymentSummaryTitle", "Tax Payment & Settlement Summary")}
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                Breakdown of tax liability, ITC utilized and net cash payable per tax head.
+                {t("reports.gstr3b.taxPaymentSummarySubtitle", "Breakdown of tax liability, ITC utilized and net cash payable per tax head.")}
               </p>
             </div>
 
@@ -1514,20 +1514,20 @@ export const Reports: React.FC = () => {
           <div className="card" style={{ padding: '20px' }}>
             <div style={{ marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                GST Reconciliation Summary
+                {t("reports.gstr3b.gstReconciliationSummaryTitle", "GST Reconciliation Summary")}
               </h3>
               <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                Comparison of book sales GST against outward tax declared in GSTR-3B.
+                {t("reports.gstr3b.gstReconciliationSummarySubtitle", "Comparison of book sales GST against outward tax declared in GSTR-3B.")}
               </p>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px' }}>
               {[
-                { label: 'Total Book Sales Value', value: formatINR(gstr3BData.outward.taxable), sub: 'Taxable turnover', color: 'var(--text-primary)' },
-                { label: 'Total Purchase Value (ITC Base)', value: formatINR(gstr3BData.itc.taxable), sub: 'Registered purchases', color: 'var(--text-primary)' },
-                { label: 'Output GST Liability', value: formatINR(outwardTaxTotal), sub: 'CGST+SGST+IGST collected', color: 'var(--color-danger-dark)' },
-                { label: 'Input GST Credit (ITC)', value: formatINR(itcTotal), sub: 'Available ITC', color: 'var(--color-success-dark)' },
-                { label: 'Net GST Cash Liability', value: formatINR(netGstPayable), sub: 'After ITC set-off', color: netGstPayable > 0 ? 'var(--color-danger-dark)' : 'var(--color-success-dark)' },
-                { label: 'Carry Forward ITC', value: formatINR(remainingItc), sub: 'Excess credit balance', color: 'var(--color-success-dark)' },
+                { label: t("reports.gstr3b.totalBookSalesValue", "Total Book Sales Value"), value: formatINR(gstr3BData.outward.taxable), sub: t("reports.gstr3b.taxableTurnover", "Taxable turnover"), color: 'var(--text-primary)' },
+                { label: t("reports.gstr3b.totalPurchaseValueItcBase", "Total Purchase Value (ITC Base)"), value: formatINR(gstr3BData.itc.taxable), sub: t("reports.gstr3b.registeredPurchases", "Registered purchases"), color: 'var(--text-primary)' },
+                { label: t("reports.gstr3b.outputGstLiability", "Output GST Liability"), value: formatINR(outwardTaxTotal), sub: t("reports.gstr3b.cgstSgstIgstCollected", "CGST+SGST+IGST collected"), color: 'var(--color-danger-dark)' },
+                { label: t("reports.gstr3b.inputGstCredit", "Input GST Credit (ITC)"), value: formatINR(itcTotal), sub: t("reports.gstr3b.availableItc", "Available ITC"), color: 'var(--color-success-dark)' },
+                { label: t("reports.gstr3b.netGstCashLiability", "Net GST Cash Liability"), value: formatINR(netGstPayable), sub: t("reports.gstr3b.afterItcSetOff", "After ITC set-off"), color: netGstPayable > 0 ? 'var(--color-danger-dark)' : 'var(--color-success-dark)' },
+                { label: t("reports.gstr3b.carryForwardItc", "Carry Forward ITC"), value: formatINR(remainingItc), sub: t("reports.gstr3b.excessCreditBalance", "Excess credit balance"), color: 'var(--color-success-dark)' },
               ].map((item, i) => (
                 <div key={i} style={{ padding: '14px 16px', borderRadius: '10px', border: '1px solid var(--border-color, #e5e7eb)', backgroundColor: 'var(--bg-base, #ffffff)' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 500 }}>{item.label}</div>
@@ -2017,7 +2017,7 @@ export const Reports: React.FC = () => {
                 <>
                   <AlertTriangle size={18} style={{ color: '#d97706', flexShrink: 0 }} />
                   <span style={{ fontSize: '11px', color: '#b45309', fontWeight: 600 }}>
-                    WARNING: A discrepancy of {formatINR(gstDiff)} detected between sales invoice register ({formatINR(totalSalesTax)}) and outward tax supplies ({formatINR(outwardTaxTotal)}). Please verify tax configurations.
+                    {t("reports.gstr3b.discrepancyDetected", "Discrepancy of {{diff}} found between Sales Invoice Register ({{salesTax}}) and Outward Tax ({{outwardTax}}). Please verify your tax configurations.", { diff: formatINR(gstDiff), salesTax: formatINR(totalSalesTax), outwardTax: formatINR(outwardTaxTotal) })}
                   </span>
                 </>
               ) : (
@@ -2037,7 +2037,7 @@ export const Reports: React.FC = () => {
         <div style={{ textAlign: 'center', marginTop: '30px', fontSize: '9px', color: '#5d6b5e', borderTop: '1px dashed #e2e9e0', paddingTop: '16px' }}>
           <div>{t("reports.systemGeneratedFooter", "System Generated Report • AgriBiz Financial Modules")}</div>
           <div style={{ marginTop: '4px', fontStyle: 'italic', maxWidth: '600px', margin: '4px auto 0 auto' }}>
-            Disclaimer: This report is generated from accounting entries and is intended for GST reconciliation and Chartered Accountant working purposes. It is not a substitute for the official GSTR-3B return filed on the GST Portal.
+            {t("reports.gstr3b.disclaimer", "Disclaimer: This report is generated from accounting entries and is intended for GST reconciliation and Chartered Accountant working purposes. It is not a substitute for the official GSTR-3B return filed on the GST Portal.")}
           </div>
         </div>
         </div> {/* Close Page 3 */}
@@ -2087,10 +2087,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Sales Transaction Breakdown
+                  {t("reports.sales.breakdownTitle", "Sales Transaction Breakdown")}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Detailed log of customer tax invoices, taxable turnover, and payment settlement statuses.
+                  {t("reports.sales.breakdownSubtitle", "Detailed log of customer tax invoices, taxable turnover, and payment settlement statuses.")}
                 </p>
               </div>
 
@@ -2227,10 +2227,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Purchase Transaction Breakdown
+                  {t("reports.purchase.breakdownTitle", "Purchase Transaction Breakdown")}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Detailed log of supplier inward purchase vouchers, input costs, and raw materials tax credit.
+                  {t("reports.purchase.breakdownSubtitle", "Detailed log of supplier inward purchase vouchers, input costs, and raw materials tax credit.")}
                 </p>
               </div>
 
@@ -2366,10 +2366,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Expense Statement Breakdown
+                  {t("reports.expense.breakdownTitle", "Expense Statement Breakdown")}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Detailed log of shop rent, light bills, transportation charges, maintenance and other operational costs.
+                  {t("reports.expense.breakdownSubtitle", "Detailed log of shop rent, light bills, transportation charges, maintenance and other operational costs.")}
                 </p>
               </div>
               
@@ -2667,10 +2667,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Inventory Stock Status Breakdown
+                  {t('reports.inventoryStockBreakdown', 'Inventory Stock Status Breakdown')}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Detailed summary of available catalog stock quantity, unit purchase costs, and raw inventory asset valuations.
+                  {t('reports.inventoryStockDesc', 'Detailed summary of available catalog stock quantity, unit purchase costs, and raw inventory asset valuations.')}
                 </p>
               </div>
 
@@ -2809,10 +2809,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  GSTR Summary Ledger Logs
+                  {t('reports.gstrSummaryLogs', 'GSTR Summary Ledger Logs')}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Aggregated GST summary statement of output tax liability and input tax credit (ITC) offsets.
+                  {t('reports.gstrSummaryLogsDesc', 'Aggregated GST summary statement of output tax liability and input tax credit (ITC) offsets.')}
                 </p>
               </div>
                 {/* Desktop View */}
@@ -2980,10 +2980,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Customer Outstanding Ledger
+                  {t('reports.customerLedger', 'Customer Outstanding Ledger')}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Detailed ledger balances showing outstanding dues pending and advance customer accounts.
+                  {t('reports.customerLedgerDesc', 'Detailed ledger balances showing outstanding dues pending and advance customer accounts.')}
                 </p>
               </div>
 
@@ -3114,10 +3114,10 @@ export const Reports: React.FC = () => {
             <div className="card" style={{ padding: '24px', border: '1px solid var(--border-color)', marginTop: '24px', boxShadow: 'none' }}>
               <div style={{ marginBottom: '16px' }}>
                 <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                  Supplier Outstanding Ledger
+                  {t("reports.suppLedger.title", "Supplier Outstanding Ledger")}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-muted)' }}>
-                  Detailed ledger balances showing raw material accounts payable costs and pending supplier settlements.
+                  {t("reports.suppLedger.subtitle", "Detailed ledger balances showing raw material accounts payable costs and pending supplier settlements.")}
                 </p>
               </div>
 
@@ -3253,14 +3253,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      1. B2B Registered Outward Supplies (4A, 4B, 4C, 6B, 6C)
+                      {t("reports.gstr1.b2bTitle", "1. B2B Registered Outward Supplies (4A, 4B, 4C, 6B, 6C)")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Outward supplies made to GST registered entities. Grouped by invoice number and tax rate.
+                      {t("reports.gstr1.b2bSubtitle", "Outward supplies made to GST registered entities. Grouped by invoice number and tax rate.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1B2B} disabled={gstr1B2BList.length === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download B2B CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr1.downloadB2bCsv", "Download B2B CSV")}
                   </button>
                 </div>
 
@@ -3315,14 +3315,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      2. B2C Small Outward Supplies (7 - Consolidated)
+                      {t("reports.gstr1.b2csTitle", "2. B2C Small Outward Supplies (7 - Consolidated)")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Consolidated taxable outward supplies to unregistered customers. Grouped by Place of Supply (POS) and Tax Rate.
+                      {t("reports.gstr1.b2csSubtitle", "Consolidated taxable outward supplies to unregistered customers. Grouped by Place of Supply (POS) and Tax Rate.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1B2CS} disabled={gstr1B2CSList.length === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download B2CS CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr1.downloadB2csCsv", "Download B2CS CSV")}
                   </button>
                 </div>
 
@@ -3333,7 +3333,7 @@ export const Reports: React.FC = () => {
                         <th className="text-nowrap">{t("reports.gstr1.type", "Type")}</th>
                         <th className="text-nowrap">{t("reports.gstr1.placeOfSupply", "Place of Supply (POS)")}</th>
                         <th className="text-nowrap align-center">{t("reports.gstr1.gstRate", "GST Rate")}</th>
-                        <th className="text-nowrap align-right">t("reports.taxableValue", "Taxable Value")</th>
+                        <th className="text-nowrap align-right">{t("reports.taxableValue", "Taxable Value")}</th>
                         <th className="text-nowrap align-right">{t("reports.gstr1.cgstAmount", "CGST Amount")}</th>
                         <th className="text-nowrap align-right">{t("reports.gstr1.sgstAmount", "SGST Amount")}</th>
                         <th className="text-nowrap align-right">{t("reports.gstr1.igstAmount", "IGST Amount")}</th>
@@ -3369,14 +3369,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {t("reports.gstr1.hsnPrintTitle", "3. HSN Summary of Outward Supplies (Table 12)")}
+                      {t("reports.gstr1.hsnTitle", "{t('reports.hsnOutwardSummary', '3. HSN Summary of Outward Supplies (Table 12)')}")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      HSN-code summary of agricultural goods supplied. Required for return filing.
+                      {t("reports.gstr1.hsnSubtitle", "HSN-code summary of agricultural goods supplied. Required for return filing.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1HSN} disabled={gstr1HSNList.length === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download HSN CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr1.downloadHsnCsv", "Download HSN CSV")}
                   </button>
                 </div>
 
@@ -3427,14 +3427,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      4. Summary of Documents Issued (Table 13)
+                      {t("reports.gstr1.docsTitle", "4. Summary of Documents Issued (Table 13)")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Serial number range and counts of tax invoices issued during the period.
+                      {t("reports.gstr1.docsSubtitle", "Serial number range and counts of tax invoices issued during the period.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr1Docs} disabled={gstr1DocsSummary.total === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download Docs CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr1.downloadDocsCsv", "Download Docs CSV")}
                   </button>
                 </div>
 
@@ -3519,14 +3519,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      1. B2B Inward Supplies Received from Registered Suppliers (3, 4A)
+                      {t("reports.gstr2.b2bTitle", "1. B2B Inward Supplies Received from Registered Suppliers (3, 4A)")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Inward supplies received from GST registered suppliers. Grouped by invoice number and tax rate.
+                      {t("reports.gstr2.b2bSubtitle", "Inward supplies received from GST registered suppliers. Grouped by invoice number and tax rate.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr2B2B} disabled={gstr2B2BList.length === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download B2B CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr2.downloadB2bCsv", "Download B2B CSV")}
                   </button>
                 </div>
 
@@ -3583,14 +3583,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {t("reports.gstr2.hsnPrintTitle", "2. HSN Summary of Inward Supplies (Table 13)")}
+                      {t("reports.gstr2.hsnTitle", "{t('reports.hsnInwardSummary', '2. HSN Summary of Inward Supplies (Table 13)')}")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      HSN-code summary of goods received (purchases). Required to audit input tax credit.
+                      {t("reports.gstr2.hsnSubtitle", "HSN-code summary of goods received (purchases). Required to audit input tax credit.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr2HSN} disabled={gstr2HSNList.length === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download HSN CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr2.downloadHsnCsv", "Download HSN CSV")}
                   </button>
                 </div>
 
@@ -3641,14 +3641,14 @@ export const Reports: React.FC = () => {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
                   <div>
                     <h3 style={{ margin: 0, fontSize: '15px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {t("reports.gstr2.docsPrintTitle", "3. Summary of Documents Received")}
+                      {t("reports.gstr2.docsTitle", "{t('reports.summaryOfDocsReceived', '3. Summary of Documents Received')}")}
                     </h3>
                     <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      Serial numbers and counts of supplier inward bills received during the period.
+                      {t("reports.gstr2.docsSubtitle", "Serial numbers and counts of supplier inward bills received during the period.")}
                     </p>
                   </div>
                   <button className="btn btn-secondary btn-sm" onClick={handleExportGstr2Docs} disabled={gstr2DocsSummary.total === 0}>
-                    <Percent size={14} style={{ marginRight: '6px' }} /> Download Docs CSV
+                    <Percent size={14} style={{ marginRight: '6px' }} /> {t("reports.gstr2.downloadDocsCsv", "Download Docs CSV")}
                   </button>
                 </div>
 
@@ -4213,7 +4213,7 @@ export const Reports: React.FC = () => {
 
             {/* 3. HSN Summary Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              3. HSN Summary of Outward Supplies (Table 12)
+              {t('reports.hsnOutwardSummary', '3. HSN Summary of Outward Supplies (Table 12)')}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
@@ -4347,7 +4347,7 @@ export const Reports: React.FC = () => {
 
             {/* 2. HSN Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              2. HSN Summary of Inward Supplies (Table 13)
+              {t('reports.hsnInwardSummary', '2. HSN Summary of Inward Supplies (Table 13)')}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px', marginBottom: '16px' }}>
               <thead>
@@ -4388,7 +4388,7 @@ export const Reports: React.FC = () => {
 
             {/* 3. Docs Table */}
             <h3 style={{ fontSize: '11px', fontWeight: 'bold', margin: '12px 0 6px 0', borderBottom: '1px solid #2F3E33', paddingBottom: '3px' }}>
-              3. Summary of Documents Received
+              {t('reports.summaryOfDocsReceived', '3. Summary of Documents Received')}
             </h3>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '9px' }}>
               <thead>

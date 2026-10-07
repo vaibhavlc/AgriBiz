@@ -167,7 +167,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <input
             type="text"
             className="form-control"
-            placeholder="e.g. Varuna Submersible Pump 5HP"
+            placeholder={t('inventory.productNamePlaceholder', 'e.g. Varuna Submersible Pump 5HP')}
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
@@ -182,7 +182,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="Auto-generated if blank"
+                placeholder={t('inventory.skuPlaceholder', 'Auto-generated if blank')}
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
               />
@@ -202,7 +202,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. 8432"
+              placeholder={t('inventory.hsnPlaceholder', 'e.g. 8432')}
               value={hsn}
               onChange={(e) => setHsn(e.target.value)}
             />
@@ -287,7 +287,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <input
               type="number"
               className="form-control"
-              placeholder="Base cost"
+              placeholder={t('inventory.baseCostPlaceholder', 'Base cost')}
               value={purchasePrice}
               onChange={(e) => {
                 const val = e.target.value;
@@ -301,7 +301,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
             <input
               type="number"
               className="form-control"
-              placeholder="Retail rate"
+              placeholder={t('inventory.retailRatePlaceholder', 'Retail rate')}
               value={sellingPrice}
               onChange={(e) => {
                 const val = e.target.value;

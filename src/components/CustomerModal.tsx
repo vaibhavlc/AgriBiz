@@ -136,7 +136,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             <input
               type="text"
               className="form-control"
-              placeholder="e.g. Ramesh Kumar"
+              placeholder={t('customers.namePlaceholder', 'e.g. Ramesh Kumar')}
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
@@ -152,7 +152,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="tel"
                 className="form-control"
-                placeholder="e.g. 9876543210"
+                placeholder={t('common.phonePlaceholder', 'e.g. 9876543210')}
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 required
@@ -164,7 +164,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="email"
                 className="form-control"
-                placeholder="e.g. ramesh@gmail.com"
+                placeholder={t('customers.emailPlaceholder', 'e.g. ramesh@gmail.com')}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 style={{ width: '100%', boxSizing: 'border-box' }}
@@ -179,7 +179,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. 23AABCR1234F1Z5"
+                placeholder={t('customers.gstinPlaceholder', 'e.g. 23AABCR1234F1Z5')}
                 maxLength={15}
                 value={gstin}
                 onChange={(e) => setGstin(e.target.value)}
@@ -208,7 +208,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
             <label className="form-label" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{t('auth.address', 'Village / Billing Address')}</label>
             <textarea
               className="form-control"
-              placeholder="e.g. Ward No. 4, Pipariya Village, MP"
+              placeholder={t('customers.addressPlaceholder', 'e.g. Ward No. 4, Pipariya Village, MP')}
               rows={2}
               value={address}
               onChange={(e) => setAddress(e.target.value)}
@@ -223,7 +223,7 @@ export const CustomerModal: React.FC<CustomerModalProps> = ({
               <input
                 type="number"
                 className="form-control"
-                placeholder="e.g. 5000 (Use negative for advance credit)"
+                placeholder={t('customers.outstandingPlaceholder', 'e.g. 5000 (Use negative for advance credit)')}
                 value={outstanding || ''}
                 onChange={(e) => setOutstanding(parseFloat(e.target.value) || 0)}
                 style={{ width: '100%', boxSizing: 'border-box' }}

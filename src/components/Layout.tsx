@@ -278,22 +278,31 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const [notifications, setNotifications] = useState([
     {
       id: 1,
+      titleKey: 'lowStockAlert',
       title: 'Low Stock Alert',
+      descKey: 'lowStockDesc',
       desc: 'Urea Fertilizer is below 15 bags.',
+      timeKey: 'tenMinsAgo',
       time: '10 mins ago',
       type: 'warning',
     },
     {
       id: 2,
+      titleKey: 'newInvoiceCreated',
       title: 'New Invoice Created',
+      descKey: 'newInvoiceDesc',
       desc: 'Invoice #INV-2026-042 generated for Vaibhav Agro.',
+      timeKey: 'oneHourAgo',
       time: '1 hour ago',
       type: 'success',
     },
     {
       id: 3,
+      titleKey: 'paymentReceived',
       title: 'Payment Received',
+      descKey: 'paymentReceivedDesc',
       desc: 'Received ₹15,000 from Balaji Traders.',
+      timeKey: 'threeHoursAgo',
       time: '3 hours ago',
       type: 'info',
     },
@@ -617,7 +626,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           onClick={() => handleTabChange('settings')}
           role="button"
           tabIndex={0}
-          title="Go to Settings"
+          title={t('nav.goToSettings', 'Go to Settings')}
+          aria-label={t('nav.goToSettings', 'Go to Settings')}
         >
           <div className="prem-logo-frame prem-logo-large">
             {settings.showLogo && settings.logo ? (
@@ -634,14 +644,15 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               type="button"
               className="prem-mobile-close"
               onClick={(e) => { e.stopPropagation(); setIsMobileSidebarOpen(false); }}
-              title="Close menu"
+              title={t('nav.closeMenu', 'Close menu')}
+              aria-label={t('nav.closeMenu', 'Close menu')}
             >
               <X size={16} />
             </button>
           )}
         </div>
 
-        <nav className="prem-nav-menu" aria-label="Main navigation">
+        <nav className="prem-nav-menu" aria-label={t('nav.mainNavigation', 'Main navigation')}>
           {renderNavGroup(t('nav.operations', 'Operations'), operationsItems)}
           {renderNavGroup(t('nav.directories', 'Directories'), directoriesItems)}
           {renderNavGroup(t('nav.admin', 'Admin'), adminItems)}
@@ -663,7 +674,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         type="button"
         className="prem-edge-collapse-btn no-print"
         onClick={toggleSidebarCollapse}
-        title={isSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title={isSidebarCollapsed ? t('common.expandSidebar', 'Expand sidebar') : t('common.collapseSidebar', 'Collapse sidebar')}
         style={{
           left: isSidebarCollapsed ? '60px' : '252px',
         }}
@@ -678,7 +689,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button 
               className="menu-toggle no-print" 
               onClick={() => setIsMobileSidebarOpen(true)}
-              title="Open Navigation Menu"
+              title={t('nav.openNavMenu', 'Open Navigation Menu')}
+              aria-label={t('nav.openNavMenu', 'Open Navigation Menu')}
             >
               <Menu size={20} />
             </button>
@@ -713,7 +725,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   <button 
                     className="search-clear-btn" 
                     onClick={() => setSearchQuery('')}
-                    title="Clear search"
+                    title={t('common.clearSearch', 'Clear search')}
                   >
                     <X size={14} />
                   </button>
@@ -727,7 +739,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <button
               className="theme-toggle-btn"
               onClick={toggleTheme}
-              title={activeTheme === 'light' ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+              title={activeTheme === 'light' ? t('common.switchToDarkMode', 'Switch to Dark Mode') : t('common.switchToLightMode', 'Switch to Light Mode')}
             >
               {activeTheme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
             </button>
@@ -770,7 +782,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <button
                 className="notification-btn"
                 onClick={() => setIsNotificationOpen(!isNotificationOpen)}
-                title="Notifications"
+                title={t('notifications.title', 'Notifications')}
               >
                 <Bell size={18} />
                 {notifications.length > 0 && (
@@ -784,32 +796,32 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {isNotificationOpen && (
                 <div className="notification-dropdown">
                   <div className="notification-dropdown-header">
-                    <span className="notification-dropdown-title">Recent Notifications</span>
+                    <span className="notification-dropdown-title">{t('notifications.recentNotifications', 'Recent Notifications')}</span>
                     {notifications.length > 0 && (
                       <button
                         className="notification-dropdown-clear"
                         onClick={() => {
                           setNotifications([]);
-                          showToast('Notifications cleared', 'success');
+                          showToast(t('notifications.cleared', 'Notifications cleared'), 'success');
                         }}
                       >
-                        Clear All
+                        {t('notifications.clearAll', 'Clear All')}
                       </button>
                     )}
                   </div>
                   <div className="notification-dropdown-list">
                     {notifications.length === 0 ? (
                       <div className="notification-dropdown-empty">
-                        No new notifications
+                        {t('notifications.noNotifications', 'No new notifications')}
                       </div>
                     ) : (
                       notifications.map((notif) => (
                         <div key={notif.id} className="notification-item">
                           <span className="notification-item-dot"></span>
                           <div className="notification-item-content">
-                            <span className="notification-item-title">{notif.title}</span>
-                            <span className="notification-item-desc">{notif.desc}</span>
-                            <span className="notification-item-time">{notif.time}</span>
+                            <span className="notification-item-title">{notif.titleKey ? t(`notifications.${notif.titleKey}`, notif.title) : notif.title}</span>
+                            <span className="notification-item-desc">{notif.descKey ? t(`notifications.${notif.descKey}`, notif.desc) : notif.desc}</span>
+                            <span className="notification-item-time">{notif.timeKey ? t(`notifications.${notif.timeKey}`, notif.time) : notif.time}</span>
                           </div>
                         </div>
                       ))
@@ -825,7 +837,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         setIsNotificationOpen(false);
                       }}
                     >
-                      View Reports Dashboard
+                      {t('notifications.viewReportsDashboard', 'View Reports Dashboard')}
                     </a>
                   </div>
                 </div>
@@ -836,7 +848,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <button
                 className="profile-trigger"
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-                title="User Profile options"
+                title={t('common.userProfileOptions', 'User Profile options')}
               >
                 <div className="avatar-wrapper">
                   <div className="avatar-circle">
@@ -873,7 +885,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <div className="profile-dropdown-name-row">
                         <span className="profile-dropdown-name">{currentUser ? currentUser.name : 'Gokul Patil'}</span>
                         <span className={`profile-role-badge role-${currentUser?.role?.toLowerCase() || 'owner'}`}>
-                          {currentUser?.role === 'Owner' ? '👑 Owner' : currentUser?.role === 'Accounts' ? '📊 Accounts' : '💵 Cashier'}
+                          {currentUser?.role === 'Owner' ? `👑 ${t('roles.owner', 'Owner')}` : currentUser?.role === 'Accounts' ? `📊 ${t('roles.accounts', 'Accounts')}` : `💵 ${t('roles.cashier', 'Cashier')}`}
                         </span>
                       </div>
                       <div className="profile-dropdown-company">
@@ -1280,7 +1292,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. UPI82012019"
+                placeholder={t('payments.refPlaceholder', 'e.g. UPI82012019')}
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
               />
@@ -1291,7 +1303,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <label className="form-label">{t('common.notes', 'Remarks / Description')}</label>
             <textarea
               className="form-control"
-              placeholder="e.g. Settle outstanding bill payment"
+              placeholder={t('payments.notesPlaceholder', 'e.g. Settle outstanding bill payment')}
               rows={2}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}

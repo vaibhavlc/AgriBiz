@@ -37,29 +37,29 @@ export const RecycleBin: React.FC = () => {
       case 'Supplier':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            <div><strong>Phone:</strong> {data.phone || 'N/A'}</div>
-            <div><strong>Email:</strong> {data.email || 'N/A'}</div>
-            <div><strong>Address:</strong> {data.address || 'N/A'}</div>
-            {data.gstin && <div><strong>GSTIN:</strong> {data.gstin}</div>}
-            {data.state && <div><strong>State:</strong> {data.state}</div>}
+            <div><strong>{t('common.phone', 'Phone')}:</strong> {data.phone || 'N/A'}</div>
+            <div><strong>{t('common.email', 'Email')}:</strong> {data.email || 'N/A'}</div>
+            <div><strong>{t('common.address', 'Address')}:</strong> {data.address || 'N/A'}</div>
+            {data.gstin && <div><strong>{t('common.gstin', 'GSTIN')}:</strong> {data.gstin}</div>}
+            {data.state && <div><strong>{t('common.state', 'State')}:</strong> {data.state}</div>}
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px' }}>
-              <strong>Outstanding:</strong> <span style={{ color: data.outstanding > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', fontWeight: 'bold' }}>₹{data.outstanding}</span>
+              <strong>{t('common.outstanding', 'Outstanding')}:</strong> <span style={{ color: data.outstanding > 0 ? 'var(--color-danger)' : 'var(--color-success-dark)', fontWeight: 'bold' }}>₹{data.outstanding}</span>
             </div>
           </div>
         );
       case 'Product':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            <div><strong>SKU:</strong> {data.sku || 'N/A'}</div>
-            <div><strong>Category:</strong> {data.category || 'N/A'}</div>
-            {data.hsn && <div><strong>HSN Code:</strong> {data.hsn}</div>}
-            <div><strong>Available Stock:</strong> {data.stock} units</div>
-            <div><strong>Min Stock Threshold:</strong> {data.minStock} units</div>
+            <div><strong>{t('inventory.sku', 'SKU')}:</strong> {data.sku || 'N/A'}</div>
+            <div><strong>{t('inventory.category', 'Category')}:</strong> {data.category || 'N/A'}</div>
+            {data.hsn && <div><strong>{t('inventory.hsn', 'HSN Code')}:</strong> {data.hsn}</div>}
+            <div><strong>{t('inventory.availableStock', 'Available Stock')}:</strong> {data.stock} units</div>
+            <div><strong>{t('inventory.minStockThreshold', 'Min Stock Threshold')}:</strong> {data.minStock} units</div>
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div><strong>Purchase Price:</strong> ₹{data.purchasePrice}</div>
-              <div><strong>Selling Price:</strong> ₹{data.sellingPrice}</div>
+              <div><strong>{t('inventory.purchasePrice', 'Purchase Price')}:</strong> ₹{data.purchasePrice}</div>
+              <div><strong>{t('inventory.sellingPrice', 'Selling Price')}:</strong> ₹{data.sellingPrice}</div>
             </div>
-            <div><strong>GST Rate:</strong> {data.gstRate}%</div>
+            <div><strong>{t('inventory.gstRate', 'GST Rate')}:</strong> {data.gstRate}%</div>
           </div>
         );
       case 'Invoice':
@@ -72,21 +72,21 @@ export const RecycleBin: React.FC = () => {
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <div><strong>Date:</strong> {new Date(data.date).toLocaleDateString()}</div>
+              <div><strong>{t('common.date', 'Date')}:</strong> {new Date(data.date).toLocaleDateString()}</div>
               <div><strong>{numLabel}:</strong> {numVal}</div>
             </div>
             <div><strong>{contactLabel}:</strong> {contactName}</div>
-            {data.validUntil && <div><strong>Valid Until:</strong> {new Date(data.validUntil).toLocaleDateString()}</div>}
+            {data.validUntil && <div><strong>{t('sales.validUntil', 'Valid Until')}:</strong> {new Date(data.validUntil).toLocaleDateString()}</div>}
             
             <div style={{ marginTop: '6px', borderTop: '1px solid var(--border-color)', paddingTop: '6px' }}>
-              <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Items List</strong>
+              <strong style={{ fontSize: '11px', textTransform: 'uppercase', color: 'var(--text-muted)' }}>{t('recycleBin.itemsList', 'Items List')}</strong>
               <div style={{ maxHeight: '120px', overflowY: 'auto', marginTop: '4px', border: '1px solid var(--border-color)', borderRadius: '6px' }}>
                 <table style={{ width: '100%', fontSize: '12px', borderCollapse: 'collapse' }}>
                   <thead style={{ backgroundColor: 'var(--bg-app)', position: 'sticky', top: 0 }}>
                     <tr style={{ borderBottom: '1px solid var(--border-color)' }}>
-                      <th style={{ padding: '4px 6px', textAlign: 'left' }}>Item</th>
-                      <th style={{ padding: '4px 6px', textAlign: 'center' }}>Qty</th>
-                      <th style={{ padding: '4px 6px', textAlign: 'right' }}>Total</th>
+                      <th style={{ padding: '4px 6px', textAlign: 'left' }}>{t('sales.item', 'Item')}</th>
+                      <th style={{ padding: '4px 6px', textAlign: 'center' }}>{t('sales.qty', 'Qty')}</th>
+                      <th style={{ padding: '4px 6px', textAlign: 'right' }}>{t('sales.total', 'Total')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -103,23 +103,23 @@ export const RecycleBin: React.FC = () => {
             </div>
 
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px', display: 'flex', flexDirection: 'column', gap: '2px', alignItems: 'flex-end', fontSize: '12px' }}>
-              {data.subtotal !== undefined && <div>Subtotal: ₹{data.subtotal}</div>}
-              {data.gstTotal !== undefined && <div>GST Tax: ₹{data.gstTotal}</div>}
-              {data.discountTotal !== undefined && <div>Discount: ₹{data.discountTotal}</div>}
-              <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary-dark)', marginTop: '2px' }}>Grand Total: ₹{data.grandTotal}</div>
+              {data.subtotal !== undefined && <div>{t('sales.subtotal', 'Subtotal')}: ₹{data.subtotal}</div>}
+              {data.gstTotal !== undefined && <div>{t('sales.gstTax', 'GST Tax')}: ₹{data.gstTotal}</div>}
+              {data.discountTotal !== undefined && <div>{t('sales.discount', 'Discount')}: ₹{data.discountTotal}</div>}
+              <div style={{ fontSize: '14px', fontWeight: 'bold', color: 'var(--primary-dark)', marginTop: '2px' }}>{t('sales.grandTotal', 'Grand Total')}: ₹{data.grandTotal}</div>
             </div>
           </div>
         );
       case 'Expense':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            <div><strong>Category:</strong> {data.category}</div>
-            <div><strong>Payee:</strong> {data.payee}</div>
-            <div><strong>Date:</strong> {new Date(data.date).toLocaleDateString()}</div>
-            <div><strong>Payment Method:</strong> {data.paymentMethod}</div>
-            <div><strong>Status:</strong> {data.status}</div>
-            {data.referenceNumber && <div><strong>Reference:</strong> {data.referenceNumber}</div>}
-            {data.notes && <div><strong>Notes:</strong> {data.notes}</div>}
+            <div><strong>{t('inventory.category', 'Category')}:</strong> {data.category}</div>
+            <div><strong>{t('expenses.payee', 'Payee')}:</strong> {data.payee}</div>
+            <div><strong>{t('common.date', 'Date')}:</strong> {new Date(data.date).toLocaleDateString()}</div>
+            <div><strong>{t('expenses.paymentMethod', 'Payment Method')}:</strong> {data.paymentMethod}</div>
+            <div><strong>{t('common.status', 'Status')}:</strong> {data.status}</div>
+            {data.referenceNumber && <div><strong>{t('common.reference', 'Reference')}:</strong> {data.referenceNumber}</div>}
+            {data.notes && <div><strong>{t('common.notes', 'Notes')}:</strong> {data.notes}</div>}
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px', fontSize: '14px', fontWeight: 'bold', color: 'var(--color-danger)' }}>
               Amount: ₹{data.amount}
             </div>
@@ -128,12 +128,12 @@ export const RecycleBin: React.FC = () => {
       case 'Payment':
         return (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontSize: '13px' }}>
-            <div><strong>Type:</strong> {data.type === 'CustomerReceipt' ? 'Customer Receipt' : 'Supplier Payment'}</div>
-            <div><strong>Contact:</strong> {data.contactName}</div>
-            <div><strong>Date:</strong> {new Date(data.date).toLocaleDateString()}</div>
-            <div><strong>Payment Method:</strong> {data.paymentMethod}</div>
-            {data.referenceNumber && <div><strong>Reference:</strong> {data.referenceNumber}</div>}
-            {data.notes && <div><strong>Notes:</strong> {data.notes}</div>}
+            <div><strong>{t('payments.type', 'Type')}:</strong> {data.type === 'CustomerReceipt' ? 'Customer Receipt' : 'Supplier Payment'}</div>
+            <div><strong>{t('payments.contact', 'Contact')}:</strong> {data.contactName}</div>
+            <div><strong>{t('common.date', 'Date')}:</strong> {new Date(data.date).toLocaleDateString()}</div>
+            <div><strong>{t('expenses.paymentMethod', 'Payment Method')}:</strong> {data.paymentMethod}</div>
+            {data.referenceNumber && <div><strong>{t('common.reference', 'Reference')}:</strong> {data.referenceNumber}</div>}
+            {data.notes && <div><strong>{t('common.notes', 'Notes')}:</strong> {data.notes}</div>}
             <div style={{ borderTop: '1px solid var(--border-color)', paddingTop: '6px', marginTop: '4px', fontSize: '14px', fontWeight: 'bold', color: 'var(--primary-dark)' }}>
               Amount: ₹{data.amount}
             </div>
