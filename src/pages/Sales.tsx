@@ -3801,7 +3801,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <Search size={16} className="search-input-icon" />
             <input 
               type="text" 
-              placeholder={salesActiveTab === 'invoices' ? "Search invoice or customer..." : "Search quotation or customer..."} 
+              placeholder={salesActiveTab === 'invoices' ? t('sales.searchInvoicePlaceholder', "Search invoice or customer...") : t('sales.searchQuotationPlaceholder', "Search quotation or customer...")} 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
             />
@@ -3816,7 +3816,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               const isActive = statusFilter === status;
               return (
                 <button
-                  key={translateStatus(t, status)}
+                  key={status}
                   className="btn-sm"
                   style={{
                     padding: '5px 10px',
@@ -3836,7 +3836,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     setCurrentPage(1);
                   }}
                 >
-                  {status}
+                  {translateStatus(t, status)}
                 </button>
               );
             })}
@@ -3857,7 +3857,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 : ['All', 'Draft', 'Sent', 'Approved', 'Declined', 'Converted']
               ).map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {translateStatus(t, status)}
                 </option>
               ))}
             </select>

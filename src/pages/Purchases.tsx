@@ -3064,7 +3064,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               const isActive = statusFilter === status;
               return (
                 <button
-                  key={translateStatus(t, status)}
+                  key={status}
                   className="btn-sm"
                   type="button"
                   style={{
@@ -3085,7 +3085,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     setCurrentPage(1);
                   }}
                 >
-                  {status}
+                  {translateStatus(t, status)}
                 </button>
               );
             })}
@@ -3103,7 +3103,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             >
               {['All', 'Paid', 'Partial', 'Unpaid'].map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {translateStatus(t, status)}
                 </option>
               ))}
             </select>
