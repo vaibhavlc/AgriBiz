@@ -91,6 +91,7 @@
     "saving": "जतन करत आहे...",
     "exportCsv": "CSV एक्सपोर्ट करा",
     "savePdf": "PDF जतन करा",
+    "printReport": "अहवाल प्रिंट करा",
     "to": "ते",
     "docNo": "दस्तऐवज क्र.",
     "description": "तपशील",
@@ -144,7 +145,11 @@
     "unpaid": "न भरलेले",
     "approved": "मंजूर",
     "declined": "नाकारले",
-    "converted": "रूपांतरित"
+    "converted": "रूपांतरित",
+    "settled": "निरंक / पूर्ण",
+    "duesPending": "थकबाकी बाकी",
+    "advanceCredit": "अगाऊ जमा",
+    "payablePending": "देणे बाकी"
   },
   "paymentMethods": {
     "cash": "रोख (कॅश)",

@@ -949,7 +949,7 @@ export const Reports: React.FC = () => {
     let filename = `${activeReport}_report_${new Date().toISOString().split('T')[0]}.csv`;
 
     if (activeReport === 'sales') {
-      headers = ['Invoice No', 'Customer Name', 'Date', 'Taxable Amt (INR)', 'Tax Collected (INR)', 'Grand Total (INR)', 'Status'];
+      headers = [t("sales.invoiceNo", "Invoice No"), t("sales.customerName", "Customer Name"), t("reports.date", "Date"), t("reports.sales.taxableAmtRs", "Taxable Amt (INR)"), t("reports.sales.taxCollectedRs", "Tax Collected (INR)"), t("reports.sales.grandTotalRs", "Grand Total (INR)"), t("common.status", "Status")];
       rows = filteredInvoices.map(inv => [
         inv.invoiceNumber,
         inv.customerName,
@@ -957,11 +957,11 @@ export const Reports: React.FC = () => {
         (inv.subtotal - inv.discountTotal).toFixed(2),
         inv.gstTotal.toFixed(2),
         inv.grandTotal.toFixed(2),
-        inv.paymentStatus
+        translateStatus(t, inv.paymentStatus)
       ]);
-      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', totalSalesBase.toFixed(2), totalSalesTax.toFixed(2), totalSalesVal.toFixed(2), '']);
+      rows.push([t("reports.summaryTotal", "Report Summary Total"), '', '', totalSalesBase.toFixed(2), totalSalesTax.toFixed(2), totalSalesVal.toFixed(2), '']);
     } else if (activeReport === 'purchase') {
-      headers = ['Bill Number', 'Supplier Name', 'Receipt Date', 'Base Cost (INR)', 'Tax Paid (INR)', 'Total Cost (INR)', 'Status'];
+      headers = [t("purchases.billNumber", "Bill Number"), t("purchases.supplierName", "Supplier Name"), t("reports.receiptDate", "Receipt Date"), t("purchases.baseCost", "Base Cost (INR)"), t("purchases.taxPaid", "Tax Paid (INR)"), t("purchases.totalCost", "Total Cost (INR)"), t("common.status", "Status")];
       rows = filteredPurchases.map(pur => [
         pur.purchaseNumber,
         pur.supplierName,
@@ -969,11 +969,11 @@ export const Reports: React.FC = () => {
         pur.subtotal.toFixed(2),
         pur.gstTotal.toFixed(2),
         pur.grandTotal.toFixed(2),
-        pur.paymentStatus
+        translateStatus(t, pur.paymentStatus)
       ]);
-      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', totalPurchasesBase.toFixed(2), totalPurchasesTax.toFixed(2), totalPurchasesVal.toFixed(2), '']);
+      rows.push([t("reports.summaryTotal", "Report Summary Total"), '', '', totalPurchasesBase.toFixed(2), totalPurchasesTax.toFixed(2), totalPurchasesVal.toFixed(2), '']);
     } else if (activeReport === 'profit') {
-      headers = ['Invoice No', 'Date', 'Customer', 'Taxable Sales (INR)', 'Cost Price (INR)', 'Net Profit (INR)', 'Margin (%)'];
+      headers = [t("sales.invoiceNo", "Invoice No"), t("reports.date", "Date"), t("reports.profit.customer", "Customer"), t("reports.profit.taxableSalesRs", "Taxable Sales (INR)"), t("reports.profit.costPriceRs", "Cost Price (INR)"), t("reports.profit.netProfitRs", "Net Profit (INR)"), t("reports.print.margin", "Margin (%)")];
       rows = filteredInvoices.map(inv => {
         const invoiceCOGS = inv.items.reduce((s, i) => {
           const cost = products.find((p) => p.id === i.productId)?.purchasePrice || 0;
@@ -991,63 +991,63 @@ export const Reports: React.FC = () => {
           `${invMargin.toFixed(1)}%`
         ];
       });
-      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', totalSalesBase.toFixed(2), coGS.toFixed(2), grossProfit.toFixed(2), `${profitMarginPercent.toFixed(1)}%`]);
+      rows.push([t("reports.summaryTotal", "Report Summary Total"), '', '', totalSalesBase.toFixed(2), coGS.toFixed(2), grossProfit.toFixed(2), `${profitMarginPercent.toFixed(1)}%`]);
     } else if (activeReport === 'stock') {
-      headers = ['SKU Code', 'Product Name', 'Category', 'Available Qty', 'Cost Price (INR)', 'Asset Valuation (INR)', 'Retail Rate (INR)', 'Retail Valuation (INR)'];
+      headers = [t("reports.print.sku", "SKU Code"), t("reports.print.productName", "Product Name"), t("reports.print.category", "Category"), t("inventory.availableQty", "Available Qty"), t("reports.profit.costPriceRs", "Cost Price (INR)"), t("reports.print.assetValueRs", "Asset Valuation (INR)"), t("reports.print.retailPriceRs", "Retail Rate (INR)"), t("reports.print.retailValueRs", "Retail Valuation (INR)")];
       rows = products.map(p => [
         p.sku,
         p.name,
-        p.category,
+        translateCategory(t, p.category),
         p.stock.toString(),
         p.purchasePrice.toFixed(2),
         (p.stock * p.purchasePrice).toFixed(2),
         p.sellingPrice.toFixed(2),
         (p.stock * p.sellingPrice).toFixed(2)
       ]);
-      rows.push(['Stock Summary Total', '', '', totalStockQty.toString(), '', totalAssetVal.toFixed(2), '', totalRetailVal.toFixed(2)]);
+      rows.push([t("reports.stockSummaryTotal", "Stock Summary Total"), '', '', totalStockQty.toString(), '', totalAssetVal.toFixed(2), '', totalRetailVal.toFixed(2)]);
     } else if (activeReport === 'gst') {
-      headers = ['Transaction Type', 'Document Count', 'Goods Value (INR)', 'Central GST (CGST) (INR)', 'State GST (SGST) (INR)', '{t("reports.purchase.totalTax", "Total Tax")} Liability (INR)'];
+      headers = [t("reports.gst.transactionType", "Transaction Type"), t("reports.gst.docCount", "Document Count"), t("reports.gst.goodsValue", "Goods Value (INR)"), t("reports.gstr3b.centralTaxRs", "Central GST (CGST) (INR)"), t("reports.gstr3b.stateUtTaxRs", "State GST (SGST) (INR)"), `${t("reports.purchase.totalTax", "Total Tax")} Liability (INR)`];
       rows = [
-        ['{t("reports.gst.outwardSupplySales", "Outward Supply (Sales Invoices)")}', filteredInvoices.length.toString(), totalSalesBase.toFixed(2), totalCGSTCollected.toFixed(2), totalSGSTCollected.toFixed(2), totalSalesTax.toFixed(2)],
-        ['{t("reports.gst.inwardSupplyBills", "Inward Supply (Supplier Bills)")}', filteredPurchases.length.toString(), totalPurchasesBase.toFixed(2), totalCGSTPaid.toFixed(2), totalSGSTPaid.toFixed(2), totalPurchasesTax.toFixed(2)],
-        ['Net Payable Tax Dues', '', (totalSalesBase - totalPurchasesBase).toFixed(2), (totalCGSTCollected - totalCGSTPaid).toFixed(2), (totalSGSTCollected - totalSGSTPaid).toFixed(2), netGSTDue.toFixed(2)]
+        [t("reports.gst.outwardSupplySales", "Outward Supply (Sales Invoices)"), filteredInvoices.length.toString(), totalSalesBase.toFixed(2), totalCGSTCollected.toFixed(2), totalSGSTCollected.toFixed(2), totalSalesTax.toFixed(2)],
+        [t("reports.gst.inwardSupplyBills", "Inward Supply (Supplier Bills)"), filteredPurchases.length.toString(), totalPurchasesBase.toFixed(2), totalCGSTPaid.toFixed(2), totalSGSTPaid.toFixed(2), totalPurchasesTax.toFixed(2)],
+        [t("reports.gst.netPayableTaxDues", "Net Payable Tax Dues"), '', (totalSalesBase - totalPurchasesBase).toFixed(2), (totalCGSTCollected - totalCGSTPaid).toFixed(2), (totalSGSTCollected - totalSGSTPaid).toFixed(2), netGSTDue.toFixed(2)]
       ];
     } else if (activeReport === 'custLedger') {
-      headers = ['Customer ID', 'Customer Name', 'Phone Number', 'GSTIN Identification', 'Outstanding Balance (INR)', 'Status'];
+      headers = [t("customers.id", "Customer ID"), t("customers.name", "Customer Name"), t("common.phone", "Phone Number"), t("common.gstin", "GSTIN Identification"), t("reports.custLedger.outstandingBalance", "Outstanding Balance (INR)"), t("common.status", "Status")];
       rows = customers.map(c => [
         c.id,
         c.name,
         c.phone,
         c.gstin || '—',
         c.outstanding.toFixed(2),
-        c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'
+        c.outstanding === 0 ? t('status.settled', 'Settled') : c.outstanding > 0 ? t('status.duesPending', 'Dues Pending') : t('status.advanceCredit', 'Advance Credit')
       ]);
-      rows.push(['Accumulated Customer Dues', '', '', '', pendingReceivables.toFixed(2), '']);
+      rows.push([t("reports.custLedger.accumulatedCustomerDues", "Accumulated Customer Dues"), '', '', '', pendingReceivables.toFixed(2), '']);
     } else if (activeReport === 'suppLedger') {
-      headers = ['Supplier ID', 'Supplier Name', 'Phone Number', 'GSTIN Identification', 'Balance Owed (INR)', 'Status'];
+      headers = [t("suppliers.id", "Supplier ID"), t("suppliers.name", "Supplier Name"), t("common.phone", "Phone Number"), t("common.gstin", "GSTIN Identification"), t("suppliers.balanceOwed", "Balance Owed (INR)"), t("common.status", "Status")];
       rows = suppliers.map(s => [
         s.id,
         s.name,
         s.phone,
         s.gstin || '—',
         s.outstanding.toFixed(2),
-        s.outstanding === 0 ? 'Settled' : 'Payable Pending'
+        s.outstanding === 0 ? t('status.settled', 'Settled') : t('status.payablePending', 'Payable Pending')
       ]);
-      rows.push(['Accumulated We Owe Suppliers', '', '', '', pendingPayables.toFixed(2), '']);
+      rows.push([t("reports.suppLedger.accumulatedWeOweSuppliers", "Accumulated We Owe Suppliers"), '', '', '', pendingPayables.toFixed(2), '']);
     } else if (activeReport === 'expense') {
-      headers = ['Date', 'Voucher ID', 'Category', 'Payee / Paid To', 'Amount (INR)', 'Status', 'Payment Method', 'Ref No.', 'Notes'];
+      headers = [t("reports.date", "Date"), t("reports.print.voucherId", "Voucher ID"), t("reports.print.category", "Category"), t("reports.expense.payeePaidTo", "Payee / Paid To"), t("common.amount", "Amount (INR)"), t("common.status", "Status"), t("reports.print.method", "Payment Method"), t("reports.expense.refNumber", "Ref No."), t("reports.expense.notes", "Notes")];
       rows = filteredExpenses.map(exp => [
         formatDate(exp.date),
         exp.id,
-        exp.category,
-        exp.payee || 'General',
+        translateCategory(t, exp.category),
+        exp.payee || t("categories.general", "General"),
         exp.amount.toFixed(2),
-        exp.status || 'Paid',
-        exp.status === 'Due' ? '—' : exp.paymentMethod,
+        translateStatus(t, exp.status || 'Paid'),
+        exp.status === 'Due' ? '—' : translatePaymentMethod(t, exp.paymentMethod),
         exp.status === 'Due' ? '—' : (exp.referenceNumber || '—'),
         exp.notes || '—'
       ]);
-      rows.push(['{t("reports.summaryTotal", "Report Summary Total")}', '', '', '', totalExpenses.toFixed(2), '', '', '', '']);
+      rows.push([t("reports.summaryTotal", "Report Summary Total"), '', '', '', totalExpenses.toFixed(2), '', '', '', '']);
     }
 
     downloadCSVFile(headers, rows, filename);
@@ -2120,7 +2120,7 @@ export const Reports: React.FC = () => {
                           <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(inv.grandTotal).replace('₹', '')}</td>
                           <td>
                             <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                              {inv.paymentStatus}
+                              {translateStatus(t, inv.paymentStatus)}
                             </span>
                           </td>
                         </tr>
@@ -2147,7 +2147,7 @@ export const Reports: React.FC = () => {
                         <span className="mobile-list-card-subtitle">{inv.customerName}</span>
                       </div>
                       <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                        {inv.paymentStatus}
+                        {translateStatus(t, inv.paymentStatus)}
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
@@ -2260,7 +2260,7 @@ export const Reports: React.FC = () => {
                           <td style={{ textAlign: 'right', fontWeight: 600 }}>{formatINR(pur.grandTotal).replace('₹', '')}</td>
                           <td>
                             <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                              {pur.paymentStatus}
+                              {translateStatus(t, pur.paymentStatus)}
                             </span>
                           </td>
                         </tr>
@@ -2287,7 +2287,7 @@ export const Reports: React.FC = () => {
                         <span className="mobile-list-card-subtitle">{pur.supplierName}</span>
                       </div>
                       <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                        {pur.paymentStatus}
+                        {translateStatus(t, pur.paymentStatus)}
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
@@ -2444,7 +2444,7 @@ export const Reports: React.FC = () => {
                         color: exp.status === 'Due' ? '#D97706' : 'var(--primary)',
                         border: exp.status === 'Due' ? '1px solid rgba(217, 119, 6, 0.2)' : '1px solid rgba(16, 185, 129, 0.2)'
                       }}>
-                        {exp.status || 'Paid'}
+                        {translateStatus(t, exp.status || 'Paid')}
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
@@ -3046,7 +3046,7 @@ export const Reports: React.FC = () => {
                         <span className="mobile-list-card-subtitle">ID: {c.id} • {c.phone}</span>
                       </div>
                       <span className={`badge ${c.outstanding === 0 ? 'badge-success' : c.outstanding > 0 ? 'badge-warning' : 'badge-info'}`}>
-                        {c.outstanding === 0 ? 'Settled' : c.outstanding > 0 ? 'Dues Pending' : 'Advance Credit'}
+                        {c.outstanding === 0 ? t('status.settled', 'Settled') : c.outstanding > 0 ? t('status.duesPending', 'Dues Pending') : t('status.advanceCredit', 'Advance Credit')}
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
@@ -3180,7 +3180,7 @@ export const Reports: React.FC = () => {
                         <span className="mobile-list-card-subtitle">ID: {s.id} • {s.phone}</span>
                       </div>
                       <span className={`badge ${s.outstanding === 0 ? 'badge-success' : s.outstanding >-1 ? 'badge-warning' : 'badge-info'}`}>
-                        {s.outstanding === 0 ? 'Settled' : 'Payable Pending'}
+                        {s.outstanding === 0 ? t('status.settled', 'Settled') : t('status.payablePending', 'Payable Pending')}
                       </span>
                     </div>
                     <div className="mobile-list-card-row">
@@ -4479,13 +4479,13 @@ export const Reports: React.FC = () => {
 
         <div className="filters-group-two" style={{ flexWrap: 'wrap', gap: '8px' }}>
           <button className="btn btn-secondary reports-export-btn" onClick={handleExport}>
-            <Download size={16} /> Export CSV
+            <Download size={16} /> {t("common.exportCsv", "Export CSV")}
           </button>
           <button className="btn btn-secondary reports-save-btn" onClick={handleDownloadPDF}>
-            <FileText size={16} /> Save PDF
+            <FileText size={16} /> {t("common.savePdf", "Save PDF")}
           </button>
           <button className="btn btn-primary reports-print-btn" onClick={handlePrint}>
-            <Printer size={16} /> Print Report
+            <Printer size={16} /> {t("common.printReport", "Print Report")}
           </button>
         </div>
       </div>

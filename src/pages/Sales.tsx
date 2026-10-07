@@ -3954,7 +3954,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           </td>
                           <td style={{ whiteSpace: 'nowrap' }}>
                             <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                              {inv.paymentStatus}
+                              {translateStatus(t, inv.paymentStatus)}
                             </span>
                           </td>
                           <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
@@ -4096,7 +4096,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       <span className="mobile-list-card-label">{t('sales.status', 'Status')}</span>
                       <span className="mobile-list-card-val">
                         <span className={`badge ${inv.paymentStatus === 'Paid' ? 'badge-success' : inv.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                          {inv.paymentStatus}
+                          {translateStatus(t, inv.paymentStatus)}
                         </span>
                       </span>
                     </div>
@@ -4209,7 +4209,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                               q.status === 'Declined' ? 'badge-danger' : 
                               'badge-secondary'
                             }`}>
-                              {q.status}
+                              {translateStatus(t, q.status)}
                             </span>
                           </td>
                           <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
@@ -4389,7 +4389,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           q.status === 'Approved' ? 'badge-info' : 
                           q.status === 'Declined' ? 'badge-danger' : 
                           'badge-secondary'
-                        }`}>{q.status}</span>
+                        }`}>{translateStatus(t, q.status)}</span>
                       </span>
                     </div>
 

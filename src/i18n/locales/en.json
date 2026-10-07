@@ -95,6 +95,7 @@
     "saving": "Saving...",
     "exportCsv": "Export CSV",
     "savePdf": "Save PDF",
+    "printReport": "Print Report",
     "to": "to",
     "docNo": "Doc No",
     "description": "Description",
@@ -143,7 +144,11 @@
     "enabled": "Enabled",
     "disabled": "Disabled",
     "success": "Success",
-    "failed": "Failed"
+    "failed": "Failed",
+    "settled": "Settled",
+    "duesPending": "Dues Pending",
+    "advanceCredit": "Advance Credit",
+    "payablePending": "Payable Pending"
   },
   "paymentMethods": {
     "cash": "Cash",

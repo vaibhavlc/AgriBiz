@@ -3213,7 +3213,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                                 : 'badge-danger'
                             }`}
                           >
-                            {pur.paymentStatus}
+                            {translateStatus(t, pur.paymentStatus)}
                           </span>
                         </td>
                         <td className="no-print" style={{ position: 'relative', textAlign: 'center', overflow: 'visible' }}>
@@ -3457,7 +3457,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     <span className="mobile-list-card-label">{t('purchases.status', 'Status')}</span>
                     <span className="mobile-list-card-val">
                       <span className={`badge ${pur.paymentStatus === 'Paid' ? 'badge-success' : pur.paymentStatus === 'Partial' ? 'badge-warning' : 'badge-danger'}`}>
-                        {pur.paymentStatus}
+                        {translateStatus(t, pur.paymentStatus)}
                       </span>
                     </span>
                   </div>

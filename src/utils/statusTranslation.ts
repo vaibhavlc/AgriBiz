@@ -31,7 +31,11 @@ export const translateStatus = (t: TFunction, status: string | undefined | null)
     enabled: 'status.enabled',
     disabled: 'status.disabled',
     success: 'status.success',
-    failed: 'status.failed'
+    failed: 'status.failed',
+    settled: 'status.settled',
+    dues_pending: 'status.duesPending',
+    advance_credit: 'status.advanceCredit',
+    payable_pending: 'status.payablePending'
   };
 
   const key = statusKeys[normalized];

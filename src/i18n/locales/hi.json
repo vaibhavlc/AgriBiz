@@ -91,6 +91,7 @@
     "saving": "सहेजा जा रहा है...",
     "exportCsv": "CSV एक्सपोर्ट करें",
     "savePdf": "PDF सहेजें",
+    "printReport": "रिपोर्ट प्रिंट करें",
     "to": "से",
     "docNo": "दस्तावेज़ सं.",
     "description": "विवरण",
@@ -139,7 +140,11 @@
     "enabled": "सक्षम",
     "disabled": "अक्षम",
     "success": "सफल",
-    "failed": "विफल"
+    "failed": "विफल",
+    "settled": "चुकता / शून्य",
+    "duesPending": "बकाया लंबित",
+    "advanceCredit": "अग्रिम जमा",
+    "payablePending": "देय लंबित"
   },
   "paymentMethods": {
     "cash": "नकद (कैश)",
