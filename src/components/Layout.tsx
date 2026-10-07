@@ -1187,12 +1187,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {paymentType === 'CustomerReceipt'
                 ? customers.map((c) => (
                     <option key={c.id} value={c.id}>
-                      {c.name} — Dues: {formatINR(c.outstanding)}
+                      {c.name}  — {t('common.dues', 'Dues')}: {formatINR(c.outstanding)}
                     </option>
                   ))
                 : suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
-                      {s.name} — Owed: {formatINR(s.outstanding)}
+                      {s.name}  — {t('common.owed', 'Owed')}: {formatINR(s.outstanding)}
                     </option>
                   ))}
             </select>

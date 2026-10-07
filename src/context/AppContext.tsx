@@ -1,3 +1,4 @@
+import i18n from '../i18n';
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import type { Product, Customer, Supplier, Invoice, Purchase, Payment, BusinessSettings, Expense, Quotation, RecycleBinItem } from '../types';
 import {
@@ -1382,7 +1383,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/products', { ...newProduct, productId: id });
       setProducts((prev) => [...prev, newProduct]);
       notifyMutation();
-      showToast('Product added successfully!');
+      showToast(i18n.t('toast.productAdded', 'Product added successfully!'));
       return newProduct;
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to add product', 'error');
@@ -1405,7 +1406,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/products/${p.id}`, formatted);
       setProducts((prev) => prev.map((item) => (item.id === p.id ? formatted : item)));
       notifyMutation();
-      showToast('Product updated successfully!');
+      showToast(i18n.t('toast.productUpdated', 'Product updated successfully!'));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update product', 'error');
     }
@@ -1425,7 +1426,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.delete(`/products/${cleanId}`);
       setProducts((prev) => prev.filter((p) => p.id !== cleanId && (p as any).productId !== cleanId));
       notifyMutation();
-      showToast('Product soft-deleted successfully!');
+      showToast(i18n.t('toast.productDeleted', 'Product soft-deleted successfully!'));
       refreshCollection('recycleBin');
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete product', 'error');
@@ -1449,7 +1450,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/customers', { ...newCustomer, customerId: id, phone: newCustomer.phone || 'N/A' });
       setCustomers((prev) => [...prev, newCustomer]);
       notifyMutation();
-      showToast('Customer added successfully!');
+      showToast(i18n.t('toast.customerAdded', 'Customer added successfully!'));
       return newCustomer;
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to add customer', 'error');
@@ -1471,7 +1472,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/customers/${c.id}`, { ...formatted, phone: formatted.phone || 'N/A' });
       setCustomers((prev) => prev.map((item) => (item.id === c.id ? formatted : item)));
       notifyMutation();
-      showToast('Customer updated successfully!');
+      showToast(i18n.t('toast.customerUpdated', 'Customer updated successfully!'));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update customer', 'error');
     }
@@ -1486,7 +1487,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.delete(`/customers/${id}`);
       setCustomers((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
-      showToast('Customer soft-deleted successfully!');
+      showToast(i18n.t('toast.customerDeleted', 'Customer soft-deleted successfully!'));
       refreshCollection('recycleBin');
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete customer', 'error');
@@ -1510,7 +1511,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/suppliers', { ...newSupplier, supplierId: id, phone: newSupplier.phone || 'N/A' });
       setSuppliers((prev) => [...prev, newSupplier]);
       notifyMutation();
-      showToast('Supplier added successfully!');
+      showToast(i18n.t('toast.supplierAdded', 'Supplier added successfully!'));
       return newSupplier;
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to add supplier', 'error');
@@ -1532,7 +1533,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/suppliers/${s.id}`, { ...formatted, phone: formatted.phone || 'N/A' });
       setSuppliers((prev) => prev.map((item) => (item.id === s.id ? formatted : item)));
       notifyMutation();
-      showToast('Supplier updated successfully!');
+      showToast(i18n.t('toast.supplierUpdated', 'Supplier updated successfully!'));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update supplier', 'error');
     }
@@ -1547,7 +1548,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.delete(`/suppliers/${id}`);
       setSuppliers((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
-      showToast('Supplier soft-deleted successfully!');
+      showToast(i18n.t('toast.supplierDeleted', 'Supplier soft-deleted successfully!'));
       refreshCollection('recycleBin');
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete supplier', 'error');
@@ -1579,7 +1580,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/invoices', { ...newInvoice, invoiceId: id, invoiceNumber });
       setInvoices((prev) => [newInvoice, ...prev]);
       notifyMutation();
-      showToast('Invoice created successfully!');
+      showToast(i18n.t('toast.invoiceCreated', 'Invoice created successfully!'));
       refreshCollection('products');
       refreshCollection('customers');
       return newInvoice;
@@ -1608,7 +1609,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/invoices/${formattedInvoice.id}`, formattedInvoice);
       setInvoices((prev) => prev.map((item) => (item.id === formattedInvoice.id ? formattedInvoice : item)));
       notifyMutation();
-      showToast('Invoice updated successfully!');
+      showToast(i18n.t('toast.invoiceUpdated', 'Invoice updated successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update invoice', 'error');
@@ -1624,7 +1625,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.delete(`/invoices/${id}`);
       setInvoices((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
-      showToast('Invoice soft-deleted successfully!');
+      showToast(i18n.t('toast.invoiceDeleted', 'Invoice soft-deleted successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete invoice', 'error');
@@ -1656,7 +1657,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/quotations', { ...newQuotation, quotationId: id, quotationNumber });
       setQuotations((prev) => [newQuotation, ...prev]);
       notifyMutation();
-      showToast('Quotation created successfully!');
+      showToast(i18n.t('toast.quotationCreated', 'Quotation created successfully!'));
       return newQuotation;
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to create quotation', 'error');
@@ -1682,7 +1683,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/quotations/${q.id}`, formatted);
       setQuotations((prev) => prev.map((item) => (item.id === q.id ? formatted : item)));
       notifyMutation();
-      showToast('Quotation updated successfully!');
+      showToast(i18n.t('toast.quotationUpdated', 'Quotation updated successfully!'));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update quotation', 'error');
     }
@@ -1697,7 +1698,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.delete(`/quotations/${id}`);
       setQuotations((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
-      showToast('Quotation soft-deleted successfully!');
+      showToast(i18n.t('toast.quotationDeleted', 'Quotation soft-deleted successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete quotation', 'error');
@@ -1777,7 +1778,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/purchases', { ...newPurchase, purchaseId: id, purchaseNumber });
       setPurchases((prev) => [newPurchase, ...prev]);
       notifyMutation();
-      showToast('Purchase recorded successfully!');
+      showToast(i18n.t('toast.purchaseRecorded', 'Purchase recorded successfully!'));
       reloadData();
       return newPurchase;
     } catch (err: any) {
@@ -1804,7 +1805,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/purchases/${formattedPurchase.id}`, formattedPurchase);
       setPurchases((prev) => prev.map((item) => (item.id === formattedPurchase.id ? formattedPurchase : item)));
       notifyMutation();
-      showToast('Purchase updated successfully!');
+      showToast(i18n.t('toast.purchaseUpdated', 'Purchase updated successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update purchase', 'error');
@@ -1819,7 +1820,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.delete(`/purchases/${id}`);
       notifyMutation();
-      showToast('Purchase soft-deleted successfully!');
+      showToast(i18n.t('toast.purchaseDeleted', 'Purchase soft-deleted successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete purchase', 'error');
@@ -1841,7 +1842,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.post('/payments', { ...newPayment, paymentId: id });
       notifyMutation();
-      showToast('Payment logged successfully!');
+      showToast(i18n.t('toast.paymentLogged', 'Payment logged successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to log payment', 'error');
@@ -1861,7 +1862,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.put(`/payments/${formattedPayment.id}`, formattedPayment);
       notifyMutation();
-      showToast('Payment updated successfully!');
+      showToast(i18n.t('toast.paymentUpdated', 'Payment updated successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update payment', 'error');
@@ -1876,7 +1877,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.delete(`/payments/${id}`);
       notifyMutation();
-      showToast('Payment soft-deleted successfully!');
+      showToast(i18n.t('toast.paymentDeleted', 'Payment soft-deleted successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete payment', 'error');
@@ -1900,7 +1901,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.post('/expenses', { ...newExpense, expenseId: id });
       setExpenses((prev) => [...prev, newExpense]);
       notifyMutation();
-      showToast('Expense logged successfully!');
+      showToast(i18n.t('toast.expenseLogged', 'Expense logged successfully!'));
       return newExpense;
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to add expense', 'error');
@@ -1923,7 +1924,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put(`/expenses/${exp.id}`, formatted);
       setExpenses((prev) => prev.map((item) => (item.id === exp.id ? formatted : item)));
       notifyMutation();
-      showToast('Expense updated successfully!');
+      showToast(i18n.t('toast.expenseUpdated', 'Expense updated successfully!'));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to update expense', 'error');
     }
@@ -1938,7 +1939,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.delete(`/expenses/${id}`);
       setExpenses((prev) => prev.filter((item) => item.id !== id));
       notifyMutation();
-      showToast('Expense soft-deleted successfully!');
+      showToast(i18n.t('toast.expenseDeleted', 'Expense soft-deleted successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete expense', 'error');
@@ -1960,7 +1961,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.post(`/recycle-bin/${cleanId}/restore`);
       notifyMutation();
-      showToast('Record restored successfully!');
+      showToast(i18n.t('toast.recordRestored', 'Record restored successfully!'));
       reloadData();
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to restore record', 'error');
@@ -1980,7 +1981,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       await api.delete(`/recycle-bin/${cleanId}`);
       notifyMutation();
-      showToast('Record permanently deleted!');
+      showToast(i18n.t('toast.recordDeletedPermanently', 'Record permanently deleted!'));
       setRecycleBin((prev) => prev.filter((r) => r.id !== cleanId && r.recycleBinItemId !== cleanId && (r as any)._id !== cleanId));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to delete record permanently', 'error');
@@ -2068,7 +2069,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       notifyMutation();
       document.title = formatted.businessName || 'AgriBiz';
-      showToast('Settings saved successfully!');
+      showToast(i18n.t('toast.settingsSaved', 'Settings saved successfully!'));
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to save settings', 'error');
     }

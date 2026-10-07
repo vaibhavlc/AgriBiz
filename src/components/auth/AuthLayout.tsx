@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { ShieldCheck, Lock, Award } from 'lucide-react';
 
@@ -6,6 +7,7 @@ interface AuthLayoutProps {
 }
 
 export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
+  const { t } = useTranslation();
   return (
     <div className="auth-outer-container">
       <style>{`
@@ -131,15 +133,15 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
         {/* Security & Trust Footer */}
         <div className="auth-trust-footer no-print">
           <span className="auth-trust-item">
-            <ShieldCheck size={13} style={{ color: 'var(--primary, #10b981)' }} /> 256-Bit Encrypted
+            <ShieldCheck size={13} style={{ color: 'var(--primary, #10b981)' }} /> {t('auth.encrypted', '256-Bit Encrypted')}
           </span>
           <span>•</span>
           <span className="auth-trust-item">
-            <Lock size={13} style={{ color: 'var(--primary, #10b981)' }} /> Enterprise Security
+            <Lock size={13} style={{ color: 'var(--primary, #10b981)' }} /> {t('auth.enterpriseSecurity', 'Enterprise Security')}
           </span>
           <span>•</span>
           <span className="auth-trust-item">
-            <Award size={13} style={{ color: 'var(--primary, #10b981)' }} /> Reliable
+            <Award size={13} style={{ color: 'var(--primary, #10b981)' }} /> {t('auth.reliable', 'Reliable')}
           </span>
         </div>
       </div>

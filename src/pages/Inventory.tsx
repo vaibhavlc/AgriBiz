@@ -374,13 +374,13 @@ export const Inventory: React.FC = () => {
                   {getStockStatusBadge(selectedProduct)}
                 </div>
                 <div style={{ display:'flex', gap:'16px', marginTop:'5px', fontSize:'12px', color:'var(--text-secondary)', flexWrap:'wrap', alignItems:'center' }}>
-                  <span>SKU: <code style={{ fontFamily:'monospace', fontWeight:700, background:'var(--bg-app)', padding:'1px 6px', borderRadius:'4px', fontSize:'11px' }}>{selectedProduct.sku}</code></span>
+                  <span>{t('inventory.sku', 'SKU')}: <code style={{ fontFamily:'monospace', fontWeight:700, background:'var(--bg-app)', padding:'1px 6px', borderRadius:'4px', fontSize:'11px' }}>{selectedProduct.sku}</code></span>
                   <span style={{ color:'var(--border-color)' }}>|</span>
                   <span>{t('inventory.category', 'Category')}: <strong style={{ color:'var(--primary-dark)' }}>{translateCategory(t, selectedProduct.category)}</strong></span>
                   {selectedProduct.hsn && (
                     <>
                       <span style={{ color:'var(--border-color)' }}>|</span>
-                      <span>HSN: <strong>{selectedProduct.hsn}</strong></span>
+                      <span>{t('inventory.hsn', 'HSN Code')}: <strong>{selectedProduct.hsn}</strong></span>
                     </>
                   )}
                 </div>
@@ -675,7 +675,7 @@ export const Inventory: React.FC = () => {
                           key={idx} 
                           onClick={() => handleTransactionClick(tx)}
                           style={{ cursor: 'pointer' }}
-                          title="Click to view transaction details"
+                          title={t("inventory.clickTransactionDetails", "Click to view transaction details")}
                         >
                           <td className="text-nowrap">{new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
                           <td>
@@ -1094,7 +1094,7 @@ export const Inventory: React.FC = () => {
                           {p.name}
                         </button>
                       </h4>
-                      <span className="mobile-list-card-subtitle">SKU: {p.sku} • {translateCategory(t, p.category)}</span>
+                      <span className="mobile-list-card-subtitle">{t('inventory.sku', 'SKU')}: {p.sku} • {translateCategory(t, p.category)}</span>
                     </div>
                     <div style={{ position: 'relative' }}>
                       <button

@@ -574,7 +574,7 @@ export const Reports: React.FC = () => {
       '0.00'
     ]);
     downloadCSVFile(headers, rows, `gstr1_b2b_${startDate}_to_${endDate}.csv`);
-    showToast('B2B GSTR-1 sheet exported successfully!');
+    showToast(t('reports.b2bGstr1Exported', 'B2B GSTR-1 sheet exported successfully!'));
   };
 
   const handleExportGstr1B2CS = () => {
@@ -589,7 +589,7 @@ export const Reports: React.FC = () => {
       '0.00'
     ]);
     downloadCSVFile(headers, rows, `gstr1_b2cs_${startDate}_to_${endDate}.csv`);
-    showToast('B2CS GSTR-1 sheet exported successfully!');
+    showToast(t('reports.b2csGstr1Exported', 'B2CS GSTR-1 sheet exported successfully!'));
   };
 
   const handleExportGstr1HSN = () => {
@@ -607,7 +607,7 @@ export const Reports: React.FC = () => {
       '0.00'
     ]);
     downloadCSVFile(headers, rows, `gstr1_hsn_${startDate}_to_${endDate}.csv`);
-    showToast('HSN Summary GSTR-1 sheet exported successfully!');
+    showToast(t('reports.hsnGstr1Exported', 'HSN Summary GSTR-1 sheet exported successfully!'));
   };
 
   const handleExportGstr1Docs = () => {
@@ -623,7 +623,7 @@ export const Reports: React.FC = () => {
       ]
     ];
     downloadCSVFile(headers, rows, `gstr1_docs_${startDate}_to_${endDate}.csv`);
-    showToast('Documents Issued GSTR-1 sheet exported successfully!');
+    showToast(t('reports.docsGstr1Exported', 'Documents Issued GSTR-1 sheet exported successfully!'));
   };
 
   const handleExportGstr2B2B = () => {
@@ -644,7 +644,7 @@ export const Reports: React.FC = () => {
       item.itcEligible
     ]);
     downloadCSVFile(headers, rows, `gstr2_b2b_${startDate}_to_${endDate}.csv`);
-    showToast('GSTR-2 B2B sheet exported successfully!');
+    showToast(t('reports.gstr2B2bExported', 'GSTR-2 B2B sheet exported successfully!'));
   };
 
   const handleExportGstr2HSN = () => {
@@ -662,7 +662,7 @@ export const Reports: React.FC = () => {
       '0.00'
     ]);
     downloadCSVFile(headers, rows, `gstr2_hsn_${startDate}_to_${endDate}.csv`);
-    showToast('GSTR-2 HSN summary sheet exported successfully!');
+    showToast(t('reports.gstr2HsnExported', 'GSTR-2 HSN summary sheet exported successfully!'));
   };
 
   const handleExportGstr2Docs = () => {
@@ -678,7 +678,7 @@ export const Reports: React.FC = () => {
       ]
     ];
     downloadCSVFile(headers, rows, `gstr2_docs_${startDate}_to_${endDate}.csv`);
-    showToast('GSTR-2 Documents summary sheet exported successfully!');
+    showToast(t('reports.gstr2DocsExported', 'GSTR-2 Documents summary sheet exported successfully!'));
   };
 
   const handleExportGstr3B = () => {
@@ -690,7 +690,7 @@ export const Reports: React.FC = () => {
       ['Table 4(C)', 'Net ITC Available (A - B)', gstr3BData.itc.taxable.toFixed(2), gstr3BData.itc.igst.toFixed(2), gstr3BData.itc.cgst.toFixed(2), gstr3BData.itc.sgst.toFixed(2), '0.00']
     ];
     downloadCSVFile(headers, rows, `gstr3b_return_${startDate}_to_${endDate}.csv`);
-    showToast('GSTR-3B consolidated return exported successfully!');
+    showToast(t('reports.gstr3bExported', 'GSTR-3B consolidated return exported successfully!'));
   };
 
   const handlePrint = () => {
@@ -854,7 +854,7 @@ export const Reports: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('Consolidated GSTR-1 Return exported successfully!');
+    showToast(t('reports.gstr1ConsolidatedExported', 'Consolidated GSTR-1 Return exported successfully!'));
   };
 
   const handleExportGstr2Consolidated = () => {
@@ -924,7 +924,7 @@ export const Reports: React.FC = () => {
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    showToast('Consolidated GSTR-2 Return exported successfully!');
+    showToast(t('reports.gstr2ConsolidatedExported', 'Consolidated GSTR-2 Return exported successfully!'));
   };
 
   // --- Export CSV Handler ---
@@ -1051,7 +1051,7 @@ export const Reports: React.FC = () => {
     }
 
     downloadCSVFile(headers, rows, filename);
-    showToast('Report exported as CSV successfully!');
+    showToast(t('reports.csvExported', 'Report exported as CSV successfully!'));
   };
 
   const handleDownloadPDF = async () => {
@@ -1134,7 +1134,7 @@ export const Reports: React.FC = () => {
 
       const filename = `${activeReport}_report_${new Date().toISOString().split('T')[0]}.pdf`;
       pdf.save(filename);
-      showToast('PDF downloaded successfully!');
+      showToast(t('reports.pdfDownloaded', 'PDF downloaded successfully!'));
     } catch (err) {
       wrapper.style.visibility = 'hidden';
       wrapper.style.zIndex = '-1';
@@ -1619,11 +1619,11 @@ export const Reports: React.FC = () => {
                 )}
                 {settings.showContact && (
                   <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{t('common.emailLabel', 'Email:')} {settings.email}</span>}
                     {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
-                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{t('common.mobLabel', 'Mob:')} {settings.phone}</span>}
                     {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
-                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>{t('common.webLabel', 'Web:')} {settings.website}</span>}
                   </p>
                 )}
                 {settings.showGstin && settings.gstin && (
@@ -1632,10 +1632,10 @@ export const Reports: React.FC = () => {
               </div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <h1 className="invoice-main-title">{t("reports.gstr3bWorkingReport", "GSTR-3B WORKING REPORT")}</h1>
-              <p className="invoice-company-sub" style={{ margin: '3px 0 0 0', fontWeight: 600 }}>Return Period: {returnPeriod()}</p>
-              <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated On: {generatedOn}</p>
-              <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated By: {settings.ownerName || 'Kunal Chaudhari'}</p>
+              <h1 className="invoice-main-title">{t("reports.gstr3bWorkingReport", "GSTR-3B WORKING {t('reports.reportTitle', 'REPORT')}")}</h1>
+              <p className="invoice-company-sub" style={{ margin: '3px 0 0 0', fontWeight: 600 }}>{t('reports.returnPeriod', 'Return Period:')} {returnPeriod()}</p>
+              <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>{t('reports.generatedOn', 'Generated On:')} {generatedOn}</p>
+              <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>{t('reports.generatedBy', 'Generated By:')} {settings.ownerName || 'Kunal Chaudhari'}</p>
             </div>
           </div>
 
@@ -4430,17 +4430,17 @@ export const Reports: React.FC = () => {
   };
 
   const reportTabs = [
-    { id: 'sales', label: 'Sales Report', icon: <FileText size={18} /> },
-    { id: 'purchase', label: 'Purchase Report', icon: <FileText size={18} /> },
-    { id: 'expense', label: 'Expense Report', icon: <TrendingDown size={18} /> },
-    { id: 'profit', label: 'Profit & Loss Summary', icon: <Briefcase size={18} /> },
-    { id: 'stock', label: 'Stock Asset Value', icon: <Layers size={18} /> },
-    { id: 'gst', label: 'GST Tax Summary', icon: <Percent size={18} /> },
-    { id: 'custLedger', label: 'Customer Dues Ledger', icon: <Users size={18} /> },
-    { id: 'suppLedger', label: 'Supplier Payables Ledger', icon: <Truck size={18} /> },
-    { id: 'gstr1', label: 'GSTR-1 Return (CA-Ready)', icon: <Percent size={18} /> },
-    { id: 'gstr2', label: 'GSTR-2 Inward (CA-Ready)', icon: <Percent size={18} /> },
-    { id: 'gstr3b', label: 'GSTR-3B Return (CA-Ready)', icon: <Percent size={18} /> },
+    { id: 'sales', label: t('reports.salesReport', 'Sales Report'), icon: <FileText size={18} /> },
+    { id: 'purchase', label: t('reports.purchaseReport', 'Purchase Report'), icon: <FileText size={18} /> },
+    { id: 'expense', label: t('reports.expenseReport', 'Expense Report'), icon: <TrendingDown size={18} /> },
+    { id: 'profit', label: t('reports.pnlSummary', 'Profit & Loss Summary'), icon: <Briefcase size={18} /> },
+    { id: 'stock', label: t('reports.stockAssetValue', 'Stock Asset Value'), icon: <Layers size={18} /> },
+    { id: 'gst', label: t('reports.gstTaxSummary', 'GST Tax Summary'), icon: <Percent size={18} /> },
+    { id: 'custLedger', label: t('reports.customerDuesLedger', 'Customer Dues Ledger'), icon: <Users size={18} /> },
+    { id: 'suppLedger', label: t('reports.supplierPayablesLedger', 'Supplier Payables Ledger'), icon: <Truck size={18} /> },
+    { id: 'gstr1', label: t('reports.gstr1Return', 'GSTR-1 Return (CA-Ready)'), icon: <Percent size={18} /> },
+    { id: 'gstr2', label: t('reports.gstr2Inward', 'GSTR-2 Inward (CA-Ready)'), icon: <Percent size={18} /> },
+    { id: 'gstr3b', label: t('reports.gstr3bReturn', 'GSTR-3B Return (CA-Ready)'), icon: <Percent size={18} /> },
   ];
 
   return (
@@ -4544,11 +4544,11 @@ export const Reports: React.FC = () => {
                 )}
                 {settings.showContact && (
                   <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
+                    {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{t('common.emailLabel', 'Email:')} {settings.email}</span>}
                     {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
-                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
+                    {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{t('common.mobLabel', 'Mob:')} {settings.phone}</span>}
                     {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
-                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
+                    {settings.website && <span style={{ whiteSpace: 'nowrap' }}>{t('common.webLabel', 'Web:')} {settings.website}</span>}
                   </p>
                 )}
                 {settings.showGstin && settings.gstin && (
@@ -4559,19 +4559,19 @@ export const Reports: React.FC = () => {
             <div style={{ textAlign: "right" }}>
               {activeReport === 'gstr3b' ? (
                 <>
-                  <h1 className="invoice-main-title">{t("reports.gstr3bWorkingReport", "GSTR-3B WORKING REPORT")}</h1>
-                  <p className="invoice-company-sub" style={{ margin: '3px 0 0 0', fontWeight: 600 }}>Return Period: {returnPeriod()}</p>
-                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated On: {generatedOn}</p>
-                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>Generated By: {settings.ownerName || 'Kunal Chaudhari'}</p>
+                  <h1 className="invoice-main-title">{t("reports.gstr3bWorkingReport", "GSTR-3B WORKING {t('reports.reportTitle', 'REPORT')}")}</h1>
+                  <p className="invoice-company-sub" style={{ margin: '3px 0 0 0', fontWeight: 600 }}>{t('reports.returnPeriod', 'Return Period:')} {returnPeriod()}</p>
+                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>{t('reports.generatedOn', 'Generated On:')} {generatedOn}</p>
+                  <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>{t('reports.generatedBy', 'Generated By:')} {settings.ownerName || 'Kunal Chaudhari'}</p>
                 </>
               ) : (
                 <>
-                  <h1 className="invoice-main-title">{activeReport.toUpperCase()} REPORT</h1>
+                  <h1 className="invoice-main-title">{activeReport.toUpperCase()} {t('reports.reportTitle', 'REPORT')}</h1>
                   <p className="invoice-company-sub" style={{ margin: '3px 0 0 0' }}>
                     Period: {dateRange === 'All' ? 'All Historical Records' : `${formatDate(startDate)} to ${formatDate(endDate)}`}
                   </p>
                   <p className="invoice-company-sub" style={{ margin: '2px 0 0 0' }}>
-                    Date Generated: {formatDate(new Date().toISOString())}
+                    {t('reports.dateGenerated', 'Date Generated:')} {formatDate(new Date().toISOString())}
                   </p>
                 </>
               )}

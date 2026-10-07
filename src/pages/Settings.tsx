@@ -1929,7 +1929,7 @@ export const Settings: React.FC = () => {
                   {logo ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                       <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '14px', width: '130px', height: '130px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-                        <img src={logo} alt="Custom Branding Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+                        <img src={logo} alt={t("settings.customLogoAlt", "Custom Branding Logo")} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
                       </div>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ {t('settings.customBusinessLogoActive', 'Custom Business Logo Active')}</div>
                       <div style={{ display: 'flex', gap: '8px' }}>
@@ -1986,7 +1986,7 @@ export const Settings: React.FC = () => {
                   {watermarkLogo ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
                       <div style={{ border: '2px dashed var(--border-color)', padding: '10px', borderRadius: '12px', width: '120px', height: '120px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--bg-app)' }}>
-                        <img src={watermarkLogo} alt="Watermark Logo" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: watermarkAsIs ? 'none' : 'grayscale(100%) contrast(120%)' }} />
+                        <img src={watermarkLogo} alt={t("settings.watermarkLogoAlt", "Watermark Logo")} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', filter: watermarkAsIs ? 'none' : 'grayscale(100%) contrast(120%)' }} />
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
@@ -2054,7 +2054,7 @@ export const Settings: React.FC = () => {
                   {savedSignature && !isPadEditing ? (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '14px' }}>
                       <div style={{ border: '2px dashed var(--border-color)', padding: '12px 24px', borderRadius: '14px', width: '280px', height: '110px', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#fff', boxShadow: '0 4px 12px rgba(0,0,0,0.04)' }}>
-                        <img src={savedSignature} alt="E-Signature Preview" style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
+                        <img src={savedSignature} alt={t("settings.signatureAlt", "E-Signature Preview")} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', mixBlendMode: 'multiply' }} />
                       </div>
                       <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--primary)' }}>✓ {t('settings.authorizedSignatureActive', 'Authorized Signatory E-Signature Active')}</div>
                       <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -4635,7 +4635,7 @@ export const Settings: React.FC = () => {
               <input
                 type="text"
                 className="form-control"
-                placeholder="e.g. 123456789-abc.apps.googleusercontent.com"
+                placeholder={t("settings.googleClientIdPlaceholder", "e.g. 123456789-abc.apps.googleusercontent.com")}
                 value={oauthClientId}
                 onChange={(e) => setOauthClientId(e.target.value)}
                 required
@@ -4650,7 +4650,7 @@ export const Settings: React.FC = () => {
               <input
                 type="password"
                 className="form-control"
-                placeholder="e.g. GOCSPX-..."
+                placeholder={t("settings.googleSecretPlaceholder", "e.g. GOCSPX-...")}
                 value={oauthClientSecret}
                 onChange={(e) => setOauthClientSecret(e.target.value)}
                 required
@@ -4674,7 +4674,7 @@ export const Settings: React.FC = () => {
                 className="btn btn-secondary"
                 onClick={handleResetOAuthCredentials}
                 disabled={isSavingOAuthCredentials}
-                title="Clear saved database keys and use Render environment variables"
+                title={t("settings.clearSavedKeysTitle", "Clear saved database keys and use Render environment variables")}
                 style={{ borderRadius: '10px', height: '44px', fontWeight: 600, fontSize: '12px' }}
               >
                 {t('settings.clearStoredKeys', 'Clear Stored Keys')}

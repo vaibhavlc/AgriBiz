@@ -1221,7 +1221,7 @@ export const Expenses: React.FC = () => {
                 type="number"
                 step="0.01"
                 className="form-control"
-                placeholder="e.g. 1500"
+                placeholder={t("expenses.amountPlaceholder", "e.g. 1500")}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 required
@@ -1354,7 +1354,7 @@ export const Expenses: React.FC = () => {
             <div>
               <h1 style={{ margin: 0, fontSize: '20px', fontWeight: 800, color: '#2F3E33' }}>{settings.businessName}</h1>
               {settings.showAddress && <p style={{ margin: '4px 0 0 0', fontSize: '11px', color: '#555555' }}>{getFullAddress(settings)}</p>}
-              {settings.showGstin && settings.gstin && <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555555', fontWeight: 600 }}>GSTIN: {settings.gstin}</p>}
+              {settings.showGstin && settings.gstin && <p style={{ margin: '2px 0 0 0', fontSize: '11px', color: '#555555', fontWeight: 600 }}>{t('common.gstinLabel', 'GSTIN:')} {settings.gstin}</p>}
             </div>
           </div>
           <div style={{ textAlign: 'right' }}>

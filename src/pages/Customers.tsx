@@ -218,7 +218,7 @@ export const Customers: React.FC = () => {
             {selectedCustomer.gstin && (
               <div className="cust-contact-item">
                 <FileText size={14} className="cust-contact-icon" />
-                <span>GSTIN: <strong>{selectedCustomer.gstin}</strong></span>
+                <span>{t('common.gstinLabel', 'GSTIN:')} <strong>{selectedCustomer.gstin}</strong></span>
               </div>
             )}
           </div>
@@ -447,7 +447,7 @@ export const Customers: React.FC = () => {
           <div>
             <h1 style={{ margin: 0, fontSize: "20px", fontWeight: 800, color: "#2F3E33" }}>{settings.businessName}</h1>
             <p style={{ margin: "4px 0 0 0", fontSize: "11px", color: "#555555" }}>{settings.address}</p>
-            <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#555555", fontWeight: 600 }}>GSTIN: {settings.gstin}</p>
+            <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#555555", fontWeight: 600 }}>{t('common.gstinLabel', 'GSTIN:')} {settings.gstin}</p>
           </div>
           <div style={{ textAlign: "right" }}>
             <h2 style={{ margin: 0, fontSize: "16px", fontWeight: 700, color: "#555555", textTransform: "uppercase", letterSpacing: "0.5px" }}>
@@ -464,10 +464,10 @@ export const Customers: React.FC = () => {
               {t('customer.accountHolderDetails', 'Account Holder Details')}
             </h3>
             <h2 style={{ margin: "4px 0", fontSize: "15px", fontWeight: 800, color: "#1E352F" }}>{selectedCustomer.name}</h2>
-            <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>Phone: {selectedCustomer.phone}</p>
-            {selectedCustomer.email && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>Email: {selectedCustomer.email}</p>}
-            {selectedCustomer.address && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>Address: {selectedCustomer.address}</p>}
-            {selectedCustomer.gstin && <p style={{ margin: "2px 0", fontSize: "11px", color: "#1E352F", fontWeight: 600 }}>GSTIN: {selectedCustomer.gstin}</p>}
+            <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>{t('common.phoneLabel', 'Phone:')} {selectedCustomer.phone}</p>
+            {selectedCustomer.email && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>{t('common.emailLabel', 'Email:')} {selectedCustomer.email}</p>}
+            {selectedCustomer.address && <p style={{ margin: "2px 0", fontSize: "11px", color: "#555555" }}>{t('common.addressLabel', 'Address:')} {selectedCustomer.address}</p>}
+            {selectedCustomer.gstin && <p style={{ margin: "2px 0", fontSize: "11px", color: "#1E352F", fontWeight: 600 }}>{t('common.gstinLabel', 'GSTIN:')} {selectedCustomer.gstin}</p>}
           </div>
           <div style={{ borderLeft: "1px solid #C8D3C5", paddingLeft: "20px" }}>
             <h3 style={{ margin: "0 0 6px 0", fontSize: "11px", textTransform: "uppercase", color: "#556B5D", fontWeight: 700, letterSpacing: "0.5px" }}>

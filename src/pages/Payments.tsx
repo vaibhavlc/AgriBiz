@@ -719,7 +719,7 @@ export const Payments: React.FC = () => {
                 )}
                 {settings.showGstin && settings.gstin && (
                   <p style={{ fontSize: '11px', color: '#64748b', fontWeight: 'bold', margin: '2px 0 0 0' }}>
-                    GSTIN: {settings.gstin}
+                    {t('common.gstinLabel', 'GSTIN:')} {settings.gstin}
                   </p>
                 )}
                 <h3 style={{ fontSize: '14px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginTop: '10px', color: 'var(--primary-dark)' }}>

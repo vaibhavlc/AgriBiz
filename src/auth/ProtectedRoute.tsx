@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { useAuth } from './AuthContext';
 
@@ -7,6 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallback }) => {
+  const { t } = useTranslation();
   const { isAuthenticated, isInitializing } = useAuth();
 
   if (isInitializing) {
@@ -34,7 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, fallba
           }}
         />
         <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-muted, #64748b)' }}>
-          Restoring Session...
+          {t('auth.restoringSession', 'Restoring Session...')}
         </span>
         <style>{`
           @keyframes agribiz-spin {

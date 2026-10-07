@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import React from 'react';
 import { Check, X } from 'lucide-react';
 
@@ -6,6 +7,7 @@ interface PasswordStrengthProps {
 }
 
 export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password }) => {
+  const { t } = useTranslation();
   if (!password) return null;
 
   const hasMinLength = password.length >= 6;
@@ -36,7 +38,7 @@ export const PasswordStrength: React.FC<PasswordStrengthProps> = ({ password }) 
   return (
     <div style={{ marginTop: '8px', animation: 'fadeIn 0.2s ease-out' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', fontWeight: 600 }}>Password Strength</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted, #94a3b8)', fontWeight: 600 }}>{t('auth.passwordStrength', 'Password Strength')}</span>
         <span style={{ fontSize: '11px', fontWeight: 700, color }}>{label}</span>
       </div>
 
