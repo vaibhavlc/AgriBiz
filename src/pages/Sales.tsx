@@ -3387,7 +3387,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       <th style={{ width: '32px' }}>#</th>
                       <th>{t("sales.product", "Product")}</th>
                       <th className="col-center" style={{ width: '70px' }}>{t("sales.gstPercent", "GST %")}</th>
-                      <th className="col-right" style={{ width: '125px' }}>Unit SP (₹)</th>
+                      <th className="col-right" style={{ width: '125px' }}>{t("sales.unitSpHeader", "Unit SP (₹)")}</th>
                       <th className="col-right" style={{ width: '140px' }}>{t("sales.totalPriceInclGst", "Total Price (Incl. GST)")}</th>
                       <th className="col-center" style={{ width: '75px' }}>{t('sales.qty', 'Qty')}</th>
                       <th className="col-center" style={{ width: '75px' }}>{t("sales.discPercentShort", "Disc %")}</th>

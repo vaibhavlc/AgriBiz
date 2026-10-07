@@ -1281,10 +1281,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 value={paymentMethod}
                 onChange={(e) => setPaymentMethod(e.target.value as any)}
               >
-                <option value="UPI">UPI / GPay / PhonePe</option>
-                <option value="Cash">Cash Ledger</option>
-                <option value="Bank Transfer">Bank Transfer (IMPS/RTGS)</option>
-                <option value="Cheque">Cheque</option>
+                <option value="UPI">{t("paymentMethods.upiGpay", "UPI / GPay / PhonePe")}</option>
+                <option value="Cash">{t("paymentMethods.cashLedger", "Cash Ledger")}</option>
+                <option value="Bank Transfer">{t("paymentMethods.bankTransferFull", "Bank Transfer (IMPS/RTGS)")}</option>
+                <option value="Cheque">{t("paymentMethods.cheque", "Cheque")}</option>
               </select>
             </div>
             <div className="form-group" style={{ margin: 0 }}>

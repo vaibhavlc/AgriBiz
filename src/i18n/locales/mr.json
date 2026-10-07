@@ -25,7 +25,11 @@
     "operations": "व्यवहार",
     "directories": "याद्या व संपर्क",
     "manageBusinessProfile": "व्यवसाय माहिती आणि टीम व्यवस्थापित करा",
-    "switchUserSession": "सक्रिय कर्मचारी सत्र बदला"
+    "switchUserSession": "सक्रिय कर्मचारी सत्र बदला",
+    "goToSettings": "Go to Settings",
+    "closeMenu": "Close menu",
+    "mainNavigation": "Main navigation",
+    "openNavMenu": "Open Navigation Menu"
   },
   "common": {
     "search": "शोधा...",
@@ -117,7 +121,21 @@
     "webLabel": "वेबसाइट:",
     "recipient": "प्राप्तकर्ता",
     "dues": "येणे",
-    "owed": "देणे"
+    "owed": "देणे",
+    "customers": "ग्राहक (शेतकरी)",
+    "suppliers": "पुरवठादार (व्यापारी)",
+    "products": "उत्पादने व साठा",
+    "phonePlaceholder": "e.g. 9876543210",
+    "compactView": "Compact View:",
+    "closeModal": "Close modal",
+    "type": "Type",
+    "downloadFile": "Download File",
+    "state": "State",
+    "outstanding": "Outstanding",
+    "reference": "Reference",
+    "restore": "Restore",
+    "restoreRecord": "Restore Record",
+    "operationFailed": "क्रिया अपयशी झाली. कृपया पुन्हा प्रयत्न करा."
   },
   "status": {
     "paid": "भरलेले",
@@ -159,7 +177,10 @@
     "card": "कार्ड",
     "netBanking": "नेट बँकिंग",
     "online": "ऑनलाइन",
-    "credit": "उधारी"
+    "credit": "उधारी",
+    "upiGpay": "यूपीआय / जीपे / फोनपे",
+    "cashLedger": "रोख खातेवही (कॅश लेजर)",
+    "bankTransferFull": "बँक ट्रान्सफर (IMPS/RTGS)"
   },
   "categories": {
     "fertilizer": "खते",
@@ -195,7 +216,9 @@
     "biller": "बिलिंग ऑपरेटर",
     "salesman": "विक्री प्रतिनिधी",
     "staff": "कर्मचारी",
-    "worker": "कामगार"
+    "worker": "कामगार",
+    "accounts": "Accounts",
+    "cashier": "Cashier"
   },
   "auth": {
     "login": "साइन इन करा",
@@ -237,7 +260,9 @@
     "encrypted": "२५६-बिट एनक्रिप्टेड",
     "enterpriseSecurity": "सुरक्षित एंटरप्राइज सुरक्षा",
     "reliable": "विश्वासार्ह",
-    "passwordStrength": "पासवर्ड मजबुती"
+    "passwordStrength": "पासवर्ड मजबुती",
+    "deviceForgottenInfo": "डिव्हाइस काढून टाकले — पुढील वेळी मोबाईल आणि पासवर्ड आवश्यक",
+    "backToSignIn": "Back to Sign In"
   },
   "notifications": {
     "title": "सूचना",
@@ -245,7 +270,8 @@
     "clearAll": "सर्व साफ करा",
     "cleared": "सूचना साफ केल्या",
     "noNotifications": "कोणत्याही नवीन सूचना नाहीत",
-    "viewReports": "अहवाल डॅशबोर्ड पहा"
+    "viewReports": "अहवाल डॅशबोर्ड पहा",
+    "viewReportsDashboard": "View Reports Dashboard"
   },
   "dashboard": {
     "title": "डॅशबोर्ड",
@@ -351,7 +377,10 @@
     "recalculateMetrics": "आकडेवारी पुन्हा गणना करा",
     "units": "नग",
     "startDate": "सुरुवातीची तारीख",
-    "endDate": "शेवटची तारीख"
+    "endDate": "शेवटची तारीख",
+    "viewFullAmount": "Click to view full overall amount",
+    "totalSales": "Total Sales (₹)",
+    "totalPurchases": "Total Purchases (₹)"
   },
   "sales": {
     "title": "विक्री इनव्हॉईस",
@@ -617,7 +646,8 @@
     "removeRow": "ओळ हटवा",
     "discPct": "सवलत %",
     "searchInvoicePlaceholder": "बिल क्रमांक किंवा ग्राहक शोधा...",
-    "searchQuotationPlaceholder": "कोटेशन क्रमांक किंवा ग्राहक शोधा..."
+    "searchQuotationPlaceholder": "कोटेशन क्रमांक किंवा ग्राहक शोधा...",
+    "customerName": "ग्राहकाचे नाव"
   },
   "purchases": {
     "title": "खरेदी",
@@ -877,7 +907,13 @@
     "status": "स्थिती",
     "view": "पहा",
     "viewDetails": "तपशील पहा",
-    "bills": "खरेदी बिलांपैकी"
+    "bills": "खरेदी बिलांपैकी",
+    "voucherNumber": "Voucher Number",
+    "noPurchasesFound": "No supplier purchases match your filters or searching criteria.",
+    "billNumber": "खरेदी बिल क्र.",
+    "baseCost": "मूळ किंमत (₹)",
+    "taxPaid": "भरलेला कर (₹)",
+    "totalCost": "एकूण किंमत (₹)"
   },
   "inventory": {
     "title": "स्टॉक आणि उत्पादने",
@@ -981,7 +1017,17 @@
     "stockDefaultHelper": "रिकामे ठेवल्यास ० मानले जाईल",
     "availableStock": "उपलब्ध स्टॉक",
     "minStockThreshold": "किमान स्टॉक मर्यादा",
-    "clickTransactionDetails": "व्यवहार तपशील पाहण्यासाठी क्लिक करा"
+    "clickTransactionDetails": "व्यवहार तपशील पाहण्यासाठी क्लिक करा",
+    "productNamePlaceholder": "e.g. Varuna Submersible Pump 5HP",
+    "skuPlaceholder": "Auto-generated if blank",
+    "hsnPlaceholder": "e.g. 8432",
+    "baseCostPlaceholder": "Base cost",
+    "retailRatePlaceholder": "Retail rate",
+    "stockWarning": "Inventory Warning:",
+    "reorderStock": "Reorder Stock",
+    "hsn": "HSN Code",
+    "editDetails": "Edit Details",
+    "availableQty": "Available Qty"
   },
   "customers": {
     "title": "ग्राहक यादी",
@@ -996,7 +1042,14 @@
     "customerSaved": "ग्राहक माहिती यशस्वीरित्या जतन झाली",
     "deleteCustomer": "ग्राहक हटवा",
     "confirmDelete": "तुम्हाला नक्की हा ग्राहक हटवायचा आहे का?",
-    "noCustomers": "कोणताही ग्राहक आढळला नाही"
+    "noCustomers": "कोणताही ग्राहक आढळला नाही",
+    "namePlaceholder": "e.g. Ramesh Kumar",
+    "emailPlaceholder": "e.g. ramesh@gmail.com",
+    "gstinPlaceholder": "e.g. 23AABCR1234F1Z5",
+    "addressPlaceholder": "e.g. Ward No. 4, Pipariya Village, MP",
+    "outstandingPlaceholder": "e.g. 5000 (Use negative for advance credit)",
+    "id": "ग्राहक आयडी",
+    "name": "ग्राहकाचे नाव"
   },
   "customer": {
     "deletedSuccess": "ग्राहक {{name}} यशस्वीरित्या हटवला गेला.",
@@ -1081,7 +1134,16 @@
     "supplierSaved": "पुरवठादार माहिती यशस्वीरित्या जतन झाली",
     "deleteSupplier": "पुरवठादार हटवा",
     "confirmDelete": "तुम्हाला नक्की हा पुरवठादार हटवायचा आहे का?",
-    "noSuppliers": "कोणताही पुरवठादार आढळला नाही"
+    "noSuppliers": "कोणताही पुरवठादार आढळला नाही",
+    "namePlaceholder": "e.g. Mahindra Agri Implements Ltd",
+    "phonePlaceholder": "e.g. 0161456789",
+    "emailPlaceholder": "e.g. billing@supplier.com",
+    "gstinPlaceholder": "e.g. 03AAACF4321F1ZX",
+    "addressPlaceholder": "e.g. Phase VII, Focal Point, Ludhiana, Punjab",
+    "outstandingPlaceholder": "e.g. 15000 (Amount we owe this supplier)",
+    "id": "पुरवठादार आयडी",
+    "name": "पुरवठादाराचे नाव",
+    "balanceOwed": "देणे बाकी (₹)"
   },
   "supplier": {
     "deletedSuccess": "पुरवठादार {{name}} यशस्वीरित्या हटवला गेला.",
@@ -1152,7 +1214,8 @@
     "creditLabel": "जमा:",
     "balanceLabel": "बाकी:",
     "suppliers": "पुरवठादार",
-    "address": "पत्ता"
+    "address": "पत्ता",
+    "supplierName": "पुरवठादाराचे नाव"
   },
   "expenses": {
     "title": "खर्च व्यवस्थापन",
@@ -1323,14 +1386,157 @@
     "payments": "पेमेंट्स",
     "customerReceipt": "ग्राहक जमा",
     "supplierPayment": "पुरवठादार नावे",
-    "contact": "संपर्क"
+    "contact": "संपर्क",
+    "recordPayout": "पेमेंट नोंदवा",
+    "refPlaceholder": "e.g. UPI82012019",
+    "notesPlaceholder": "e.g. Settle outstanding bill payment",
+    "recordReceipt": "Record Receipt"
   },
   "reports": {
     "title": "अहवाल आणि विश्लेषण",
     "salesReport": "विक्री अहवाल",
     "purchaseReport": "खरेदी अहवाल",
-    "gstr1": "GSTR-1 टॅक्स रिपोर्ट",
-    "gstr3b": "GSTR-3B सारांश",
+    "gstr1": {
+      "b2bInvoicesCard": "B2B Invoices (Registered)",
+      "b2csCard": "B2CS (Unregistered OE)",
+      "hsnCard": "HSN Summary (Table 12)",
+      "docsCard": "Documents Issued (Table 13)",
+      "b2bTitle": "1. B2B Registered Outward Supplies (4A, 4B, 4C, 6B, 6C)",
+      "b2bSubtitle": "Outward supplies made to GST registered entities. Grouped by invoice number and tax rate.",
+      "downloadB2bCsv": "Download B2B CSV",
+      "recipientGstin": "Recipient GSTIN",
+      "recipientName": "Recipient Name",
+      "invoiceNo": "इनव्हॉईस क्र.",
+      "invoiceDate": "Invoice Date",
+      "totalValue": "Total Value",
+      "pos": "POS",
+      "rate": "Rate",
+      "noB2bSupplies": "No registered B2B supplies found in this period.",
+      "b2csTitle": "2. B2C Small Outward Supplies (7 - Consolidated)",
+      "b2csSubtitle": "Consolidated taxable outward supplies to unregistered customers. Grouped by Place of Supply (POS) and Tax Rate.",
+      "downloadB2csCsv": "Download B2CS CSV",
+      "type": "Type",
+      "placeOfSupply": "Place of Supply (POS)",
+      "gstRate": "GST Rate",
+      "cgstAmount": "CGST Amount",
+      "sgstAmount": "SGST Amount",
+      "igstAmount": "IGST Amount",
+      "noB2csSupplies": "No unregistered B2C supplies found in this period.",
+      "oeOther": "OE (Other)",
+      "hsnTitle": "{t(",
+      "hsnSubtitle": "HSN-code summary of agricultural goods supplied. Required for return filing.",
+      "downloadHsnCsv": "Download HSN CSV",
+      "hsnSac": "HSN/SAC",
+      "productDescription": "Product Description",
+      "unitUqc": "Unit (UQC)",
+      "totalQty": "Total Qty",
+      "cgstPaid": "CGST Paid",
+      "sgstPaid": "SGST Paid",
+      "igstPaid": "IGST Paid",
+      "noHsnItems": "No items found in this period.",
+      "docsTitle": "4. Summary of Documents Issued (Table 13)",
+      "docsSubtitle": "Serial number range and counts of tax invoices issued during the period.",
+      "downloadDocsCsv": "Docs CSV डाउनलोड करा",
+      "natureOfDocument": "दस्तऐवजाचा प्रकार",
+      "srNoFrom": "अनुक्रमांक पासून",
+      "srNoTo": "अनुक्रमांक पर्यंत",
+      "totalCount": "एकूण संख्या",
+      "cancelled": "रद्द केले",
+      "netIssued": "निव्वळ जारी केलेले",
+      "noDocsIssued": "या कालावधीत कोणतेही इनव्हॉइस जारी केलेले नाही.",
+      "invOutwardSupply": "विक्रीसाठी दिलेली बिले",
+      "b2bPrintTitle": "1. B2B Registered Supplies (4A, 4B, 4C, 6B, 6C)",
+      "noB2bSuppliesPrint": "No registered B2B supplies found.",
+      "b2csPrintTitle": "2. B2C Small Supplies (7 - Consolidated)",
+      "noB2csSuppliesPrint": "No unregistered B2C supplies found.",
+      "noHsnItemsPrint": "No HSN details found.",
+      "docsPrintTitle": "4. Documents Issued Summary (Table 13)",
+      "noDocsIssuedPrint": "No document summary found."
+    },
+    "gstr3b": {
+      "taxableValueRs": "Taxable Value (₹)",
+      "integratedTaxRs": "Integrated Tax (₹)",
+      "centralTaxRs": "Central Tax (₹)",
+      "stateUtTaxRs": "State/UT Tax (₹)",
+      "cessRs": "Cess (₹)",
+      "totalTaxableSales": "Total Taxable Sales",
+      "totalGstLiability": "Total GST Liability",
+      "eligibleItcCard": "Eligible ITC",
+      "netGstPayableCard": "Net GST Payable",
+      "reconciliationWarning": "Reconciliation Warning",
+      "discrepancyDetected": "Discrepancy of {{diff}} found between Sales Invoice Register ({{salesTax}}) and Outward Tax ({{outwardTax}}). Please verify your tax configurations.",
+      "ledgerReconciled": "Ledger Reconciled",
+      "reconciledDesc": "Outward tax matches Sales Invoice Register perfectly. No discrepancy found.",
+      "table31Title": "Table 3.1: Outward Supplies Summary",
+      "table31Subtitle": "Details of outward taxable supplies and inward supplies liable to reverse charge.",
+      "downloadGstr3bCsv": "Download GSTR-3B CSV",
+      "sec31a": "(a) Outward taxable supplies (other than zero rated, nil rated and exempted)",
+      "sec31b": "(b) Outward taxable supplies (Zero Rated)",
+      "sec31c": "(c) Other Outward Supplies (Nil Rated / Exempted)",
+      "sec31d": "(d) Inward Supplies liable to Reverse Charge)",
+      "sec31e": "(e) Non GST Outward Supplies)",
+      "table32Title": "Table 3.2: Inter-State Supplies to Unregistered / Composition / UIN",
+      "table32Subtitle": "Details of inter-state supplies made to unregistered persons, composition dealers and UIN holders.",
+      "noInterstateSuppliesPeriod": "No inter-state supplies found in the selected period.",
+      "table4Title": "Table 4: Eligible Input Tax Credit (ITC)",
+      "table4Subtitle": "ITC available from registered supplier invoices received during the period.",
+      "allOtherItc": "All other ITC – Registered purchases (4A.5)",
+      "netItcAvailable": "Net ITC Available (A – B)",
+      "taxPaymentSummaryTitle": "Tax Payment & Settlement Summary",
+      "taxPaymentSummarySubtitle": "Breakdown of tax liability, ITC utilized and net cash payable per tax head.",
+      "gstReconciliationSummaryTitle": "GST Reconciliation Summary",
+      "gstReconciliationSummarySubtitle": "Comparison of book sales GST against outward tax declared in GSTR-3B.",
+      "totalBookSalesValue": "Total Book Sales Value",
+      "taxableTurnover": "Taxable turnover",
+      "totalPurchaseValueItcBase": "Total Purchase Value (ITC Base)",
+      "registeredPurchases": "Registered purchases",
+      "outputGstLiability": "Output GST Liability",
+      "cgstSgstIgstCollected": "CGST+SGST+IGST collected",
+      "inputGstCredit": "Input GST Credit (ITC)",
+      "availableItc": "Available ITC",
+      "netGstCashLiability": "Net GST Cash Liability",
+      "afterItcSetOff": "After ITC set-off",
+      "carryForwardItc": "Carry Forward ITC",
+      "excessCreditBalance": "Excess credit balance",
+      "eligibleItc": "Eligible ITC",
+      "netGstPayable": "Net GST Payable",
+      "remainingItc": "Remaining ITC",
+      "totalPurchaseValue": "Total Purchase Value",
+      "totalSalesValue": "Total Sales Value",
+      "totalGstCollected": "Total GST Collected",
+      "table31PrintTitle": "Table 3.1: Details of Outward Supplies and Inward Supplies Liable to Reverse Charge",
+      "table32PrintTitle": "Table 3.2: Details of Inter-State Supplies Made To (Unregistered/Composition/UIN)",
+      "posRecipientStateType": "Place of Supply (Recipient State Type)",
+      "suppliesUnregistered": "Supplies made to Unregistered Persons",
+      "suppliesComposition": "Supplies made to Composition Taxable Persons",
+      "suppliesUinHolders": "Supplies made to UIN Holders",
+      "totalInterstateSuppliesTable32": "Total Interstate Supplies (Table 3.2)",
+      "noInterstateSupplies": "No Interstate Supplies",
+      "table4PrintTitle": "Table 4: Eligible Input Tax Credit (ITC) Details",
+      "itcAvailableHeader": "(A) ITC Available (whether in full or part)",
+      "importGoods": "1. Import of goods",
+      "importServices": "2. Import of services",
+      "inwardReverseCharge": "3. Inward supplies liable to reverse charge (other than 1 & 2 above)",
+      "inwardIsd": "4. Inward supplies from ISD",
+      "allOtherItcPrint": "5. All other ITC (Registered purchases)",
+      "itcReversedHeader": "(B) ITC Reversed",
+      "rules4243": "1. As per rules 42 & 43 of CGST Rules",
+      "others": "2. Others",
+      "netItcAvailablePrint": "(C) Net ITC Available (A - B)",
+      "table5PrintTitle": "Table 5: Values of Exempt, Nil Rated and Non GST Inward Supplies",
+      "interStateSuppliesRs": "Inter-State Supplies (₹)",
+      "intraStateSuppliesRs": "Intra-State Supplies (₹)",
+      "compositionExemptInward": "From a supplier under composition scheme, Exempt and Nil rated inward supplies",
+      "nonGstInward": "Non GST inward supplies",
+      "taxPaymentLedgerTitle": "Tax Payment and Settlement Ledger",
+      "taxLiabilityRs": "Tax Liability (₹)",
+      "itcUtilizedRs": "ITC Utilized (₹)",
+      "paidInCashRs": "Paid in Cash (₹)",
+      "balanceCreditRs": "Balance Credit (₹)",
+      "cess": "Cess",
+      "reconciliationAuditTitle": "GST Reconciliation Audit Summary",
+      "disclaimer": "Disclaimer: This report is generated from accounting entries and is intended for GST reconciliation and Chartered Accountant working purposes. It is not a substitute for the official GSTR-3B return filed on the GST Portal."
+    },
     "stockReport": "स्टॉक मूल्यांकन अहवाल",
     "profitLoss": "नफा आणि तोटा खाते",
     "dayBook": "दैनिक रोजकीर्द (डे बुक)",
@@ -1392,7 +1598,27 @@
       "inwardSupplyBills": "आवक पुरवठा (पुरवठादार बिल्स)",
       "grossTaxableTurnover": "एकूण करपात्र उलाढाल",
       "outputGstCollectedLabel": "आउटपुट जीएसटी (जमा)",
-      "inputGstItcPaidLabel": "इनपुट जीएसटी (भरलेला ITC)"
+      "inputGstItcPaidLabel": "इनपुट जीएसटी (भरलेला ITC)",
+      "docCount": "Document Count",
+      "goodsValue": "Goods Value (INR)",
+      "outwardSupplySales": "Outward Supply (Sales Invoices)",
+      "netPayableTaxDues": "Net Payable Tax Dues",
+      "documentCount": "Document Count",
+      "netPayableDues": "Net Payable Tax Dues:",
+      "outwardSupplyHeader": "Outward Supply (Sales)",
+      "goodsValueBaseLabel": "Goods Value (Base)",
+      "cgstCollected": "CGST collected",
+      "sgstCollected": "SGST collected",
+      "totalOutputGst": "Total Output GST",
+      "inwardSupplyHeader": "Inward Supply (Purchases)",
+      "cgstPaid": "CGST Paid",
+      "sgstPaid": "SGST Paid",
+      "totalInputItc": "Total Input ITC",
+      "netPayableDuesNoColon": "Net Payable Tax Dues",
+      "netGoodsDiff": "Net Goods Difference",
+      "netCgst": "Net CGST",
+      "netSgst": "Net SGST",
+      "netLiability": "Net Liability"
     },
     "custLedger": {
       "registeredCustomers": "नोंदणीकृत ग्राहक",
@@ -1409,7 +1635,11 @@
       "phoneNumber": "फोन नंबर",
       "gstinIdentification": "जीएसटीआयएन ओळख",
       "outstandingBalanceRs": "उर्वरित शिल्लक (₹)",
-      "status": "स्थिती"
+      "status": "स्थिती",
+      "outstandingBalance": "उधारी बाकी (₹)",
+      "accumulatedCustomerDues": "Accumulated Customer Dues",
+      "accumulatedDuesTotal": "Accumulated Customer Dues:",
+      "accumulatedDuesTotalNoColon": "Accumulated Customer Dues"
     },
     "suppLedger": {
       "registeredSuppliers": "नोंदणीकृत पुरवठादार",
@@ -1427,7 +1657,11 @@
       "phoneContact": "फोन / संपर्क",
       "gstinIdentification": "जीएसटीआयएन ओळख",
       "balanceOwedRs": "देणे असलेली शिल्लक (₹)",
-      "status": "स्थिती"
+      "status": "स्थिती",
+      "accumulatedWeOweSuppliers": "Accumulated We Owe Suppliers",
+      "accumulatedOwedTotal": "Accumulated We Owe Suppliers:",
+      "balanceOwed": "Balance Owed",
+      "accumulatedOwedTotalNoColon": "Accumulated Owed Balance"
     },
     "gstr2": {
       "b2bPurchasesCard": "B2B खरेदी (नोंदणीकृत)",
@@ -1471,7 +1705,14 @@
       "b2bPrintTitle": "1. B2B आवक पुरवठा (3, 4A)",
       "noB2bSuppliesPrint": "कोणताही नोंदणीकृत आवक पुरवठा आढळला नाही.",
       "hsnPrintTitle": "2. आवक पुरवठ्याचा HSN सारांश (तक्ता 13)",
-      "docsPrintTitle": "3. प्राप्त दस्तऐवजांचा सारांश"
+      "docsPrintTitle": "3. प्राप्त दस्तऐवजांचा सारांश",
+      "b2bTitle": "१. नोंदणीकृत पुरवठादारांकडून मिळालेली B2B खरेदी (3, 4A)",
+      "b2bSubtitle": "जीएसटी नोंदणीकृत पुरवठादारांकडून आलेली आवक खरेदी.",
+      "hsnTitle": "{t(",
+      "hsnSubtitle": "HSN-code summary of goods received (purchases). Required to audit input tax credit.",
+      "docsTitle": "{t(",
+      "docsSubtitle": "Serial numbers and counts of supplier inward bills received during the period.",
+      "invInwardSupply": "खरेदीसाठी मिळालेली बिले"
     },
     "print": {
       "salesStatementTitle": "विक्री व्यवहार पत्रक",
@@ -1589,7 +1830,13 @@
       "date": "तारीख",
       "taxableAmtRs": "करपात्र रक्कम (₹)",
       "taxCollectedRs": "जमा केलेला कर (₹)",
-      "grandTotalRs": "एकूण बेरीज (₹)"
+      "grandTotalRs": "एकूण बेरीज (₹)",
+      "totalTaxableSales": "Total Taxable Sales",
+      "breakdownTitle": "Sales Transaction Breakdown",
+      "breakdownSubtitle": "Detailed log of customer tax invoices, taxable turnover, and payment settlement statuses.",
+      "taxableAmt": "Taxable Amt",
+      "taxCollected": "Tax Collected",
+      "totalValue": "Total Value"
     },
     "purchase": {
       "billsLoggedCard": "नोंदवलेली बिल्स",
@@ -1599,7 +1846,13 @@
       "baseCostRs": "मूळ खर्च (₹)",
       "taxPaidRs": "भरलेला कर (₹)",
       "totalCostRs": "एकूण खर्च (₹)",
-      "totalTax": "एकूण कर"
+      "totalTax": "एकूण कर",
+      "breakdownTitle": "Purchase Transaction Breakdown",
+      "breakdownSubtitle": "Detailed log of supplier inward purchase vouchers, input costs, and raw materials tax credit.",
+      "baseCost": "Base Cost",
+      "taxPaid": "Tax Paid",
+      "totalCost": "Total Cost",
+      "totalBase": "Total Base"
     },
     "expense": {
       "totalExpensesSpendsCard": "एकूण खर्च",
@@ -1612,7 +1865,12 @@
       "amountRs": "रक्कम (₹)",
       "method": "पद्धत",
       "refNumber": "संदर्भ क्र.",
-      "notes": "नोंदी"
+      "notes": "नोंदी",
+      "breakdownTitle": "Expense Statement Breakdown",
+      "breakdownSubtitle": "Detailed log of shop rent, light bills, transportation charges, maintenance and other operational costs.",
+      "payeeLabel": "Payee",
+      "remarks": "Remarks",
+      "totalExpense": "Total Expense"
     },
     "profit": {
       "salesRevenueTaxable": "विक्री महसूल (करपात्र)",
@@ -1623,7 +1881,16 @@
       "taxableSalesRs": "करपात्र विक्री (₹)",
       "costPriceRs": "खरेदी किंमत (₹)",
       "netProfitRs": "निव्वळ नफा (₹)",
-      "marginPercent": "मार्जिन (%)"
+      "marginPercent": "मार्जिन (%)",
+      "tableTitle": "Sales Profit Breakdown by Invoices",
+      "marginBadge": "{{margin}}% Margin",
+      "taxableSales": "Taxable Sales",
+      "costPrice": "Cost Price",
+      "netProfit": "Net Profit",
+      "totalSales": "Total Sales",
+      "totalProfit": "Total Profit",
+      "averageMargin": "Average Margin",
+      "summaryNetProfitPrint": "अहवाल सारांश (निव्वळ नफा):"
     },
     "stock": {
       "totalStockQty": "एकूण स्टॉक नग",
@@ -1637,7 +1904,17 @@
       "costPriceRs": "खरेदी किंमत (₹)",
       "assetValuationRs": "मालमत्ता मूल्यमापन (₹)",
       "retailRateRs": "किरकोळ दर (₹)",
-      "retailValuationRs": "किरकोळ मूल्यमापन (₹)"
+      "retailValuationRs": "किरकोळ मूल्यमापन (₹)",
+      "stockSummaryTotalColon": "Stock Summary Total:",
+      "unitsBadge": "{{count}} Units",
+      "costRetailRate": "Cost / Retail Rate",
+      "assetValuation": "Asset Valuation",
+      "retailValuation": "Retail Valuation",
+      "stockSummaryTotal": "Stock Summary Total",
+      "totalQtyLabel": "Total Qty",
+      "itemsValue": "{{count}} items",
+      "totalAssetValue": "Total Asset Value",
+      "totalRetailValue": "Total Retail Value"
     },
     "returnPeriod": "रिटर्न कालावधी:",
     "generatedOn": "तयार केल्याची तारीख:",
@@ -1693,7 +1970,52 @@
     "accumulatedWeOweSuppliers": "एकूण जमा पुरवठादार देणी",
     "voucherId": "व्हाउचर आयडी",
     "payeePaidTo": "प्राप्तकर्ता / कोणाला दिले",
-    "refNo": "संदर्भ क्र."
+    "refNo": "संदर्भ क्र.",
+    "receiptDate": "पावती दिनांक",
+    "natureOfSupplies": "Nature of Supplies",
+    "taxableValue": "Taxable Value",
+    "sgstUtgst": "SGST/UTGST",
+    "cess": "Cess",
+    "grandTotal": "Grand Total",
+    "recipientType": "Recipient Type",
+    "integratedTaxIgst": "Integrated Tax (IGST)",
+    "suppliesUnregistered": "Supplies to Unregistered Persons",
+    "suppliesComposition": "Supplies to Composition Taxable Persons",
+    "suppliesUinHolders": "Supplies to UIN Holders",
+    "totalInterstateSupplies": "Total Interstate Supplies",
+    "itcCategory": "ITC Category",
+    "totalItc": "Total ITC",
+    "importOfGoods": "Import of goods",
+    "importOfServices": "Import of services",
+    "inwardSuppliesReverseCharge": "Inward supplies (Reverse Charge)",
+    "taxHead": "Tax Head",
+    "taxLiability": "Tax Liability",
+    "itcUtilized": "ITC Utilized",
+    "cashToPay": "Cash to Pay",
+    "centralTaxCgst": "Central Tax (CGST)",
+    "stateTaxSgst": "State/UT Tax (SGST)",
+    "totalSettlement": "Total Settlement",
+    "gstr3bWorkingReport": "GSTR-3B WORKING {t(",
+    "grandTotalTable31": "Grand Total (Table 3.1)",
+    "detailsOfItc": "Details of Input Tax Credit (ITC)",
+    "natureOfInwardSupplies": "Nature of Inward Supplies",
+    "taxComponent": "Tax Component",
+    "totalSettlementSummary": "Total Settlement Summary",
+    "totalBookSalesValue": "Total Book Sales Value:",
+    "totalBookPurchaseValue": "Total Book Purchase Value:",
+    "outputGstLiability": "Output GST Liability (GSTR-3B):",
+    "inputGstCredit": "Input GST Credit (ITC Available):",
+    "netGstCashLiability": "Net GST Cash Liability:",
+    "carryForwardTaxCredit": "Carry Forward Tax Credit:",
+    "inventoryStockBreakdown": "Inventory Stock Status Breakdown",
+    "inventoryStockDesc": "Detailed summary of available catalog stock quantity, unit purchase costs, and raw inventory asset valuations.",
+    "gstrSummaryLogs": "GSTR Summary Ledger Logs",
+    "gstrSummaryLogsDesc": "Aggregated GST summary statement of output tax liability and input tax credit (ITC) offsets.",
+    "customerLedger": "Customer Outstanding Ledger",
+    "customerLedgerDesc": "Detailed ledger balances showing outstanding dues pending and advance customer accounts.",
+    "hsnOutwardSummary": "3. HSN Summary of Outward Supplies (Table 12)",
+    "hsnInwardSummary": "2. HSN Summary of Inward Supplies (Table 13)",
+    "summaryOfDocsReceived": "3. Summary of Documents Received"
   },
   "pwa": {
     "errorAppNameEmpty": "ॲप्लिकेशनचे नाव रिकामे असू शकत नाही.",
@@ -2180,7 +2502,76 @@
     "enterStateName": "राज्याचे नाव प्रविष्ट करा",
     "enterDistrictName": "जिल्ह्याचे नाव प्रविष्ट करा",
     "gstin": "जीएसटी क्रमांक (GSTIN)",
-    "primaryPhone": "प्राथमिक मोबाईल नंबर"
+    "primaryPhone": "प्राथमिक मोबाईल नंबर",
+    "drawResignWithCursor": "माऊस कर्सरने स्वाक्षरी करा / पुन्हा स्वाक्षरी करा",
+    "uploadImage": "इमेज अपलोड करा",
+    "drawSignatureInstructions": "खालील चौकटीत माऊस कर्सर दाबून ओढा आणि स्वाक्षरी करा:",
+    "voucherPrefixes": "पावती व दस्तऐवज प्रीफिक्स (Prefixes)",
+    "configureVoucherPrefixes": "पावती क्रमांक प्रीफिक्स रचना कॉन्फिगर करा",
+    "footerMessagePlaceholder": "तुमच्या व्यवसायाबद्दल मनापासून धन्यवाद!",
+    "termsPerBillType": "अटी व शर्ती (प्रत्येक बिल प्रकारानुसार)",
+    "invoiceTermsPlaceholder": "उदा. विकलेला माल परत घेतला जाणार नाही. वॉरंटी उत्पादकाच्या अटींनुसार राहील.",
+    "quotationTermsPlaceholder": "उदा. हे कोटेशन १५ दिवसांसाठी वैध आहे. किमती पूर्वसूचनेशिवाय बदलू शकतात.",
+    "purchaseTermsPlaceholder": "उदा. ३० दिवसांच्या आत देयक देय. माल योग्य स्थितीत प्राप्त झाला.",
+    "termsNotice": "ह्या अटी त्यांच्या संबंधित बिलांच्या प्रिंटवर स्वयंचलितपणे दिसतील.",
+    "languageTitle": "भाषा सेटिंग्स / भाषा निवडा",
+    "languageSubtitle": "ॲग्रीबिझ प्रणालीसाठी भाषा निवडा",
+    "chooseColorPalette": "तुमच्या पसंतीचा रंग मोड (थीम) निवडा",
+    "pwaInstallationDesc": "ॲग्रीबिझ संगणक / मोबाईल ॲप म्हणून इन्स्टॉल करा",
+    "configuredPwaAppName": "कॉन्फिगर केलेले PWA ॲपचे नाव",
+    "reconfigureInstallApp": "पुन्हा कॉन्फिगर करा / ॲप इन्स्टॉल करा",
+    "customizePrintVisibility": "मुद्रित A5 इनव्हॉइसवरील दिसणारे घटक कस्टमायझ करा",
+    "showLogoSubtext": "A5 बिल आणि प्रिंट नमुन्यांवर कंपनीचा लोगो दाखवतो",
+    "showGstinSubtext": "पावतीवर तुमचा GSTIN नंबर मुद्रित करतो",
+    "showAddressSubtext": "हेडरखाली तुमचा दुकानाचा पत्ता मुद्रित करतो",
+    "showContactSubtext": "फोन नंबर, ईमेल आणि वेबसाइट मुद्रित करतो",
+    "showBankSubtext": "बँकेचे नाव, खाते क्र., IFSC आणि UPI तपशील मुद्रित करतो",
+    "showTermsSubtext": "बिलाच्या तळाशी डीफॉल्ट अटी मुद्रित करतो",
+    "toggleStockWarnings": "कमी स्टॉक आणि सुरक्षा मर्यादा इशारे सुरू/बंद करा",
+    "belowSafetyLimitSubtext": "उत्पादनाचा साठा सुरक्षा मर्यादेपेक्षा कमी झाल्यावर इशारा दाखवतो",
+    "outOfStockWarning": "स्टॉक पूर्ण संपल्याचा इशारा",
+    "outOfStockSubtext": "उत्पादनाचा साठा शून्य झाल्यावर इशारा दाखवतो",
+    "configureDateFormat": "सिस्टम तारीख आणि चलन स्वरूप कॉन्फिगर करा",
+    "currencyInr": "₹ (भारतीय रुपया - INR)",
+    "currencyUsd": "$ (अमेरिकन डॉलर - USD)",
+    "currencyEur": "€ (युरो - EUR)",
+    "currencyGbp": "£ (पाउंड - GBP)",
+    "currencyJpy": "¥ (येन - JPY)",
+    "formatStandard": "मानक (Standard)",
+    "formatIso": "आयएसओ (ISO)",
+    "deviceSessionStatus": "डिव्हाइस सत्र स्थिती:",
+    "remembered": "आठवणीत ठेवलेले",
+    "rememberedHelpText": "हे डिव्हाइस सध्या ओळखले गेले आहे. पुढील लॉगिनसाठी फक्त ४-अंकी PIN आवश्यक आहे. 'हे डिव्हाइस काढून टाका' वर क्लिक केल्यास पुढील वेळी मोबाईल नंबर आणि पासवर्ड टाकून लॉगिन करावे लागेल.",
+    "databaseResetWarning": "सर्व स्थानिक बदल (नवीन बिले, कस्टम दर) पुसून टाका आणि सुरुवातीच्या डेटाबेस स्थितीत पुनर्संचयित करा.",
+    "istTimeZone": "IST (भारतीय प्रमाण वेळ)",
+    "lastManualExportLabel": "शेवटची मॅन्युअल निर्यात",
+    "lastRestoredLabel": "शेवटचे पुनर्संचयित केले",
+    "quotations": "अंदाजे कोटेशन्स",
+    "businessInformation": "व्यवसाय माहिती",
+    "websitePlaceholder": "e.g. www.agribizstore.com",
+    "setPhysicalStoreBillingAddresses": "दुकानाचा / व्यवसायाचा पत्ता आणि तपशील सेट करा",
+    "enterManually": "-- मॅन्युअली प्रविष्ट करा --",
+    "talukaPlaceholder": "e.g. Pipariya",
+    "cityPlaceholder": "e.g. Pipariya",
+    "bankingDetails": "बँक तपशील आणि सेटलमेंट",
+    "manageBankOptions": "बँक खाते आणि UPI जमा पर्याय व्यवस्थापित करा",
+    "upiIdPlaceholder": "e.g. storename@ybl",
+    "configureInvoiceLogoBrandings": "इनव्हॉइस लोगो ब्रँडिंग कॉन्फिगर करा",
+    "customBusinessLogoActive": "कस्टम व्यवसाय लोगो सक्रिय",
+    "changeLogo": "लोगो बदला",
+    "defaultBusinessLogoFallback": "डीफॉल्ट व्यवसाय लोगो",
+    "uploadCustomBusinessLogo": "कस्टम व्यवसाय लोगो अपलोड करा",
+    "logoFileFormatHelp": "PNG, JPG, or SVG format up to 1.5MB",
+    "dedicatedBillWatermarkLogo": "बिलासाठी वॉटरमार्क लोगो",
+    "configureWatermarks": "बिलामागील पारदर्शक वॉटरमार्क सेट करा",
+    "changeWatermark": "वॉटरमार्क बदला",
+    "removeWatermark": "वॉटरमार्क हटवा",
+    "uploadBillWatermarkLogo": "वॉटरमार्क लोगो अपलोड करा",
+    "watermarkFormatHelp": "PNG, JPG, or SVG format up to 1.5MB (Defaults to Company Logo if empty)",
+    "showWatermarkAsIs": "Show Watermark Image As Is (Original Color)",
+    "watermarkAsIsHelp": "When checked, watermark on invoices renders in original colors. Uncheck to display in Black & White (Grayscale).",
+    "drawSignatureSubtitle": "इनव्हॉइससाठी ई-स्वाक्षरी व्यवस्थापित करा",
+    "authorizedSignatureActive": "अधिकृत स्वाक्षरीकर्त्याची ई-स्वाक्षरी सक्रिय"
   },
   "recycleBin": {
     "title": "रिसायकल बिन",
@@ -2239,7 +2630,8 @@
     "deleteBulkDesc": "इशारा: निवडलेल्या सर्व {{count}} नोंदी कायमच्या हटवल्या जातील. ही कृती पुन्हा मागे घेता येणार नाही.",
     "restoreAllSelected": "सर्व निवडलेले पुनर्संचयित करा",
     "deleteAllSelected": "सर्व निवडलेले कायमचे हटवा",
-    "restoreRecord": "पुनर्संचयित करा"
+    "restoreRecord": "पुनर्संचयित करा",
+    "itemsList": "Items List"
   },
   "modals": {
     "confirmTitle": "कृतीची खात्री करा",
@@ -2341,7 +2733,30 @@
     "retryLoadingStaff": "पुन्हा प्रयत्न करा",
     "noActiveStaff": "सक्रिय कर्मचारी सापडले नाहीत. कृपया पुन्हा कनेक्ट करा.",
     "forgetDevice": "हे डिव्हाइस काढून टाका / खाते बदला",
-    "enter4DigitPin": "४-अंकी सुरक्षा PIN प्रविष्ट करा"
+    "enter4DigitPin": "४-अंकी सुरक्षा PIN प्रविष्ट करा",
+    "errorSessionNotFound": "Business session not found. Please log in again.",
+    "ownerPinSent": "Owner PIN reset link has been sent to your email.",
+    "failedSendPinReset": "Failed to send PIN reset link.",
+    "failedRequestPinReset": "Failed to request Owner PIN reset. Please try again.",
+    "failedFetchStaff": "Failed to fetch staff profiles. Please try again.",
+    "failedLoadStaff": "Failed to load staff profiles. Please reconnect and try again.",
+    "enterMobile": "Please enter your mobile number.",
+    "enterPassword": "Please enter your password.",
+    "pin4Digits": "PIN must be exactly 4 digits.",
+    "pinsDoNotMatch": "PINs do not match.",
+    "failedSetPin": "Failed to set PIN. Please try again.",
+    "agribizTraderSuite": "AgriBiz Trader Suite",
+    "tagline": "Manage Billing • Inventory • GST • Reports",
+    "youAreLoggingInto": "You are logging into",
+    "sendingResetLink": "Sending Reset Link...",
+    "forgotPin": "Forgot PIN?",
+    "backToStaffSelection": "Back to Staff Selection",
+    "createYourLoginPin": "Create Your Login PIN",
+    "noPinSetNotice": "No PIN was set for {{name}}. Create a 4-digit PIN to use for future logins.",
+    "new4DigitPin": "New 4-Digit PIN *",
+    "confirmPin": "Confirm PIN *",
+    "settingPin": "Setting PIN...",
+    "setPinAndLogin": "Set PIN & Login"
   },
   "register": {
     "title": "नवीन AgriBiz नोंदणी",
@@ -2400,7 +2815,25 @@
     "pinsDoNotMatch": "PIN जुळत नाहीत",
     "pinConfirmed": "PIN पुष्टी झाली ✓",
     "registering": "नोंदणी करत आहे...",
-    "completeAndLaunchSuite": "🚀 खाते पूर्ण करा आणि ॲप सुरू करा"
+    "completeAndLaunchSuite": "🚀 खाते पूर्ण करा आणि ॲप सुरू करा",
+    "errValidEmail": "Please enter a valid Email Address before sending verification email.",
+    "errFailedSendEmail": "Failed to send verification email.",
+    "errBusinessName": "Please enter your Business Name.",
+    "errOwnerName": "Please enter the Owner Name.",
+    "errMobile": "Please enter a valid 10-digit Mobile Number.",
+    "errEmail": "Please enter your Email Address.",
+    "errVerifyEmailSent": "Verification email sent to {{email}}. Please check your inbox and click the link to continue.",
+    "errPassword": "Please enter a password.",
+    "errPasswordLength": "Password must be at least 6 characters long.",
+    "errPasswordsDoNotMatch": "Passwords do not match.",
+    "errOwnerPinDigits": "Owner PIN must be exactly 4 digits.",
+    "errPinsDoNotMatch": "PINs do not match. Please re-enter your PIN.",
+    "registrationSuccessful": "Registration Successful!",
+    "verificationLinkSent": "A verification link has been sent to your email address:",
+    "localDevLink": "🛠️ Local Dev Mode Verification Link",
+    "clickToVerifyNotice": "Click below to verify your email directly in local testing:",
+    "clickHereToVerify": "🔗 Click Here to Verify Email",
+    "continueToSuite": "🚀 Continue to AgriBiz Suite"
   },
   "forgot": {
     "title": "पासवर्ड विसरलात?",
@@ -2414,5 +2847,188 @@
     "newPin": "नवीन ४-अंकी PIN",
     "confirmPin": "नवीन PIN ची पुष्टी करा",
     "savePin": "नवीन PIN जतन करा"
+  },
+  "verifyEmail": {
+    "noToken": "URL लिंकमध्ये पडताळणी टोकन उपलब्ध नाही.",
+    "verifiedSuccess": "ईमेल यशस्वीरित्या पडताळला गेला!",
+    "alreadyVerified": "तुमचा ईमेल पत्ता आधीच पडताळलेला आहे!",
+    "invalidLink": "अवैध, कालबाह्य किंवा आधीच वापरलेली पडताळणी लिंक.",
+    "enterEmail": "कृपया तुमचा नोंदणीकृत ईमेल पत्ता टाका.",
+    "linkSent": "नवीन पडताळणी लिंक तुमच्या ईमेलवर पाठवली आहे.",
+    "resendFailed": "पडताळणी ईमेल पुन्हा पाठवण्यास अपयशी.",
+    "ownerEmailVerification": "मालक ईमेल पडताळणी",
+    "verifyingNotice": "तुमचा ईमेल पडताळत आहे... कृपया वाट पहा.",
+    "emailVerifiedSuccessfully": "ईमेल यशस्वीरित्या पडताळला गेला!",
+    "thankYouVerified": "धन्यवाद! तुमचा ईमेल पत्ता पडताळला गेला आहे.",
+    "continueToStep3": "नोंदणी सुरू ठेवा (पायरी ३: पासवर्ड आणि पिन तयार करा) →",
+    "alreadyRegistered": "आधीच नोंदणी केली आहे? विद्यमान खात्यात साइन इन करा",
+    "verificationFailed": "पडताळणी अयशस्वी",
+    "requestNewLink": "नवीन पडताळणी लिंक मागवा:",
+    "placeholderEmail": "नोंदणीकृत ईमेल प्रविष्ट करा",
+    "resending": "पुन्हा पाठवत आहे...",
+    "resendEmail": "पडताळणी ईमेल पुन्हा पाठवा",
+    "backToSignIn": "साइन इनवर परत जा"
+  },
+  "Please select a contact to log payment": {
+    "": "error"
+  },
+  "Please enter a valid amount greater than zero": {
+    "": "error"
+  },
+  "No internet connection": {
+    " Cannot add product while offline": {
+      "": "error"
+    },
+    " Cannot update product while offline": {
+      "": "error"
+    },
+    " Cannot delete product while offline": {
+      "": "error"
+    },
+    " Cannot add customer while offline": {
+      "": "error"
+    },
+    " Cannot update customer while offline": {
+      "": "error"
+    },
+    " Cannot delete customer while offline": {
+      "": "error"
+    },
+    " Cannot add supplier while offline": {
+      "": "error"
+    },
+    " Cannot update supplier while offline": {
+      "": "error"
+    },
+    " Cannot delete supplier while offline": {
+      "": "error"
+    },
+    " Cannot create invoice while offline": {
+      "": "error"
+    },
+    " Cannot update invoice while offline": {
+      "": "error"
+    },
+    " Cannot delete invoice while offline": {
+      "": "error"
+    },
+    " Cannot create quotation while offline": {
+      "": "error"
+    },
+    " Cannot update quotation while offline": {
+      "": "error"
+    },
+    " Cannot delete quotation while offline": {
+      "": "error"
+    },
+    " Cannot convert quotation while offline": {
+      "": "error"
+    },
+    " Cannot record purchase while offline": {
+      "": "error"
+    },
+    " Cannot update purchase while offline": {
+      "": "error"
+    },
+    " Cannot delete purchase while offline": {
+      "": "error"
+    },
+    " Cannot log payment while offline": {
+      "": "error"
+    },
+    " Cannot update payment while offline": {
+      "": "error"
+    },
+    " Cannot delete payment while offline": {
+      "": "error"
+    },
+    " Cannot add expense while offline": {
+      "": "error"
+    },
+    " Cannot update expense while offline": {
+      "": "error"
+    },
+    " Cannot delete expense while offline": {
+      "": "error"
+    },
+    " Cannot restore item while offline": {
+      "": "error"
+    },
+    " Cannot delete item while offline": {
+      "": "error"
+    },
+    " Cannot update settings while offline": {
+      "": "error"
+    }
+  },
+  "Invalid product ID for deletion": {
+    "": "error"
+  },
+  "Invalid record ID for restore": {
+    "": "error"
+  },
+  "Invalid record ID for permanent deletion": {
+    "": "error"
+  },
+  "Dashboard metrics recalculated": "success",
+  "forgotPassword": {
+    "errValidMobile": "Please enter a valid 10-digit registered mobile number.",
+    "errConnection": "Connection error. Please try again.",
+    "errTokenMissing": "Password reset token is missing or expired. Please request a new link.",
+    "errPasswordMin": "New password must be at least 6 characters.",
+    "errPasswordMatch": "Passwords do not match.",
+    "createNewPassword": "Create New Password",
+    "passwordRecovery": "Password Recovery",
+    "enterSecurePassword": "Enter a secure new password for your AgriBiz account",
+    "resetLinkSentToEmail": "Reset link will be sent to the verified email linked to your mobile",
+    "registeredMobileNumber": "Registered Mobile Number *",
+    "placeholderMobile": "10-digit mobile number",
+    "resetLinkNotice": "The password reset link will be sent to the verified email address linked to this account.",
+    "findingAccount": "Finding Account & Sending Link...",
+    "sendResetLink": "Send Reset Link to Linked Email",
+    "checkInboxNotice": "Please check your email inbox and click the reset link to create a new password. If you don",
+    "backToSignIn": "Back to Sign In",
+    "newPassword": "New Password *",
+    "placeholderPassword": "Enter at least 6 characters",
+    "confirmNewPassword": "Confirm New Password *",
+    "placeholderConfirmPassword": "Re-enter new password",
+    "updatingPassword": "Updating Password...",
+    "resetPasswordAndUpdate": "Reset Password & Update",
+    "resetSuccessful": "Password Reset Successful!",
+    "resetSuccessNotice": "Your account password has been updated successfully. You can now sign in with your new password."
+  },
+  "Could not find report printout element": {
+    "": "error"
+  },
+  "Generating PDF, please wait": {
+    "": {
+      "": {
+        "": "info"
+      }
+    }
+  },
+  "Error generating PDF": {
+    " Please try again": {
+      "": "error"
+    }
+  },
+  "resetOwnerPin": {
+    "noToken": "No valid PIN reset token found in URL link.",
+    "err4Digits": "Owner PIN must be exactly 4 numeric digits.",
+    "errMatch": "PINs do not match.",
+    "successMsg": "Owner PIN reset successfully!",
+    "failedMsg": "PIN reset failed.",
+    "errExpired": "Failed to reset Owner PIN. The link may be expired or already used.",
+    "completeTitle": "Owner PIN Reset Complete",
+    "createTitle": "Create New Owner PIN",
+    "completeSub": "Your new Owner PIN has been saved securely.",
+    "createSub": "Enter a 4-digit PIN for the Owner account.",
+    "continueSignIn": "Continue to Sign In →",
+    "newPin": "New 4-Digit Owner PIN",
+    "placeholder": "Enter 4 digits",
+    "confirmPin": "Confirm 4-Digit Owner PIN",
+    "reenterPlaceholder": "Re-enter 4 digits",
+    "updating": "Updating PIN...",
+    "saveBtn": "Save New Owner PIN"
   }
 }

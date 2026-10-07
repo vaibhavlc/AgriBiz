@@ -808,7 +808,7 @@ export const Dashboard: React.FC = () => {
           }}
         >
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Start Date</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("common.startDate", "Start Date")}</span>
             <input 
               type="date" 
               className="filter-select" 
@@ -827,7 +827,7 @@ export const Dashboard: React.FC = () => {
             />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1, minWidth: 0 }}>
-            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>End Date</span>
+            <span style={{ color: 'var(--text-muted)', fontSize: '10px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t("common.endDate", "End Date")}</span>
             <input 
               type="date" 
               className="filter-select" 
