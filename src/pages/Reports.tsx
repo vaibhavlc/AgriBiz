@@ -24,7 +24,8 @@ import {
 } from 'lucide-react';
 
 export const Reports: React.FC = () => {
-  const { t } = useTranslation();
+  const { t: tApp, i18n } = useTranslation();
+  const tEn = useMemo(() => i18n.getFixedT('en'), [i18n]);
   const {
     invoices,
     purchases,
@@ -36,6 +37,8 @@ export const Reports: React.FC = () => {
   } = useApp();
 
   const [activeReport, setActiveReport] = useState<'sales' | 'purchase' | 'expense' | 'profit' | 'stock' | 'gst' | 'custLedger' | 'suppLedger' | 'gstr1' | 'gstr2' | 'gstr3b'>('sales');
+  const isGstrPage = activeReport === 'gstr1' || activeReport === 'gstr2' || activeReport === 'gstr3b';
+  const t = isGstrPage ? tEn : tApp;
   
   // Date filtering state
   const [dateRange, setDateRange] = useState('All');
@@ -682,7 +685,7 @@ export const Reports: React.FC = () => {
   };
 
   const handleExportGstr3B = () => {
-    const headers = ['GSTR-3B Table Section', 'Nature of Supplies / Credit', 'Total {t("reports.gstr3b.taxableValueRs", "Taxable Value (₹)")}', '{t("reports.gstr3b.integratedTaxRs", "Integrated Tax (₹)")}', '{t("reports.gstr3b.centralTaxRs", "Central Tax (₹)")}', '{t("reports.gstr3b.stateUtTaxRs", "State/UT Tax (₹)")}', '{t("reports.gstr3b.cessRs", "Cess (₹)")}'];
+    const headers = ['GSTR-3B Table Section', 'Nature of Supplies / Credit', 'Total Taxable Value (₹)', 'Integrated Tax (₹)', 'Central Tax (₹)', 'State/UT Tax (₹)', 'Cess (₹)'];
     const rows = [
       ['Table 3.1(a)', 'Outward Taxable Supplies (other than zero rated, nil rated and exempted)', gstr3BData.outward.taxable.toFixed(2), gstr3BData.outward.igst.toFixed(2), gstr3BData.outward.cgst.toFixed(2), gstr3BData.outward.sgst.toFixed(2), '0.00'],
       ['Table 3.1(d)', 'Inward Supplies Liable to Reverse Charge', '0.00', '0.00', '0.00', '0.00', '0.00'],
@@ -4430,17 +4433,17 @@ export const Reports: React.FC = () => {
   };
 
   const reportTabs = [
-    { id: 'sales', label: t('reports.salesReport', 'Sales Report'), icon: <FileText size={18} /> },
-    { id: 'purchase', label: t('reports.purchaseReport', 'Purchase Report'), icon: <FileText size={18} /> },
-    { id: 'expense', label: t('reports.expenseReport', 'Expense Report'), icon: <TrendingDown size={18} /> },
-    { id: 'profit', label: t('reports.pnlSummary', 'Profit & Loss Summary'), icon: <Briefcase size={18} /> },
-    { id: 'stock', label: t('reports.stockAssetValue', 'Stock Asset Value'), icon: <Layers size={18} /> },
-    { id: 'gst', label: t('reports.gstTaxSummary', 'GST Tax Summary'), icon: <Percent size={18} /> },
-    { id: 'custLedger', label: t('reports.customerDuesLedger', 'Customer Dues Ledger'), icon: <Users size={18} /> },
-    { id: 'suppLedger', label: t('reports.supplierPayablesLedger', 'Supplier Payables Ledger'), icon: <Truck size={18} /> },
-    { id: 'gstr1', label: t('reports.gstr1Return', 'GSTR-1 Return (CA-Ready)'), icon: <Percent size={18} /> },
-    { id: 'gstr2', label: t('reports.gstr2Inward', 'GSTR-2 Inward (CA-Ready)'), icon: <Percent size={18} /> },
-    { id: 'gstr3b', label: t('reports.gstr3bReturn', 'GSTR-3B Return (CA-Ready)'), icon: <Percent size={18} /> },
+    { id: 'sales', label: tApp('reports.salesReport', 'Sales Report'), icon: <FileText size={18} /> },
+    { id: 'purchase', label: tApp('reports.purchaseReport', 'Purchase Report'), icon: <FileText size={18} /> },
+    { id: 'expense', label: tApp('reports.expenseReport', 'Expense Report'), icon: <TrendingDown size={18} /> },
+    { id: 'profit', label: tApp('reports.pnlSummary', 'Profit & Loss Summary'), icon: <Briefcase size={18} /> },
+    { id: 'stock', label: tApp('reports.stockAssetValue', 'Stock Asset Value'), icon: <Layers size={18} /> },
+    { id: 'gst', label: tApp('reports.gstTaxSummary', 'GST Tax Summary'), icon: <Percent size={18} /> },
+    { id: 'custLedger', label: tApp('reports.customerDuesLedger', 'Customer Dues Ledger'), icon: <Users size={18} /> },
+    { id: 'suppLedger', label: tApp('reports.supplierPayablesLedger', 'Supplier Payables Ledger'), icon: <Truck size={18} /> },
+    { id: 'gstr1', label: tEn('reports.gstr1Return', 'GSTR-1 Return (CA-Ready)'), icon: <Percent size={18} /> },
+    { id: 'gstr2', label: tEn('reports.gstr2Inward', 'GSTR-2 Inward (CA-Ready)'), icon: <Percent size={18} /> },
+    { id: 'gstr3b', label: tEn('reports.gstr3bReturn', 'GSTR-3B Return (CA-Ready)'), icon: <Percent size={18} /> },
   ];
 
   return (
