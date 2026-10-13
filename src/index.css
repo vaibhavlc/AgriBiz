@@ -64,10 +64,10 @@
   --header-shadow: 0 6px 18px rgba(15, 23, 42, 0.08), 0 1px 4px rgba(15, 23, 42, 0.04);
 
   /* Floating Navbar Styles (Farma Style - Light Mode) */
-  --navbar-gradient-scrolled: rgba(248, 250, 252, 0.9);
-  --navbar-gradient-unscrolled: rgba(248, 250, 252, 0.5);
-  --navbar-bg-scrolled: rgba(255, 255, 255, 0.92);
-  --navbar-bg-unscrolled: rgba(255, 255, 255, 0.70);
+  --navbar-gradient-scrolled: #ffffff;
+  --navbar-gradient-unscrolled: #ffffff;
+  --navbar-bg-scrolled: #ffffff;
+  --navbar-bg-unscrolled: #ffffff;
   --navbar-border: rgba(16, 185, 129, 0.12);
   --navbar-shadow-scrolled: 0 8px 30px -8px rgba(6, 78, 59, 0.12), 0 0 0 1px rgba(74, 222, 128, 0.12) inset, 0 1px 0 0 rgba(255, 255, 255, 0.8) inset;
   --navbar-shadow-unscrolled: 0 4px 16px -4px rgba(6, 78, 59, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
@@ -130,10 +130,10 @@ body.dark-theme {
   --header-shadow: 0 6px 18px rgba(0, 0, 0, 0.5), 0 1px 4px rgba(0, 0, 0, 0.35);
 
   /* Floating Navbar Styles (Farma Style - Dark Mode) */
-  --navbar-gradient-scrolled: rgba(11, 15, 25, 0.9);
-  --navbar-gradient-unscrolled: rgba(11, 15, 25, 0.5);
-  --navbar-bg-scrolled: rgba(17, 24, 39, 0.92);
-  --navbar-bg-unscrolled: rgba(17, 24, 39, 0.70);
+  --navbar-gradient-scrolled: #111827;
+  --navbar-gradient-unscrolled: #111827;
+  --navbar-bg-scrolled: #111827;
+  --navbar-bg-unscrolled: #111827;
   --navbar-border: rgba(255, 255, 255, 0.08);
   --navbar-shadow-scrolled: 0 8px 40px -8px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(52, 211, 153, 0.06) inset, 0 1px 0 0 rgba(255, 255, 255, 0.08) inset;
   --navbar-shadow-unscrolled: 0 4px 24px -4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
