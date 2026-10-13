@@ -268,7 +268,7 @@ export const Purchases: React.FC = () => {
 
             <div style={{ flex: 1, overflow: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#f1f5f9', borderRadius: '12px', padding: '10px' }}>
               {isPDF ? (
-                <iframe src={attachedFileUrl} style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px' }} title="PDF Preview" />
+                <iframe src={attachedFileUrl} style={{ width: '100%', height: '100%', border: 'none', borderRadius: '8px' }} title={t('purchases.pdfPreview', 'PDF Preview')} />
               ) : isImage ? (
                 <img src={attachedFileUrl} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: '8px' }} alt="Invoice Preview" />
               ) : (
@@ -3174,7 +3174,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                             type="button"
                             className="table-link-btn bill-link"
                             onClick={() => setViewPurchase(pur.id)}
-                            title={`View details for ${pur.purchaseNumber}`}
+                            title={t('purchases.viewDetails', 'View Details')}
                           >
                             {pur.purchaseNumber}
                           </button>
@@ -3188,7 +3188,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                               setViewSupplier(pur.supplierId);
                               setViewPurchase(null);
                             }}
-                            title={`View supplier profile for ${pur.supplierName}`}
+                            title={t('supplier.viewProfile', 'View Profile')}
                           >
                             {pur.supplierName}
                           </button>
@@ -3426,21 +3426,21 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                           }}>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { setViewPurchase(pur.id); setActiveMenuPurchaseId(null); }}>
-                              <Eye size={14} /> View Details
+                              <Eye size={14} /> {t('purchases.viewDetails', 'View Details')}
                             </button>
                             <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                               onClick={() => { handleStartEditPurchase(pur); setActiveMenuPurchaseId(null); }}>
-                              <Edit2 size={14} /> Edit Purchase
+                              <Edit2 size={14} /> {t('purchases.editPurchase', 'Edit Purchase')}
                             </button>
                             {getAttachmentName(pur.notes) && (
                               <button className="dropdown-item" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--text-primary)' }}
                                 onClick={() => { setActivePreviewPurchase(pur); setShowAttachmentPreview(true); setActiveMenuPurchaseId(null); }}>
-                                <FileText size={14} /> View Invoice File
+                                <FileText size={14} /> {t('purchases.viewInvoiceFile', 'View Invoice File')}
                               </button>
                             )}
                             <button className="dropdown-item danger" style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', padding: '8px 12px', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '13px', color: 'var(--color-danger)' }}
                               onClick={() => { handleDeletePurchase(pur.id, pur.purchaseNumber); setActiveMenuPurchaseId(null); }}>
-                              <Trash size={14} /> Delete
+                              <Trash size={14} /> {t('purchases.delete', 'Delete')}
                             </button>
                           </div>
                         </>
@@ -3483,9 +3483,10 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             {totalPages > 1 && (
               <div className="pagination-row">
                 <span>
-                  Showing <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> to{' '}
-                  <strong>{Math.min(currentPage * itemsPerPage, sortedPurchases.length)}</strong> of{' '}
-                  <strong>{sortedPurchases.length}</strong> bills
+                  {t('common.showing', 'Showing')}{' '}
+                  <strong>{(currentPage - 1) * itemsPerPage + 1}</strong> {t('common.to', 'to')}{' '}
+                  <strong>{Math.min(currentPage * itemsPerPage, sortedPurchases.length)}</strong> {t('common.of', 'of')}{' '}
+                  <strong>{sortedPurchases.length}</strong> {t('purchases.bills', 'bills')}
                 </span>
                 <div className="pagination-btn-group">
                   <button

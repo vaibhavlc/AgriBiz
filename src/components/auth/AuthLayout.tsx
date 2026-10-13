@@ -150,7 +150,6 @@ export const AuthLayout: React.FC<AuthLayoutProps> = ({ children }) => {
             >
               <option value="en">English</option>
               <option value="mr">मराठी (Marathi)</option>
-              <option value="hi">हिन्दी (Hindi)</option>
             </select>
           </div>
         </div>

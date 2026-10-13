@@ -2300,17 +2300,6 @@ export const Settings: React.FC = () => {
                   >
                     {t('common.marathi', 'मराठी')} (Marathi)
                   </button>
-                  <button
-                    type="button"
-                    className={`btn ${i18n.language === 'hi' ? 'btn-primary' : 'btn-secondary'}`}
-                    style={{ flex: 1, minWidth: '140px', justifyContent: 'center', fontWeight: 700 }}
-                    onClick={() => {
-                      i18n.changeLanguage('hi');
-                      localStorage.setItem('agribiz_language', 'hi');
-                    }}
-                  >
-                    {t('common.hindi', 'हिन्दी')} (Hindi)
-                  </button>
                 </div>
               </div>
 

@@ -1927,11 +1927,11 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       <strong className="print-only">{customerDetail.name}</strong>
                     </>
                   ) : (
-                    <strong>Walk-in</strong>
+                    <strong>{t('sales.walkInCustomer', 'Walk-in Customer')}</strong>
                   )}
                 </div>{customerDetail?.phone && <div>{t("sales.phoneLabel", "Phone:")} {customerDetail.phone}</div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{t('sales.item', 'ITEM')}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>AMT({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>{t("sales.rateLabel", "Rate:")} {settings.currencySymbol || "₹"}{item.price} | {t("sales.gstLabel", "GST:")} {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
+              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{t('sales.item', 'ITEM')}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>{t('sales.amtCaps', 'AMT')}({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>{t("sales.rateLabel", "Rate:")} {settings.currencySymbol || "₹"}{item.price} | {t("sales.gstLabel", "GST:")} {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.totalTaxable', 'Total Taxable')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.discountMinus', 'Discount (-)')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>{t("sales.grandTotalCaps", "GRAND TOTAL")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>{t("sales.cashCollectedCaps", "CASH COLLECTED")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>{t("sales.balanceDueCaps", "BALANCE DUE")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
@@ -2307,10 +2307,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>Est No: <strong>{selectedQuotation.quotationNumber}</strong></span>
-                  <span>Date: {formatDate(selectedQuotation.date)}</span>
+                  <span>{t('sales.estNoHeader', 'Est No')}: <strong>{selectedQuotation.quotationNumber}</strong></span>
+                  <span>{t('sales.dateLabel', 'Date:')} {formatDate(selectedQuotation.date)}</span>
                 </div>
-                <div>Customer:{' '}
+                <div>{t('sales.customer', 'Customer')}:{' '}
                   {customerDetail ? (
                     <>
                       <button
@@ -2328,24 +2328,24 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                       <strong className="print-only">{customerDetail.name}</strong>
                     </>
                   ) : (
-                    <strong>Walk-in</strong>
+                    <strong>{t('sales.walkInCustomer', 'Walk-in Customer')}</strong>
                   )}
                 </div>
-                {customerDetail?.phone && <div>Phone: {customerDetail.phone}</div>}
+                {customerDetail?.phone && <div>{t('sales.phoneLabel', 'Phone:')} {customerDetail.phone}</div>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px" }}>
                 <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
                   <span>{t('sales.item', 'ITEM')}</span>
                   <span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span>
-                  <span style={{ textAlign: "right" }}>AMT(₹)</span>
+                  <span style={{ textAlign: "right" }}>{t('sales.amtCaps', 'AMT')}({settings.currencySymbol || "₹"})</span>
                 </div>
                 <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
                 {selectedQuotation.items.map((item, index) => (
                   <div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}>
                     <div>
                       <span style={{ fontWeight: "bold" }}>{item.productName}</span>
-                      <div style={{ fontSize: "10px", color: "#555" }}>Rate: ₹{item.price} | GST: {item.gstRate}%</div>
+                      <div style={{ fontSize: "10px", color: "#555" }}>{t('sales.rateLabel', 'Rate:')} {settings.currencySymbol || "₹"}{item.price} | {t('sales.gstLabel', 'GST:')} {item.gstRate}%</div>
                     </div>
                     <span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
                     <span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span>
@@ -2388,9 +2388,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div>{settings.footerMessage || "THANK YOU!"}</div>
+                <div>{settings.footerMessage || t("sales.thankYouVisitAgain", "THANK YOU! VISIT AGAIN.")}</div>
                 {selectedQuotation.notes && <div style={{ fontStyle: "italic" }}>"{selectedQuotation.notes}"</div>}
-                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {settings.businessName || "AgriBiz"} POS software</div>
+                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div>
               </div>
             </div>
           </div>
@@ -2863,7 +2863,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                             type="button"
                             className="delete-btn"
                             onClick={() => handleRemoveItemRow(index)}
-                            title="Remove row"
+                            title={t('sales.removeRow', 'Remove row')}
                           >
                             <Trash2 size={15} />
                           </button>
@@ -3523,7 +3523,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                               type="button"
                               className="delete-btn"
                               onClick={() => handleRemoveItemRow(index)}
-                              title="Remove row"
+                              title={t('sales.removeRow', 'Remove row')}
                             >
                               <Trash2 size={15} />
                             </button>
@@ -3552,7 +3552,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     style={{ fontSize: '13px', resize: 'vertical', minHeight: '130px' }}
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="E.g., Validity extensions, special dealer terms, packaging notes..."
+                    placeholder={t('sales.notesPlaceholder', 'E.g., Validity extensions, special dealer terms, packaging notes...')}
                   />
                 </div>
               </div>

@@ -119,15 +119,17 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const mainWrapperRef = useRef<HTMLDivElement>(null);
   const bottomNavRef = useRef<HTMLDivElement>(null);
   const [scrolled, setScrolled] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr' | 'hi'>(
-    () => (i18n.language?.slice(0, 2) as 'en' | 'mr' | 'hi') || 'en'
+  const [selectedLanguage, setSelectedLanguage] = useState<'en' | 'mr'>(
+    () => {
+      const lang = i18n.language?.slice(0, 2);
+      return (lang === 'mr' ? 'mr' : 'en') as 'en' | 'mr';
+    }
   );
   const [isLangDropdownOpen, setIsLangDropdownOpen] = useState(false);
 
   const LANGUAGES = [
     { code: 'en', label: 'English', nativeLabel: 'English' },
     { code: 'mr', label: 'Marathi', nativeLabel: 'मराठी' },
-    { code: 'hi', label: 'Hindi', nativeLabel: 'हिन्दी' },
   ];
 
   useEffect(() => {
@@ -761,7 +763,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       type="button"
                       className={`lang-dropdown-item${lang.code === selectedLanguage ? ' active' : ''}`}
                       onClick={() => {
-                        const code = lang.code as 'en' | 'mr' | 'hi';
+                        const code = lang.code as 'en' | 'mr';
                         setSelectedLanguage(code);
                         i18n.changeLanguage(code);
                         try { localStorage.setItem('agribiz_language', code); } catch {}
@@ -1040,7 +1042,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             {toast.type === 'success' && <CheckCircle2 size={18} style={{ color: 'var(--color-success)' }} />}
             {toast.type === 'error' && <AlertCircle size={18} style={{ color: 'var(--color-danger)' }} />}
             {toast.type === 'info' && <Info size={18} style={{ color: 'var(--color-info)' }} />}
-            <span>{toast.message}</span>
+            <span>{typeof toast.message === 'string' ? t(toast.message, toast.message) : String(toast.message || '')}</span>
           </div>
         </div>
       )}

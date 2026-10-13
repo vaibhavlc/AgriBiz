@@ -665,7 +665,7 @@ export const Dashboard: React.FC = () => {
                   borderRadius: '50%',
                   transition: 'background-color 0.2s',
                 }}
-                title="Alert settings"
+                title={t('dashboard.alertSettings', 'Alert settings')}
               >
                 <Settings size={16} />
               </button>
@@ -706,7 +706,7 @@ export const Dashboard: React.FC = () => {
               <button 
                 onClick={() => setIsAlertDismissed(true)} 
                 style={{ background: 'none', border: 'none', color: 'var(--color-danger-dark)', cursor: 'pointer', padding: '4px', display: 'flex', alignItems: 'center' }}
-                title="Dismiss warning"
+                title={t('dashboard.dismissWarning', 'Dismiss warning')}
               >
                 <X size={16} />
               </button>
@@ -729,7 +729,7 @@ export const Dashboard: React.FC = () => {
             {settings.showLogo && settings.logo && (
               <img 
                 src={settings.logo} 
-                alt="Business Logo" 
+                alt={t('dashboard.businessLogoAlt', 'Business Logo')} 
                 style={{ width: '56px', height: '56px', objectFit: 'contain', borderRadius: '10px', flexShrink: 0 }} 
               />
             )}
@@ -746,7 +746,7 @@ export const Dashboard: React.FC = () => {
           <button 
             className="btn btn-secondary btn-icon"
             onClick={triggerRefresh}
-            title="Recalculate metrics"
+            title={t('dashboard.recalculateMetrics', 'Recalculate metrics')}
             disabled={isRefreshing}
             style={{ 
               flexShrink: 0, 
