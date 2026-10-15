@@ -6,7 +6,8 @@ import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
-import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
+import { InvoiceDocument } from '../components/InvoiceDocument';
+import { formatINR, formatDate, getTodayISTDate, roundTo2 } from '../utils/dummyData';
 import { translatePaymentMethod, translateStatus } from '../utils/statusTranslation';
 import { KpiCard } from '../components/KpiCard';
 import type { Invoice, Quotation } from '../types';
@@ -68,6 +69,7 @@ export const Sales: React.FC = () => {
     setSalesActiveTab,
     showToast,
     settings,
+    updateSettings,
     setViewCustomer,
     setCurrentTab,
     salesFormPresetCustomerId,
@@ -162,8 +164,33 @@ export const Sales: React.FC = () => {
     }
   }, [isCreatingQuotation, !!initialQuotationValues]);
 
-  // Print Template Selector (A5 standard vs Thermal receipt POS roll)
-  const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
+  // Print Template Selector (A4 standard GST invoice vs A5 compact bill book vs Thermal receipt POS roll)
+  const [printTemplate, setPrintTemplate] = useState<'A4' | 'A5' | 'Thermal'>('A4');
+
+  const currentInvoiceLanguage: 'mr' | 'en' =
+    settings.invoiceLanguage ||
+    (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_invoice_language') as 'mr' | 'en') : null) ||
+    'mr';
+
+  const handleToggleInvoiceLanguage = (newLang: 'mr' | 'en') => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('agribiz_invoice_language', newLang);
+      } catch (e) {}
+    }
+    updateSettings({
+      ...settings,
+      invoiceLanguage: newLang,
+    });
+    if (showToast) {
+      showToast(
+        newLang === 'mr'
+          ? t('settings.invoiceLanguageSetMr', 'Invoice language set to Marathi (मराठी)')
+          : t('settings.invoiceLanguageSetEn', 'Invoice language set to English'),
+        'success'
+      );
+    }
+  };
 
   // Modals & Filters
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
@@ -221,8 +248,10 @@ export const Sales: React.FC = () => {
     tempEl.style.setProperty('transform', 'none', 'important');
     tempEl.style.setProperty('box-shadow', 'none', 'important');
     tempEl.style.setProperty('border-radius', '0', 'important');
-    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+    const targetWidth = printTemplate === 'A4' ? '210mm' : printTemplate === 'A5' ? '148mm' : '80mm';
+    const targetHeight = printTemplate === 'A5' ? '210mm' : 'auto';
+    tempEl.style.setProperty('width', targetWidth, 'important');
+    tempEl.style.setProperty('height', targetHeight, 'important');
     tempEl.style.setProperty('margin', '0', 'important');
     tempEl.style.setProperty('display', 'block', 'important');
 
@@ -244,9 +273,9 @@ export const Sales: React.FC = () => {
             return;
           }
           
-          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
-          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory") || kid.innerText.includes(t('sales.receiversSignature', "Receiver's Signature"));
-          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!") || kid.innerText.includes(t('sales.thankYouBusiness', 'Thank you for your business!'));
+          const isSvgIllustration = kid.classList.contains('invoice-decor-row') || (kid.querySelector('svg') && !kid.querySelector('p'));
+          const isSignatureRow = kid.classList.contains('invoice-signatures-row') || kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory") || kid.innerText.includes("स्वाक्षरी") || kid.innerText.includes(t('sales.receiversSignature', "Receiver's Signature"));
+          const isFooterMessage = kid.classList.contains('invoice-footer-message') || kid.style.fontSize === '9px' || kid.innerText.includes("Thank you") || kid.innerText.includes("धन्यवाद") || kid.innerText.includes(t('sales.thankYouBusiness', 'Thank you for your business!'));
           
           if (isSvgIllustration || isSignatureRow || isFooterMessage) {
             bottomKids.push(kid);
@@ -321,6 +350,10 @@ export const Sales: React.FC = () => {
         }
       }
 
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
       const canvas = await html2canvas(tempEl, {
         scale: 2.5,
         useCORS: true,
@@ -348,7 +381,7 @@ export const Sales: React.FC = () => {
               <style>
                 @page {
                   margin: 0;
-                  size: ${printTemplate === 'A5' ? 'A5 portrait' : 'auto'};
+                  size: ${printTemplate === 'A4' ? 'A4 portrait' : printTemplate === 'A5' ? 'A5 portrait' : 'auto'};
                 }
                 body {
                   margin: 0;
@@ -407,8 +440,10 @@ export const Sales: React.FC = () => {
     tempEl.style.setProperty('transform', 'none', 'important');
     tempEl.style.setProperty('box-shadow', 'none', 'important');
     tempEl.style.setProperty('border-radius', '0', 'important');
-    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+    const targetWidth = printTemplate === 'A4' ? '210mm' : printTemplate === 'A5' ? '148mm' : '80mm';
+    const targetHeight = printTemplate === 'A5' ? '210mm' : 'auto';
+    tempEl.style.setProperty('width', targetWidth, 'important');
+    tempEl.style.setProperty('height', targetHeight, 'important');
     tempEl.style.setProperty('margin', '0', 'important');
     tempEl.style.setProperty('display', 'block', 'important');
 
@@ -430,9 +465,9 @@ export const Sales: React.FC = () => {
             return;
           }
           
-          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
-          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
-          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
+          const isSvgIllustration = kid.classList.contains('invoice-decor-row') || (kid.querySelector('svg') && !kid.querySelector('p'));
+          const isSignatureRow = kid.classList.contains('invoice-signatures-row') || kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory") || kid.innerText.includes("स्वाक्षरी") || kid.innerText.includes(t('sales.receiversSignature', "Receiver's Signature"));
+          const isFooterMessage = kid.classList.contains('invoice-footer-message') || kid.style.fontSize === '9px' || kid.innerText.includes("Thank you") || kid.innerText.includes("धन्यवाद") || kid.innerText.includes(t('sales.thankYouBusiness', 'Thank you for your business!'));
           
           if (isSvgIllustration || isSignatureRow || isFooterMessage) {
             bottomKids.push(kid);
@@ -507,6 +542,10 @@ export const Sales: React.FC = () => {
         }
       }
 
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
       const canvas = await html2canvas(tempEl, {
         scale: 2.5,
         useCORS: true,
@@ -518,13 +557,13 @@ export const Sales: React.FC = () => {
         ? `${selectedInvoice.invoiceNumber}.pdf` 
         : `${selectedQuotation?.quotationNumber || 'estimate'}.pdf`;
 
-      const imgWidth = printTemplate === 'A5' ? 148 : 80;
-      const imgHeight = printTemplate === 'A5' ? 210 : (canvas.height * imgWidth) / canvas.width;
+      const imgWidth = printTemplate === 'A4' ? 210 : printTemplate === 'A5' ? 148 : 80;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
+        format: printTemplate === 'A4' ? [210, Math.max(297, imgHeight)] : printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
       });
 
       doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
@@ -597,8 +636,10 @@ export const Sales: React.FC = () => {
     tempEl.style.setProperty('transform', 'none', 'important');
     tempEl.style.setProperty('box-shadow', 'none', 'important');
     tempEl.style.setProperty('border-radius', '0', 'important');
-    tempEl.style.setProperty('width', printTemplate === 'A5' ? '148mm' : '80mm', 'important');
-    tempEl.style.setProperty('height', printTemplate === 'A5' ? '210mm' : 'auto', 'important');
+    const targetWidth = printTemplate === 'A4' ? '210mm' : printTemplate === 'A5' ? '148mm' : '80mm';
+    const targetHeight = printTemplate === 'A5' ? '210mm' : 'auto';
+    tempEl.style.setProperty('width', targetWidth, 'important');
+    tempEl.style.setProperty('height', targetHeight, 'important');
     tempEl.style.setProperty('margin', '0', 'important');
     tempEl.style.setProperty('display', 'block', 'important');
 
@@ -620,9 +661,9 @@ export const Sales: React.FC = () => {
             return;
           }
           
-          const isSvgIllustration = kid.querySelector('svg') && !kid.querySelector('p');
-          const isSignatureRow = kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory");
-          const isFooterMessage = kid.style.fontSize === '9px' || kid.innerText.includes("Thank you for your business!");
+          const isSvgIllustration = kid.classList.contains('invoice-decor-row') || (kid.querySelector('svg') && !kid.querySelector('p'));
+          const isSignatureRow = kid.classList.contains('invoice-signatures-row') || kid.innerText.includes("Receiver's Signature") || kid.innerText.includes("Authorized Signatory") || kid.innerText.includes("स्वाक्षरी") || kid.innerText.includes(t('sales.receiversSignature', "Receiver's Signature"));
+          const isFooterMessage = kid.classList.contains('invoice-footer-message') || kid.style.fontSize === '9px' || kid.innerText.includes("Thank you") || kid.innerText.includes("धन्यवाद") || kid.innerText.includes(t('sales.thankYouBusiness', 'Thank you for your business!'));
           
           if (isSvgIllustration || isSignatureRow || isFooterMessage) {
             bottomKids.push(kid);
@@ -697,6 +738,10 @@ export const Sales: React.FC = () => {
         }
       }
 
+      if (document.fonts) {
+        await document.fonts.ready;
+      }
+
       const canvas = await html2canvas(tempEl, {
         scale: 2.5,
         useCORS: true,
@@ -704,13 +749,13 @@ export const Sales: React.FC = () => {
       });
 
       const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      const imgWidth = printTemplate === 'A5' ? 148 : 80;
-      const imgHeight = printTemplate === 'A5' ? 210 : (canvas.height * imgWidth) / canvas.width;
+      const imgWidth = printTemplate === 'A4' ? 210 : printTemplate === 'A5' ? 148 : 80;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
-        format: printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
+        format: printTemplate === 'A4' ? [210, Math.max(297, imgHeight)] : printTemplate === 'A5' ? [148, 210] : [80, imgHeight],
       });
 
       doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
@@ -1528,15 +1573,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   // 1. DETAILS / PRINT VIEW (WITH TEMPLATE TOGGLING)
   if (selectedInvoice) {
     const customerDetail = customers.find((c) => c.id === selectedInvoice.customerId);
-    const isInterState = customerDetail && customerDetail.state && settings.state && customerDetail.state !== settings.state;
-    const invoiceTotals = {
-      subtotal: selectedInvoice.subtotal,
-      discountTotal: selectedInvoice.discountTotal,
-      gstTotal: selectedInvoice.gstTotal,
-      grandTotal: selectedInvoice.grandTotal,
-      amountPaid: selectedInvoice.amountPaid,
-      balanceDue: selectedInvoice.balanceDue,
-    };
 
     return (
       <div style={{ animation: "fadeIn 0.2s ease-out" }}>
@@ -1546,12 +1582,39 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewInvoice(null)}>
               <ArrowLeft size={16} /> {t("sales.backToInvoices", "Back to Invoices")}
             </button>
-            <div className="template-selector-group">
-              <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
-              <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
-                <option value="Thermal">{t('sales.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
-              </select>
+            <div className="template-selector-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
+                <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A4" | "A5" | "Thermal")}>
+                  <option value="A4">{t('sales.standardA4', 'Standard A4 GST Invoice')}</option>
+                  <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
+                  <option value="Thermal">{t('sales.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
+                </select>
+              </div>
+
+              <div className="invoice-lang-toggle-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--bg-secondary)', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  {t('settings.invoiceLanguage', 'Language')}:
+                </span>
+                <button
+                  type="button"
+                  className={`btn btn-xs ${currentInvoiceLanguage === 'mr' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'mr' ? 700 : 500 }}
+                  onClick={() => handleToggleInvoiceLanguage('mr')}
+                  title="मराठीत बिल प्रिंट करा"
+                >
+                  मराठी
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-xs ${currentInvoiceLanguage === 'en' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'en' ? 700 : 500 }}
+                  onClick={() => handleToggleInvoiceLanguage('en')}
+                  title="Print invoice in English"
+                >
+                  English
+                </button>
+              </div>
             </div>
           </div>
           <div className="action-buttons-grid">
@@ -1567,378 +1630,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           </div>
         </div>
 
-        {printTemplate === "A5" ? (
-          <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
-              {/* Dynamic Logo Watermark in Center */}
-              {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-                <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
-                  <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
-                </div>
-              )}
-              {/* Elegant leafy branch corner watermark */}
-              <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
-                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 90 Q 50 50 90 10" />
-                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#000000" />
-                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#000000" />
-                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#000000" />
-                </svg>
-              </div>
-
-              {/* Header: Logo, Company Info, Invoice Title */}
-              <div className="invoice-header-bar">
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                  {settings.showLogo && settings.logo && (
-                    <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
-                      <img 
-                        src={settings.logo} 
-                        alt="Business Logo" 
-                        style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="invoice-company-name">{settings.businessName}</h2>
-                    {settings.showAddress && (
-                      <p className="invoice-company-sub">{getFullAddress(settings)}</p>
-                    )}
-                    {settings.showContact && (
-                      <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{t("sales.emailLabel", "Email:")} {settings.email}</span>}
-                        {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
-                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{t("sales.mobLabel", "Mob:")} {settings.phone}</span>}
-                        {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
-                        {settings.website && <span style={{ whiteSpace: 'nowrap' }}>{t("sales.webLabel", "Web:")} {settings.website}</span>}
-                      </p>
-                    )}
-                    {settings.showGstin && settings.gstin && (
-                      <p className="invoice-company-gst">{t("sales.gstinLabel", "GSTIN:")} {settings.gstin}</p>
-                    )}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-title">{t("sales.taxInvoice", "INVOICE")}</h1>
-                  <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
-                  <p className="invoice-date-text">{t("sales.dateLabel", "Date:")} {formatDate(selectedInvoice.date)}</p>
-                </div>
-              </div>
-
-            {/* Billed To and Payment details */}
-            <div className="invoice-billing-details">
-              <div>
-                <h4 className="invoice-detail-header">{t("sales.billingTo", "Billing to:")}</h4>
-                {customerDetail ? (
-                  <>
-                    <h3 className="invoice-customer-name">
-                      <button
-                        type="button"
-                        className="table-link-btn customer-link no-print"
-                        style={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'var(--primary)', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
-                        onClick={() => {
-                          setViewCustomer(customerDetail.id);
-                          setCurrentTab('customers');
-                          setViewInvoice(null);
-                        }}
-                      >
-                        {customerDetail.name}
-                      </button>
-                      <span className="print-only">{customerDetail.name}</span>
-                    </h3>
-                    <p className="invoice-customer-sub">{customerDetail.address || t("sales.addressNa", "Address: N/A")}</p>
-                    <p className="invoice-customer-sub">{t("sales.phoneLabel", "Phone:")} {customerDetail.phone}</p>
-                    {customerDetail.gstin && (
-                      <p className="invoice-customer-gst">{t("sales.gstinLabel", "GSTIN:")} {customerDetail.gstin}</p>
-                    )}
-                  </>
-                ) : (
-                  <h3 className="invoice-customer-name">{t("sales.walkInCustomer", "Walk-in Customer")}</h3>
-                )}
-              </div>
-              <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
-                <h4 className="invoice-detail-header">{t("sales.paymentInfo", "Payment Info:")}</h4>
-                <span className={`invoice-payment-badge ${selectedInvoice.paymentStatus.toLowerCase()}`}>
-                  {translateStatus(t, selectedInvoice.paymentStatus).toUpperCase()}
-                </span>
-                {selectedInvoice.paymentMethod && (
-                  <p className="invoice-customer-sub" style={{ marginTop: "6px", fontWeight: 600 }}>
-                    {t("sales.methodLabel", "Method:")} {translatePaymentMethod(t, selectedInvoice.paymentMethod)}
-                  </p>
-                )}
-                {selectedInvoice.referenceNumber && (
-                  <p className="invoice-customer-sub" style={{ marginTop: "3px", fontWeight: 600 }}>
-                    {selectedInvoice.paymentMethod === 'Cheque' ? t('sales.chequeNo', 'Cheque No.') : t('sales.txnRefNo', 'Txn / UTR No.')}: {selectedInvoice.referenceNumber}
-                  </p>
-                )}
-                {selectedInvoice.dueDate && selectedInvoice.balanceDue > 0 && (
-                  <p className="invoice-customer-sub" style={{ marginTop: "3px", fontWeight: 600, color: 'var(--color-danger)' }}>
-                    {t("sales.dueBy", "Due By:")} {formatDate(selectedInvoice.dueDate)}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Items Table */}
-            <table className="invoice-table">
-              <thead>
-                <tr>
-                  <th style={{ width: "40px", textAlign: "center" }}>{t('sales.srNo', 'Sr')}</th>
-                  <th style={{ textAlign: "left" }}>{t('sales.productDescription', 'Product / Description')}</th>
-                  <th style={{ width: "80px", textAlign: "center" }}>{t('sales.gst', 'GST')}</th>
-                  <th style={{ width: "90px", textAlign: "right" }}>{t("sales.priceHeader", "Price (₹)")}</th>
-                  <th style={{ width: "60px", textAlign: "center" }}>{t('sales.qty', 'Qty')}</th>
-                  <th style={{ width: "70px", textAlign: "right" }}>{t('sales.discPercent', 'Disc (%)')}</th>
-                  <th style={{ width: "100px", textAlign: "right" }}>{t("sales.totalHeader", "Total (₹)")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {selectedInvoice.items.map((item, index) => (
-                  <tr key={index}>
-                    <td style={{ textAlign: "center" }}>{index + 1}</td>
-                    <td style={{ fontWeight: 600 }}>{item.productName}</td>
-                    <td style={{ textAlign: "center" }}>{item.gstRate}%</td>
-                    <td style={{ textAlign: "right" }}>{item.price.toFixed(2)}</td>
-                    <td style={{ textAlign: "center" }}>{item.quantity}</td>
-                    <td style={{ textAlign: "right" }}>{item.discount}%</td>
-                    <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total.toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {/* Bottom summary and remarks */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
-              <div style={{ flex: 1, maxWidth: "55%" }}>
-                {settings.showBankDetails && settings.bankName && (
-                  <div style={{ marginBottom: "8px" }}>
-                    <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>{t('sales.bankDetails', 'BANK DETAILS:')}</h5>
-                    <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.bank', 'Bank:')}</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
-                      </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acName', 'A/c Name:')}</span> {settings.accountHolderName}
-                      </div>
-                      <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acNo', 'A/c No:')}</span> {settings.accountNumber}
-                        <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                        <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.ifsc', 'IFSC:')}</span> {settings.ifscCode}
-                        {settings.upiId && (
-                          <>
-                            <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                            <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.upi', 'UPI:')}</span> {settings.upiId}
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {settings.showTerms && (settings.invoiceTerms || settings.defaultTerms) && (
-                  <>
-                    <h5 className="invoice-terms-title">{t('sales.termsConditions', 'TERMS & CONDITIONS:')}</h5>
-                    <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
-                      {settings.invoiceTerms || settings.defaultTerms}
-                    </p>
-                  </>
-                )}
-                {selectedInvoice.notes && (
-                  <>
-                    <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>{t('sales.note', 'NOTE:')}</h5>
-                    <p className="invoice-terms-text">{selectedInvoice.notes}</p>
-                  </>
-                )}
-              </div>
-              <div style={{ minWidth: "200px" }}>
-                <table className="invoice-summary-table">
-                  <tbody>
-                    <tr>
-                      <td>{t('sales.subtotal', 'Subtotal')}</td>
-                      <td>{formatINR(invoiceTotals.subtotal)}</td>
-                    </tr>
-                    {invoiceTotals.discountTotal > 0 && (
-                      <tr className="discount-row">
-                        <td>{t('sales.discountMinus', 'Discount (-)')}</td>
-                        <td>{formatINR(invoiceTotals.discountTotal)}</td>
-                      </tr>
-                    )}
-                    {isInterState ? (
-                      <tr>
-                        <td>{t("sales.igst", "IGST")} ({selectedInvoice.items[0]?.gstRate || 18}%)</td>
-                        <td>{formatINR(invoiceTotals.gstTotal)}</td>
-                      </tr>
-                    ) : (
-                      <>
-                        <tr>
-                          <td>{t("sales.cgst", "CGST")} ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
-                          <td>{formatINR(invoiceTotals.gstTotal / 2)}</td>
-                        </tr>
-                        <tr>
-                          <td>{t("sales.sgst", "SGST")} ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</td>
-                          <td>{formatINR(invoiceTotals.gstTotal / 2)}</td>
-                        </tr>
-                      </>
-                    )}
-                    <tr className="grand-total-row">
-                      <td>{t('sales.totalCaps', 'TOTAL')}</td>
-                      <td>{formatINR(invoiceTotals.grandTotal)}</td>
-                    </tr>
-                    <tr className="collected-row">
-                      <td>{t('sales.collected', 'Collected')}</td>
-                      <td>{formatINR(invoiceTotals.amountPaid)}</td>
-                    </tr>
-                    {invoiceTotals.balanceDue > 0 && (
-                      <tr className="due-row">
-                        <td>{t('sales.balanceDue', 'Balance Due')}</td>
-                        <td>{formatINR(invoiceTotals.balanceDue)}</td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-                        {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "2px", width: "100%", flexShrink: 0 }}>
-              {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height="30" style={{ display: "block", maxWidth: "360px" }}>
-                {/* Ground line */}
-                <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
-                
-                {/* 1. Tractor with Plow */}
-                <rect x="20" y="35" width="45" height="25" fill="#4E6C50" rx="3" />
-                <rect x="30" y="20" width="28" height="16" fill="none" stroke="#4E6C50" strokeWidth="2" rx="1" />
-                <rect x="32" y="22" width="24" height="12" fill="#FCFAF6" rx="0.5" />
-                <rect x="65" y="40" width="18" height="20" fill="#4E6C50" />
-                <line x1="83" y1="42" x2="83" y2="55" stroke="#EAE3D2" strokeWidth="1.5" />
-                <line x1="72" y1="40" x2="72" y2="18" stroke="#2F3E33" strokeWidth="1.5" />
-                {/* Tractor Wheels */}
-                <circle cx="32" cy="60" r="13" fill="#2F3E33" />
-                <circle cx="32" cy="60" r="5" fill="#EAE3D2" />
-                <circle cx="72" cy="63" r="9" fill="#2F3E33" />
-                <circle cx="72" cy="63" r="3.5" fill="#EAE3D2" />
-                {/* Plow attachment */}
-                <path d="M 20 48 L 5 48 L 0 65 M 5 65 L 10 48" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
-                <line x1="0" y1="65" x2="-6" y2="70" stroke="#2F3E33" strokeWidth="1.5" />
-                <line x1="5" y1="65" x2="-1" y2="70" stroke="#2F3E33" strokeWidth="1.5" />
-
-                {/* 2. Engineering Gear Wheels */}
-                <circle cx="160" cy="45" r="16" stroke="#4E6C50" strokeWidth="2" fill="none" />
-                <circle cx="160" cy="45" r="6" fill="#4E6C50" />
-                <path d="M 160 25 L 160 29 M 160 61 L 160 65 M 140 45 L 144 45 M 176 45 L 180 45 M 146 31 L 149 34 M 171 56 T 174 59 M 146 59 L 149 56 M 171 31 L 174 34" stroke="#4E6C50" strokeWidth="3" />
-                
-                <circle cx="190" cy="55" r="11" stroke="#2F3E33" strokeWidth="2" fill="none" />
-                <circle cx="190" cy="55" r="4" fill="#2F3E33" />
-                <path d="M 190 41 L 190 44 M 190 66 L 190 69 M 176 55 L 179 55 M 201 55 L 204 55" stroke="#2F3E33" strokeWidth="2.5" />
-
-                {/* 3. Centrifugal Water Pump & Motor */}
-                <rect x="265" y="35" width="40" height="25" fill="#4E6C50" rx="2" />
-                {/* Motor fins */}
-                <line x1="270" y1="35" x2="270" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="275" y1="35" x2="275" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="280" y1="35" x2="280" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="285" y1="35" x2="285" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="290" y1="35" x2="290" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="295" y1="35" x2="295" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <circle cx="318" cy="47" r="14" fill="#2F3E33" />
-                {/* Suction & Delivery Pipes */}
-                <rect x="313" y="61" width="10" height="14" fill="#2F3E33" />
-                <rect x="308" y="72" width="20" height="3" fill="#4E6C50" rx="0.5" />
-                <path d="M 322 35 Q 328 20 338 20 L 348 20" stroke="#2F3E33" strokeWidth="4" strokeLinecap="round" fill="none" />
-                {/* Water Nozzle Spray */}
-                <path d="M 350 18 Q 360 15 370 21 M 350 20 Q 360 23 370 19" stroke="#EAE3D2" strokeWidth="1" fill="none" opacity="0.6" />
-
-                {/* 4. Power Knapsack Sprayer Tank */}
-                <rect x="410" y="25" width="26" height="38" fill="#4E6C50" rx="6" />
-                <rect x="418" y="21" width="10" height="4" fill="#2F3E33" rx="1" />
-                <circle cx="423" cy="35" r="4.5" fill="#FCFAF6" stroke="#2F3E33" strokeWidth="1" />
-                <path d="M 436 55 Q 445 65 448 50 T 452 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
-                <line x1="452" y1="35" x2="472" y2="15" stroke="#2F3E33" strokeWidth="1" />
-                {/* Spray mist */}
-                <circle cx="474" cy="13" r="1" fill="#EAE3D2" opacity="0.5" />
-                <circle cx="477" cy="11" r="1.5" fill="#EAE3D2" opacity="0.4" />
-                <circle cx="475" cy="17" r="1.2" fill="#EAE3D2" opacity="0.4" />
-              </svg>
-            </div>
-
-            {/* Signatures Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "2px", width: "100%", flexShrink: 0 }}>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: "6px" }}></div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  {t('sales.receiversSignature', "Receiver's Signature")}
-                </p>
-              </div>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: "6px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                  {settings.signature && selectedInvoice.showSignature !== false ? (
-                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "22px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
-                  ) : null}
-                </div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  {t('sales.authorizedSignatory', 'Authorized Signatory')}
-                </p>
-              </div>
-            </div>
-            {settings.footerMessage && (
-                <div style={{
-                  textAlign: "center",
-                  fontSize: "9px",
-                  color: "var(--text-muted)",
-                  borderTop: "1px dashed var(--border-color)",
-                  paddingTop: "4px",
-                  marginTop: "8px",
-                  width: "100%",
-                  flexShrink: 0
-                }}>
-                  {settings.footerMessage}
-                </div>
-              )}
-            </div>
-          </div>
-      ) : (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="print-invoice-layout thermal">
-              <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
-                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
-                {settings.showContact && (
-                  <p style={{ margin: 0, fontSize: "11px" }}>
-                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
-                  </p>
-                )}
-                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
-              </div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t("sales.billNoLabel", "Bill No:")} <strong>{selectedInvoice.invoiceNumber}</strong></span><span>{t("sales.dateLabel", "Date:")} {formatDate(selectedInvoice.date)}</span></div>                <div>Customer:{' '}
-                  {customerDetail ? (
-                    <>
-                      <button
-                        type="button"
-                        className="table-link-btn customer-link no-print"
-                        style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
-                        onClick={() => {
-                          setViewCustomer(customerDetail.id);
-                          setCurrentTab('customers');
-                          setViewInvoice(null);
-                        }}
-                      >
-                        <strong>{customerDetail.name}</strong>
-                      </button>
-                      <strong className="print-only">{customerDetail.name}</strong>
-                    </>
-                  ) : (
-                    <strong>{t('sales.walkInCustomer', 'Walk-in Customer')}</strong>
-                  )}
-                </div>{customerDetail?.phone && <div>{t("sales.phoneLabel", "Phone:")} {customerDetail.phone}</div>}</div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{t('sales.item', 'ITEM')}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>{t('sales.amtCaps', 'AMT')}({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>{t("sales.rateLabel", "Rate:")} {settings.currencySymbol || "₹"}{item.price} | {t("sales.gstLabel", "GST:")} {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.totalTaxable', 'Total Taxable')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{t('sales.discountMinus', 'Discount (-)')}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>{t("sales.grandTotalCaps", "GRAND TOTAL")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>{t("sales.cashCollectedCaps", "CASH COLLECTED")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>{t("sales.balanceDueCaps", "BALANCE DUE")}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || t("sales.thankYouVisitAgain", "THANK YOU! VISIT AGAIN.")}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div></div>
-            </div>
-          </div>
-        )}
+        <div className="invoice-mockup-wrapper" style={{ display: 'flex', justifyContent: 'center' }}>
+          <InvoiceDocument
+            invoice={selectedInvoice}
+            customer={customerDetail}
+            settings={settings}
+            language={currentInvoiceLanguage}
+            template={printTemplate}
+            onCustomerClick={(id) => {
+              setViewCustomer(id);
+              setCurrentTab('customers');
+              setViewInvoice(null);
+            }}
+            formatDateFn={(str) => formatDate(str || '')}
+          />
+        </div>
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteInvoice(selectedInvoice.id || selectedInvoice.invoiceNumber, selectedInvoice.invoiceNumber)}>
             <Trash2 size={16} /> {t("sales.deleteResetStock", "Delete & Reset Stock")}
@@ -1951,13 +1657,6 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
   if (selectedQuotation) {
     const customerDetail = customers.find((c) => c.id === selectedQuotation.customerId);
-    const isInterState = customerDetail && customerDetail.state && settings.state && customerDetail.state !== settings.state;
-    const quotationTotals = {
-      subtotal: selectedQuotation.subtotal,
-      discountTotal: selectedQuotation.discountTotal,
-      gstTotal: selectedQuotation.gstTotal,
-      grandTotal: selectedQuotation.grandTotal,
-    };
 
     return (
       <div style={{ animation: "fadeIn 0.2s ease-out" }}>
@@ -1967,12 +1666,39 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewQuotation(null)}>
               <ArrowLeft size={16} /> {t("sales.backToQuotations", "Back to Quotations")}
             </button>
-            <div className="template-selector-group">
-              <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
-              <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
-                <option value="Thermal">{t('sales.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
-              </select>
+            <div className="template-selector-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
+                <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A4" | "A5" | "Thermal")}>
+                  <option value="A4">{t('sales.standardA4', 'Standard A4 GST Invoice')}</option>
+                  <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
+                  <option value="Thermal">{t('sales.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
+                </select>
+              </div>
+
+              <div className="invoice-lang-toggle-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--bg-secondary)', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
+                  {t('settings.invoiceLanguage', 'Language')}:
+                </span>
+                <button
+                  type="button"
+                  className={`btn btn-xs ${currentInvoiceLanguage === 'mr' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'mr' ? 700 : 500 }}
+                  onClick={() => handleToggleInvoiceLanguage('mr')}
+                  title="मराठीत कोटेशन प्रिंट करा"
+                >
+                  मराठी
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-xs ${currentInvoiceLanguage === 'en' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'en' ? 700 : 500 }}
+                  onClick={() => handleToggleInvoiceLanguage('en')}
+                  title="Print quotation in English"
+                >
+                  English
+                </button>
+              </div>
             </div>
           </div>
           <div className="action-buttons-grid">
@@ -1988,413 +1714,21 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           </div>
         </div>
 
-        {printTemplate === "A5" ? (
-          <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
-              {/* Dynamic Logo Watermark in Center */}
-              {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
-                <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
-                  <img src={settings.watermarkLogo || settings.logo} alt="Watermark" />
-                </div>
-              )}
-              {/* Elegant leafy branch corner watermark */}
-              <div style={{ position: "absolute", top: "8px", right: "8px", opacity: 0.08, pointerEvents: "none", zIndex: 1 }}>
-                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" stroke="#000000" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M10 90 Q 50 50 90 10" />
-                  <path d="M90 10 C80 20 65 25 60 15 C55 5 70 0 90 10" fill="#000000" />
-                  <path d="M70 30 C60 40 45 45 40 35 C35 25 50 20 70 30" fill="#000000" />
-                  <path d="M50 50 C40 60 25 65 20 55 C15 45 30 40 50 50" fill="#000000" />
-                </svg>
-              </div>
-
-              {/* Header: Logo, Company Info, Title */}
-              <div className="invoice-header-bar">
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                  {settings.showLogo && settings.logo && (
-                    <div className="invoice-logo-container" style={{ flexShrink: 0, margin: 0, padding: 0 }}>
-                      <img 
-                        src={settings.logo} 
-                        alt="Business Logo" 
-                        style={{ maxWidth: "120px", maxHeight: "120px", objectFit: "contain", borderRadius: "8px", margin: 0, padding: 0 }} 
-                      />
-                    </div>
-                  )}
-                  <div>
-                    <h2 className="invoice-company-name">{settings.businessName}</h2>
-                    {settings.showAddress && (
-                      <p className="invoice-company-sub">{getFullAddress(settings)}</p>
-                    )}
-                    {settings.showContact && (
-                      <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                        {settings.email && <span style={{ whiteSpace: 'nowrap' }}>Email: {settings.email}</span>}
-                        {settings.email && (settings.phone || settings.website) && <span style={{ opacity: 0.5 }}>|</span>}
-                        {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>Mob: {settings.phone}</span>}
-                        {settings.phone && settings.website && <span style={{ opacity: 0.5 }}>|</span>}
-                        {settings.website && <span style={{ whiteSpace: 'nowrap' }}>Web: {settings.website}</span>}
-                      </p>
-                    )}
-                    {settings.showGstin && settings.gstin && (
-                      <p className="invoice-company-gst">GSTIN: {settings.gstin}</p>
-                    )}
-                  </div>
-                </div>
-                <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-title" style={{ color: 'var(--primary)' }}>{t('sales.estimate', 'ESTIMATE')}</h1>
-                  <h3 className="invoice-number-text">#{selectedQuotation.quotationNumber}</h3>
-                  <p className="invoice-date-text">{t("sales.dateLabel", "Date:")} {formatDate(selectedQuotation.date)}</p>
-                </div>
-              </div>
-
-              {/* Billed To and Payment details */}
-              <div className="invoice-billing-details">
-                <div>
-                  <h4 className="invoice-detail-header">{t('sales.estimateFor', 'Estimate for:')}</h4>
-                  {customerDetail ? (
-                    <>
-                      <h3 className="invoice-customer-name">
-                        <button
-                          type="button"
-                          className="table-link-btn customer-link no-print"
-                          style={{ fontSize: 'inherit', fontWeight: 'inherit', color: 'var(--primary)', padding: 0, border: 'none', background: 'none', cursor: 'pointer', textAlign: 'left' }}
-                          onClick={() => {
-                            setViewCustomer(customerDetail.id);
-                            setCurrentTab('customers');
-                            setViewQuotation(null);
-                          }}
-                        >
-                          {customerDetail.name}
-                        </button>
-                        <span className="print-only">{customerDetail.name}</span>
-                      </h3>
-                      <p className="invoice-customer-sub">{customerDetail.address || "Address: N/A"}</p>
-                      <p className="invoice-customer-sub">Phone: {customerDetail.phone}</p>
-                      {customerDetail.gstin && (
-                        <p className="invoice-customer-gst">GSTIN: {customerDetail.gstin}</p>
-                      )}
-                    </>
-                  ) : (
-                    <h3 className="invoice-customer-name">{t("sales.walkInCustomer", "Walk-in Customer")}</h3>
-                  )}
-                </div>
-                <div style={{ textAlign: "right", display: "flex", flexDirection: "column", justifyContent: "flex-start", alignItems: "flex-end" }}>
-                  <h4 className="invoice-detail-header">{t('sales.validityInfo', 'Validity Info:')}</h4>
-                  <span className="invoice-payment-badge paid" style={{ backgroundColor: 'rgba(59,130,246,0.1)', color: '#3b82f6', border: '1px solid rgba(59,130,246,0.2)' }}>
-                    {t("sales.validUntilCaps", "VALID UNTIL:")} {formatDate(selectedQuotation.validUntil)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Items Table */}
-              <table className="invoice-table">
-                <thead>
-                  <tr>
-                    <th style={{ width: "40px", textAlign: "center" }}>{t('sales.srNo', 'Sr')}</th>
-                    <th style={{ textAlign: "left" }}>{t('sales.productDescription', 'Product / Description')}</th>
-                    <th style={{ width: "80px", textAlign: "center" }}>{t('sales.gst', 'GST')}</th>
-                    <th style={{ width: "90px", textAlign: "right" }}>{t("sales.priceHeader", "Price (₹)")}</th>
-                    <th style={{ width: "60px", textAlign: "center" }}>{t('sales.qty', 'Qty')}</th>
-                    <th style={{ width: "70px", textAlign: "right" }}>{t('sales.discPercent', 'Disc (%)')}</th>
-                    <th style={{ width: "100px", textAlign: "right" }}>{t("sales.totalHeader", "Total (₹)")}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedQuotation.items.map((item, index) => (
-                    <tr key={index}>
-                      <td style={{ textAlign: "center" }}>{index + 1}</td>
-                      <td style={{ fontWeight: 600 }}>{item.productName}</td>
-                      <td style={{ textAlign: "center" }}>{item.gstRate}%</td>
-                      <td style={{ textAlign: "right" }}>{item.price.toFixed(2)}</td>
-                      <td style={{ textAlign: "center" }}>{item.quantity}</td>
-                      <td style={{ textAlign: "right" }}>{item.discount}%</td>
-                      <td style={{ textAlign: "right", fontWeight: 600 }}>{item.total.toFixed(2)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-
-              {/* Bottom summary and remarks */}
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "24px" }}>
-                <div style={{ flex: 1, maxWidth: "55%" }}>
-                  {settings.showBankDetails && settings.bankName && (
-                    <div style={{ marginBottom: "8px" }}>
-                      <h5 className="invoice-terms-title" style={{ marginBottom: "4px" }}>{t('sales.bankDetails', 'BANK DETAILS:')}</h5>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "1.5px", marginTop: "4px" }}>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.bank', 'Bank:')}</span> {settings.bankName}{settings.branchName ? ` (${settings.branchName})` : ""}
-                        </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acName', 'A/c Name:')}</span> {settings.accountHolderName}
-                        </div>
-                        <div style={{ fontSize: "9.5px", color: "var(--text-muted)", whiteSpace: "nowrap" }}>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.acNo', 'A/c No:')}</span> {settings.accountNumber}
-                          <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                          <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.ifsc', 'IFSC:')}</span> {settings.ifscCode}
-                          {settings.upiId && (
-                            <>
-                              <span style={{ margin: "0 6px", color: "#EAE3D2" }}>|</span>
-                              <span style={{ fontWeight: 700, color: "#2F3E33" }}>{t('sales.upi', 'UPI:')}</span> {settings.upiId}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                  {settings.showTerms && (settings.quotationTerms || settings.defaultTerms) && (
-                    <>
-                      <h5 className="invoice-terms-title">{t('sales.termsConditions', 'TERMS & CONDITIONS:')}</h5>
-                      <p className="invoice-terms-text" style={{ whiteSpace: "pre-wrap" }}>
-                        {settings.quotationTerms || settings.defaultTerms}
-                      </p>
-                    </>
-                  )}
-                  {selectedQuotation.notes && (
-                    <>
-                      <h5 className="invoice-terms-title" style={{ marginTop: "8px" }}>{t('sales.note', 'NOTE:')}</h5>
-                      <p className="invoice-terms-text">{selectedQuotation.notes}</p>
-                    </>
-                  )}
-                </div>
-                <div style={{ minWidth: "200px" }}>
-                  <table className="invoice-summary-table">
-                    <tbody>
-                      <tr>
-                        <td>{t('sales.subtotal', 'Subtotal')}</td>
-                        <td>{formatINR(quotationTotals.subtotal)}</td>
-                      </tr>
-                      {quotationTotals.discountTotal > 0 && (
-                        <tr className="discount-row">
-                          <td>{t('sales.discountMinus', 'Discount (-)')}</td>
-                          <td>{formatINR(quotationTotals.discountTotal)}</td>
-                        </tr>
-                      )}
-                      {isInterState ? (
-                        <tr>
-                          <td>IGST ({selectedQuotation.items[0]?.gstRate || 18}%)</td>
-                          <td>{formatINR(quotationTotals.gstTotal)}</td>
-                        </tr>
-                      ) : (
-                        <>
-                          <tr>
-                            <td>CGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</td>
-                            <td>{formatINR(quotationTotals.gstTotal / 2)}</td>
-                          </tr>
-                          <tr>
-                            <td>SGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</td>
-                            <td>{formatINR(quotationTotals.gstTotal / 2)}</td>
-                          </tr>
-                        </>
-                      )}
-                      <tr className="grand-total-row">
-                        <td>{t('sales.totalCaps', 'TOTAL')}</td>
-                        <td>{formatINR(quotationTotals.grandTotal)}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-                          {/* SVG Illustration centered */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: "2px", width: "100%", flexShrink: 0 }}>
-              {/* Custom Inline SVG Illustration */}
-              <svg viewBox="0 0 500 80" width="100%" height="30" style={{ display: "block", maxWidth: "360px" }}>
-                {/* Ground line */}
-                <line x1="0" y1="75" x2="500" y2="75" stroke="#EAE3D2" strokeWidth="2.5" />
-                
-                {/* 1. Tractor with Plow */}
-                <rect x="20" y="35" width="45" height="25" fill="#4E6C50" rx="3" />
-                <rect x="30" y="20" width="28" height="16" fill="none" stroke="#4E6C50" strokeWidth="2" rx="1" />
-                <rect x="32" y="22" width="24" height="12" fill="#FCFAF6" rx="0.5" />
-                <rect x="65" y="40" width="18" height="20" fill="#4E6C50" />
-                <line x1="83" y1="42" x2="83" y2="55" stroke="#EAE3D2" strokeWidth="1.5" />
-                <line x1="72" y1="40" x2="72" y2="18" stroke="#2F3E33" strokeWidth="1.5" />
-                {/* Tractor Wheels */}
-                <circle cx="32" cy="60" r="13" fill="#2F3E33" />
-                <circle cx="32" cy="60" r="5" fill="#EAE3D2" />
-                <circle cx="72" cy="63" r="9" fill="#2F3E33" />
-                <circle cx="72" cy="63" r="3.5" fill="#EAE3D2" />
-                {/* Plow attachment */}
-                <path d="M 20 48 L 5 48 L 0 65 M 5 65 L 10 48" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
-                <line x1="0" y1="65" x2="-6" y2="70" stroke="#2F3E33" strokeWidth="1.5" />
-                <line x1="5" y1="65" x2="-1" y2="70" stroke="#2F3E33" strokeWidth="1.5" />
-
-                {/* 2. Engineering Gear Wheels */}
-                <circle cx="160" cy="45" r="16" stroke="#4E6C50" strokeWidth="2" fill="none" />
-                <circle cx="160" cy="45" r="6" fill="#4E6C50" />
-                <path d="M 160 25 L 160 29 M 160 61 L 160 65 M 140 45 L 144 45 M 176 45 L 180 45 M 146 31 L 149 34 M 171 56 T 174 59 M 146 59 L 149 56 M 171 31 L 174 34" stroke="#4E6C50" strokeWidth="3" />
-                
-                <circle cx="190" cy="55" r="11" stroke="#2F3E33" strokeWidth="2" fill="none" />
-                <circle cx="190" cy="55" r="4" fill="#2F3E33" />
-                <path d="M 190 41 L 190 44 M 190 66 L 190 69 M 176 55 L 179 55 M 201 55 L 204 55" stroke="#2F3E33" strokeWidth="2.5" />
-
-                {/* 3. Centrifugal Water Pump & Motor */}
-                <rect x="265" y="35" width="40" height="25" fill="#4E6C50" rx="2" />
-                {/* Motor fins */}
-                <line x1="270" y1="35" x2="270" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="275" y1="35" x2="275" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="280" y1="35" x2="280" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="285" y1="35" x2="285" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="290" y1="35" x2="290" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <line x1="295" y1="35" x2="295" y2="60" stroke="#FCFAF6" strokeWidth="1" />
-                <circle cx="318" cy="47" r="14" fill="#2F3E33" />
-                {/* Suction & Delivery Pipes */}
-                <rect x="313" y="61" width="10" height="14" fill="#2F3E33" />
-                <rect x="308" y="72" width="20" height="3" fill="#4E6C50" rx="0.5" />
-                <path d="M 322 35 Q 328 20 338 20 L 348 20" stroke="#2F3E33" strokeWidth="4" strokeLinecap="round" fill="none" />
-                {/* Water Nozzle Spray */}
-                <path d="M 350 18 Q 360 15 370 21 M 350 20 Q 360 23 370 19" stroke="#EAE3D2" strokeWidth="1" fill="none" opacity="0.6" />
-
-                {/* 4. Power Knapsack Sprayer Tank */}
-                <rect x="410" y="25" width="26" height="38" fill="#4E6C50" rx="6" />
-                <rect x="418" y="21" width="10" height="4" fill="#2F3E33" rx="1" />
-                <circle cx="423" cy="35" r="4.5" fill="#FCFAF6" stroke="#2F3E33" strokeWidth="1" />
-                <path d="M 436 55 Q 445 65 448 50 T 452 35" stroke="#2F3E33" strokeWidth="1.5" fill="none" />
-                <line x1="452" y1="35" x2="472" y2="15" stroke="#2F3E33" strokeWidth="1" />
-                {/* Spray mist */}
-                <circle cx="474" cy="13" r="1" fill="#EAE3D2" opacity="0.5" />
-                <circle cx="477" cy="11" r="1.5" fill="#EAE3D2" opacity="0.4" />
-                <circle cx="475" cy="17" r="1.2" fill="#EAE3D2" opacity="0.4" />
-              </svg>
-            </div>
-
-            {/* Signatures Row */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginTop: "2px", width: "100%", flexShrink: 0 }}>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: "6px" }}></div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  {t('sales.receiversSignature', "Receiver's Signature")}
-                </p>
-              </div>
-              <div style={{ textAlign: "center", minWidth: "110px" }}>
-                <div style={{ height: "6px", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
-                  {settings.signature ? (
-                    <img src={settings.signature} alt="E-Signature" style={{ maxHeight: "22px", maxWidth: "100px", objectFit: "contain", mixBlendMode: "multiply" }} />
-                  ) : null}
-                </div>
-                <p style={{ borderTop: "1.5px solid #EAE3D2", paddingTop: "6px", fontSize: "11px", fontWeight: 700, color: "#4E6C50", whiteSpace: "nowrap" }}>
-                  {t('sales.authorizedSignatory', 'Authorized Signatory')}
-                </p>
-              </div>
-            </div>
-              {settings.footerMessage && (
-                <div style={{
-                  textAlign: "center",
-                  fontSize: "9px",
-                  color: "var(--text-muted)",
-                  borderTop: "1px dashed var(--border-color)",
-                  paddingTop: "4px",
-                  marginTop: "8px",
-                  width: "100%",
-                  flexShrink: 0
-                }}>
-                  {settings.footerMessage}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="print-invoice-layout thermal">
-              <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
-                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
-                {settings.showContact && (
-                  <p style={{ margin: 0, fontSize: "11px" }}>
-                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
-                  </p>
-                )}
-                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
-              </div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>{t('sales.estNoHeader', 'Est No')}: <strong>{selectedQuotation.quotationNumber}</strong></span>
-                  <span>{t('sales.dateLabel', 'Date:')} {formatDate(selectedQuotation.date)}</span>
-                </div>
-                <div>{t('sales.customer', 'Customer')}:{' '}
-                  {customerDetail ? (
-                    <>
-                      <button
-                        type="button"
-                        className="table-link-btn customer-link no-print"
-                        style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
-                        onClick={() => {
-                          setViewCustomer(customerDetail.id);
-                          setCurrentTab('customers');
-                          setViewQuotation(null);
-                        }}
-                      >
-                        <strong>{customerDetail.name}</strong>
-                      </button>
-                      <strong className="print-only">{customerDetail.name}</strong>
-                    </>
-                  ) : (
-                    <strong>{t('sales.walkInCustomer', 'Walk-in Customer')}</strong>
-                  )}
-                </div>
-                {customerDetail?.phone && <div>{t('sales.phoneLabel', 'Phone:')} {customerDetail.phone}</div>}
-              </div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}>
-                <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
-                  <span>{t('sales.item', 'ITEM')}</span>
-                  <span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span>
-                  <span style={{ textAlign: "right" }}>{t('sales.amtCaps', 'AMT')}({settings.currencySymbol || "₹"})</span>
-                </div>
-                <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
-                {selectedQuotation.items.map((item, index) => (
-                  <div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}>
-                    <div>
-                      <span style={{ fontWeight: "bold" }}>{item.productName}</span>
-                      <div style={{ fontSize: "10px", color: "#555" }}>{t('sales.rateLabel', 'Rate:')} {settings.currencySymbol || "₹"}{item.price} | {t('sales.gstLabel', 'GST:')} {item.gstRate}%</div>
-                    </div>
-                    <span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
-                    <span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span>
-                  </div>
-                ))}
-              </div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>{t('sales.totalTaxable', 'Total Taxable')}</span>
-                  <span>₹{quotationTotals.subtotal.toFixed(2)}</span>
-                </div>
-                {quotationTotals.discountTotal > 0 && (
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>{t('sales.discountMinus', 'Discount (-)')}</span>
-                    <span>₹{quotationTotals.discountTotal.toFixed(2)}</span>
-                  </div>
-                )}
-                {isInterState ? (
-                  <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>IGST ({selectedQuotation.items[0]?.gstRate || 18}%)</span>
-                    <span>₹{quotationTotals.gstTotal.toFixed(2)}</span>
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>CGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</span>
-                      <span>₹{(quotationTotals.gstTotal / 2).toFixed(2)}</span>
-                    </div>
-                    <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span>SGST ({(selectedQuotation.items[0]?.gstRate || 18) / 2}%)</span>
-                      <span>₹{(quotationTotals.gstTotal / 2).toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
-                <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
-                  <span>{t('sales.grandTotalEst', 'GRAND TOTAL EST')}</span>
-                  <span>₹{quotationTotals.grandTotal.toFixed(2)}</span>
-                </div>
-              </div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div>{settings.footerMessage || t("sales.thankYouVisitAgain", "THANK YOU! VISIT AGAIN.")}</div>
-                {selectedQuotation.notes && <div style={{ fontStyle: "italic" }}>"{selectedQuotation.notes}"</div>}
-                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div>
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="invoice-mockup-wrapper" style={{ display: 'flex', justifyContent: 'center' }}>
+          <InvoiceDocument
+            quotation={selectedQuotation}
+            customer={customerDetail}
+            settings={settings}
+            language={currentInvoiceLanguage}
+            template={printTemplate}
+            onCustomerClick={(id) => {
+              setViewCustomer(id);
+              setCurrentTab('customers');
+              setViewQuotation(null);
+            }}
+            formatDateFn={(str) => formatDate(str || '')}
+          />
+        </div>
 
         {/* Bottom Actions Row */}
         <div className="no-print preview-actions-row" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>

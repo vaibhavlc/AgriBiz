@@ -1,5 +1,5 @@
-/* Inter and Outfit fonts from Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+/* Inter, Outfit, and Mukta fonts from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Mukta:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 :root {
   /* Fonts */
@@ -4631,21 +4631,76 @@ html.light .glass-bottom-nav {
 
 .invoice-print-container {
   background-color: #FFFFFF !important;
-  color: #000000 !important;
-  border: 2px solid #000000 !important;
-  border-radius: 12px !important;
-  font-family: 'Outfit', 'Inter', sans-serif !important;
-  padding: 24px 24px 38px 24px !important; /* Extra bottom padding for absolute footer */
-  box-shadow: 0 15px 50px rgba(130, 76, 54, 0.08) !important;
+  color: #0f172a !important;
+  border: 1px solid #d1e2d6 !important;
+  border-radius: 8px !important;
+  font-family: 'Mukta', 'Inter', -apple-system, sans-serif !important;
+  padding: 26px 28px !important;
+  box-shadow: 0 10px 30px rgba(27, 67, 50, 0.06) !important;
   position: relative;
   overflow: hidden;
   text-align: left;
-  width: 148mm; /* Standard A5 Width */
-  height: 210mm; /* Standard A5 Height */
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  justify-content: space-between; /* Pins bottom row/SVG to the bottom */
+  justify-content: space-between;
+}
+
+.invoice-print-container.a4-layout {
+  width: 210mm;
+  min-height: 297mm;
+  height: auto;
+  padding: 30px 32px 36px 32px !important;
+}
+
+.invoice-print-container.a5-layout {
+  width: 148mm;
+  min-height: 210mm;
+  height: auto;
+  padding: 20px 22px 28px 22px !important;
+}
+
+/* Devanagari typography hierarchy */
+.invoice-marathi {
+  font-family: 'Mukta', 'Noto Sans Devanagari', -apple-system, sans-serif !important;
+  line-height: 1.5;
+}
+
+.invoice-marathi .invoice-main-title {
+  font-family: 'Mukta', sans-serif !important;
+  font-weight: 800 !important;
+  color: #1b4332 !important;
+  letter-spacing: 0.2px !important;
+}
+
+.invoice-marathi .invoice-company-name {
+  font-family: 'Mukta', sans-serif !important;
+  font-weight: 800 !important;
+  color: #1b4332 !important;
+}
+
+.invoice-marathi .invoice-detail-header,
+.invoice-marathi .invoice-terms-title {
+  font-family: 'Mukta', sans-serif !important;
+  font-weight: 700 !important;
+  color: #1b4332 !important;
+  letter-spacing: 0.2px !important;
+}
+
+.invoice-marathi .invoice-table th {
+  font-family: 'Mukta', sans-serif !important;
+  font-weight: 800 !important;
+  color: #1b4332 !important;
+}
+
+.invoice-marathi .invoice-table td {
+  font-family: 'Mukta', sans-serif !important;
+  line-height: 1.5 !important;
+}
+
+.invoice-num-font {
+  font-family: 'Outfit', 'Inter', sans-serif !important;
+  font-variant-numeric: tabular-nums;
 }
 
 /* Watermark Pattern in Center */
@@ -5029,7 +5084,12 @@ html.light .glass-bottom-nav {
     margin: 0;
   }
 
-  @page invoice-page {
+  @page invoice-page-a4 {
+    size: A4 portrait;
+    margin: 0;
+  }
+
+  @page invoice-page-a5 {
     size: A5 portrait;
     margin: 0;
   }
@@ -5054,17 +5114,29 @@ html.light .glass-bottom-nav {
   }
 
   .invoice-print-container {
-    page: invoice-page;
-    background-color: #FCFAF6 !important;
+    background-color: #ffffff !important;
     border: none !important;
-    padding: 24px !important; /* Keep original padding */
     box-shadow: none !important;
-    width: 148mm !important; /* Fixed A5 Width */
-    height: 210mm !important; /* Fixed A5 Height */
-    overflow: hidden !important; /* Force hide overflow scrollbars */
+    overflow: hidden !important;
     scrollbar-width: none !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+  }
+
+  .invoice-print-container.a4-layout {
+    page: invoice-page-a4;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    height: auto !important;
+    padding: 24px 28px !important;
+  }
+
+  .invoice-print-container.a5-layout {
+    page: invoice-page-a5;
+    width: 148mm !important;
+    min-height: 210mm !important;
+    height: auto !important;
+    padding: 18px 20px !important;
   }
   
   .invoice-logo-pill {
@@ -5074,14 +5146,15 @@ html.light .glass-bottom-nav {
   }
   
   .invoice-table th {
-    background-color: rgba(78, 108, 80, 0.12) !important;
-    color: #2F3E33 !important;
+    background-color: #f0f7f2 !important;
+    color: #1b4332 !important;
+    border-bottom: 2px solid #1b4332 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
   
   .invoice-summary-table .grand-total-row td:last-child {
-    background-color: #BE3144 !important;
+    background-color: #1b4332 !important;
     color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;

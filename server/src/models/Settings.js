@@ -49,6 +49,7 @@ const settingsSchema = new mongoose.Schema(
     quotationTerms: { type: String },
     purchaseTerms: { type: String },
     footerMessage: { type: String },
+    invoiceLanguage: { type: String, enum: ['mr', 'en'], default: 'mr' },
     
     // Print Preferences
     showLogo: { type: Boolean, default: true },

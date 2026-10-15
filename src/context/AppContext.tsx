@@ -253,9 +253,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     
     const watermarkLogo = raw.watermarkLogo !== undefined ? raw.watermarkLogo : (cachedBranding?.watermarkLogoUrl || '');
     const businessName = toTitleCase(activeCompany?.businessName || cachedBranding?.businessName || raw.businessName || 'AgriBiz Suite');
+    const savedInvoiceLang = (typeof window !== 'undefined' && (localStorage.getItem('agribiz_invoice_language') as ('mr' | 'en'))) || raw.invoiceLanguage || 'mr';
 
     return {
       ...raw,
+      invoiceLanguage: savedInvoiceLang,
       logo,
       watermarkLogo,
       businessName,
@@ -752,8 +754,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const updatedWatermark = remoteSettings.watermarkLogo || '';
           const updatedName = toTitleCase(remoteSettings.businessName || prev.businessName);
 
+          const activeInvoiceLang = (typeof window !== 'undefined' && (localStorage.getItem('agribiz_invoice_language') as ('mr' | 'en'))) || remoteSettings.invoiceLanguage || 'mr';
           const updatedSettings = {
             ...remoteSettings,
+            invoiceLanguage: activeInvoiceLang,
             logo: updatedLogo,
             watermarkLogo: updatedWatermark,
             businessName: updatedName,
@@ -2061,6 +2065,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       await api.put('/settings', formatted);
       setSettings(formatted);
       clearAllDirtyForms();
+      if (formatted.invoiceLanguage) {
+        localStorage.setItem('agribiz_invoice_language', formatted.invoiceLanguage);
+      }
       sessionStorage.setItem('agribiz_settings', JSON.stringify(formatted));
       setCachedBranding({
         logoUrl: formatted.logo || '',

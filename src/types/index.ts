@@ -189,6 +189,7 @@ export interface BusinessSettings {
   quotationTerms?: string;
   purchaseTerms?: string;
   footerMessage?: string;
+  invoiceLanguage?: 'mr' | 'en';
 
   // Print Preferences
   showLogo: boolean;

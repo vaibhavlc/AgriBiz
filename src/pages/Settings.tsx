@@ -991,6 +991,13 @@ export const Settings: React.FC = () => {
   const [quotationTerms, setQuotationTerms] = useState(settings.quotationTerms || initialSettings.quotationTerms || '');
   const [purchaseTerms, setPurchaseTerms] = useState(settings.purchaseTerms || initialSettings.purchaseTerms || '');
   const [footerMessage, setFooterMessage] = useState(settings.footerMessage || '');
+  const [invoiceLanguage, setInvoiceLanguage] = useState<'mr' | 'en'>(() => {
+    return (
+      settings.invoiceLanguage ||
+      (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_invoice_language') as 'mr' | 'en') : null) ||
+      'mr'
+    );
+  });
 
   // Print Preferences
   const [showLogo, setShowLogo] = useState(settings.showLogo ?? true);
@@ -1042,6 +1049,7 @@ export const Settings: React.FC = () => {
     quotationTerms,
     purchaseTerms,
     footerMessage,
+    invoiceLanguage,
     showLogo,
     showGstin,
     showAddress,
@@ -1090,6 +1098,7 @@ export const Settings: React.FC = () => {
     quotationTerms: settings.quotationTerms || initialSettings.quotationTerms || '',
     purchaseTerms: settings.purchaseTerms || initialSettings.purchaseTerms || '',
     footerMessage: settings.footerMessage || '',
+    invoiceLanguage: settings.invoiceLanguage || 'mr',
     showLogo: settings.showLogo ?? true,
     showGstin: settings.showGstin ?? true,
     showAddress: settings.showAddress ?? true,
@@ -1167,6 +1176,7 @@ export const Settings: React.FC = () => {
       quotationTerms,
       purchaseTerms,
       footerMessage,
+      invoiceLanguage,
       showLogo,
       showGstin,
       showAddress,
@@ -1189,6 +1199,33 @@ export const Settings: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     setTimeout(() => setSavedSuccess(false), 3000);
   };
+
+  const handleInvoiceLanguageChange = (lang: 'mr' | 'en') => {
+    setInvoiceLanguage(lang);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('agribiz_invoice_language', lang);
+      } catch (e) {}
+    }
+    updateSettings({
+      ...settings,
+      invoiceLanguage: lang,
+    });
+    if (showToast) {
+      showToast(
+        lang === 'mr'
+          ? t('settings.invoiceLanguageSetMr', 'Invoice language set to Marathi (मराठी)')
+          : t('settings.invoiceLanguageSetEn', 'Invoice language set to English'),
+        'success'
+      );
+    }
+  };
+
+  useEffect(() => {
+    if (settings.invoiceLanguage && settings.invoiceLanguage !== invoiceLanguage) {
+      setInvoiceLanguage(settings.invoiceLanguage);
+    }
+  }, [settings.invoiceLanguage]);
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2173,7 +2210,7 @@ export const Settings: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="form-row">
+                <div className="form-grid-2" style={{ marginTop: '12px' }}>
                   <div className="form-group" style={{ margin: 0 }}>
                     <label className="form-label">{t('settings.financialYear', 'Financial Year (F.Y.)')} *</label>
                     <select
@@ -2184,6 +2221,17 @@ export const Settings: React.FC = () => {
                       <option value="2025-2026">2025 - 2026</option>
                       <option value="2026-2027">2026 - 2027</option>
                       <option value="2027-2028">2027 - 2028</option>
+                    </select>
+                  </div>
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <label className="form-label">{t('settings.invoiceLanguageTitle', 'Default Invoice Language / बिलाची भाषा')} *</label>
+                    <select
+                      className="form-control"
+                      value={invoiceLanguage}
+                      onChange={(e) => handleInvoiceLanguageChange(e.target.value as 'mr' | 'en')}
+                    >
+                      <option value="mr">मराठी (Marathi)</option>
+                      <option value="en">English</option>
                     </select>
                   </div>
                 </div>
@@ -2300,6 +2348,46 @@ export const Settings: React.FC = () => {
                   >
                     {t('common.marathi', 'मराठी')} (Marathi)
                   </button>
+                </div>
+              </div>
+
+              {/* Dedicated Customer Invoice Language Card */}
+              <div className="card animate-fade-in" style={{ marginBottom: '20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(27, 67, 50, 0.12)', color: '#1b4332', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.invoiceLanguageTitle', 'Invoice Language / बिलाची भाषा')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.invoiceLanguageSubtitle', 'Select dedicated language for customer invoices & estimates (independent of app interface language)')}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    className={`btn ${invoiceLanguage === 'mr' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, minWidth: '150px', justifyContent: 'center', fontWeight: 700 }}
+                    onClick={() => handleInvoiceLanguageChange('mr')}
+                  >
+                    {t('settings.invoiceLanguageMr', 'मराठी (Marathi)')}
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn ${invoiceLanguage === 'en' ? 'btn-primary' : 'btn-secondary'}`}
+                    style={{ flex: 1, minWidth: '150px', justifyContent: 'center', fontWeight: 700 }}
+                    onClick={() => handleInvoiceLanguageChange('en')}
+                  >
+                    {t('settings.invoiceLanguageEn', 'English')}
+                  </button>
+                </div>
+
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '12px', lineHeight: 1.4 }}>
+                  {t('settings.invoiceLanguageNotice', 'Selected invoice language applies to invoice preview, PDF download, and paper printouts.')}
                 </div>
               </div>
 

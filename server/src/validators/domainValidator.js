@@ -205,6 +205,7 @@ export const settingsSchema = z.object({
   quotationTerms: z.string().optional().nullable(),
   purchaseTerms: z.string().optional().nullable(),
   footerMessage: z.string().optional().nullable(),
+  invoiceLanguage: z.enum(['mr', 'en']).optional().default('mr'),
   showLogo: z.boolean().default(true),
   showGstin: z.boolean().default(true),
   showAddress: z.boolean().default(true),
