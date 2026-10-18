@@ -105,8 +105,11 @@ export const formatDate = (dateStr: string): string => {
 };
 
 // Helper to format split address fields dynamically
-export const getFullAddress = (settings: any): string => {
+export const getFullAddress = (settings: any, lang?: 'mr' | 'en'): string => {
   if (!settings) return '';
+  if (lang === 'mr' && settings.addressMr && typeof settings.addressMr === 'string' && settings.addressMr.trim() !== '') {
+    return settings.addressMr.trim();
+  }
   if (!settings.addressLine1) return settings.address || '';
   const parts = [
     settings.addressLine1,
@@ -675,6 +678,13 @@ export const initialSettings: BusinessSettings = {
   district: 'Hoshangabad',
   state: 'Madhya Pradesh',
   pincode: '461775',
+
+  // Marathi Business Details & Invoice Titles
+  businessNameMr: 'अॅग्रीबिझ सीड्स अँड इम्पलिमेंट्स स्टोअर',
+  ownerNameMr: 'वैभव पटेल',
+  addressMr: 'दुकान क्र. १२-१४, कृषी मंडी कॉम्प्लेक्स, पिपरिया, मध्य प्रदेश - ४६१७७५',
+  invoiceHeader: 'TAX INVOICE',
+  invoiceHeaderMr: 'कर चलन',
 
   // Branding
   logo: '',

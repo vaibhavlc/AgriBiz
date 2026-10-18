@@ -652,6 +652,10 @@ export const Sales: React.FC = () => {
 
 
   const handleWhatsAppShare = async () => {
+    const activeBusinessName = (currentInvoiceLanguage === 'mr' && settings.businessNameMr?.trim())
+      ? settings.businessNameMr.trim()
+      : (settings.businessName || 'AgriBiz');
+
     const activeDoc = selectedInvoice 
       ? { 
           id: selectedInvoice.id, 
@@ -660,7 +664,7 @@ export const Sales: React.FC = () => {
           customerName: selectedInvoice.customerName,
           grandTotal: selectedInvoice.grandTotal,
           isQuotation: false,
-          msgText: `Your invoice *${selectedInvoice.invoiceNumber}* from *${settings.businessName}* has been generated.
+          msgText: `Your invoice *${selectedInvoice.invoiceNumber}* from *${activeBusinessName}* has been generated.
 
 *Summary of Transactions:*
 ---------------------------------------
@@ -677,7 +681,7 @@ export const Sales: React.FC = () => {
           customerName: selectedQuotation.customerName,
           grandTotal: selectedQuotation.grandTotal,
           isQuotation: true,
-          msgText: `Your quotation *${selectedQuotation.quotationNumber}* from *${settings.businessName}* has been generated.
+          msgText: `Your quotation *${selectedQuotation.quotationNumber}* from *${activeBusinessName}* has been generated.
 
 *Summary of Estimate:*
 ---------------------------------------
@@ -1643,6 +1647,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   if (selectedInvoice) {
     const customerDetail = customers.find((c) => c.id === selectedInvoice.customerId);
     const invLabels = getInvoiceLabels(currentInvoiceLanguage);
+    const displayBusinessName = (currentInvoiceLanguage === 'mr' && settings.businessNameMr?.trim())
+      ? settings.businessNameMr.trim()
+      : (settings.businessName || 'AgriBiz');
+    const displayAddress = getFullAddress(settings, currentInvoiceLanguage);
+    const displayInvoiceTitle = currentInvoiceLanguage === 'mr'
+      ? (settings.invoiceHeaderMr?.trim() || invLabels.invoiceTitle)
+      : (settings.invoiceHeader?.trim() || invLabels.invoiceTitle);
     const isInterState = customerDetail && customerDetail.state && settings.state && customerDetail.state !== settings.state;
     const invoiceTotals = {
       subtotal: selectedInvoice.subtotal,
@@ -1740,9 +1751,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
                   )}
                   <div>
-                    <h2 className="invoice-company-name">{settings.businessName}</h2>
+                    <h2 className="invoice-company-name">{displayBusinessName}</h2>
                     {settings.showAddress && (
-                      <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                      <p className="invoice-company-sub">{displayAddress}</p>
                     )}
                     {settings.showContact && (
                       <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
@@ -1759,7 +1770,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <h1 className="invoice-main-title">{invLabels.invoiceTitle}</h1>
+                  <h1 className="invoice-main-title">{displayInvoiceTitle}</h1>
                   <h3 className="invoice-number-text">#{selectedInvoice.invoiceNumber}</h3>
                   <p className="invoice-date-text">{invLabels.dateLabel} {formatDate(selectedInvoice.date)}</p>
                 </div>
@@ -2040,8 +2051,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
-                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>
+                  {currentInvoiceLanguage === 'en' ? displayBusinessName.toUpperCase() : displayBusinessName}
+                </h3>
+                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{displayAddress}</p>}
                 {settings.showContact && (
                   <p style={{ margin: 0, fontSize: "11px" }}>
                     {[settings.phone, settings.email].filter(Boolean).join(' • ')}
@@ -2093,6 +2106,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   if (selectedQuotation) {
     const customerDetail = customers.find((c) => c.id === selectedQuotation.customerId);
     const invLabels = getInvoiceLabels(currentInvoiceLanguage);
+    const displayBusinessName = (currentInvoiceLanguage === 'mr' && settings.businessNameMr?.trim())
+      ? settings.businessNameMr.trim()
+      : (settings.businessName || 'AgriBiz');
+    const displayAddress = getFullAddress(settings, currentInvoiceLanguage);
     const isInterState = customerDetail && customerDetail.state && settings.state && customerDetail.state !== settings.state;
     const quotationTotals = {
       subtotal: selectedQuotation.subtotal,
@@ -2188,9 +2205,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     </div>
                   )}
                   <div>
-                    <h2 className="invoice-company-name">{settings.businessName}</h2>
+                    <h2 className="invoice-company-name">{displayBusinessName}</h2>
                     {settings.showAddress && (
-                      <p className="invoice-company-sub">{getFullAddress(settings)}</p>
+                      <p className="invoice-company-sub">{displayAddress}</p>
                     )}
                     {settings.showContact && (
                       <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
@@ -2463,8 +2480,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           <div style={{ display: "flex", justifyContent: "center" }}>
             <div className="print-invoice-layout thermal">
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
-                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>
+                  {currentInvoiceLanguage === 'en' ? displayBusinessName.toUpperCase() : displayBusinessName}
+                </h3>
+                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{displayAddress}</p>}
                 {settings.showContact && (
                   <p style={{ margin: 0, fontSize: "11px" }}>
                     {[settings.phone, settings.email].filter(Boolean).join(' • ')}

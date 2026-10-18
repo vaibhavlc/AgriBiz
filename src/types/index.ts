@@ -164,6 +164,13 @@ export interface BusinessSettings {
   state: string;
   pincode: string;
 
+  // Marathi Business Details & Invoice Titles
+  businessNameMr?: string;
+  ownerNameMr?: string;
+  addressMr?: string;
+  invoiceHeader?: string;
+  invoiceHeaderMr?: string;
+
   // Branding
   logo?: string;
   watermarkLogo?: string;

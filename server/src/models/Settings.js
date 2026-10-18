@@ -24,6 +24,13 @@ const settingsSchema = new mongoose.Schema(
     pincode: { type: String, trim: true },
     address: { type: String, trim: true }, // Legacy fallback
     
+    // Marathi Business Details & Invoice Titles
+    businessNameMr: { type: String, trim: true },
+    ownerNameMr: { type: String, trim: true },
+    addressMr: { type: String, trim: true },
+    invoiceHeader: { type: String, trim: true, default: 'TAX INVOICE' },
+    invoiceHeaderMr: { type: String, trim: true, default: 'कर चलन' },
+    
     // Branding
     logo: { type: String },
     watermarkLogo: { type: String },

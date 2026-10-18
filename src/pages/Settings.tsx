@@ -44,6 +44,7 @@ import {
   ChevronDown,
   ChevronUp,
   Smartphone,
+  Languages,
 } from 'lucide-react';
 import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
@@ -898,6 +899,11 @@ export const Settings: React.FC = () => {
   // Business Information
   const [businessName, setBusinessName] = useState(settings.businessName || '');
   const [ownerName, setOwnerName] = useState(settings.ownerName || '');
+  const [businessNameMr, setBusinessNameMr] = useState(settings.businessNameMr || '');
+  const [ownerNameMr, setOwnerNameMr] = useState(settings.ownerNameMr || '');
+  const [addressMr, setAddressMr] = useState(settings.addressMr || '');
+  const [invoiceHeader, setInvoiceHeader] = useState(settings.invoiceHeader || 'TAX INVOICE');
+  const [invoiceHeaderMr, setInvoiceHeaderMr] = useState(settings.invoiceHeaderMr || 'कर चलन');
   const [gstin, setGstin] = useState(settings.gstin || '');
   const [panNumber, setPanNumber] = useState(settings.panNumber || '');
   const [businessType, setBusinessType] = useState(settings.businessType || '');
@@ -1016,6 +1022,11 @@ export const Settings: React.FC = () => {
   const currentFormValues = {
     businessName,
     ownerName,
+    businessNameMr,
+    ownerNameMr,
+    addressMr,
+    invoiceHeader,
+    invoiceHeaderMr,
     gstin,
     panNumber,
     businessType,
@@ -1065,6 +1076,11 @@ export const Settings: React.FC = () => {
   const initialFormValues = {
     businessName: settings.businessName || '',
     ownerName: settings.ownerName || '',
+    businessNameMr: settings.businessNameMr || '',
+    ownerNameMr: settings.ownerNameMr || '',
+    addressMr: settings.addressMr || '',
+    invoiceHeader: settings.invoiceHeader || 'TAX INVOICE',
+    invoiceHeaderMr: settings.invoiceHeaderMr || 'कर चलन',
     gstin: settings.gstin || '',
     panNumber: settings.panNumber || '',
     businessType: settings.businessType || '',
@@ -1143,6 +1159,11 @@ export const Settings: React.FC = () => {
     updateSettings({
       businessName: formattedBusinessName,
       ownerName: formattedOwnerName,
+      businessNameMr: businessNameMr.trim(),
+      ownerNameMr: ownerNameMr.trim(),
+      addressMr: addressMr.trim(),
+      invoiceHeader: invoiceHeader.trim() || 'TAX INVOICE',
+      invoiceHeaderMr: invoiceHeaderMr.trim() || 'कर चलन',
       gstin: formattedGSTIN,
       panNumber: formattedPAN,
       businessType,
@@ -1725,6 +1746,20 @@ export const Settings: React.FC = () => {
                     />
                   </div>
                 </div>
+
+                <div className="form-group" style={{ marginTop: '16px' }}>
+                  <label className="form-label">{t('settings.invoiceHeaderEn', 'Invoice Header (English)')}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="TAX INVOICE"
+                    value={invoiceHeader}
+                    onChange={(e) => setInvoiceHeader(e.target.value)}
+                  />
+                  <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                    {t('settings.invoiceHeaderEnHelp', 'Header title displayed on English invoices (default: TAX INVOICE)')}
+                  </small>
+                </div>
               </div>
 
               {/* Business Address */}
@@ -1863,6 +1898,93 @@ export const Settings: React.FC = () => {
                       required
                     />
                   </div>
+                </div>
+              </div>
+
+              {/* Marathi Business Details / मराठी व्यवसाय तपशील */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Languages size={18} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.marathiBusinessDetails', 'Marathi Business Details / मराठी व्यवसाय तपशील')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.marathiBusinessDetailsSubtitle', 'Manage business information for Marathi invoices (automatically used when Marathi invoice language is selected)')}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{
+                  padding: '10px 14px',
+                  backgroundColor: 'rgba(16, 185, 129, 0.07)',
+                  border: '1px solid rgba(16, 185, 129, 0.25)',
+                  borderRadius: '8px',
+                  marginBottom: '16px',
+                  fontSize: '12px',
+                  color: 'var(--text-primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <span style={{ fontSize: '14px' }}>ℹ️</span>
+                  <span>
+                    {t('settings.marathiDetailsNotice', 'ही माहिती मराठी भाषेतील पावत्यांवर (Invoices / Estimates) आपोआप दिसेल. जर येथे माहिती रिक्त ठेवली, तर इंग्रजी माहिती आपोआप वापरली जाईल.')}
+                  </span>
+                </div>
+
+                <div className="form-grid-2" style={{ marginTop: '16px' }}>
+                  <div className="form-group">
+                    <label className="form-label">{t('settings.businessNameMr', 'व्यवसायाचे नाव (मराठी)')}</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder={t('settings.businessNameMrPlaceholder', 'उदा. श्री गणेश ट्रेडर्स')}
+                      value={businessNameMr}
+                      onChange={(e) => setBusinessNameMr(e.target.value)}
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label className="form-label">{t('settings.ownerNameMr', 'मालकाचे नाव (मराठी)')}</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder={t('settings.ownerNameMrPlaceholder', 'उदा. राजेश पाटील')}
+                      value={ownerNameMr}
+                      onChange={(e) => setOwnerNameMr(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{t('settings.addressMr', 'व्यवसायाचा पत्ता (मराठी)')}</label>
+                  <textarea
+                    rows={2}
+                    className="form-control"
+                    placeholder={t('settings.addressMrPlaceholder', 'उदा. मेन रोड, रावेर, महाराष्ट्र - ४२५५०८')}
+                    value={addressMr}
+                    onChange={(e) => setAddressMr(e.target.value)}
+                    style={{ resize: 'vertical' }}
+                  />
+                  <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                    {t('settings.addressMrHelp', 'मराठी चलनावर छापण्यासाठी संपूर्ण पत्ता (गावं, तालुका, जिल्हा, पिनकोडसह)')}
+                  </small>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">{t('settings.invoiceHeaderMr', 'चलन शीर्षक (मराठी)')}</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="कर चलन"
+                    value={invoiceHeaderMr}
+                    onChange={(e) => setInvoiceHeaderMr(e.target.value)}
+                  />
+                  <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                    {t('settings.invoiceHeaderMrHelp', 'मराठी चलनावर दिसणारे मुख्य शीर्षक (डिफॉल्ट: कर चलन)')}
+                  </small>
                 </div>
               </div>
 
