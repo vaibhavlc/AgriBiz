@@ -34,6 +34,7 @@ import {
   TrendingUp,
   AlertTriangle,
   Share2,
+  Languages,
 } from 'lucide-react';
 import type { PurchaseItem, Product, Purchase } from '../types';
 
@@ -44,6 +45,82 @@ interface LocalPurchaseItem {
   discount: number; // percentage
   gstRate: number;
 }
+
+const getPurchaseLabels = (lang: 'en' | 'mr') => {
+  const isMr = lang === 'mr';
+  return {
+    voucherTitle: isMr ? 'खरेदी पावती' : 'PURCHASE',
+    dateLabel: isMr ? 'तारीख:' : 'Date:',
+    emailLabel: isMr ? 'ईमेल:' : 'Email:',
+    mobLabel: isMr ? 'मोबाईल:' : 'Mob:',
+    gstinRecipient: isMr ? 'GSTIN: {{gstin}} (प्राप्तकर्ता)' : 'GSTIN: {{gstin}} (Recipient)',
+    supplierSeller: isMr ? 'पुरवठादार (विक्रेता):' : 'Supplier (Seller):',
+    addressNa: isMr ? 'पत्ता: उपलब्ध नाही' : 'Address: N/A',
+    gstinLabel: 'GSTIN:',
+    generalVendor: isMr ? 'सर्वसाधारण विक्रेता' : 'General Vendor',
+    voucherStatus: isMr ? 'पावती स्थिती:' : 'Voucher Status:',
+    modeLabel: isMr ? 'पद्धत:' : 'Mode:',
+    srNo: isMr ? 'अ.क्र.' : 'Sr',
+    productDescription: isMr ? 'मालाचा तपशील / वस्तूचे नाव' : 'Product / Description',
+    gst: 'GST',
+    priceHeader: isMr ? 'दर (₹)' : 'Price (₹)',
+    qty: isMr ? 'नग' : 'Qty',
+    discPercent: isMr ? 'सवलत (%)' : 'Disc (%)',
+    totalHeader: isMr ? 'एकूण (₹)' : 'Total (₹)',
+    voucherDetailsCaps: isMr ? 'पावती तपशील:' : 'VOUCHER DETAILS:',
+    invoiceRef: isMr ? 'चलन संदर्भ:' : 'Invoice Ref:',
+    typeStatusLabel: isMr ? 'प्रकार | स्थिती:' : 'Type | Status:',
+    paymentDueDate: isMr ? 'देय तारीख:' : 'Payment Due Date:',
+    charges: isMr ? 'खर्च:' : 'Charges:',
+    txnReference: isMr ? 'व्यवहार संदर्भ:' : 'Txn Reference:',
+    remarks: isMr ? 'शेरा:' : 'Remarks:',
+    termsConditions: isMr ? 'नियम आणि अटी:' : 'TERMS & CONDITIONS:',
+    totalBaseCost: isMr ? 'एकूण मूळ रक्कम' : 'Total Base Cost',
+    inputCgst: isMr ? 'Input CGST (GST चा 50%)' : 'Input CGST (50% of GST)',
+    inputSgst: isMr ? 'Input SGST (GST चा 50%)' : 'Input SGST (50% of GST)',
+    totalExclCharges: isMr ? 'एकूण (खर्च वगळून)' : 'Total (Excl. Charges)',
+    additionalCharges: isMr ? 'इतर आकार / खर्च' : 'Additional Charges',
+    grandTotalInclCharges: isMr ? 'एकूण देय रक्कम' : 'Grand Total (Incl. Charges)',
+    amountPaid: isMr ? 'जमा रक्कम' : 'Amount Paid',
+    balanceDue: isMr ? 'शिल्लक रक्कम' : 'Balance Due',
+    receiversSignature: isMr ? 'स्वीकारणाऱ्याची स्वाक्षरी' : "Receiver's Signature",
+    authorizedSignatory: isMr ? 'अधिकृत स्वाक्षरी' : 'Authorized Signatory',
+    billNoLabel: isMr ? 'बिल क्र.:' : 'Bill No:',
+    supplierLabel: isMr ? 'पुरवठादार:' : 'Supplier:',
+    itemCaps: isMr ? 'वस्तू' : 'ITEM',
+    qtyCaps: isMr ? 'नग' : 'QTY',
+    rateLabel: isMr ? 'दर' : 'RATE',
+    amtCaps: isMr ? 'रक्कम' : 'AMT',
+    totalBaseThermal: isMr ? 'एकूण मूळ:' : 'Total Base:',
+    gstThermal: 'GST:',
+    netPayableThermal: isMr ? 'एकूण देय:' : 'Net Payable:',
+    paidThermal: isMr ? 'जमा:' : 'Paid:',
+    balanceThermal: isMr ? 'शिल्लक:' : 'Balance:',
+    statusThermal: isMr ? 'स्थिती:' : 'Status:',
+  };
+};
+
+const translatePurchaseStatus = (status: string, isMr: boolean) => {
+  if (!isMr) return (status || '').toUpperCase();
+  switch (status?.toLowerCase()) {
+    case 'paid': return 'पूर्ण भरणा (PAID)';
+    case 'partial': return 'अंशतः भरणा (PARTIAL)';
+    case 'unpaid': return 'थकबाकी (UNPAID)';
+    default: return (status || '').toUpperCase();
+  }
+};
+
+const translatePurchasePaymentMethod = (method: string, isMr: boolean) => {
+  if (!isMr) return method;
+  switch (method?.toLowerCase()) {
+    case 'cash': return 'रोख (Cash)';
+    case 'upi': return 'UPI';
+    case 'bank transfer': return 'बँक ट्रान्सफर (Bank Transfer)';
+    case 'cheque': return 'धनादेश (Cheque)';
+    case 'credit': return 'उधारी (Credit)';
+    default: return method;
+  }
+};
 
 export const Purchases: React.FC = () => {
   const { t } = useTranslation();
@@ -81,6 +158,28 @@ export const Purchases: React.FC = () => {
   const [activePreviewPurchase, setActivePreviewPurchase] = useState<Purchase | null>(null);
   const [initialPurchaseValues, setInitialPurchaseValues] = useState<any>(null);
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
+  const [currentInvoiceLanguage, setCurrentInvoiceLanguage] = useState<'mr' | 'en'>(() => {
+    return (
+      (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_invoice_language') as 'mr' | 'en') : null) ||
+      settings.invoiceLanguage ||
+      'mr'
+    );
+  });
+
+  useEffect(() => {
+    if (settings.invoiceLanguage) {
+      setCurrentInvoiceLanguage(settings.invoiceLanguage);
+    }
+  }, [settings.invoiceLanguage]);
+
+  const handleToggleInvoiceLanguage = (lang: 'mr' | 'en') => {
+    setCurrentInvoiceLanguage(lang);
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('agribiz_invoice_language', lang);
+      } catch (e) {}
+    }
+  };
   const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
   const [isDeletingPurchase, setIsDeletingPurchase] = useState(false);
 
@@ -938,12 +1037,16 @@ export const Purchases: React.FC = () => {
       const pdfBlob = doc.output('blob');
       const pdfFile = new File([pdfBlob], `${selectedPurchase.purchaseNumber}.pdf`, { type: 'application/pdf' });
       
+      const activeBusinessName = (currentInvoiceLanguage === 'mr' && settings.businessNameMr?.trim())
+        ? settings.businessNameMr.trim()
+        : (settings.businessName || 'AgriBiz');
+
       const nav = navigator as any;
       if (nav.canShare && nav.canShare({ files: [pdfFile] })) {
         await nav.share({
           files: [pdfFile],
           title: `Purchase Bill ${selectedPurchase.purchaseNumber}`,
-          text: `Purchase Bill from ${settings.businessName}`
+          text: `Purchase Bill from ${activeBusinessName}`
         });
         showToast(t('purchases.docSharedSuccess', 'Document shared successfully!'));
       } else {
@@ -958,7 +1061,7 @@ export const Purchases: React.FC = () => {
 
         const message = `Hello ${supplierDetail?.name || 'Supplier'},
 
-Your purchase bill *${selectedPurchase.purchaseNumber}* from *${settings.businessName}* has been generated.
+Your purchase bill *${selectedPurchase.purchaseNumber}* from *${activeBusinessName}* has been generated.
 
 *Summary of Transaction:*
 ---------------------------------------
@@ -1447,6 +1550,11 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
   // 1. Voucher details A4 view
   if (selectedPurchase) {
     const supplierDetail = suppliers.find((s) => s.id === selectedPurchase.supplierId);
+    const purchaseLabels = getPurchaseLabels(currentInvoiceLanguage);
+    const displayBusinessName = (currentInvoiceLanguage === 'mr' && settings.businessNameMr?.trim())
+      ? settings.businessNameMr.trim()
+      : (settings.businessName || 'AgriBiz');
+    const displayAddress = getFullAddress(settings, currentInvoiceLanguage);
     const totals = {
       subtotal: selectedPurchase.subtotal,
       gstTotal: selectedPurchase.gstTotal,
@@ -1517,12 +1625,37 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewPurchase(null)}>
               <ArrowLeft size={16} /> {t("purchases.backToPurchases", "Back to Purchases")}
             </button>
-            <div className="template-selector-group">
-              <span className="template-label">{t("purchases.printTemplate", "Print Template:")}</span>
-              <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
-                <option value="A5">{t('purchases.standardA5', 'Standard A5 Bill Book')}</option>
-                <option value="Thermal">{t('purchases.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
-              </select>
+            <div className="invoice-header-controls">
+              <div className="template-selector-group">
+                <span className="template-label">{t("purchases.printTemplate", "Print Template:")}</span>
+                <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
+                  <option value="A5">{t('purchases.standardA5', 'Standard A5 Bill Book')}</option>
+                  <option value="Thermal">{t('purchases.thermal3Inch', 'Thermal 3-Inch roll POS')}</option>
+                </select>
+              </div>
+
+              <div className="invoice-lang-toggle-group" role="group" aria-label="Purchase Voucher Language">
+                <div className="invoice-lang-icon-badge">
+                  <Languages size={13} />
+                  <span>Lang</span>
+                </div>
+                <button
+                  type="button"
+                  className={`invoice-lang-pill ${currentInvoiceLanguage === 'en' ? 'active' : ''}`}
+                  onClick={() => handleToggleInvoiceLanguage('en')}
+                  title="Print voucher in English"
+                >
+                  English
+                </button>
+                <button
+                  type="button"
+                  className={`invoice-lang-pill ${currentInvoiceLanguage === 'mr' ? 'active' : ''}`}
+                  onClick={() => handleToggleInvoiceLanguage('mr')}
+                  title="मराठीत पावती प्रिंट करा"
+                >
+                  मराठी
+                </button>
+              </div>
             </div>
           </div>
           <div className="action-buttons-grid">
@@ -1541,7 +1674,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""} ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
@@ -1576,29 +1709,31 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                   </div>
                 )}
                 <div>
-                  <h2 className="invoice-company-name">{settings.businessName}</h2>
-                  {settings.showAddress && <p className="invoice-company-sub">{getFullAddress(settings)}</p>}
+                  <h2 className="invoice-company-name">{displayBusinessName}</h2>
+                  {settings.showAddress && <p className="invoice-company-sub">{displayAddress}</p>}
                   {settings.showContact && (
                     <p className="invoice-company-sub" style={{ display: 'flex', flexWrap: 'nowrap', gap: '4px 6px', alignItems: 'center', margin: '2px 0 0 0', whiteSpace: 'nowrap' }}>
-                      {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{t('purchases.emailLabel', 'Email:')} {settings.email}</span>}
+                      {settings.email && <span style={{ whiteSpace: 'nowrap' }}>{purchaseLabels.emailLabel} {settings.email}</span>}
                       {settings.email && settings.phone && <span style={{ opacity: 0.5 }}>|</span>}
-                      {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{t('purchases.mobLabel', 'Mob:')} {settings.phone}</span>}
+                      {settings.phone && <span style={{ whiteSpace: 'nowrap' }}>{purchaseLabels.mobLabel} {settings.phone}</span>}
                     </p>
                   )}
-                  {settings.showGstin && settings.gstin && <p className="invoice-company-gst">{t('purchases.gstinRecipient', 'GSTIN: {{gstin}} (Recipient)', { gstin: settings.gstin })}</p>}
+                  {settings.showGstin && settings.gstin && (
+                    <p className="invoice-company-gst">{purchaseLabels.gstinRecipient.replace('{{gstin}}', settings.gstin)}</p>
+                  )}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <h1 className="invoice-main-title">{t("purchases.purchaseVoucher", "PURCHASE")}</h1>
+                <h1 className="invoice-main-title">{purchaseLabels.voucherTitle}</h1>
                 <p className="invoice-number-text">#{selectedPurchase.purchaseNumber}</p>
-                <p className="invoice-date-text">{t('purchases.dateLabel', 'Date:')} {formatDate(selectedPurchase.date)}</p>
+                <p className="invoice-date-text">{purchaseLabels.dateLabel} {formatDate(selectedPurchase.date)}</p>
               </div>
             </div>
 
             {/* Supplier details card */}
             <div className="invoice-billing-details">
               <div>
-                <h4 className="invoice-detail-header">{t('purchases.supplierSeller', 'Supplier (Seller):')}</h4>
+                <h4 className="invoice-detail-header">{purchaseLabels.supplierSeller}</h4>
                 <h3 className="invoice-customer-name">
                   {selectedPurchase.supplierId ? (
                     <>
@@ -1623,22 +1758,22 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 {supplierDetail ? (
                   <>
                     <p className="invoice-customer-sub">{supplierDetail.phone}</p>
-                    <p className="invoice-customer-sub">{supplierDetail.address || t('purchases.addressNa', 'Address: N/A')}</p>
-                    {supplierDetail.gstin && <p className="invoice-customer-gst">{t('purchases.gstinLabel', 'GSTIN:')} {supplierDetail.gstin}</p>}
+                    <p className="invoice-customer-sub">{supplierDetail.address || purchaseLabels.addressNa}</p>
+                    {supplierDetail.gstin && <p className="invoice-customer-gst">{purchaseLabels.gstinLabel} {supplierDetail.gstin}</p>}
                   </>
                 ) : (
-                  <p className="invoice-customer-sub">{t('purchases.generalVendor', 'General Vendor')}</p>
+                  <p className="invoice-customer-sub">{purchaseLabels.generalVendor}</p>
                 )}
               </div>
               <div style={{ textAlign: 'right' }}>
-                <h4 className="invoice-detail-header">{t('purchases.voucherStatus', 'Voucher Status:')}</h4>
+                <h4 className="invoice-detail-header">{purchaseLabels.voucherStatus}</h4>
                 <span className={`invoice-payment-badge ${
                   selectedPurchase.paymentStatus === 'Paid' ? 'paid' : selectedPurchase.paymentStatus === 'Partial' ? 'partial' : 'unpaid'
                 }`}>
-                  {translateStatus(t, selectedPurchase.paymentStatus).toUpperCase()}
+                  {translatePurchaseStatus(selectedPurchase.paymentStatus, currentInvoiceLanguage === 'mr')}
                 </span>
                 {selectedPurchase.paymentMethod && (
-                  <p className="invoice-customer-sub" style={{ marginTop: '6px' }}>Mode: {selectedPurchase.paymentMethod}</p>
+                  <p className="invoice-customer-sub" style={{ marginTop: '6px' }}>{purchaseLabels.modeLabel} {translatePurchasePaymentMethod(selectedPurchase.paymentMethod, currentInvoiceLanguage === 'mr')}</p>
                 )}
               </div>
             </div>
@@ -1647,13 +1782,13 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             <table className="invoice-table">
               <thead>
                 <tr>
-                  <th style={{ width: '40px', textAlign: 'center' }}>{t('purchases.srNo', 'Sr')}</th>
-                  <th style={{ textAlign: 'left' }}>{t('purchases.productDescription', 'Product / Description')}</th>
-                  <th style={{ width: '80px', textAlign: 'center' }}>{t('purchases.gst', 'GST')}</th>
-                  <th style={{ width: '90px', textAlign: 'right' }}>{t('purchases.priceHeader', 'Price (₹)')}</th>
-                  <th style={{ width: '60px', textAlign: 'center' }}>{t('purchases.qty', 'Qty')}</th>
-                  <th style={{ width: '70px', textAlign: 'right' }}>{t('purchases.discPercent', 'Disc (%)')}</th>
-                  <th style={{ width: '100px', textAlign: 'right' }}>{t('purchases.totalHeader', 'Total (₹)')}</th>
+                  <th style={{ width: '40px', textAlign: 'center' }}>{purchaseLabels.srNo}</th>
+                  <th style={{ textAlign: 'left' }}>{purchaseLabels.productDescription}</th>
+                  <th style={{ width: '80px', textAlign: 'center' }}>{purchaseLabels.gst}</th>
+                  <th style={{ width: '90px', textAlign: 'right' }}>{purchaseLabels.priceHeader}</th>
+                  <th style={{ width: '60px', textAlign: 'center' }}>{purchaseLabels.qty}</th>
+                  <th style={{ width: '70px', textAlign: 'right' }}>{purchaseLabels.discPercent}</th>
+                  <th style={{ width: '100px', textAlign: 'right' }}>{purchaseLabels.totalHeader}</th>
                 </tr>
               </thead>
               <tbody>
@@ -1676,41 +1811,41 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <div style={{ flex: 1, maxWidth: '55%' }}>
                 {selectedPurchase.notes && (
                   <div style={{ marginBottom: (settings.purchaseTerms || settings.defaultTerms) ? '12px' : '0' }}>
-                    <h4 className="invoice-terms-title" style={{ borderBottom: '1px dashed rgba(78, 108, 80, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>{t('purchases.voucherDetailsCaps', 'VOUCHER DETAILS:')}</h4>
+                    <h4 className="invoice-terms-title" style={{ borderBottom: '1px dashed rgba(78, 108, 80, 0.2)', paddingBottom: '4px', marginBottom: '8px' }}>{purchaseLabels.voucherDetailsCaps}</h4>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: selectedPurchase.items.length > 3 ? '9px' : '10.5px' }}>
                       {supplierInvoiceNo && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.invoiceRef', 'Invoice Ref:')}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{purchaseLabels.invoiceRef}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>{supplierInvoiceNo} {supplierInvoiceDt && `(Date: ${supplierInvoiceDt})`}</span>
                         </div>
                       )}
                       {purchaseTypeVal && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.typeStatusLabel', 'Type | Status:')}</span>
-                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{purchaseTypeVal} | {translateStatus(t, purchaseStatusVal)}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{purchaseLabels.typeStatusLabel}</span>
+                          <span style={{ fontWeight: 500, color: '#2F3E33' }}>{purchaseTypeVal} | {translatePurchaseStatus(purchaseStatusVal, currentInvoiceLanguage === 'mr')}</span>
                         </div>
                       )}
                       {dueDtVal && purchaseTypeVal === 'Credit' && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.paymentDueDate', 'Payment Due Date:')}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{purchaseLabels.paymentDueDate}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>{dueDtVal}</span>
                         </div>
                       )}
                       {(transportVal !== '₹0' || loadingVal !== '₹0' || otherVal !== '₹0') && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.charges', 'Charges:')}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{purchaseLabels.charges}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>Transport {transportVal}, Loading {loadingVal}, Other {otherVal}</span>
                         </div>
                       )}
                       {txnRefVal && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px dashed rgba(109, 130, 113, 0.08)', paddingBottom: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.txnReference', 'Txn Reference:')}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{purchaseLabels.txnReference}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33' }}>{txnRefVal}</span>
                         </div>
                       )}
                       {remarksVal && remarksVal.trim() !== '' && !remarksVal.startsWith('Invoice Ref:') && (
                         <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '2.5px' }}>
-                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{t('purchases.remarks', 'Remarks:')}</span>
+                          <span style={{ fontWeight: 700, color: '#4E6C50' }}>{purchaseLabels.remarks}</span>
                           <span style={{ fontWeight: 500, color: '#2F3E33', whiteSpace: 'pre-wrap', textAlign: 'right' }}>{remarksVal}</span>
                         </div>
                       )}
@@ -1719,7 +1854,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 )}
                 {(settings.purchaseTerms || settings.defaultTerms) && (
                   <>
-                    <h4 className="invoice-terms-title">{t('purchases.termsConditions', 'TERMS & CONDITIONS:')}</h4>
+                    <h4 className="invoice-terms-title">{purchaseLabels.termsConditions}</h4>
                     <p className="invoice-terms-text" style={{ whiteSpace: 'pre-wrap' }}>
                       {settings.purchaseTerms || settings.defaultTerms}
                     </p>
@@ -1730,42 +1865,42 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <table className="invoice-summary-table">
                   <tbody>
                     <tr>
-                      <td>{t('purchases.totalBaseCost', 'Total Base Cost')}</td>
+                      <td>{purchaseLabels.totalBaseCost}</td>
                       <td>{formatINR(totals.subtotal)}</td>
                     </tr>
                     {totals.cgst > 0 && (
                       <tr>
-                        <td>{t('purchases.inputCgst', 'Input CGST (50% of GST)')}</td>
+                        <td>{purchaseLabels.inputCgst}</td>
                         <td>{formatINR(totals.cgst)}</td>
                       </tr>
                     )}
                     {totals.sgst > 0 && (
                       <tr>
-                        <td>{t('purchases.inputSgst', 'Input SGST (50% of GST)')}</td>
+                        <td>{purchaseLabels.inputSgst}</td>
                         <td>{formatINR(totals.sgst)}</td>
                       </tr>
                     )}
                     <tr style={{ borderTop: '1px dashed var(--border-color)', fontWeight: 600 }}>
-                      <td>{t('purchases.totalExclCharges', 'Total (Excl. Charges)')}</td>
+                      <td>{purchaseLabels.totalExclCharges}</td>
                       <td>{formatINR(totalExclCharges)}</td>
                     </tr>
                     {additionalCharges > 0 && (
                       <tr>
-                        <td>{t('purchases.additionalCharges', 'Additional Charges')}</td>
+                        <td>{purchaseLabels.additionalCharges}</td>
                         <td>{formatINR(additionalCharges)}</td>
                       </tr>
                     )}
                     <tr className="grand-total-row">
-                      <td>{t('purchases.grandTotalInclCharges', 'Grand Total (Incl. Charges)')}</td>
+                      <td>{purchaseLabels.grandTotalInclCharges}</td>
                       <td>{formatINR(selectedPurchase.grandTotal)}</td>
                     </tr>
                     <tr>
-                      <td style={{ color: '#10B981' }}>{t('purchases.amountPaid', 'Amount Paid')}</td>
+                      <td style={{ color: '#10B981' }}>{purchaseLabels.amountPaid}</td>
                       <td style={{ color: '#10B981' }}>{formatINR(totals.amountPaid)}</td>
                     </tr>
                     {totals.balanceDue > 0 && (
                       <tr className="due-row">
-                        <td>{t('purchases.balanceDue', 'Balance Due')}</td>
+                        <td>{purchaseLabels.balanceDue}</td>
                         <td>{formatINR(totals.balanceDue)}</td>
                       </tr>
                     )}
@@ -1872,7 +2007,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <div style={{ textAlign: 'center', minWidth: '110px' }}>
                   <div style={{ height: '25px' }}></div>
                   <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
-                    {t('purchases.receiversSignature', "Receiver's Signature")}
+                    {purchaseLabels.receiversSignature}
                   </p>
                 </div>
                 <div style={{ textAlign: 'center', minWidth: '110px' }}>
@@ -1882,7 +2017,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                     ) : null}
                   </div>
                   <p style={{ borderTop: '1.5px solid #EAE3D2', paddingTop: '6px', fontSize: '11px', fontWeight: 700, color: '#4E6C50', whiteSpace: 'nowrap' }}>
-                    {t('purchases.authorizedSignatory', 'Authorized Signatory')}
+                    {purchaseLabels.authorizedSignatory}
                   </p>
                 </div>
               </div>
@@ -1905,24 +2040,28 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         </div>
         ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="print-invoice-layout thermal">
+            <div className={`print-invoice-layout thermal ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{(settings.businessName || "AgriBiz").toUpperCase()}</h3>
-                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{getFullAddress(settings)}</p>}
+                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{displayBusinessName}</h3>
+                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{displayAddress}</p>}
                 {settings.showContact && (
                   <p style={{ margin: 0, fontSize: "11px" }}>
                     {[settings.phone, settings.email].filter(Boolean).join(' • ')}
                   </p>
                 )}
-                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin} (Recipient)</p>}
+                {settings.showGstin && settings.gstin && (
+                  <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>
+                    {purchaseLabels.gstinRecipient.replace('{{gstin}}', settings.gstin)}
+                  </p>
+                )}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>{t('purchases.billNoLabel', 'Bill No:')} <strong>{selectedPurchase.purchaseNumber}</strong></span>
-                  <span>{t('purchases.dateLabel', 'Date:')} {formatDate(selectedPurchase.date)}</span>
+                  <span>{purchaseLabels.billNoLabel} <strong>{selectedPurchase.purchaseNumber}</strong></span>
+                  <span>{purchaseLabels.dateLabel} {formatDate(selectedPurchase.date)}</span>
                 </div>
-                <div>{t('purchases.supplierLabel', 'Supplier:')}{' '}
+                <div>{purchaseLabels.supplierLabel}{' '}
                   {selectedPurchase.supplierId ? (
                     <>
                       <button
@@ -1940,25 +2079,25 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                       <strong className="print-only">{supplierDetail?.name || selectedPurchase.supplierName}</strong>
                     </>
                   ) : (
-                    <strong>{selectedPurchase.supplierName || "{t('purchases.walkInSupplier', 'Walk-in Supplier')}"}</strong>
+                    <strong>{selectedPurchase.supplierName || (currentInvoiceLanguage === 'mr' ? 'सर्वसाधारण विक्रेता' : 'Walk-in Supplier')}</strong>
                   )}
                 </div>
-                {supplierDetail?.phone && <div>{t('purchases.phoneLabel', 'Phone:')} {supplierDetail.phone}</div>}
-                {supplierInvoiceNo && <div>{t('purchases.supplierInvLabel', 'Supplier Inv:')} <strong>{supplierInvoiceNo}</strong> ({supplierInvoiceDt})</div>}
+                {supplierDetail?.phone && <div>{purchaseLabels.mobLabel} {supplierDetail.phone}</div>}
+                {supplierInvoiceNo && <div>{purchaseLabels.invoiceRef} <strong>{supplierInvoiceNo}</strong> ({supplierInvoiceDt})</div>}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px" }}>
                 <div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}>
-                  <span>{t('purchases.itemHeaderCaps', 'ITEM')}</span>
-                  <span style={{ textAlign: "center" }}>{t('purchases.qtyHeaderCaps', 'QTY')}</span>
-                  <span style={{ textAlign: "right" }}>{t('purchases.amtHeaderCaps', 'AMT')}({settings.currencySymbol || "₹"})</span>
+                  <span>{purchaseLabels.itemCaps}</span>
+                  <span style={{ textAlign: "center" }}>{purchaseLabels.qtyCaps}</span>
+                  <span style={{ textAlign: "right" }}>{purchaseLabels.amtCaps}({settings.currencySymbol || "₹"})</span>
                 </div>
                 <div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>
                 {selectedPurchase.items.map((item, index) => (
                   <div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}>
                     <div>
                       <span style={{ fontWeight: "bold" }}>{item.productName}</span>
-                      <div style={{ fontSize: "10px", color: "#555" }}>{t('purchases.rateLabel', 'Rate:')} {settings.currencySymbol || "₹"}{item.price} | {t('purchases.gstLabel', 'GST:')} {item.gstRate}%</div>
+                      <div style={{ fontSize: "10px", color: "#555" }}>{purchaseLabels.rateLabel}: {settings.currencySymbol || "₹"}{item.price} | {purchaseLabels.gst}: {item.gstRate}%</div>
                     </div>
                     <span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span>
                     <span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span>
@@ -1968,51 +2107,51 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span>{t('purchases.totalTaxable', 'Total Taxable')}</span>
+                  <span>{purchaseLabels.totalBaseCost}</span>
                   <span>{settings.currencySymbol || "₹"}{totals.subtotal.toFixed(2)}</span>
                 </div>
                 {totals.cgst > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>{t('purchases.inputCgstLabel', 'Input CGST')}</span>
+                    <span>{purchaseLabels.inputCgst}</span>
                     <span>{settings.currencySymbol || "₹"}{totals.cgst.toFixed(2)}</span>
                   </div>
                 )}
                 {totals.sgst > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
-                    <span>{t('purchases.inputSgstLabel', 'Input SGST')}</span>
+                    <span>{purchaseLabels.inputSgst}</span>
                     <span>{settings.currencySymbol || "₹"}{totals.sgst.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed #eee', paddingTop: '3px' }}>
-                  <span>{t('purchases.totalExclCharges', 'Total (Excl. Charges)')}</span>
+                  <span>{purchaseLabels.totalExclCharges}</span>
                   <span>{settings.currencySymbol || "₹"}{totalExclCharges.toFixed(2)}</span>
                 </div>
                 {additionalCharges > 0 && (
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span>{t('purchases.additionalCharges', 'Additional Charges')}</span>
+                    <span>{purchaseLabels.additionalCharges}</span>
                     <span>{settings.currencySymbol || "₹"}{additionalCharges.toFixed(2)}</span>
                   </div>
                 )}
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}>
-                  <span>{t('purchases.grandTotalCaps', 'GRAND TOTAL (INCL. CHARGES)')}</span>
+                  <span>{purchaseLabels.grandTotalInclCharges.toUpperCase()}</span>
                   <span>{settings.currencySymbol || "₹"}{totals.grandTotal.toFixed(2)}</span>
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}>
-                  <span>{t('purchases.amountPaidCaps', 'AMOUNT PAID')}</span>
+                  <span>{purchaseLabels.amountPaid.toUpperCase()}</span>
                   <span>{settings.currencySymbol || "₹"}{totals.amountPaid.toFixed(2)}</span>
                 </div>
                 {totals.balanceDue > 0 && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}>
-                    <span>{t('purchases.balanceDueCaps', 'BALANCE DUE')}</span>
+                    <span>{purchaseLabels.balanceDue.toUpperCase()}</span>
                     <span>{settings.currencySymbol || "₹"}{totals.balanceDue.toFixed(2)}</span>
                   </div>
                 )}
               </div>
               <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
               <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}>
-                <div>{settings.footerMessage || t('purchases.thankYouVisitAgain', 'THANK YOU! VISIT AGAIN.')}</div>
+                <div>{settings.footerMessage || (currentInvoiceLanguage === 'mr' ? 'धन्यवाद! पुन्हा भेट द्या.' : 'THANK YOU! VISIT AGAIN.')}</div>
                 {selectedPurchase.notes && <div style={{ fontStyle: "italic" }}>"{remarksVal || selectedPurchase.notes}"</div>}
-                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t('purchases.poweredBy', 'Powered by {{businessName}} POS software', { businessName: settings.businessName || "AgriBiz" })}</div>
+                <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {displayBusinessName} POS software</div>
               </div>
             </div>
           </div>

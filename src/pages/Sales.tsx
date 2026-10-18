@@ -30,6 +30,7 @@ import {
   Store,
   Calendar,
   TrendingUp,
+  Languages,
 } from 'lucide-react';
 
 interface InvoiceItemLocal {
@@ -1672,8 +1673,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewInvoice(null)}>
               <ArrowLeft size={16} /> {t("sales.backToInvoices", "Back to Invoices")}
             </button>
-            <div className="template-selector-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="invoice-header-controls">
+              <div className="template-selector-group">
                 <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
                 <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
                   <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
@@ -1681,14 +1682,14 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </select>
               </div>
 
-              <div className="invoice-lang-toggle-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--bg-secondary)', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Language:
-                </span>
+              <div className="invoice-lang-toggle-group" role="group" aria-label="Invoice Language">
+                <div className="invoice-lang-icon-badge">
+                  <Languages size={13} />
+                  <span>Lang</span>
+                </div>
                 <button
                   type="button"
-                  className={`btn btn-xs ${currentInvoiceLanguage === 'en' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'en' ? 700 : 500 }}
+                  className={`invoice-lang-pill ${currentInvoiceLanguage === 'en' ? 'active' : ''}`}
                   onClick={() => handleToggleInvoiceLanguage('en')}
                   title="Print invoice in English"
                 >
@@ -1696,8 +1697,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-xs ${currentInvoiceLanguage === 'mr' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'mr' ? 700 : 500 }}
+                  className={`invoice-lang-pill ${currentInvoiceLanguage === 'mr' ? 'active' : ''}`}
                   onClick={() => handleToggleInvoiceLanguage('mr')}
                   title="मराठीत बिल प्रिंट करा"
                 >
@@ -2126,8 +2126,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <button className="btn btn-secondary back-to-invoices-btn" onClick={() => setViewQuotation(null)}>
               <ArrowLeft size={16} /> {t("sales.backToQuotations", "Back to Quotations")}
             </button>
-            <div className="template-selector-group" style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <div className="invoice-header-controls">
+              <div className="template-selector-group">
                 <span className="template-label">{t('sales.printTemplate', 'Print Template:')}</span>
                 <select className="filter-select template-select-field" value={printTemplate} onChange={(e) => setPrintTemplate(e.target.value as "A5" | "Thermal")}>
                   <option value="A5">{t('sales.standardA5', 'Standard A5 Bill Book')}</option>
@@ -2135,25 +2135,24 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </select>
               </div>
 
-              <div className="invoice-lang-toggle-group" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'var(--bg-secondary)', padding: '3px 6px', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
-                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Language:
-                </span>
+              <div className="invoice-lang-toggle-group" role="group" aria-label="Quotation Language">
+                <div className="invoice-lang-icon-badge">
+                  <Languages size={13} />
+                  <span>Lang</span>
+                </div>
                 <button
                   type="button"
-                  className={`btn btn-xs ${currentInvoiceLanguage === 'en' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'en' ? 700 : 500 }}
+                  className={`invoice-lang-pill ${currentInvoiceLanguage === 'en' ? 'active' : ''}`}
                   onClick={() => handleToggleInvoiceLanguage('en')}
-                  title="Print invoice in English"
+                  title="Print quotation in English"
                 >
                   English
                 </button>
                 <button
                   type="button"
-                  className={`btn btn-xs ${currentInvoiceLanguage === 'mr' ? 'btn-primary' : 'btn-secondary'}`}
-                  style={{ padding: '2px 8px', fontSize: '11px', fontWeight: currentInvoiceLanguage === 'mr' ? 700 : 500 }}
+                  className={`invoice-lang-pill ${currentInvoiceLanguage === 'mr' ? 'active' : ''}`}
                   onClick={() => handleToggleInvoiceLanguage('mr')}
-                  title="मराठीत बिल प्रिंट करा"
+                  title="मराठीत दरपत्रक प्रिंट करा"
                 >
                   मराठी
                 </button>

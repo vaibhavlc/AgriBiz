@@ -5243,7 +5243,15 @@ html.light .glass-bottom-nav {
 .invoice-detail-top-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
+}
+
+.invoice-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .template-selector-group {
@@ -5255,6 +5263,63 @@ html.light .glass-bottom-nav {
 .template-label {
   font-size: 13px;
   font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Premium Segmented Language Toggle */
+.invoice-lang-toggle-group {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-secondary, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 9px;
+  padding: 3px;
+  gap: 3px;
+  box-sizing: border-box;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.invoice-lang-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted, #64748b);
+  letter-spacing: 0.3px;
+  user-select: none;
+}
+
+.invoice-lang-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 13px;
+  height: 28px;
+  font-size: 12px;
+  font-weight: 600;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary, #475569);
+  transition: all 0.16s ease-in-out;
+  user-select: none;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+.invoice-lang-pill:hover:not(.active) {
+  color: var(--text-primary, #0f172a);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.invoice-lang-pill.active {
+  background: var(--primary, #10b981);
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: 0 2px 5px rgba(16, 185, 129, 0.35);
 }
 
 .desktop-only-text {
@@ -5271,13 +5336,13 @@ html.light .glass-bottom-nav {
   .invoice-detail-nav-panel {
     flex-direction: column;
     align-items: stretch;
-    gap: 8px !important;
+    gap: 10px !important;
     padding: 12px !important;
   }
 
   .invoice-detail-top-row {
-    display: grid !important;
-    grid-template-columns: 1fr 1fr !important;
+    display: flex !important;
+    flex-direction: column !important;
     width: 100% !important;
     gap: 8px !important;
     border-bottom: none !important;
@@ -5295,13 +5360,21 @@ html.light .glass-bottom-nav {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 0 !important;
+    padding: 0 12px !important;
     font-size: 13px !important;
     box-sizing: border-box !important;
   }
 
+  .invoice-header-controls {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   .template-selector-group {
-    display: block !important;
+    display: flex !important;
     width: 100% !important;
     margin: 0 !important;
   }
@@ -5317,6 +5390,30 @@ html.light .glass-bottom-nav {
     background-position: right 8px center !important;
     font-size: 12px !important;
     margin: 0 !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  .invoice-lang-toggle-group {
+    display: flex !important;
+    width: 100% !important;
+    height: 42px !important;
+    padding: 3px !important;
+    margin: 0 !important;
+    border-radius: 8px !important;
+    box-sizing: border-box !important;
+  }
+
+  .invoice-lang-icon-badge {
+    display: none !important;
+  }
+
+  .invoice-lang-pill {
+    flex: 1 !important;
+    height: 100% !important;
+    padding: 0 6px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
     box-sizing: border-box !important;
   }
 
