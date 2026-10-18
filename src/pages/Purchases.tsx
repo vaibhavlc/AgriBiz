@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { translateStatus } from '../utils/statusTranslation';
@@ -8,6 +8,7 @@ import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
+import { InvoiceGlassyLoader } from '../components/InvoiceGlassyLoader';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
@@ -166,6 +167,16 @@ export const Purchases: React.FC = () => {
     );
   });
 
+  const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
+  const [switchingTargetLang, setSwitchingTargetLang] = useState<'mr' | 'en'>(currentInvoiceLanguage);
+  const switchTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (switchTimeoutRef.current) clearTimeout(switchTimeoutRef.current);
+    };
+  }, []);
+
   useEffect(() => {
     if (settings.invoiceLanguage) {
       setCurrentInvoiceLanguage(settings.invoiceLanguage);
@@ -173,12 +184,21 @@ export const Purchases: React.FC = () => {
   }, [settings.invoiceLanguage]);
 
   const handleToggleInvoiceLanguage = (lang: 'mr' | 'en') => {
+    if (lang === currentInvoiceLanguage) return;
+    setSwitchingTargetLang(lang);
+    setIsLanguageSwitching(true);
+    if (switchTimeoutRef.current) {
+      clearTimeout(switchTimeoutRef.current);
+    }
     setCurrentInvoiceLanguage(lang);
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('agribiz_invoice_language', lang);
       } catch (e) {}
     }
+    switchTimeoutRef.current = setTimeout(() => {
+      setIsLanguageSwitching(false);
+    }, 340);
   };
   const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
   const [isDeletingPurchase, setIsDeletingPurchase] = useState(false);
@@ -1672,7 +1692,9 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
         </div>
         {renderAttachmentPreviewModal()}
 
-        {printTemplate === "A5" ? (
+        <div className={`invoice-preview-viewport ${isLanguageSwitching ? 'is-switching' : ''}`}>
+          <InvoiceGlassyLoader isSwitching={isLanguageSwitching} targetLanguage={switchingTargetLang} />
+          {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
             <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""} ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
               {/* Dynamic Logo Watermark in Center */}
@@ -2156,6 +2178,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
             </div>
           </div>
         )}
+        </div>
 
         {/* Bottom secondary action buttons */}
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", gap: "8px", marginTop: "24px" }}>

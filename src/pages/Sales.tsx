@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
+import { InvoiceGlassyLoader } from '../components/InvoiceGlassyLoader';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
 import { translatePaymentMethod, translateStatus } from '../utils/statusTranslation';
 import { KpiCard } from '../components/KpiCard';
@@ -256,7 +257,23 @@ export const Sales: React.FC = () => {
     (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_invoice_language') as 'mr' | 'en') : null) ||
     'en';
 
+  const [isLanguageSwitching, setIsLanguageSwitching] = useState(false);
+  const [switchingTargetLang, setSwitchingTargetLang] = useState<'mr' | 'en'>(currentInvoiceLanguage);
+  const switchTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (switchTimeoutRef.current) clearTimeout(switchTimeoutRef.current);
+    };
+  }, []);
+
   const handleToggleInvoiceLanguage = (newLang: 'mr' | 'en') => {
+    if (newLang === currentInvoiceLanguage) return;
+    setSwitchingTargetLang(newLang);
+    setIsLanguageSwitching(true);
+    if (switchTimeoutRef.current) {
+      clearTimeout(switchTimeoutRef.current);
+    }
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('agribiz_invoice_language', newLang);
@@ -266,6 +283,9 @@ export const Sales: React.FC = () => {
       ...settings,
       invoiceLanguage: newLang,
     });
+    switchTimeoutRef.current = setTimeout(() => {
+      setIsLanguageSwitching(false);
+    }, 340);
   };
 
   // Modals & Filters
@@ -1719,7 +1739,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           </div>
         </div>
 
-        {printTemplate === "A5" ? (
+        <div className={`invoice-preview-viewport ${isLanguageSwitching ? 'is-switching' : ''}`}>
+          <InvoiceGlassyLoader isSwitching={isLanguageSwitching} targetLanguage={switchingTargetLang} />
+          {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
             <div className={`print-invoice-layout invoice-print-container dense-layout ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
@@ -2093,6 +2115,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
           </div>
         )}
+        </div>
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
           <button className="btn btn-secondary" style={{ borderColor: "var(--color-danger)", color: "var(--color-danger)" }} onClick={() => handleDeleteInvoice(selectedInvoice.id || selectedInvoice.invoiceNumber, selectedInvoice.invoiceNumber)}>
             <Trash2 size={16} /> {t("sales.deleteResetStock", "Delete & Reset Stock")}
@@ -2172,7 +2195,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           </div>
         </div>
 
-        {printTemplate === "A5" ? (
+        <div className={`invoice-preview-viewport ${isLanguageSwitching ? 'is-switching' : ''}`}>
+          <InvoiceGlassyLoader isSwitching={isLanguageSwitching} targetLanguage={switchingTargetLang} />
+          {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
             <div className={`print-invoice-layout invoice-print-container dense-layout ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
@@ -2581,6 +2606,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
           </div>
         )}
+        </div>
 
         {/* Bottom Actions Row */}
         <div className="no-print preview-actions-row" style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '20px' }}>
