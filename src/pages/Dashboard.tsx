@@ -899,7 +899,7 @@ export const Dashboard: React.FC = () => {
         {activeKpiTab === 'financial' && (
           <div className="grid-cols-4 tab-content-enter">
             <KpiCard
-              label={t('dashboard.todaySales', 'Total Sales Billing')}
+              label={t('dashboard.todaySales', 'Total Sales')}
               value={<AnimatedCounter value={stats.totalSales} isCurrency />}
               subtext={t('dashboard.salesInclusiveGst', 'Sales inclusive of GST')}
               icon={<TrendingUp size={20} />}
@@ -919,7 +919,7 @@ export const Dashboard: React.FC = () => {
             />
 
             <KpiCard
-              label={t('dashboard.todayPurchases', 'Total Purchases Billing')}
+              label={t('dashboard.todayPurchases', 'Total Purchases')}
               value={<AnimatedCounter value={stats.totalPurchases} isCurrency />}
               subtext={t('dashboard.stockAcquisitions', 'Cumulative stock acquisitions')}
               icon={<TrendingDown size={20} />}

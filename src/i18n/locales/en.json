@@ -271,8 +271,8 @@
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome",
-    "todaySales": "Today's Sales",
-    "todayPurchases": "Today's Purchases",
+    "todaySales": "Total Sales",
+    "todayPurchases": "Total Purchases",
     "totalReceivable": "Total Outstanding Receivable",
     "totalPayable": "Total Outstanding Payable",
     "totalCustomers": "Total Customers",

@@ -275,8 +275,8 @@
   "dashboard": {
     "title": "डॅशबोर्ड",
     "welcome": "स्वागत आहे",
-    "todaySales": "आजची विक्री",
-    "todayPurchases": "आजची खरेदी",
+    "todaySales": "एकूण विक्री",
+    "todayPurchases": "एकूण खरेदी",
     "totalReceivable": "एकूण येणे बाकी (शेतकरी)",
     "totalPayable": "एकूण देणे बाकी (व्यापारी)",
     "totalCustomers": "एकूण ग्राहक",
