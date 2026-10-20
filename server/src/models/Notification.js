@@ -48,6 +48,14 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    icon: {
+      type: String,
+      default: null,
+    },
+    image: {
+      type: String,
+      default: null,
+    },
     data: {
       type: mongoose.Schema.Types.Mixed,
       default: {},

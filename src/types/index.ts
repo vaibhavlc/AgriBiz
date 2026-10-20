@@ -325,6 +325,8 @@ export interface AppNotification {
   title: string;
   body: string;
   type: 'DUE_REMINDER' | 'OVERDUE_PAYMENT' | 'PAYMENT_RECEIVED' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'STOCK_RECOVERY' | 'NEW_ORDER' | 'ORDER_STATUS' | 'BUSINESS_ALERT';
+  icon?: string | null;
+  image?: string | null;
   data?: {
     url?: string;
     tab?: string;

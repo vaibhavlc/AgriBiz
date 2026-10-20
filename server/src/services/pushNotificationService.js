@@ -2,6 +2,7 @@ import webpush from 'web-push';
 import PushSubscription from '../models/PushSubscription.js';
 import Notification from '../models/Notification.js';
 import Settings from '../models/Settings.js';
+import Company from '../models/Company.js';
 import logger from '../config/logger.js';
 import { getIO } from '../config/socket.js';
 
@@ -203,7 +204,32 @@ class PushNotificationService {
       }
     }
 
-    // 3. Save Notification DB Record with atomic duplicate key protection
+    // 3. Resolve Company Branding Logo (from Settings or Company model)
+    let hasCustomLogo = Boolean(settings && settings.logo && String(settings.logo).trim());
+    if (!hasCustomLogo) {
+      try {
+        const comp = await Company.findOne({ companyId }).select('logo').lean();
+        if (comp && comp.logo && String(comp.logo).trim()) {
+          hasCustomLogo = true;
+        }
+      } catch (e) {
+        // Fallback gracefully
+      }
+    }
+
+    const backendOrigin = (
+      process.env.BACKEND_URL ||
+      process.env.RENDER_EXTERNAL_URL ||
+      (process.env.CLIENT_URL ? process.env.CLIENT_URL.replace(/:\d+$/, ':5000') : '') ||
+      'https://agribiz-backend.onrender.com'
+    ).replace(/\/+$/, '');
+
+    const companyLogoEndpoint = `${backendOrigin}/api/v1/notifications/company-logo/${encodeURIComponent(companyId)}`;
+    const notificationIcon = hasCustomLogo ? companyLogoEndpoint : (payload.icon || '/logo-192.png');
+    const notificationImage = hasCustomLogo ? companyLogoEndpoint : (payload.image || null);
+    const notificationBadge = payload.badge || '/logo-192.png';
+
+    // 4. Save Notification DB Record with atomic duplicate key protection
     const notificationId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     let notificationDoc;
     try {
@@ -215,7 +241,12 @@ class PushNotificationService {
         title: payload.title,
         body: payload.body,
         type: payload.type || 'BUSINESS_ALERT',
-        data: payload.data || {},
+        icon: notificationIcon,
+        image: notificationImage,
+        data: {
+          ...payload.data,
+          companyLogo: hasCustomLogo ? companyLogoEndpoint : null,
+        },
         eventReference: payload.eventReference || null,
       });
     } catch (createErr) {
@@ -229,7 +260,7 @@ class PushNotificationService {
       throw createErr;
     }
 
-    // 4. Query active subscriptions
+    // 5. Query active subscriptions
     const subQuery = { companyId, isActive: true };
     if (options.userId) {
       subQuery.userId = options.userId;
@@ -237,13 +268,14 @@ class PushNotificationService {
 
     const subscriptions = await PushSubscription.find(subQuery);
     logger.info(
-      '[PUSH] Dispatching notification "%s" to %d active subscriptions (company: %s)',
+      '[PUSH] Dispatching notification "%s" to %d active subscriptions (company: %s, brandedLogo: %s)',
       payload.title,
       subscriptions.length,
-      companyId
+      companyId,
+      hasCustomLogo
     );
 
-    // 5. Construct Push payload with privacy preservation and size limit safeguards
+    // 6. Construct Push payload with privacy preservation, branding, and size limit safeguards
     const maskPrivacy = settings ? settings.maskSensitiveNotificationData !== false : true;
     const pushBody = this.resolvePushBody(payload, maskPrivacy);
     const safeBody = (pushBody || '').slice(0, 400);
@@ -253,12 +285,15 @@ class PushNotificationService {
       title: payload.title,
       body: safeBody,
       type: payload.type || 'BUSINESS_ALERT',
-      icon: payload.icon || '/logo-192.png',
-      badge: payload.badge || '/logo-192.png',
+      icon: notificationIcon,
+      image: notificationImage,
+      badge: notificationBadge,
       data: {
         url: payload.url || (payload.data && payload.data.url) || '/',
         tab: payload.tab || (payload.data && payload.data.tab) || 'dashboard',
         notificationId,
+        companyId,
+        companyLogo: hasCustomLogo ? companyLogoEndpoint : null,
         ...payload.data,
       },
       tag: payload.tag || `${payload.type || 'alert'}-${Date.now()}`,

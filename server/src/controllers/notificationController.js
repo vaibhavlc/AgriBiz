@@ -2,6 +2,7 @@ import pushNotificationService from '../services/pushNotificationService.js';
 import notificationSchedulerService from '../services/notificationSchedulerService.js';
 import Notification from '../models/Notification.js';
 import Settings from '../models/Settings.js';
+import Company from '../models/Company.js';
 import PushSubscription from '../models/PushSubscription.js';
 import logger from '../config/logger.js';
 
@@ -22,6 +23,62 @@ class NotificationController {
     } catch (error) {
       logger.error('[NOTIFICATION] Failed to get VAPID public key: %s', error.message);
       res.status(500).json({ success: false, message: 'Failed to retrieve notification key.' });
+    }
+  }
+
+  /**
+   * Serve the business/company branding logo dynamically
+   * Publicly accessible so browser and OS notification services can fetch the icon
+   */
+  async getCompanyLogo(req, res) {
+    try {
+      const { companyId } = req.params;
+      const clientUrl = (process.env.CLIENT_URL || 'https://agribiz.vercel.app').replace(/\/+$/, '');
+      const fallbackUrl = `${clientUrl}/logo-192.png`;
+
+      if (!companyId) {
+        return res.redirect(302, fallbackUrl);
+      }
+
+      // 1. Look up business settings (source of truth for company customizations)
+      const settings = await Settings.findOne({ companyId }).select('logo').lean();
+      let rawLogo = settings && settings.logo ? String(settings.logo).trim() : '';
+
+      // 2. If not found in settings, check Company model as secondary source of truth
+      if (!rawLogo) {
+        const company = await Company.findOne({ companyId }).select('logo').lean();
+        if (company && company.logo) {
+          rawLogo = String(company.logo).trim();
+        }
+      }
+
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+
+      if (!rawLogo) {
+        return res.redirect(302, fallbackUrl);
+      }
+
+      // If stored as external HTTP/HTTPS URL
+      if (rawLogo.startsWith('http://') || rawLogo.startsWith('https://')) {
+        return res.redirect(302, rawLogo);
+      }
+
+      // If stored as base64 Data URL (e.g. data:image/png;base64,...)
+      const match = rawLogo.match(/^data:([^;]+);base64,(.+)$/);
+      if (match) {
+        const mimeType = match[1];
+        const buffer = Buffer.from(match[2], 'base64');
+        res.setHeader('Content-Type', mimeType);
+        res.setHeader('Content-Length', buffer.length);
+        return res.end(buffer);
+      }
+
+      return res.redirect(302, fallbackUrl);
+    } catch (error) {
+      logger.warn('[NOTIFICATION] Error serving company logo for %s: %s', req.params.companyId, error.message);
+      const clientUrl = (process.env.CLIENT_URL || 'https://agribiz.vercel.app').replace(/\/+$/, '');
+      return res.redirect(302, `${clientUrl}/logo-192.png`);
     }
   }
 

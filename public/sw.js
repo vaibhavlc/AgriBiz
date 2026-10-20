@@ -147,12 +147,15 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  const title = notificationData.title || 'Daivyayog Alert';
+  const title = notificationData.title || 'AgriBiz Alert';
+  const iconUrl = notificationData.icon || '/logo-192.png';
+  const badgeUrl = notificationData.badge || '/logo-192.png';
+
   const options = {
     body: notificationData.body,
-    icon: notificationData.icon || '/logo-192.png',
-    badge: notificationData.badge || '/logo-192.png',
-    tag: notificationData.tag || `daivyayog-notif-${Date.now()}`,
+    icon: iconUrl,
+    badge: badgeUrl,
+    tag: notificationData.tag || `agribiz-notif-${Date.now()}`,
     data: notificationData.data || { url: '/?tab=dashboard', tab: 'dashboard' },
     vibrate: notificationData.vibrate || [150, 50, 150, 50, 200],
     renotify: true,
@@ -162,6 +165,11 @@ self.addEventListener('push', (event) => {
       { action: 'dismiss', title: 'Dismiss' }
     ]
   };
+
+  // Configure expanded image if business logo / image is provided
+  if (notificationData.image) {
+    options.image = notificationData.image;
+  }
 
   event.waitUntil(self.registration.showNotification(title, options));
 });
