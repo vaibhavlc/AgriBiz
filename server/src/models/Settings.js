@@ -71,9 +71,17 @@ const settingsSchema = new mongoose.Schema(
     currencySymbol: { type: String, default: '₹' },
     dateFormat: { type: String, default: 'DD/MM/YYYY' },
     
-    // Stock Alerts
+    // Stock & Push Alerts
     showLowStockAlert: { type: Boolean, default: true },
     showOutOfStockAlert: { type: Boolean, default: true },
+    notifyLowStock: { type: Boolean, default: true },
+    notifyOutOfStock: { type: Boolean, default: true },
+    notifyUpcomingDues: { type: Boolean, default: true },
+    notifyOverdueDues: { type: Boolean, default: true },
+    dueReminderDaysBefore: { type: Number, default: 2 },
+    notifyPaymentReceived: { type: Boolean, default: true },
+    notifyNewOrders: { type: Boolean, default: true },
+    notifyOrderStatus: { type: Boolean, default: true },
     
     // Sync & Auditing
     version: { type: Number, default: 1 },

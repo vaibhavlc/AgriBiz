@@ -214,6 +214,14 @@ export interface BusinessSettings {
   // Alert Settings
   showLowStockAlert?: boolean;
   showOutOfStockAlert?: boolean;
+  notifyLowStock?: boolean;
+  notifyOutOfStock?: boolean;
+  notifyUpcomingDues?: boolean;
+  notifyOverdueDues?: boolean;
+  dueReminderDaysBefore?: number;
+  notifyPaymentReceived?: boolean;
+  notifyNewOrders?: boolean;
+  notifyOrderStatus?: boolean;
 
   // Legacy fallback to prevent TS issues in other files before refactoring
   address: string;
@@ -306,4 +314,33 @@ export interface BackupHistoryItem {
   completedAt?: string;
   failureReason?: string;
   dataSummary?: any;
+}
+
+export interface AppNotification {
+  _id?: string;
+  notificationId: string;
+  companyId: string;
+  userId?: string | null;
+  title: string;
+  body: string;
+  type: 'DUE_REMINDER' | 'OVERDUE_PAYMENT' | 'PAYMENT_RECEIVED' | 'LOW_STOCK' | 'OUT_OF_STOCK' | 'STOCK_RECOVERY' | 'NEW_ORDER' | 'ORDER_STATUS' | 'BUSINESS_ALERT';
+  data?: {
+    url?: string;
+    tab?: string;
+    invoiceNumber?: string;
+    customerName?: string;
+    balanceDue?: number;
+    amount?: number;
+    paymentMethod?: string;
+    productId?: string;
+    productName?: string;
+    stock?: number;
+    minStock?: number;
+    [key: string]: any;
+  };
+  isRead: boolean;
+  isDelivered?: boolean;
+  deliveredCount?: number;
+  createdAt: string;
+  updatedAt: string;
 }

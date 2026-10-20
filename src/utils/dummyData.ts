@@ -724,6 +724,16 @@ export const initialSettings: BusinessSettings = {
   theme: 'system',
   currencySymbol: '₹',
   dateFormat: 'DD/MM/YYYY',
+  showLowStockAlert: true,
+  showOutOfStockAlert: true,
+  notifyLowStock: true,
+  notifyOutOfStock: true,
+  notifyUpcomingDues: true,
+  notifyOverdueDues: true,
+  dueReminderDaysBefore: 2,
+  notifyPaymentReceived: true,
+  notifyNewOrders: true,
+  notifyOrderStatus: true,
 
   // Legacy fallback address
   address: 'Shop No. 12-14, Krishi Mandi Complex, Pipariya, Madhya Pradesh - 461775',

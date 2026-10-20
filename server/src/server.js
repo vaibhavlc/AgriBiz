@@ -42,6 +42,7 @@ import backupRoutes from './routes/backupRoutes.js';
 import recycleBinRoutes from './routes/recycleBinRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
+import notificationRoutes from './routes/notificationRoutes.js';
 import { errorHandler } from './middlewares/errorMiddleware.js';
 
 const app = express();
@@ -49,6 +50,7 @@ const PORT = process.env.PORT || 5000;
 
 import emailService from './services/emailService.js';
 import backupSchedulerService from './services/backupSchedulerService.js';
+import notificationSchedulerService from './services/notificationSchedulerService.js';
 
 // Connect to Database & Seed Demo Data
 const initApp = async () => {
@@ -57,6 +59,7 @@ const initApp = async () => {
     await authService.seedDemoData();
     await emailService.verifySmtpConfig();
     backupSchedulerService.initScheduler();
+    notificationSchedulerService.initScheduler();
     server.listen(PORT, () => {
       logger.info(`AgriBiz Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
     });
@@ -157,6 +160,7 @@ app.use('/api/v1/recycle-bin', recycleBinRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/v1/notifications', notificationRoutes);
 
 // ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
 import { cascadeDeleteByMobile } from './utils/cascadeDelete.js';

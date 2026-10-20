@@ -4,6 +4,7 @@ import supplierRepository from '../repositories/supplierRepository.js';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
 import { normalizeRecycleBinData } from '../utils/normalizeRecycleBinData.js';
+import pushNotificationService from './pushNotificationService.js';
 
 class PaymentService {
   async getPayment(paymentId, companyId) {
@@ -24,7 +25,7 @@ class PaymentService {
       err.statusCode = 400;
       throw err;
     }
-    return runInTransaction(async (session) => {
+    const payment = await runInTransaction(async (session) => {
       const paymentPayload = {
         ...paymentData,
         companyId,
@@ -44,13 +45,30 @@ class PaymentService {
         );
       }
 
-      const [payment] = await Promise.all([
+      const [createdPayment] = await Promise.all([
         paymentRepository.create(paymentPayload, session),
         ...updateTasks,
       ]);
 
-      return payment;
+      return createdPayment;
     });
+
+    // Mobile Push Notification for Customer Receipts
+    try {
+      if (payment.type === 'CustomerReceipt') {
+        pushNotificationService.notifyPaymentReceived({
+          companyId,
+          customerName: payment.contactName,
+          amount: payment.amount,
+          paymentMethod: payment.paymentMethod,
+          referenceNumber: payment.referenceNumber,
+        }).catch(() => {});
+      }
+    } catch (e) {
+      // Non-blocking
+    }
+
+    return payment;
   }
 
   async updatePayment(paymentId, companyId, paymentData, updatedBy) {

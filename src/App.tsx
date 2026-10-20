@@ -135,10 +135,39 @@ const AppContent: React.FC = () => {
   // Guarantee initial scroll position and clean up registration URL parameters on login
   useEffect(() => {
     window.scrollTo(0, 0);
+    if (typeof window !== 'undefined') {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tabParam = searchParams.get('tab');
+      if (tabParam && hasPermission(tabParam)) {
+        setCurrentTab(tabParam);
+      }
+    }
     if (typeof window !== 'undefined' && (window.location.search.includes('token') || window.location.search.includes('step') || window.location.search.includes('view'))) {
       window.history.replaceState({}, '', '/');
     }
   }, []);
+
+  // Listen for background push notification navigation from Service Worker
+  useEffect(() => {
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'NAVIGATE_TAB') {
+        const targetTab = event.data.tab || (event.data.data && event.data.data.tab);
+        if (targetTab && hasPermission(targetTab)) {
+          setCurrentTab(targetTab);
+        }
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    }
+
+    return () => {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+      }
+    };
+  }, [hasPermission, setCurrentTab]);
 
   // If user lacks permission for currentTab, automatically redirect to first permitted tab
   useEffect(() => {

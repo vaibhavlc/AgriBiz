@@ -624,6 +624,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
       });
 
+      socket.on('new_notification', (notification: any) => {
+        if (!isSubscribed) return;
+        console.log('[SOCKET] new_notification received:', notification);
+        window.dispatchEvent(new CustomEvent('daivyayog_new_notification', { detail: notification }));
+      });
+
       socket.on('data_change', (event: any) => {
         if (!isSubscribed) return;
         const T3 = performance.now();

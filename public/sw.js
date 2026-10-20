@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agribiz-v5';
+const CACHE_NAME = 'agribiz-v6';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -59,19 +59,23 @@ self.addEventListener('fetch', (event) => {
       name: nameToUse,
       short_name: nameToUse,
       start_url: '/',
+      scope: '/',
       display: 'standalone',
+      orientation: 'portrait-primary',
       background_color: '#f8fafc',
       theme_color: '#0b0f19',
       icons: [
         {
           src: '/logo-192.png',
           sizes: '192x192',
-          type: 'image/png'
+          type: 'image/png',
+          purpose: 'any maskable'
         },
         {
           src: '/logo-512.png',
           sizes: '512x512',
-          type: 'image/png'
+          type: 'image/png',
+          purpose: 'any maskable'
         }
       ]
     };
@@ -115,6 +119,113 @@ self.addEventListener('fetch', (event) => {
           statusText: 'Service Unavailable',
           headers: { 'Content-Type': 'text/plain' }
         });
+      })
+  );
+});
+
+// ─────────────────────────────────────────────────────────
+// WEB PUSH NOTIFICATIONS EVENT LISTENERS
+// ─────────────────────────────────────────────────────────
+
+// 1. Receive Push Event in background (even when web app is closed)
+self.addEventListener('push', (event) => {
+  let notificationData = {
+    title: 'Daivyayog Alert',
+    body: 'You have a new business notification.',
+    icon: '/logo-192.png',
+    badge: '/logo-192.png',
+    tag: 'business-alert',
+    data: { url: '/?tab=dashboard', tab: 'dashboard' }
+  };
+
+  if (event.data) {
+    try {
+      const parsed = event.data.json();
+      notificationData = { ...notificationData, ...parsed };
+    } catch (e) {
+      notificationData.body = event.data.text() || notificationData.body;
+    }
+  }
+
+  const title = notificationData.title || 'Daivyayog Alert';
+  const options = {
+    body: notificationData.body,
+    icon: notificationData.icon || '/logo-192.png',
+    badge: notificationData.badge || '/logo-192.png',
+    tag: notificationData.tag || `daivyayog-notif-${Date.now()}`,
+    data: notificationData.data || { url: '/?tab=dashboard', tab: 'dashboard' },
+    vibrate: notificationData.vibrate || [150, 50, 150, 50, 200],
+    renotify: true,
+    requireInteraction: true,
+    actions: notificationData.actions || [
+      { action: 'open', title: 'Open' },
+      { action: 'dismiss', title: 'Dismiss' }
+    ]
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// 2. Handle User Clicking the Notification or Action Button
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+
+  if (event.action === 'dismiss') {
+    return;
+  }
+
+  const notificationData = event.notification.data || {};
+  let targetUrl = notificationData.url || '/';
+
+  // If a specific tab is targeted, ensure URL reflects it
+  if (notificationData.tab && !targetUrl.includes('tab=')) {
+    targetUrl = targetUrl.includes('?')
+      ? `${targetUrl}&tab=${notificationData.tab}`
+      : `${targetUrl}?tab=${notificationData.tab}`;
+  }
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // If a window of the app is already open, focus it and tell it to navigate
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.focus();
+          client.postMessage({
+            type: 'NAVIGATE_TAB',
+            url: targetUrl,
+            tab: notificationData.tab || null,
+            data: notificationData
+          });
+          return;
+        }
+      }
+
+      // If no open window, open a new window to the target URL
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
+// 3. Handle Subscription Change (Browser / Platform Refresh)
+self.addEventListener('pushsubscriptionchange', (event) => {
+  event.waitUntil(
+    self.registration.pushManager
+      .subscribe(event.oldSubscription?.options || { userVisibleOnly: true })
+      .then((newSubscription) => {
+        // Inform active client windows about the new subscription
+        return self.clients.matchAll({ type: 'window' }).then((clients) => {
+          clients.forEach((client) => {
+            client.postMessage({
+              type: 'PUSH_SUBSCRIPTION_CHANGED',
+              subscription: newSubscription.toJSON()
+            });
+          });
+        });
+      })
+      .catch((err) => {
+        console.warn('[SW] pushsubscriptionchange failed:', err);
       })
   );
 });

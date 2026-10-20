@@ -39,10 +39,31 @@ import {
   Mail,
 } from 'lucide-react';
 import { PWAInstallModal } from './PWAInstallModal';
+import api from '../utils/api';
+import { checkCurrentSubscription, subscribeToPush } from '../utils/pushManager';
+import type { AppNotification } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
+
+
+const formatRelativeTime = (isoString?: string): string => {
+  if (!isoString) return 'Just now';
+  try {
+    const diff = Date.now() - new Date(isoString).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Just now';
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
+  } catch {
+    return 'Recently';
+  }
+};
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t, i18n } = useTranslation();
@@ -277,38 +298,115 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return () => cancelAnimationFrame(rafId);
   }, [currentTab]);
 
-  const [notifications, setNotifications] = useState([
-    {
-      id: 1,
-      titleKey: 'lowStockAlert',
-      title: 'Low Stock Alert',
-      descKey: 'lowStockDesc',
-      desc: 'Urea Fertilizer is below 15 bags.',
-      timeKey: 'tenMinsAgo',
-      time: '10 mins ago',
-      type: 'warning',
-    },
-    {
-      id: 2,
-      titleKey: 'newInvoiceCreated',
-      title: 'New Invoice Created',
-      descKey: 'newInvoiceDesc',
-      desc: 'Invoice #INV-2026-042 generated for Vaibhav Agro.',
-      timeKey: 'oneHourAgo',
-      time: '1 hour ago',
-      type: 'success',
-    },
-    {
-      id: 3,
-      titleKey: 'paymentReceived',
-      title: 'Payment Received',
-      descKey: 'paymentReceivedDesc',
-      desc: 'Received ₹15,000 from Balaji Traders.',
-      timeKey: 'threeHoursAgo',
-      time: '3 hours ago',
-      type: 'info',
-    },
-  ]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unreadNotifCount, setUnreadNotifCount] = useState<number>(0);
+  const [pushStatus, setPushStatus] = useState<{
+    supported: boolean;
+    permission: NotificationPermission;
+    isSubscribed: boolean;
+  }>({
+    supported: false,
+    permission: 'default',
+    isSubscribed: false,
+  });
+  const [isSubscribingPush, setIsSubscribingPush] = useState<boolean>(false);
+
+  const fetchLiveNotifications = async () => {
+    try {
+      const res = await api.get('/notifications?limit=25');
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        setNotifications(res.data.data);
+        setUnreadNotifCount(res.data.pagination?.unreadCount || 0);
+      }
+    } catch {
+      // Fallback silently if offline
+    }
+  };
+
+  const refreshPushStatus = async () => {
+    try {
+      const status = await checkCurrentSubscription();
+      setPushStatus(status);
+    } catch (e) {
+      console.warn('Failed to check push status', e);
+    }
+  };
+
+  useEffect(() => {
+    fetchLiveNotifications();
+    refreshPushStatus();
+
+    const handleNewNotif = (e: any) => {
+      const newNotif = e.detail;
+      if (!newNotif) return;
+      setNotifications((prev) => [newNotif, ...prev]);
+      setUnreadNotifCount((prev) => prev + 1);
+    };
+
+    window.addEventListener('daivyayog_new_notification', handleNewNotif);
+    return () => {
+      window.removeEventListener('daivyayog_new_notification', handleNewNotif);
+    };
+  }, []);
+
+  const handleEnablePush = async () => {
+    setIsSubscribingPush(true);
+    try {
+      const res = await subscribeToPush();
+      if (res.success) {
+        showToast(res.message, 'success');
+        await refreshPushStatus();
+      } else {
+        showToast(res.message, 'info');
+        await refreshPushStatus();
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to enable notifications', 'error');
+    } finally {
+      setIsSubscribingPush(false);
+    }
+  };
+
+  const handleNotificationClick = async (notif: AppNotification) => {
+    if (!notif.isRead) {
+      try {
+        await api.patch(`/notifications/${notif.notificationId}/read`);
+        setNotifications((prev) =>
+          prev.map((n) => (n.notificationId === notif.notificationId ? { ...n, isRead: true } : n))
+        );
+        setUnreadNotifCount((prev) => Math.max(0, prev - 1));
+      } catch (err) {
+        // Non-blocking
+      }
+    }
+
+    setIsNotificationOpen(false);
+
+    const targetTab = notif.data?.tab || (
+      notif.type === 'LOW_STOCK' || notif.type === 'OUT_OF_STOCK'
+        ? 'inventory'
+        : notif.type === 'PAYMENT_RECEIVED'
+        ? 'payments'
+        : notif.type === 'DUE_REMINDER' || notif.type === 'OVERDUE_PAYMENT' || notif.type === 'NEW_ORDER' || notif.type === 'ORDER_STATUS'
+        ? 'sales'
+        : 'dashboard'
+    );
+
+    if (hasPermission(targetTab)) {
+      handleTabChange(targetTab);
+    }
+  };
+
+  const handleClearAllNotifications = async () => {
+    try {
+      await api.delete('/notifications/clear-all');
+      setNotifications([]);
+      setUnreadNotifCount(0);
+      showToast(t('notifications.cleared', 'Notifications cleared'), 'success');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to clear notifications', 'error');
+    }
+  };
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -783,14 +881,20 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="notification-wrapper">
               <button
                 className="notification-btn"
-                onClick={() => setIsNotificationOpen(!isNotificationOpen)}
+                onClick={() => {
+                  setIsNotificationOpen(!isNotificationOpen);
+                  if (!isNotificationOpen) {
+                    fetchLiveNotifications();
+                    refreshPushStatus();
+                  }
+                }}
                 title={t('notifications.title', 'Notifications')}
               >
                 <Bell size={18} />
-                {notifications.length > 0 && (
+                {(unreadNotifCount > 0 || notifications.length > 0) && (
                   <>
                     <span className="notification-badge-pulse"></span>
-                    <span className="notification-badge"></span>
+                    <span className="notification-badge">{unreadNotifCount > 0 ? (unreadNotifCount > 9 ? '9+' : unreadNotifCount) : ''}</span>
                   </>
                 )}
               </button>
@@ -798,35 +902,101 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               {isNotificationOpen && (
                 <div className="notification-dropdown">
                   <div className="notification-dropdown-header">
-                    <span className="notification-dropdown-title">{t('notifications.recentNotifications', 'Recent Notifications')}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span className="notification-dropdown-title">{t('notifications.recentNotifications', 'Recent Notifications')}</span>
+                      {unreadNotifCount > 0 && (
+                        <span style={{ fontSize: '11px', background: 'var(--primary)', color: '#fff', borderRadius: '10px', padding: '1px 6px', fontWeight: 700 }}>
+                          {unreadNotifCount}
+                        </span>
+                      )}
+                    </div>
                     {notifications.length > 0 && (
                       <button
                         className="notification-dropdown-clear"
-                        onClick={() => {
-                          setNotifications([]);
-                          showToast(t('notifications.cleared', 'Notifications cleared'), 'success');
-                        }}
+                        onClick={handleClearAllNotifications}
                       >
                         {t('notifications.clearAll', 'Clear All')}
                       </button>
                     )}
                   </div>
+
+                  {/* Enable Mobile Push Notifications Banner */}
+                  {pushStatus.supported && !pushStatus.isSubscribed && (
+                    <div
+                      style={{
+                        padding: '10px 14px',
+                        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(59, 130, 246, 0.12))',
+                        borderBottom: '1px solid rgba(16, 185, 129, 0.2)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        gap: '10px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <Smartphone size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>Enable Phone Alerts</div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Get dues, stock & orders on phone</div>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleEnablePush}
+                        disabled={isSubscribingPush}
+                        className="btn btn-primary"
+                        style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, height: 'auto', minHeight: 'unset' }}
+                      >
+                        {isSubscribingPush ? 'Enabling...' : 'Enable'}
+                      </button>
+                    </div>
+                  )}
+
                   <div className="notification-dropdown-list">
                     {notifications.length === 0 ? (
                       <div className="notification-dropdown-empty">
                         {t('notifications.noNotifications', 'No new notifications')}
                       </div>
                     ) : (
-                      notifications.map((notif) => (
-                        <div key={notif.id} className="notification-item">
-                          <span className="notification-item-dot"></span>
-                          <div className="notification-item-content">
-                            <span className="notification-item-title">{notif.titleKey ? t(`notifications.${notif.titleKey}`, notif.title) : notif.title}</span>
-                            <span className="notification-item-desc">{notif.descKey ? t(`notifications.${notif.descKey}`, notif.desc) : notif.desc}</span>
-                            <span className="notification-item-time">{notif.timeKey ? t(`notifications.${notif.timeKey}`, notif.time) : notif.time}</span>
+                      notifications.map((notif) => {
+                        const dotColor =
+                          notif.type === 'PAYMENT_RECEIVED'
+                            ? '#10b981'
+                            : notif.type === 'OVERDUE_PAYMENT' || notif.type === 'OUT_OF_STOCK'
+                            ? '#ef4444'
+                            : notif.type === 'LOW_STOCK' || notif.type === 'DUE_REMINDER'
+                            ? '#f59e0b'
+                            : '#3b82f6';
+
+                        return (
+                          <div
+                            key={notif.notificationId || notif._id}
+                            className={`notification-item ${notif.isRead ? 'read' : 'unread'}`}
+                            onClick={() => handleNotificationClick(notif)}
+                            style={{
+                              cursor: 'pointer',
+                              backgroundColor: notif.isRead ? 'transparent' : 'rgba(16, 185, 129, 0.04)',
+                              borderLeft: notif.isRead ? '3px solid transparent' : '3px solid var(--primary)',
+                              padding: '10px 14px',
+                            }}
+                          >
+                            <span className="notification-item-dot" style={{ backgroundColor: dotColor }}></span>
+                            <div className="notification-item-content" style={{ width: '100%' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                                <span className="notification-item-title" style={{ fontWeight: notif.isRead ? 600 : 700 }}>
+                                  {notif.title}
+                                </span>
+                                <span className="notification-item-time" style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>
+                                  {formatRelativeTime(notif.createdAt)}
+                                </span>
+                              </div>
+                              <span className="notification-item-desc" style={{ fontSize: '12px', marginTop: '2px', display: 'block' }}>
+                                {notif.body}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))
+                        );
+                      })
                     )}
                   </div>
                   <div className="notification-dropdown-footer">

@@ -5,6 +5,7 @@ import paymentRepository from '../repositories/paymentRepository.js';
 import recycleBinRepository from '../repositories/recycleBinRepository.js';
 import { runInTransaction } from '../utils/transactionHelper.js';
 import { normalizeRecycleBinData } from '../utils/normalizeRecycleBinData.js';
+import pushNotificationService from './pushNotificationService.js';
 
 class InvoiceService {
   async getInvoice(invoiceId, companyId) {
@@ -27,7 +28,7 @@ class InvoiceService {
       throw err;
     }
 
-    return runInTransaction(async (session) => {
+    const invoice = await runInTransaction(async (session) => {
       const invoicePayload = {
         ...invoiceData,
         companyId,
@@ -74,13 +75,56 @@ class InvoiceService {
         updateTasks.push(paymentRepository.create(paymentPayload, session));
       }
 
-      const [invoice] = await Promise.all([
+      const [createdInvoice] = await Promise.all([
         invoiceRepository.create(invoicePayload, session),
         ...updateTasks,
       ]);
 
-      return invoice;
+      return createdInvoice;
     });
+
+    // Mobile Push Notifications for business events
+    try {
+      pushNotificationService.notifyNewOrder({
+        companyId,
+        invoiceNumber: invoice.invoiceNumber,
+        customerName: invoice.customerName,
+        grandTotal: invoice.grandTotal,
+      }).catch(() => {});
+
+      if (invoice.amountPaid > 0) {
+        pushNotificationService.notifyPaymentReceived({
+          companyId,
+          customerName: invoice.customerName,
+          amount: invoice.amountPaid,
+          paymentMethod: invoice.paymentMethod,
+          referenceNumber: invoice.referenceNumber,
+          invoiceNumber: invoice.invoiceNumber,
+        }).catch(() => {});
+      }
+
+      if (invoiceData.items && Array.isArray(invoiceData.items)) {
+        for (const item of invoiceData.items) {
+          if (item && item.productId) {
+            productRepository.findById(item.productId, companyId).then((prod) => {
+              if (prod && (prod.stock <= prod.minStock || prod.stock <= 0)) {
+                pushNotificationService.notifyStockAlert({
+                  companyId,
+                  productId: prod.productId,
+                  productName: prod.name,
+                  stock: prod.stock,
+                  minStock: prod.minStock,
+                }).catch(() => {});
+              }
+            }).catch(() => {});
+          }
+        }
+      }
+    } catch (e) {
+      // Non-blocking for response
+    }
+
+    return invoice;
   }
 
   async updateInvoice(invoiceId, companyId, invoiceData, updatedBy) {

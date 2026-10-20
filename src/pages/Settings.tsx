@@ -45,7 +45,12 @@ import {
   ChevronUp,
   Smartphone,
   Languages,
+  Bell,
+  Send,
+
+  Check,
 } from 'lucide-react';
+import { checkCurrentSubscription, subscribeToPush, unsubscribeFromPush, sendTestPushNotification } from '../utils/pushManager';
 import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
 const INDIAN_STATES = [
@@ -103,7 +108,7 @@ export const Settings: React.FC = () => {
   const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
   const { currentUser, currentCompany, forgetDevice } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'users' | 'backup' | 'erase'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'notifications' | 'users' | 'backup' | 'erase'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Erase Business Data module states
@@ -1019,6 +1024,63 @@ export const Settings: React.FC = () => {
   const [showLowStockAlert, setShowLowStockAlert] = useState(settings.showLowStockAlert !== false);
   const [showOutOfStockAlert, setShowOutOfStockAlert] = useState(settings.showOutOfStockAlert !== false);
 
+  // Push Notification Preferences
+  const [notifyLowStock, setNotifyLowStock] = useState(settings.notifyLowStock !== false);
+  const [notifyOutOfStock, setNotifyOutOfStock] = useState(settings.notifyOutOfStock !== false);
+  const [notifyUpcomingDues, setNotifyUpcomingDues] = useState(settings.notifyUpcomingDues !== false);
+  const [notifyOverdueDues, setNotifyOverdueDues] = useState(settings.notifyOverdueDues !== false);
+  const [dueReminderDaysBefore, setDueReminderDaysBefore] = useState(settings.dueReminderDaysBefore || 2);
+  const [notifyPaymentReceived, setNotifyPaymentReceived] = useState(settings.notifyPaymentReceived !== false);
+  const [notifyNewOrders, setNotifyNewOrders] = useState(settings.notifyNewOrders !== false);
+  const [notifyOrderStatus, setNotifyOrderStatus] = useState(settings.notifyOrderStatus !== false);
+
+  const [pushStatus, setPushStatus] = useState<{
+    supported: boolean;
+    permission: NotificationPermission;
+    isSubscribed: boolean;
+  }>({
+    supported: false,
+    permission: 'default',
+    isSubscribed: false,
+  });
+  const [isPushToggling, setIsPushToggling] = useState(false);
+  const [isTestingPush, setIsTestingPush] = useState(false);
+
+  useEffect(() => {
+    checkCurrentSubscription().then(setPushStatus).catch(() => {});
+  }, []);
+
+  const handleTogglePush = async () => {
+    setIsPushToggling(true);
+    try {
+      if (pushStatus.isSubscribed) {
+        const res = await unsubscribeFromPush();
+        showToast(res.message, res.success ? 'info' : 'error');
+      } else {
+        const res = await subscribeToPush();
+        showToast(res.message, res.success ? 'success' : 'info');
+      }
+      const updated = await checkCurrentSubscription();
+      setPushStatus(updated);
+    } catch (err: any) {
+      showToast(err.message || 'Push registration failed', 'error');
+    } finally {
+      setIsPushToggling(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsTestingPush(true);
+    try {
+      const res = await sendTestPushNotification();
+      showToast(res.message, res.success ? 'success' : 'error');
+    } catch (err: any) {
+      showToast(err.message || 'Failed to trigger test alert', 'error');
+    } finally {
+      setIsTestingPush(false);
+    }
+  };
+
   const currentFormValues = {
     businessName,
     ownerName,
@@ -1208,10 +1270,29 @@ export const Settings: React.FC = () => {
       dateFormat,
       showLowStockAlert,
       showOutOfStockAlert,
+      notifyLowStock,
+      notifyOutOfStock,
+      notifyUpcomingDues,
+      notifyOverdueDues,
+      dueReminderDaysBefore,
+      notifyPaymentReceived,
+      notifyNewOrders,
+      notifyOrderStatus,
       theme: settings.theme,
       address: legacyAddress,
       signature: savedSignature,
     });
+
+    api.put('/notifications/settings/preferences', {
+      notifyLowStock,
+      notifyOutOfStock,
+      notifyUpcomingDues,
+      notifyOverdueDues,
+      dueReminderDaysBefore,
+      notifyPaymentReceived,
+      notifyNewOrders,
+      notifyOrderStatus,
+    }).catch(() => {});
 
     setSavedSuccess(true);
     if (showToast) {
@@ -1590,6 +1671,14 @@ export const Settings: React.FC = () => {
           data-active={activeTab === 'system'}
         >
           <Sliders size={15} /> {t('settings.printAndSystem', 'Print & System')}
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('notifications')}
+          className={`settings-tab-pill ${activeTab === 'notifications' ? 'active' : ''}`}
+          data-active={activeTab === 'notifications'}
+        >
+          <Bell size={15} /> {t('settings.notifications', 'Notifications')}
         </button>
         <button
           type="button"
@@ -2804,6 +2893,361 @@ export const Settings: React.FC = () => {
                 </div>
               </div>
             </>
+          )}
+
+          {/* TAB: Mobile Push Notifications & Business Alerts */}
+          {activeTab === 'notifications' && (
+            <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+              
+              {/* Card 1: Device Registration & Push Status */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px', flexWrap: 'wrap', gap: '10px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <Smartphone size={20} />
+                    </div>
+                    <div>
+                      <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                        {t('settings.mobilePushStatus', 'Mobile Push Notifications (PWA)')}
+                      </h3>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                        {t('settings.mobilePushDesc', 'Receive business alerts directly in your phone notification drawer, even when the web app is closed.')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '20px',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        backgroundColor: pushStatus.isSubscribed
+                          ? 'rgba(16, 185, 129, 0.15)'
+                          : pushStatus.permission === 'denied'
+                          ? 'rgba(239, 68, 68, 0.15)'
+                          : 'rgba(100, 116, 139, 0.15)',
+                        color: pushStatus.isSubscribed
+                          ? '#10b981'
+                          : pushStatus.permission === 'denied'
+                          ? '#ef4444'
+                          : 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '8px',
+                          height: '8px',
+                          borderRadius: '50%',
+                          backgroundColor: pushStatus.isSubscribed
+                            ? '#10b981'
+                            : pushStatus.permission === 'denied'
+                            ? '#ef4444'
+                            : '#94a3b8',
+                        }}
+                      ></span>
+                      {pushStatus.isSubscribed
+                        ? t('settings.pushActive', 'Subscribed & Active on This Device')
+                        : pushStatus.permission === 'denied'
+                        ? t('settings.pushBlocked', 'Permission Blocked in Browser Settings')
+                        : t('settings.pushNotEnabled', 'Not Enabled on This Device')}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ backgroundColor: 'var(--bg-subtle, rgba(0,0,0,0.02))', padding: '16px 20px', borderRadius: '12px', border: '1px solid var(--border-color)', marginBottom: '20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+                    <div style={{ maxWidth: '650px' }}>
+                      <h4 style={{ margin: '0 0 6px 0', fontSize: '14px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                        {pushStatus.isSubscribed
+                          ? t('settings.notificationsRunningHeading', 'Push Notifications are Active')
+                          : t('settings.enableNotificationsHeading', 'Enable Business Notifications on Your Device')}
+                      </h4>
+                      <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
+                        {t('settings.notificationsExplanation', 'When enabled, Daivyayog will deliver instant notifications to your mobile phone notification shade for upcoming dues, overdue payments, low stock warnings, payments received, and new sales orders.')}
+                      </p>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={handleTogglePush}
+                        disabled={isPushToggling || (!pushStatus.supported && !pushStatus.isSubscribed)}
+                        className={`btn ${pushStatus.isSubscribed ? 'btn-outline' : 'btn-primary'}`}
+                        style={{ padding: '9px 18px', fontWeight: 700 }}
+                      >
+                        {isPushToggling ? (
+                          <RefreshCw size={15} className="spin" />
+                        ) : pushStatus.isSubscribed ? (
+                          <Check size={15} />
+                        ) : (
+                          <Bell size={15} />
+                        )}
+                        <span>
+                          {isPushToggling
+                            ? t('common.loading', 'Processing...')
+                            : pushStatus.isSubscribed
+                            ? t('settings.disableOnDevice', 'Disable on This Device')
+                            : t('settings.enableBusinessNotifications', 'Enable Business Notifications')}
+                        </span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSendTestPush}
+                        disabled={isTestingPush || !pushStatus.isSubscribed}
+                        className="btn btn-secondary"
+                        style={{ padding: '9px 18px', fontWeight: 700 }}
+                        title={!pushStatus.isSubscribed ? 'Enable notifications on this device first to test' : 'Send an immediate test alert to this device'}
+                      >
+                        <Send size={15} />
+                        <span>{isTestingPush ? t('common.sending', 'Sending...') : t('settings.sendTestAlert', 'Send Test Notification')}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {!pushStatus.supported && (
+                    <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '8px', backgroundColor: 'rgba(239, 68, 68, 0.08)', color: '#ef4444', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <AlertCircle size={16} />
+                      <span>{t('settings.pushUnsupportedNote', 'Web Push requires a browser that supports the Service Worker and Push API (Chrome, Edge, Firefox, or Safari on iOS 16.4+ installed as PWA).')}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
+                  <div style={{ padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Smartphone size={14} style={{ color: 'var(--primary)' }} /> Android Installation
+                    </div>
+                    <div>Tap the browser menu (three dots) & choose <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong> for native lockscreen alerts.</div>
+                  </div>
+                  <div style={{ padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <Smartphone size={14} style={{ color: '#3b82f6' }} /> Apple iOS (iPhone/iPad)
+                    </div>
+                    <div>In Safari, tap <strong>Share</strong> (square with arrow up) and select <strong>"Add to Home Screen"</strong> to receive push alerts on iOS 16.4+.</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Customer Dues & Payment Overdue Alerts */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(245, 158, 11, 0.1)', color: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Clock size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.customerDuesAlerts', 'Customer Dues & Overdue Payment Reminders')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.customerDuesAlertsSub', 'Automatic daily alerts for invoices approaching due date or overdue balances.')}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={notifyUpcomingDues}
+                      onChange={(e) => setNotifyUpcomingDues(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {t('settings.upcomingDueReminder', 'Upcoming Payment Due Reminders')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.upcomingDueSub', 'Notify when an unpaid invoice is approaching its expected clearance date.')}
+                      </div>
+
+                      {notifyUpcomingDues && (
+                        <div style={{ marginTop: '10px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {t('settings.reminderDaysThreshold', 'Send reminder')}:
+                          </span>
+                          <select
+                            className="form-control"
+                            style={{ width: 'auto', padding: '4px 10px', fontSize: '12px' }}
+                            value={dueReminderDaysBefore}
+                            onChange={(e) => setDueReminderDaysBefore(parseInt(e.target.value) || 2)}
+                          >
+                            <option value={1}>1 day before due date</option>
+                            <option value={2}>2 days before due date</option>
+                            <option value={3}>3 days before due date</option>
+                            <option value={5}>5 days before due date</option>
+                            <option value={7}>7 days before due date</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={notifyOverdueDues}
+                      onChange={(e) => setNotifyOverdueDues(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {t('settings.overduePaymentAlert', 'Overdue Payment Alerts')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.overduePaymentSub', 'Send high-priority alerts with customer name, invoice number, and outstanding balance when past due date.')}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Card 3: Payments Received & Cash Flow */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: '#10b981', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <CreditCard size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.paymentAlertsHeading', 'Customer Payments & Receipts')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.paymentAlertsSub', 'Real-time alert when payments are recorded against invoices or customer ledgers.')}
+                    </p>
+                  </div>
+                </div>
+
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                  <input
+                    type="checkbox"
+                    checked={notifyPaymentReceived}
+                    onChange={(e) => setNotifyPaymentReceived(e.target.checked)}
+                    style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                  />
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                      {t('settings.paymentReceivedAlert', 'Customer Payment Received Alert')}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                      {t('settings.paymentReceivedSub', 'Receive immediate notification with customer name, payment amount, and method (UPI, Cash, Bank Transfer) when a receipt is recorded.')}
+                    </div>
+                  </div>
+                </label>
+              </div>
+
+              {/* Card 4: Inventory & Low Stock Alerts */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <ShieldAlert size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.inventoryAlertsHeading', 'Inventory & Stock Level Alerts')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.inventoryAlertsSub', 'Alerts when warehouse stock falls below minimum safety thresholds.')}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={notifyLowStock}
+                      onChange={(e) => setNotifyLowStock(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {t('settings.lowStockPushAlert', 'Low Stock Push Warning')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.lowStockPushSub', 'Push notification triggered when billing deductions drop product stock below minimum safety limit.')}
+                      </div>
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={notifyOutOfStock}
+                      onChange={(e) => setNotifyOutOfStock(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {t('settings.outOfStockPushAlert', 'Out of Stock Critical Alert')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.outOfStockPushSub', 'Immediate notification when product stock is completely exhausted (0 units).')}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              {/* Card 5: Orders & Sales Vouchers */}
+              <div className="card">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1.5px solid var(--border-color)', paddingBottom: '14px', marginBottom: '20px' }}>
+                  <div style={{ width: '40px', height: '40px', borderRadius: '10px', backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.salesOrdersAlertsHeading', 'Sales Orders & Invoices')}
+                    </h3>
+                    <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                      {t('settings.salesOrdersAlertsSub', 'Alerts for newly generated invoices, orders, and status transitions.')}
+                    </p>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={notifyNewOrders}
+                      onChange={(e) => setNotifyNewOrders(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {t('settings.newOrderAlert', 'New Invoice / Order Issued Alert')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.newOrderSub', 'Notification with customer name and invoice total whenever a sale is completed.')}
+                      </div>
+                    </div>
+                  </label>
+
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={notifyOrderStatus}
+                      onChange={(e) => setNotifyOrderStatus(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)' }}>
+                        {t('settings.orderStatusAlert', 'Order Status & Return Updates')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.orderStatusSub', 'Notification when orders are marked as dispatched, delivered, or returned.')}
+                      </div>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+            </div>
           )}
 
           {/* TAB 6: Staff & Roles Management (Redeveloped From Scratch) */}
