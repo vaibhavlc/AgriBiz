@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import { translateStatus } from '../utils/statusTranslation';
@@ -8,6 +8,7 @@ import { KpiCard } from '../components/KpiCard';
 import { SupplierModal } from '../components/SupplierModal';
 import { ProductModal } from '../components/ProductModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
+import { InvoiceA5Skeleton, InvoiceThermalSkeleton, ensureFontsReady } from '../components/InvoiceSkeleton';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import {
@@ -123,7 +124,7 @@ const translatePurchasePaymentMethod = (method: string, isMr: boolean) => {
 };
 
 export const Purchases: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     settings,
     purchases,
@@ -172,13 +173,45 @@ export const Purchases: React.FC = () => {
     }
   }, [settings.invoiceLanguage]);
 
-  const handleToggleInvoiceLanguage = (lang: 'mr' | 'en') => {
-    setCurrentInvoiceLanguage(lang);
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
+  const invoiceSwitchTimeoutRef = useRef<any>(null);
+
+  useEffect(() => {
+    return () => {
+      if (invoiceSwitchTimeoutRef.current) clearTimeout(invoiceSwitchTimeoutRef.current);
+    };
+  }, []);
+
+  const handleToggleInvoiceLanguage = async (lang: 'mr' | 'en') => {
+    if (lang === currentInvoiceLanguage) return;
+
+    setIsInvoiceLoading(true);
+    if (invoiceSwitchTimeoutRef.current) {
+      clearTimeout(invoiceSwitchTimeoutRef.current);
+    }
+
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('agribiz_invoice_language', lang);
       } catch (e) {}
     }
+
+    // Contextual notification for purchase voucher language change
+    const isUiMarathi = i18n.language === 'mr';
+    const msg = lang === 'mr'
+      ? (isUiMarathi ? 'चलनाची भाषा मराठीमध्ये बदलली.' : 'Invoice language changed to Marathi.')
+      : (isUiMarathi ? 'चलनाची भाषा इंग्रजीमध्ये बदलली.' : 'Invoice language changed to English.');
+    showToast(msg, 'success');
+
+    setCurrentInvoiceLanguage(lang);
+
+    try {
+      await ensureFontsReady(lang);
+    } catch (e) {}
+
+    invoiceSwitchTimeoutRef.current = setTimeout(() => {
+      setIsInvoiceLoading(false);
+    }, 180);
   };
   const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
   const [isDeletingPurchase, setIsDeletingPurchase] = useState(false);
@@ -1674,7 +1707,12 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""} ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
+            {isInvoiceLoading ? (
+              <div className="print-invoice-layout invoice-print-container dense-layout invoice-skeleton-container no-print">
+                <InvoiceA5Skeleton />
+              </div>
+            ) : (
+              <div className={`print-invoice-layout invoice-print-container dense-layout ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""} ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
@@ -2037,10 +2075,16 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
               </div>
             )}
           </div>
+          )}
         </div>
         ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className={`print-invoice-layout thermal ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
+            {isInvoiceLoading ? (
+              <div className="print-invoice-layout thermal invoice-skeleton-container no-print">
+                <InvoiceThermalSkeleton />
+              </div>
+            ) : (
+              <div className={`print-invoice-layout thermal ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
                 <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>{displayBusinessName}</h3>
                 {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{displayAddress}</p>}
@@ -2154,6 +2198,7 @@ ${transactionReference ? `Txn Reference: ${transactionReference}\n` : ''}${attac
                 <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>Powered by {displayBusinessName} POS software</div>
               </div>
             </div>
+            )}
           </div>
         )}
 

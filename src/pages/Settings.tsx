@@ -1232,14 +1232,6 @@ export const Settings: React.FC = () => {
       ...settings,
       invoiceLanguage: lang,
     });
-    if (showToast) {
-      showToast(
-        lang === 'mr'
-          ? t('settings.invoiceLanguageSetMr', 'Invoice language set to Marathi (मराठी)')
-          : t('settings.invoiceLanguageSetEn', 'Invoice language set to English'),
-        'success'
-      );
-    }
   };
 
   useEffect(() => {

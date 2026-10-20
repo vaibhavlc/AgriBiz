@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import html2canvas from 'html2canvas';
@@ -6,6 +6,7 @@ import { jsPDF } from 'jspdf';
 import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
+import { InvoiceA5Skeleton, InvoiceThermalSkeleton, ensureFontsReady } from '../components/InvoiceSkeleton';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
 import { translatePaymentMethod, translateStatus } from '../utils/statusTranslation';
 import { KpiCard } from '../components/KpiCard';
@@ -126,7 +127,7 @@ const translateInvoicePaymentMethod = (method: string, isMr: boolean) => {
 };
 
 export const Sales: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const {
     invoices,
     quotations,
@@ -153,7 +154,6 @@ export const Sales: React.FC = () => {
     setSalesActiveTab,
     showToast,
     settings,
-    updateSettings,
     setViewCustomer,
     setCurrentTab,
     salesFormPresetCustomerId,
@@ -251,21 +251,58 @@ export const Sales: React.FC = () => {
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
 
-  const currentInvoiceLanguage: 'mr' | 'en' =
-    settings.invoiceLanguage ||
-    (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_invoice_language') as 'mr' | 'en') : null) ||
-    'en';
+  const [currentInvoiceLanguage, setCurrentInvoiceLanguage] = useState<'mr' | 'en'>(() => {
+    return (
+      (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_invoice_language') as 'mr' | 'en') : null) ||
+      settings.invoiceLanguage ||
+      'mr'
+    );
+  });
+  const [isInvoiceLoading, setIsInvoiceLoading] = useState(false);
+  const invoiceSwitchTimeoutRef = useRef<any>(null);
 
-  const handleToggleInvoiceLanguage = (newLang: 'mr' | 'en') => {
+  useEffect(() => {
+    if (settings.invoiceLanguage) {
+      setCurrentInvoiceLanguage(settings.invoiceLanguage);
+    }
+  }, [settings.invoiceLanguage]);
+
+  useEffect(() => {
+    return () => {
+      if (invoiceSwitchTimeoutRef.current) clearTimeout(invoiceSwitchTimeoutRef.current);
+    };
+  }, []);
+
+  const handleToggleInvoiceLanguage = async (newLang: 'mr' | 'en') => {
+    if (newLang === currentInvoiceLanguage) return;
+
+    setIsInvoiceLoading(true);
+    if (invoiceSwitchTimeoutRef.current) {
+      clearTimeout(invoiceSwitchTimeoutRef.current);
+    }
+
     if (typeof window !== 'undefined') {
       try {
         localStorage.setItem('agribiz_invoice_language', newLang);
       } catch (e) {}
     }
-    updateSettings({
-      ...settings,
-      invoiceLanguage: newLang,
-    });
+
+    // Contextual notification for invoice language change
+    const isUiMarathi = i18n.language === 'mr';
+    const msg = newLang === 'mr'
+      ? (isUiMarathi ? 'चलनाची भाषा मराठीमध्ये बदलली.' : 'Invoice language changed to Marathi.')
+      : (isUiMarathi ? 'चलनाची भाषा इंग्रजीमध्ये बदलली.' : 'Invoice language changed to English.');
+    showToast(msg, 'success');
+
+    setCurrentInvoiceLanguage(newLang);
+
+    try {
+      await ensureFontsReady(newLang);
+    } catch (e) {}
+
+    invoiceSwitchTimeoutRef.current = setTimeout(() => {
+      setIsInvoiceLoading(false);
+    }, 180);
   };
 
   // Modals & Filters
@@ -1721,7 +1758,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container dense-layout ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            {isInvoiceLoading ? (
+              <div className="print-invoice-layout invoice-print-container dense-layout invoice-skeleton-container no-print">
+                <InvoiceA5Skeleton />
+              </div>
+            ) : (
+              <div className={`print-invoice-layout invoice-print-container dense-layout ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
@@ -2046,51 +2088,58 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
               )}
             </div>
+            )}
           </div>
       ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="print-invoice-layout thermal">
-              <div style={{ textAlign: "center", marginBottom: "12px" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>
-                  {currentInvoiceLanguage === 'en' ? displayBusinessName.toUpperCase() : displayBusinessName}
-                </h3>
-                {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{displayAddress}</p>}
-                {settings.showContact && (
-                  <p style={{ margin: 0, fontSize: "11px" }}>
-                    {[settings.phone, settings.email].filter(Boolean).join(' • ')}
-                  </p>
-                )}
-                {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
+            {isInvoiceLoading ? (
+              <div className="print-invoice-layout thermal invoice-skeleton-container no-print">
+                <InvoiceThermalSkeleton />
               </div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{invLabels.billNoLabel} <strong>{selectedInvoice.invoiceNumber}</strong></span><span>{invLabels.dateLabel} {formatDate(selectedInvoice.date)}</span></div>                <div>{invLabels.customer}:{' '}
-                  {customerDetail ? (
-                    <>
-                      <button
-                        type="button"
-                        className="table-link-btn customer-link no-print"
-                        style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
-                        onClick={() => {
-                          setViewCustomer(customerDetail.id);
-                          setCurrentTab('customers');
-                          setViewInvoice(null);
-                        }}
-                      >
-                        <strong>{customerDetail.name}</strong>
-                      </button>
-                      <strong className="print-only">{customerDetail.name}</strong>
-                    </>
-                  ) : (
-                    <strong>{invLabels.walkInCustomer}</strong>
+            ) : (
+              <div className={`print-invoice-layout thermal ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
+                <div style={{ textAlign: "center", marginBottom: "12px" }}>
+                  <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>
+                    {currentInvoiceLanguage === 'en' ? displayBusinessName.toUpperCase() : displayBusinessName}
+                  </h3>
+                  {settings.showAddress && <p style={{ margin: "2px 0 0 0", fontSize: "11px" }}>{displayAddress}</p>}
+                  {settings.showContact && (
+                    <p style={{ margin: 0, fontSize: "11px" }}>
+                      {[settings.phone, settings.email].filter(Boolean).join(' • ')}
+                    </p>
                   )}
-                </div>{customerDetail?.phone && <div>{invLabels.phoneLabel} {customerDetail.phone}</div>}</div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{invLabels.itemCaps}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>{t('sales.amtCaps', 'AMT')}({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>{invLabels.rateLabel} {settings.currencySymbol || "₹"}{item.price} | {invLabels.gst}: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{invLabels.totalTaxable}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{invLabels.discountMinus}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>{invLabels.grandTotalCaps}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>{invLabels.cashCollectedCaps}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>{invLabels.balanceDueCaps}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
-              <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
-              <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || invLabels.thankYouVisitAgain}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div></div>
-            </div>
+                  {settings.showGstin && settings.gstin && <p style={{ margin: "4px 0 0 0", fontSize: "11px", fontWeight: "bold" }}>GSTIN: {settings.gstin}</p>}
+                </div>
+                <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+                <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "2px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{invLabels.billNoLabel} <strong>{selectedInvoice.invoiceNumber}</strong></span><span>{invLabels.dateLabel} {formatDate(selectedInvoice.date)}</span></div>                <div>{invLabels.customer}:{' '}
+                    {customerDetail ? (
+                      <>
+                        <button
+                          type="button"
+                          className="table-link-btn customer-link no-print"
+                          style={{ fontSize: 'inherit', fontWeight: 'inherit', padding: 0, border: 'none', background: 'none', cursor: 'pointer', display: 'inline' }}
+                          onClick={() => {
+                            setViewCustomer(customerDetail.id);
+                            setCurrentTab('customers');
+                            setViewInvoice(null);
+                          }}
+                        >
+                          <strong>{customerDetail.name}</strong>
+                        </button>
+                        <strong className="print-only">{customerDetail.name}</strong>
+                      </>
+                    ) : (
+                      <strong>{invLabels.walkInCustomer}</strong>
+                    )}
+                  </div>{customerDetail?.phone && <div>{invLabels.phoneLabel} {customerDetail.phone}</div>}</div>
+                <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+                <div style={{ fontSize: "11px" }}><div style={{ fontWeight: "bold", display: "grid", gridTemplateColumns: "3fr 1fr 1fr", paddingBottom: "4px" }}><span>{invLabels.itemCaps}</span><span style={{ textAlign: "center" }}>{t('sales.qtyCaps', 'QTY')}</span><span style={{ textAlign: "right" }}>{t('sales.amtCaps', 'AMT')}({settings.currencySymbol || "₹"})</span></div><div style={{ borderTop: "1px solid #eee", margin: "4px 0" }}></div>{selectedInvoice.items.map((item, index) => (<div key={index} style={{ marginBottom: "6px", display: "grid", gridTemplateColumns: "3fr 1fr 1fr" }}><div><span style={{ fontWeight: "bold" }}>{item.productName}</span><div style={{ fontSize: "10px", color: "#555" }}>{invLabels.rateLabel} {settings.currencySymbol || "₹"}{item.price} | {invLabels.gst}: {item.gstRate}%</div></div><span style={{ textAlign: "center", fontWeight: "bold" }}>{item.quantity}</span><span style={{ textAlign: "right", fontWeight: "bold" }}>{item.total.toFixed(2)}</span></div>))}</div>
+                <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+                <div style={{ fontSize: "11px", display: "flex", flexDirection: "column", gap: "3px" }}><div style={{ display: "flex", justifyContent: "space-between" }}><span>{invLabels.totalTaxable}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.subtotal.toFixed(2)}</span></div>{invoiceTotals.discountTotal > 0 && <div style={{ display: "flex", justifyContent: "space-between" }}><span>{invLabels.discountMinus}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.discountTotal.toFixed(2)}</span></div>}{isInterState ? <div style={{ display: "flex", justifyContent: "space-between" }}><span>IGST ({(selectedInvoice.items[0]?.gstRate || 18)}%)</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.gstTotal.toFixed(2)}</span></div> : <><div style={{ display: "flex", justifyContent: "space-between" }}><span>CGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between" }}><span>SGST ({(selectedInvoice.items[0]?.gstRate || 18) / 2}%)</span><span>{settings.currencySymbol || "₹"}{(invoiceTotals.gstTotal / 2).toFixed(2)}</span></div></>}<div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", fontSize: "13px", borderTop: "1px solid #000", borderBottom: "1px solid #000", padding: "4px 0" }}><span>{invLabels.grandTotalCaps}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.grandTotal.toFixed(2)}</span></div><div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "green" }}><span>{invLabels.cashCollectedCaps}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.amountPaid.toFixed(2)}</span></div>{invoiceTotals.balanceDue > 0 && <div style={{ display: "flex", justifyContent: "space-between", fontWeight: "bold", color: "red" }}><span>{invLabels.balanceDueCaps}</span><span>{settings.currencySymbol || "₹"}{invoiceTotals.balanceDue.toFixed(2)}</span></div>}</div>
+                <div style={{ borderTop: "1px dashed #000", margin: "8px 0" }}></div>
+                <div style={{ textAlign: "center", fontSize: "10px", display: "flex", flexDirection: "column", gap: "2px" }}><div>{settings.footerMessage || invLabels.thankYouVisitAgain}</div>{selectedInvoice.notes && <div style={{ fontStyle: "italic" }}>"{selectedInvoice.notes}"</div>}<div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div></div>
+              </div>
+            )}
           </div>
         )}
         <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", marginTop: "24px" }}>
@@ -2174,7 +2223,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
         {printTemplate === "A5" ? (
           <div className="invoice-mockup-wrapper">
-            <div className={`print-invoice-layout invoice-print-container dense-layout ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
+            {isInvoiceLoading ? (
+              <div className="print-invoice-layout invoice-print-container dense-layout invoice-skeleton-container no-print">
+                <InvoiceA5Skeleton />
+              </div>
+            ) : (
+              <div className={`print-invoice-layout invoice-print-container dense-layout ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''} ${(settings.showLogo && (settings.watermarkLogo || settings.logo)) ? "has-custom-watermark" : ""}`}>
               {/* Dynamic Logo Watermark in Center */}
               {settings.showLogo && (settings.watermarkLogo || settings.logo) && (
                 <div className={`print-watermark-logo ${(settings.watermarkAsIs || settings.watermarkColorMode === 'as_is') ? 'as-is' : ''}`}>
@@ -2474,10 +2528,16 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
               )}
             </div>
+            )}
           </div>
         ) : (
           <div style={{ display: "flex", justifyContent: "center" }}>
-            <div className="print-invoice-layout thermal">
+            {isInvoiceLoading ? (
+              <div className="print-invoice-layout thermal invoice-skeleton-container no-print">
+                <InvoiceThermalSkeleton />
+              </div>
+            ) : (
+              <div className={`print-invoice-layout thermal ${currentInvoiceLanguage === 'mr' ? 'invoice-marathi' : ''}`}>
               <div style={{ textAlign: "center", marginBottom: "12px" }}>
                 <h3 style={{ margin: 0, fontSize: "16px", fontWeight: 800 }}>
                   {currentInvoiceLanguage === 'en' ? displayBusinessName.toUpperCase() : displayBusinessName}
@@ -2579,6 +2639,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <div style={{ fontSize: "8px", color: "#777", marginTop: "4px" }}>{t("sales.poweredBy", "Powered by {{businessName}} POS software", { businessName: settings.businessName || "AgriBiz" })}</div>
               </div>
             </div>
+            )}
           </div>
         )}
 
