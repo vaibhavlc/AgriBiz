@@ -76,7 +76,7 @@ const notificationSchema = new mongoose.Schema(
 
 notificationSchema.index({ companyId: 1, createdAt: -1 });
 notificationSchema.index({ companyId: 1, userId: 1, isRead: 1 });
-notificationSchema.index({ companyId: 1, eventReference: 1 });
+notificationSchema.index({ companyId: 1, eventReference: 1 }, { unique: true, sparse: true });
 
 const Notification = mongoose.model('Notification', notificationSchema);
 export default Notification;

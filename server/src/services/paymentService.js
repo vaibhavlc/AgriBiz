@@ -62,6 +62,7 @@ class PaymentService {
           amount: payment.amount,
           paymentMethod: payment.paymentMethod,
           referenceNumber: payment.referenceNumber,
+          paymentId: payment.paymentId,
         }).catch(() => {});
       }
     } catch (e) {

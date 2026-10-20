@@ -1,14 +1,14 @@
 import { Router } from 'express';
 import notificationController from '../controllers/notificationController.js';
-import { authenticate } from '../middlewares/authMiddleware.js';
+import { authenticate, authorizePermission } from '../middlewares/authMiddleware.js';
 
 const router = Router();
 
-// All routes require authentication
-router.use(authenticate);
-
-// VAPID Public key endpoint
+// VAPID Public key endpoint (Publicly readable per RFC 8292 to allow devices to subscribe)
 router.get('/vapid-public-key', (req, res) => notificationController.getVapidPublicKey(req, res));
+
+// All following routes require authentication
+router.use(authenticate);
 
 // Push subscription endpoints
 router.post('/subscribe', (req, res) => notificationController.subscribe(req, res));
@@ -26,6 +26,6 @@ router.delete('/clear-all', (req, res) => notificationController.clearAll(req, r
 
 // Notification settings preferences
 router.get('/settings/preferences', (req, res) => notificationController.getSettings(req, res));
-router.put('/settings/preferences', (req, res) => notificationController.updateSettings(req, res));
+router.put('/settings/preferences', authorizePermission('settings'), (req, res) => notificationController.updateSettings(req, res));
 
 export default router;

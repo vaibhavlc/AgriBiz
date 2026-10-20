@@ -82,6 +82,7 @@ const settingsSchema = new mongoose.Schema(
     notifyPaymentReceived: { type: Boolean, default: true },
     notifyNewOrders: { type: Boolean, default: true },
     notifyOrderStatus: { type: Boolean, default: true },
+    maskSensitiveNotificationData: { type: Boolean, default: true },
     
     // Sync & Auditing
     version: { type: Number, default: 1 },

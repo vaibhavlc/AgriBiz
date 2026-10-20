@@ -1033,6 +1033,7 @@ export const Settings: React.FC = () => {
   const [notifyPaymentReceived, setNotifyPaymentReceived] = useState(settings.notifyPaymentReceived !== false);
   const [notifyNewOrders, setNotifyNewOrders] = useState(settings.notifyNewOrders !== false);
   const [notifyOrderStatus, setNotifyOrderStatus] = useState(settings.notifyOrderStatus !== false);
+  const [maskSensitiveNotificationData, setMaskSensitiveNotificationData] = useState(settings.maskSensitiveNotificationData !== false);
 
   const [pushStatus, setPushStatus] = useState<{
     supported: boolean;
@@ -1278,6 +1279,7 @@ export const Settings: React.FC = () => {
       notifyPaymentReceived,
       notifyNewOrders,
       notifyOrderStatus,
+      maskSensitiveNotificationData,
       theme: settings.theme,
       address: legacyAddress,
       signature: savedSignature,
@@ -1292,6 +1294,7 @@ export const Settings: React.FC = () => {
       notifyPaymentReceived,
       notifyNewOrders,
       notifyOrderStatus,
+      maskSensitiveNotificationData,
     }).catch(() => {});
 
     setSavedSuccess(true);
@@ -3016,6 +3019,26 @@ export const Settings: React.FC = () => {
                       <span>{t('settings.pushUnsupportedNote', 'Web Push requires a browser that supports the Service Worker and Push API (Chrome, Edge, Firefox, or Safari on iOS 16.4+ installed as PWA).')}</span>
                     </div>
                   )}
+                </div>
+
+                <div style={{ padding: '14px 16px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)', marginBottom: '16px' }}>
+                  <label style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={maskSensitiveNotificationData}
+                      onChange={(e) => setMaskSensitiveNotificationData(e.target.checked)}
+                      style={{ width: '18px', height: '18px', cursor: 'pointer', marginTop: '2px' }}
+                    />
+                    <div>
+                      <div style={{ fontWeight: 700, fontSize: '14px', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <Eye size={15} style={{ color: 'var(--primary)' }} />
+                        {t('settings.maskSensitiveTitle', 'Mask Sensitive Financial Data on Device Lockscreen')}
+                      </div>
+                      <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                        {t('settings.maskSensitiveSub', 'Sanitizes push notifications to omit sensitive debtor names and exact rupee amounts from lockscreen banners. Full details remain visible when opening the app.')}
+                      </div>
+                    </div>
+                  </label>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', fontSize: '11.5px', color: 'var(--text-muted)' }}>

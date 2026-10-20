@@ -28,6 +28,7 @@ class InvoiceService {
       throw err;
     }
 
+    let instantPaymentId = null;
     const invoice = await runInTransaction(async (session) => {
       const invoicePayload = {
         ...invoiceData,
@@ -58,8 +59,9 @@ class InvoiceService {
 
       // Create Payment log if invoice was paid instantly
       if (invoicePayload.amountPaid > 0 && invoicePayload.customerId) {
+        instantPaymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const paymentPayload = {
-          paymentId: `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+          paymentId: instantPaymentId,
           companyId,
           date: invoicePayload.date,
           type: 'CustomerReceipt',
@@ -100,6 +102,7 @@ class InvoiceService {
           paymentMethod: invoice.paymentMethod,
           referenceNumber: invoice.referenceNumber,
           invoiceNumber: invoice.invoiceNumber,
+          paymentId: instantPaymentId,
         }).catch(() => {});
       }
 

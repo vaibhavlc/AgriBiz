@@ -112,9 +112,22 @@ export const subscribeToPush = async (): Promise<{
     }
 
     // 2. Fetch VAPID Public Key from backend
-    const keyRes = await api.get('/notifications/vapid-public-key');
+    let keyRes;
+    try {
+      keyRes = await api.get('/notifications/vapid-public-key');
+    } catch (apiErr: any) {
+      const msg = apiErr.response?.data?.message || apiErr.message;
+      if (apiErr.response?.status === 404) {
+        throw new Error('Notification service endpoint not found (HTTP 404). Backend service deployment is pending.');
+      }
+      if (apiErr.response?.status === 503) {
+        throw new Error(msg || 'Web Push notifications are not configured on the server (missing VAPID keys).');
+      }
+      throw new Error(`Failed to retrieve notification credentials: ${msg}`);
+    }
+
     if (!keyRes.data?.success || !keyRes.data?.publicKey) {
-      throw new Error('Unable to retrieve application push credentials.');
+      throw new Error(keyRes.data?.message || 'Unable to retrieve application push credentials from server.');
     }
     const convertedVapidKey = urlBase64ToUint8Array(keyRes.data.publicKey);
 

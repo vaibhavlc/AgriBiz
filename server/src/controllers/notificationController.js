@@ -1,4 +1,5 @@
 import pushNotificationService from '../services/pushNotificationService.js';
+import notificationSchedulerService from '../services/notificationSchedulerService.js';
 import Notification from '../models/Notification.js';
 import Settings from '../models/Settings.js';
 import PushSubscription from '../models/PushSubscription.js';
@@ -11,6 +12,12 @@ class NotificationController {
   async getVapidPublicKey(req, res) {
     try {
       const publicKey = pushNotificationService.getVapidPublicKey();
+      if (!publicKey) {
+        return res.status(503).json({
+          success: false,
+          message: 'Push notifications are not configured on the server (missing VAPID keys).',
+        });
+      }
       res.status(200).json({ success: true, publicKey });
     } catch (error) {
       logger.error('[NOTIFICATION] Failed to get VAPID public key: %s', error.message);
@@ -114,14 +121,29 @@ class NotificationController {
   async getNotifications(req, res) {
     try {
       const companyId = req.user.companyId;
+
+      // Lazy recovery after server sleep / restart / redeployment (throttled to 30 mins)
+      notificationSchedulerService.runCatchupCheckForCompany(companyId).catch(() => {});
+
       const page = parseInt(req.query.page) || 1;
       const limit = parseInt(req.query.limit) || 30;
       const skip = (page - 1) * limit;
 
       const filter = { companyId };
+      // Enforce role & user privacy scoping for non-owner accounts
+      if (req.user && req.user.role !== 'Owner') {
+        filter.$or = [
+          { userId: null, targetRole: null },
+          { userId: req.user.userId },
+          { targetRole: req.user.role },
+        ];
+      }
+
       if (req.query.unreadOnly === 'true') {
         filter.isRead = false;
       }
+
+      const unreadFilter = { ...filter, isRead: false };
 
       const [notifications, total, unreadCount] = await Promise.all([
         Notification.find(filter)
@@ -130,7 +152,7 @@ class NotificationController {
           .limit(limit)
           .lean(),
         Notification.countDocuments(filter),
-        Notification.countDocuments({ companyId, isRead: false }),
+        Notification.countDocuments(unreadFilter),
       ]);
 
       res.status(200).json({

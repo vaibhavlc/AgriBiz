@@ -222,6 +222,7 @@ export interface BusinessSettings {
   notifyPaymentReceived?: boolean;
   notifyNewOrders?: boolean;
   notifyOrderStatus?: boolean;
+  maskSensitiveNotificationData?: boolean;
 
   // Legacy fallback to prevent TS issues in other files before refactoring
   address: string;

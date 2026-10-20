@@ -175,13 +175,25 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   const notificationData = event.notification.data || {};
-  let targetUrl = notificationData.url || '/';
+  let targetUrl = '/';
+  try {
+    const rawUrl = notificationData.url || '/';
+    const parsed = new URL(rawUrl, self.location.origin);
+    if (parsed.origin === self.location.origin) {
+      targetUrl = parsed.pathname + parsed.search + parsed.hash;
+    }
+  } catch (e) {
+    targetUrl = '/';
+  }
 
   // If a specific tab is targeted, ensure URL reflects it
-  if (notificationData.tab && !targetUrl.includes('tab=')) {
+  const validTabs = ['dashboard', 'sales', 'purchases', 'inventory', 'customers', 'suppliers', 'payments', 'expenses', 'reports', 'settings', 'recycle_bin'];
+  const safeTab = validTabs.includes(notificationData.tab) ? notificationData.tab : null;
+
+  if (safeTab && !targetUrl.includes('tab=')) {
     targetUrl = targetUrl.includes('?')
-      ? `${targetUrl}&tab=${notificationData.tab}`
-      : `${targetUrl}?tab=${notificationData.tab}`;
+      ? `${targetUrl}&tab=${safeTab}`
+      : `${targetUrl}?tab=${safeTab}`;
   }
 
   event.waitUntil(

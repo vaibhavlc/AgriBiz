@@ -38,7 +38,8 @@ const ROLE_PERMISSIONS = {
 
 export const hasUserPermission = (user, permission) => {
   if (!user || !user.role) return false;
-  if (user.role === 'Owner') return true;
+  const roleLower = String(user.role).toLowerCase();
+  if (roleLower === 'owner' || roleLower === 'admin') return true;
 
   const normalizedPerm = permission === 'recycle_bin' ? 'recycle' : permission;
 
@@ -47,7 +48,10 @@ export const hasUserPermission = (user, permission) => {
     return user.customPermissions.includes(normalizedPerm) || user.customPermissions.includes(permission);
   }
 
-  const allowed = ROLE_PERMISSIONS[user.role];
+  const roleKey = Object.keys(ROLE_PERMISSIONS).find(
+    (k) => k.toLowerCase() === roleLower
+  );
+  const allowed = roleKey ? ROLE_PERMISSIONS[roleKey] : undefined;
   if (!allowed) return false;
   if (allowed.includes('*')) return true;
   return allowed.includes(normalizedPerm) || allowed.includes(permission);

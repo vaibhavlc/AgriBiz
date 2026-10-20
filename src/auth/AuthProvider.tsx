@@ -4,6 +4,7 @@ import { authService } from './authService';
 import { hasPermission as checkRolePermission } from './permissions';
 import api from '../utils/api';
 import { initialSettings } from '../utils/dummyData';
+import { unsubscribeFromPush } from '../utils/pushManager';
 import type { User, Company, UserRole } from '../types';
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -167,6 +168,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
+    try {
+      await unsubscribeFromPush();
+    } catch (e) {}
     await authService.logout();
     setCurrentUser(null);
     const savedCompany = authService.getCurrentCompany();
@@ -174,6 +178,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logoutStaff = () => {
+    unsubscribeFromPush().catch(() => {});
     authService.logoutStaff();
     setCurrentUser(null);
     const savedCompany = authService.getCurrentCompany();
@@ -181,6 +186,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const forgetDevice = async () => {
+    try {
+      await unsubscribeFromPush();
+    } catch (e) {}
     await authService.forgetDevice();
     setCurrentUser(null);
     setCurrentCompany(null);

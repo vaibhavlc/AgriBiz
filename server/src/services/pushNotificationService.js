@@ -129,6 +129,23 @@ class PushNotificationService {
   }
 
   /**
+   * Get current date string formatted as YYYY-MM-DD in Asia/Kolkata timezone
+   */
+  getTodayIST() {
+    return new Date(Date.now() + 5.5 * 60 * 60 * 1000).toISOString().split('T')[0];
+  }
+
+  /**
+   * Resolve push notification body text based on privacy settings
+   */
+  resolvePushBody(payload, maskPrivacy = true) {
+    if (maskPrivacy && payload && payload.privacySafeBody) {
+      return payload.privacySafeBody;
+    }
+    return payload ? payload.body : '';
+  }
+
+  /**
    * Core method to send notification to company devices and record to Notification history
    */
   async sendNotificationToCompany(companyId, payload, options = {}) {
@@ -186,19 +203,31 @@ class PushNotificationService {
       }
     }
 
-    // 3. Save Notification DB Record
+    // 3. Save Notification DB Record with atomic duplicate key protection
     const notificationId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    const notificationDoc = await Notification.create({
-      notificationId,
-      companyId,
-      userId: options.userId || null,
-      targetRole: options.targetRole || null,
-      title: payload.title,
-      body: payload.body,
-      type: payload.type || 'BUSINESS_ALERT',
-      data: payload.data || {},
-      eventReference: payload.eventReference || null,
-    });
+    let notificationDoc;
+    try {
+      notificationDoc = await Notification.create({
+        notificationId,
+        companyId,
+        userId: options.userId || null,
+        targetRole: options.targetRole || null,
+        title: payload.title,
+        body: payload.body,
+        type: payload.type || 'BUSINESS_ALERT',
+        data: payload.data || {},
+        eventReference: payload.eventReference || null,
+      });
+    } catch (createErr) {
+      if (createErr.code === 11000) {
+        logger.info(
+          '[PUSH] Atomic deduplication prevented duplicate notification for eventReference: %s',
+          payload.eventReference
+        );
+        return { success: false, reason: 'Duplicate notification ignored (atomic DB constraint)' };
+      }
+      throw createErr;
+    }
 
     // 4. Query active subscriptions
     const subQuery = { companyId, isActive: true };
@@ -214,11 +243,15 @@ class PushNotificationService {
       companyId
     );
 
-    // 5. Construct Push payload
+    // 5. Construct Push payload with privacy preservation and size limit safeguards
+    const maskPrivacy = settings ? settings.maskSensitiveNotificationData !== false : true;
+    const pushBody = this.resolvePushBody(payload, maskPrivacy);
+    const safeBody = (pushBody || '').slice(0, 400);
+
     const pushPayload = JSON.stringify({
       notificationId,
       title: payload.title,
-      body: payload.body,
+      body: safeBody,
       type: payload.type || 'BUSINESS_ALERT',
       icon: payload.icon || '/logo-192.png',
       badge: payload.badge || '/logo-192.png',
@@ -318,14 +351,14 @@ class PushNotificationService {
    */
   async notifyUpcomingDue({ companyId, invoiceNumber, customerName, balanceDue, dueDate, currencySymbol = '₹' }) {
     const formattedAmount = `${currencySymbol}${Number(balanceDue).toLocaleString('en-IN')}`;
-    const todayStr = new Date().toISOString().split('T')[0];
-    const eventReference = `due_reminder:${invoiceNumber}:${todayStr}`;
+    const eventReference = `due_reminder:${invoiceNumber}:${dueDate}`;
 
     return this.sendNotificationToCompany(
       companyId,
       {
         title: 'Payment Due Soon',
         body: `${customerName} has an upcoming balance of ${formattedAmount} due on ${dueDate}.`,
+        privacySafeBody: `Invoice ${invoiceNumber} has an upcoming payment due on ${dueDate}. Tap to view details.`,
         type: 'DUE_REMINDER',
         url: '/?tab=sales',
         tab: 'sales',
@@ -348,7 +381,7 @@ class PushNotificationService {
    */
   async notifyOverduePayment({ companyId, invoiceNumber, customerName, balanceDue, dueDate, currencySymbol = '₹' }) {
     const formattedAmount = `${currencySymbol}${Number(balanceDue).toLocaleString('en-IN')}`;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = this.getTodayIST();
     const eventReference = `overdue:${invoiceNumber}:${todayStr}`;
 
     return this.sendNotificationToCompany(
@@ -356,6 +389,7 @@ class PushNotificationService {
       {
         title: 'Payment Overdue',
         body: `${customerName} has an overdue balance of ${formattedAmount} for invoice ${invoiceNumber}.`,
+        privacySafeBody: `Invoice ${invoiceNumber} is past its payment due date. Tap to review customer dues.`,
         type: 'OVERDUE_PAYMENT',
         url: '/?tab=sales',
         tab: 'sales',
@@ -376,16 +410,19 @@ class PushNotificationService {
   /**
    * C. Payment Received
    */
-  async notifyPaymentReceived({ companyId, customerName, amount, paymentMethod, referenceNumber, invoiceNumber, currencySymbol = '₹' }) {
+  async notifyPaymentReceived({ companyId, customerName, amount, paymentMethod, referenceNumber, invoiceNumber, paymentId, currencySymbol = '₹' }) {
     const formattedAmount = `${currencySymbol}${Number(amount).toLocaleString('en-IN')}`;
     let body = `Payment of ${formattedAmount} received from ${customerName || 'Customer'} via ${paymentMethod || 'UPI'}.`;
     if (invoiceNumber) {
       body += ` (Invoice ${invoiceNumber})`;
     }
+    const privacySafeBody = `Customer payment received via ${paymentMethod || 'UPI'}. Tap to view ledger entry.`;
+    const eventReference = paymentId ? `payment:${paymentId}` : (invoiceNumber ? `payment:inv:${invoiceNumber}` : null);
 
     return this.sendNotificationToCompany(companyId, {
       title: 'Payment Received',
       body,
+      privacySafeBody,
       type: 'PAYMENT_RECEIVED',
       url: '/?tab=payments',
       tab: 'payments',
@@ -395,9 +432,11 @@ class PushNotificationService {
         paymentMethod,
         referenceNumber,
         invoiceNumber,
+        paymentId,
         url: '/?tab=payments',
         tab: 'payments',
       },
+      eventReference,
     });
   }
 
@@ -411,13 +450,17 @@ class PushNotificationService {
     const body = isOutOfStock
       ? `${productName} is completely out of stock (0 units remaining).`
       : `${productName} has reached low stock: only ${stock} units remaining (Minimum threshold: ${minStock}).`;
+    const privacySafeBody = isOutOfStock
+      ? `${productName} is completely out of stock.`
+      : `${productName} has fallen below safety limit (${stock} remaining).`;
 
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = this.getTodayIST();
     const eventReference = `stock:${productId}:${type}:${todayStr}`;
 
     return this.sendNotificationToCompany(companyId, {
       title,
       body,
+      privacySafeBody,
       type,
       url: '/?tab=inventory',
       tab: 'inventory',
@@ -438,9 +481,12 @@ class PushNotificationService {
    */
   async notifyNewOrder({ companyId, invoiceNumber, customerName, grandTotal, currencySymbol = '₹' }) {
     const formattedAmount = `${currencySymbol}${Number(grandTotal).toLocaleString('en-IN')}`;
+    const eventReference = `order:${invoiceNumber}`;
+
     return this.sendNotificationToCompany(companyId, {
       title: 'New Order Created',
       body: `Invoice ${invoiceNumber} issued to ${customerName} for ${formattedAmount}.`,
+      privacySafeBody: `Invoice ${invoiceNumber} has been issued. Tap to view order details.`,
       type: 'NEW_ORDER',
       url: '/?tab=sales',
       tab: 'sales',
@@ -451,6 +497,7 @@ class PushNotificationService {
         url: '/?tab=sales',
         tab: 'sales',
       },
+      eventReference,
     });
   }
 
@@ -458,9 +505,12 @@ class PushNotificationService {
    * F. Order Status Change
    */
   async notifyOrderStatus({ companyId, invoiceNumber, customerName, status, statusText }) {
+    const eventReference = `order_status:${invoiceNumber}:${status}`;
+
     return this.sendNotificationToCompany(companyId, {
       title: 'Order Status Updated',
       body: `Order ${invoiceNumber} for ${customerName} is now ${statusText || status}.`,
+      privacySafeBody: `Order ${invoiceNumber} status is now ${statusText || status}.`,
       type: 'ORDER_STATUS',
       url: '/?tab=sales',
       tab: 'sales',
@@ -471,6 +521,7 @@ class PushNotificationService {
         url: '/?tab=sales',
         tab: 'sales',
       },
+      eventReference,
     });
   }
 }

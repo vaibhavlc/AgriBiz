@@ -734,6 +734,7 @@ export const initialSettings: BusinessSettings = {
   notifyPaymentReceived: true,
   notifyNewOrders: true,
   notifyOrderStatus: true,
+  maskSensitiveNotificationData: true,
 
   // Legacy fallback address
   address: 'Shop No. 12-14, Krishi Mandi Complex, Pipariya, Madhya Pradesh - 461775',
