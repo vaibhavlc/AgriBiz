@@ -90,7 +90,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     suppliers,
   } = useApp();
 
-  const { currentUser, currentCompany, hasPermission, logout, logoutStaff, forgetDevice } = useAuth();
+  const { currentUser, currentCompany, hasPermission, logout, logoutStaff } = useAuth();
 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -959,20 +959,6 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                   >
                     <LogOut size={15} />
                     <span>{t('nav.logout', 'Sign Out / Lock Session')}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="profile-logout-btn"
-                    style={{ color: '#ef4444', marginTop: '4px' }}
-                    onClick={async () => {
-                      setIsProfileDropdownOpen(false);
-                      await forgetDevice();
-                      showToast(t('auth.deviceForgotten', 'Device forgotten — mobile & password required next time'), 'info');
-                    }}
-                  >
-                    <Smartphone size={15} />
-                    <span>{t('auth.forgetDevice', 'Forget This Device')}</span>
                   </button>
                 </div>
               )}

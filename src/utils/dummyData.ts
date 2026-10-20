@@ -44,17 +44,17 @@ export const toTitleCase = (str: string | undefined | null): string => {
     .join(' ');
 };
 
-// Helper to extract first letter of first name and last letter of last name for profile avatars
+// Helper to extract first letter of first name and first letter of surname for profile avatars
 export const getUserInitials = (name?: string | null): string => {
   if (!name || !name.trim()) return 'AB';
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 1) {
     const word = parts[0];
-    return (word[0] + word[word.length - 1]).toUpperCase();
+    return word.slice(0, 2).toUpperCase();
   }
   const firstName = parts[0];
   const lastName = parts[parts.length - 1];
-  return (firstName[0] + lastName[lastName.length - 1]).toUpperCase();
+  return (firstName[0] + lastName[0]).toUpperCase();
 };
 
 // Helper to get current day's IST date (YYYY-MM-DD)
