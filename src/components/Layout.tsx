@@ -343,9 +343,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       setUnreadNotifCount((prev) => prev + 1);
     };
 
-    window.addEventListener('daivyayog_new_notification', handleNewNotif);
+    window.addEventListener('agribiz_new_notification', handleNewNotif as EventListener);
+    window.addEventListener('daivyayog_new_notification', handleNewNotif as EventListener);
     return () => {
-      window.removeEventListener('daivyayog_new_notification', handleNewNotif);
+      window.removeEventListener('agribiz_new_notification', handleNewNotif as EventListener);
+      window.removeEventListener('daivyayog_new_notification', handleNewNotif as EventListener);
     };
   }, []);
 

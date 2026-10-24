@@ -224,10 +224,15 @@ class PushNotificationService {
       'https://agribiz-backend.onrender.com'
     ).replace(/\/+$/, '');
 
+    const clientOrigin = (
+      process.env.CLIENT_URL ||
+      'https://agri-biz-snowy.vercel.app'
+    ).replace(/\/+$/, '');
+
     const companyLogoEndpoint = `${backendOrigin}/api/v1/notifications/company-logo/${encodeURIComponent(companyId)}`;
-    const notificationIcon = hasCustomLogo ? companyLogoEndpoint : (payload.icon || '/logo-192.png');
+    const notificationIcon = hasCustomLogo ? companyLogoEndpoint : (payload.icon || `${clientOrigin}/logo-192.png`);
     const notificationImage = hasCustomLogo ? companyLogoEndpoint : (payload.image || null);
-    const notificationBadge = payload.badge || '/logo-192.png';
+    const notificationBadge = payload.badge || `${backendOrigin}/api/v1/notifications/badge`;
 
     // 4. Save Notification DB Record with atomic duplicate key protection
     const notificationId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;

@@ -1,10 +1,11 @@
-const CACHE_NAME = 'agribiz-v6';
+const CACHE_NAME = 'agribiz-v7';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/logo-192.png',
   '/logo-512.png',
-  '/favicon.svg'
+  '/favicon.svg',
+  '/badge-monochrome-96.png'
 ];
 
 let customPwaName = 'AgriBiz';
@@ -130,11 +131,11 @@ self.addEventListener('fetch', (event) => {
 // 1. Receive Push Event in background (even when web app is closed)
 self.addEventListener('push', (event) => {
   let notificationData = {
-    title: 'Daivyayog Alert',
+    title: 'AgriBiz Alert',
     body: 'You have a new business notification.',
     icon: '/logo-192.png',
-    badge: '/logo-192.png',
-    tag: 'business-alert',
+    badge: '/badge-monochrome-96.png',
+    tag: 'agribiz-business-alert',
     data: { url: '/?tab=dashboard', tab: 'dashboard' }
   };
 
@@ -149,7 +150,7 @@ self.addEventListener('push', (event) => {
 
   const title = notificationData.title || 'AgriBiz Alert';
   const iconUrl = notificationData.icon || '/logo-192.png';
-  const badgeUrl = notificationData.badge || '/logo-192.png';
+  const badgeUrl = notificationData.badge || '/badge-monochrome-96.png';
 
   const options = {
     body: notificationData.body,

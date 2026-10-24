@@ -7,6 +7,9 @@ const router = Router();
 // VAPID Public key endpoint (Publicly readable per RFC 8292 to allow devices to subscribe)
 router.get('/vapid-public-key', (req, res) => notificationController.getVapidPublicKey(req, res));
 
+// Monochrome notification badge endpoint (Publicly readable image asset for Android status bar)
+router.get('/badge', (req, res) => notificationController.getBadge(req, res));
+
 // Company branding logo endpoint (Publicly readable image asset for Web Push notifications)
 router.get('/company-logo/:companyId', (req, res) => notificationController.getCompanyLogo(req, res));
 

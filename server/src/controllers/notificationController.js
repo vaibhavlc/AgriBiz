@@ -1,3 +1,6 @@
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import pushNotificationService from '../services/pushNotificationService.js';
 import notificationSchedulerService from '../services/notificationSchedulerService.js';
 import Notification from '../models/Notification.js';
@@ -5,6 +8,9 @@ import Settings from '../models/Settings.js';
 import Company from '../models/Company.js';
 import PushSubscription from '../models/PushSubscription.js';
 import logger from '../config/logger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 class NotificationController {
   /**
@@ -33,7 +39,7 @@ class NotificationController {
   async getCompanyLogo(req, res) {
     try {
       const { companyId } = req.params;
-      const clientUrl = (process.env.CLIENT_URL || 'https://agribiz.vercel.app').replace(/\/+$/, '');
+      const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
       const fallbackUrl = `${clientUrl}/logo-192.png`;
 
       if (!companyId) {
@@ -77,8 +83,34 @@ class NotificationController {
       return res.redirect(302, fallbackUrl);
     } catch (error) {
       logger.warn('[NOTIFICATION] Error serving company logo for %s: %s', req.params.companyId, error.message);
-      const clientUrl = (process.env.CLIENT_URL || 'https://agribiz.vercel.app').replace(/\/+$/, '');
+      const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
       return res.redirect(302, `${clientUrl}/logo-192.png`);
+    }
+  }
+
+  /**
+   * Serve the transparent monochrome notification badge for Android status bar
+   */
+  async getBadge(req, res) {
+    try {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+
+      const badgeFile = path.resolve(__dirname, '../../public/badge-monochrome-96.png');
+      const serverBadgeFile = path.resolve(__dirname, '../public/badge-monochrome-96.png');
+
+      const targetPath = fs.existsSync(badgeFile) ? badgeFile : (fs.existsSync(serverBadgeFile) ? serverBadgeFile : null);
+      if (targetPath) {
+        res.setHeader('Content-Type', 'image/png');
+        return res.sendFile(targetPath);
+      }
+
+      const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
+      return res.redirect(302, `${clientUrl}/badge-monochrome-96.png`);
+    } catch (err) {
+      logger.warn('[NOTIFICATION] Error serving monochrome badge: %s', err.message);
+      const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
+      return res.redirect(302, `${clientUrl}/badge-monochrome-96.png`);
     }
   }
 
@@ -292,7 +324,7 @@ class NotificationController {
       const result = await pushNotificationService.sendNotificationToCompany(
         companyId,
         {
-          title: 'Daivyayog Alert',
+          title: 'AgriBiz Alert',
           body: 'Mobile push notifications are working properly on your phone!',
           type: 'BUSINESS_ALERT',
           url: '/?tab=dashboard',

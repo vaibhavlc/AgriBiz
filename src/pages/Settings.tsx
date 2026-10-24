@@ -2971,7 +2971,7 @@ export const Settings: React.FC = () => {
                           : t('settings.enableNotificationsHeading', 'Enable Business Notifications on Your Device')}
                       </h4>
                       <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-muted)', lineHeight: '1.5' }}>
-                        {t('settings.notificationsExplanation', 'When enabled, Daivyayog will deliver instant notifications to your mobile phone notification shade for upcoming dues, overdue payments, low stock warnings, payments received, and new sales orders.')}
+                        {t('settings.notificationsExplanation', 'When enabled, AgriBiz will deliver instant notifications to your mobile phone notification shade for upcoming dues, overdue payments, low stock warnings, payments received, and new sales orders.')}
                       </p>
                     </div>
 

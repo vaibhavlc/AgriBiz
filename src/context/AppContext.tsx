@@ -627,6 +627,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       socket.on('new_notification', (notification: any) => {
         if (!isSubscribed) return;
         console.log('[SOCKET] new_notification received:', notification);
+        window.dispatchEvent(new CustomEvent('agribiz_new_notification', { detail: notification }));
         window.dispatchEvent(new CustomEvent('daivyayog_new_notification', { detail: notification }));
       });
 

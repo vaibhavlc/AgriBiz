@@ -82,6 +82,10 @@ app.use(helmet());
 // Cookie Parser
 app.use(cookieParser());
 
+// Serve static public assets (including notification badges and fallback icons)
+app.use(express.static(path.resolve(__dirname, '../public')));
+app.use(express.static(path.resolve(__dirname, '../../public')));
+
 // Health Check Endpoints for Cloud Deployment (Northflank/Render/Health Monitors)
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'UP', timestamp: new Date().toISOString(), uptime: process.uptime() });

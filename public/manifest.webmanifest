@@ -1,7 +1,7 @@
 {
-  "name": "Daivyayog Business Suite",
-  "short_name": "Daivyayog",
-  "description": "Enterprise Business and Trader Management Suite with Real-time Business Alerts",
+  "name": "AgriBiz Trader Suite",
+  "short_name": "AgriBiz",
+  "description": "Enterprise Agriculture Business and Trader Management Suite with Real-time Business Alerts",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -20,6 +20,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/badge-monochrome-96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "monochrome"
     }
   ]
 }
