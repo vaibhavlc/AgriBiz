@@ -1,11 +1,14 @@
-const CACHE_NAME = 'agribiz-v7';
+const CACHE_NAME = 'agribiz-v8';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
   '/logo-192.png',
   '/logo-512.png',
+  '/logo-maskable-192.png',
+  '/logo-maskable-512.png',
   '/favicon.svg',
-  '/badge-monochrome-96.png'
+  '/badge-monochrome-96.png',
+  '/badge-monochrome-72.png'
 ];
 
 let customPwaName = 'AgriBiz';
@@ -51,7 +54,7 @@ self.addEventListener('fetch', (event) => {
   // Skip API backend requests and websockets so SW doesn't intercept or corrupt API calls
   if (requestUrl.pathname.startsWith('/api/')) return;
 
-  // Intercept Web App Manifest requests and return dynamic JSON with customized app name
+  // Intercept Web App Manifest requests and return dynamic JSON with customized app name & full icon suite
   if (requestUrl.pathname.includes('manifest.webmanifest')) {
     const urlName = requestUrl.searchParams.get('name');
     const nameToUse = urlName || customPwaName || 'AgriBiz';
@@ -70,13 +73,37 @@ self.addEventListener('fetch', (event) => {
           src: '/logo-192.png',
           sizes: '192x192',
           type: 'image/png',
-          purpose: 'any maskable'
+          purpose: 'any'
         },
         {
           src: '/logo-512.png',
           sizes: '512x512',
           type: 'image/png',
-          purpose: 'any maskable'
+          purpose: 'any'
+        },
+        {
+          src: '/logo-maskable-192.png',
+          sizes: '192x192',
+          type: 'image/png',
+          purpose: 'maskable'
+        },
+        {
+          src: '/logo-maskable-512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
+        },
+        {
+          src: '/badge-monochrome-96.png',
+          sizes: '96x96',
+          type: 'image/png',
+          purpose: 'monochrome'
+        },
+        {
+          src: '/badge-monochrome-72.png',
+          sizes: '72x72',
+          type: 'image/png',
+          purpose: 'monochrome'
         }
       ]
     };
@@ -130,49 +157,91 @@ self.addEventListener('fetch', (event) => {
 
 // 1. Receive Push Event in background (even when web app is closed)
 self.addEventListener('push', (event) => {
-  let notificationData = {
-    title: 'AgriBiz Alert',
-    body: 'You have a new business notification.',
-    icon: '/logo-192.png',
-    badge: '/badge-monochrome-96.png',
-    tag: 'agribiz-business-alert',
-    data: { url: '/?tab=dashboard', tab: 'dashboard' }
-  };
+  event.waitUntil((async () => {
+    let notificationData = {
+      title: 'AgriBiz Alert',
+      body: 'You have a new business notification.',
+      icon: `${self.location.origin}/logo-192.png`,
+      badge: `${self.location.origin}/badge-monochrome-96.png`,
+      tag: 'agribiz-business-alert',
+      data: { url: '/?tab=dashboard', tab: 'dashboard' }
+    };
 
-  if (event.data) {
-    try {
-      const parsed = event.data.json();
-      notificationData = { ...notificationData, ...parsed };
-    } catch (e) {
-      notificationData.body = event.data.text() || notificationData.body;
+    if (event.data) {
+      try {
+        const parsed = event.data.json();
+        notificationData = { ...notificationData, ...parsed };
+      } catch (e) {
+        notificationData.body = event.data.text() || notificationData.body;
+      }
     }
-  }
 
-  const title = notificationData.title || 'AgriBiz Alert';
-  const iconUrl = notificationData.icon || '/logo-192.png';
-  const badgeUrl = notificationData.badge || '/badge-monochrome-96.png';
+    const title = notificationData.title || 'AgriBiz Alert';
 
-  const options = {
-    body: notificationData.body,
-    icon: iconUrl,
-    badge: badgeUrl,
-    tag: notificationData.tag || `agribiz-notif-${Date.now()}`,
-    data: notificationData.data || { url: '/?tab=dashboard', tab: 'dashboard' },
-    vibrate: notificationData.vibrate || [150, 50, 150, 50, 200],
-    renotify: true,
-    requireInteraction: true,
-    actions: notificationData.actions || [
-      { action: 'open', title: 'Open' },
-      { action: 'dismiss', title: 'Dismiss' }
-    ]
-  };
+    // Fast, guaranteed fallback assets on high-availability client origin
+    const fallbackIcon = `${self.location.origin}/logo-192.png`;
+    const fallbackBadge = `${self.location.origin}/badge-monochrome-96.png`;
 
-  // Configure expanded image if business logo / image is provided
-  if (notificationData.image) {
-    options.image = notificationData.image;
-  }
+    // Ensure icon and badge URLs are always fully-qualified absolute HTTPS URLs
+    let iconUrl = notificationData.icon || fallbackIcon;
+    let badgeUrl = notificationData.badge || fallbackBadge;
 
-  event.waitUntil(self.registration.showNotification(title, options));
+    if (!iconUrl.startsWith('http://') && !iconUrl.startsWith('https://')) {
+      iconUrl = new URL(iconUrl, self.location.origin).href;
+    }
+    if (!badgeUrl.startsWith('http://') && !badgeUrl.startsWith('https://')) {
+      badgeUrl = new URL(badgeUrl, self.location.origin).href;
+    }
+
+    // Android status bar strictly requires monochrome alpha mask
+    // Always use our verified local monochrome asset so Android never falls back to the system bell!
+    badgeUrl = fallbackBadge;
+
+    // For the notification drawer avatar (icon):
+    // If it's a custom business logo URL, verify it is reachable and responds quickly.
+    // If it fails or the server is in cold sleep (>2s), gracefully fall back to the real AgriBiz logo
+    // so Android NEVER displays the generic "A" circle avatar fallback!
+    if (iconUrl !== fallbackIcon) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+        const checkRes = await fetch(iconUrl, { method: 'GET', signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (!checkRes.ok) {
+          iconUrl = fallbackIcon;
+        }
+      } catch (err) {
+        console.warn('[SW] Remote custom icon unreachable or timed out, using AgriBiz fallback:', err);
+        iconUrl = fallbackIcon;
+      }
+    }
+
+    const options = {
+      body: notificationData.body,
+      icon: iconUrl,
+      badge: badgeUrl,
+      tag: notificationData.tag || `agribiz-notif-${Date.now()}`,
+      data: notificationData.data || { url: '/?tab=dashboard', tab: 'dashboard' },
+      vibrate: notificationData.vibrate || [150, 50, 150, 50, 200],
+      renotify: true,
+      requireInteraction: true,
+      actions: notificationData.actions || [
+        { action: 'open', title: 'Open' },
+        { action: 'dismiss', title: 'Dismiss' }
+      ]
+    };
+
+    // If expanded image banner is provided, ensure it is an absolute URL
+    if (notificationData.image) {
+      let imageUrl = notificationData.image;
+      if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        imageUrl = new URL(imageUrl, self.location.origin).href;
+      }
+      options.image = imageUrl;
+    }
+
+    return self.registration.showNotification(title, options);
+  })());
 });
 
 // 2. Handle User Clicking the Notification or Action Button

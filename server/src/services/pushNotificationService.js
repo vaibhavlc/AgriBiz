@@ -232,7 +232,7 @@ class PushNotificationService {
     const companyLogoEndpoint = `${backendOrigin}/api/v1/notifications/company-logo/${encodeURIComponent(companyId)}`;
     const notificationIcon = hasCustomLogo ? companyLogoEndpoint : (payload.icon || `${clientOrigin}/logo-192.png`);
     const notificationImage = hasCustomLogo ? companyLogoEndpoint : (payload.image || null);
-    const notificationBadge = payload.badge || `${backendOrigin}/api/v1/notifications/badge`;
+    const notificationBadge = payload.badge || `${clientOrigin}/badge-monochrome-96.png`;
 
     // 4. Save Notification DB Record with atomic duplicate key protection
     const notificationId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
