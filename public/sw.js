@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agribiz-v10';
+const CACHE_NAME = 'agribiz-v11';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -49,7 +49,37 @@ self.addEventListener('fetch', (event) => {
   // Skip API backend requests and websockets, except for company branding logo images
   if (requestUrl.pathname.startsWith('/api/') && !requestUrl.pathname.includes('/company-logo/')) return;
 
-  // Network-first strategy with cache fallback for HTML, static assets, manifest, and logos
+  // 1. Static assets, icons, logos, badges: CACHE-FIRST strategy
+  // Returning local cached assets in 0ms guarantees Blink's NotificationResourcesLoader
+  // and Android's BitmapFetcher never time out on slow mobile networks!
+  if (
+    requestUrl.origin === self.location.origin &&
+    (requestUrl.pathname.endsWith('.png') ||
+     requestUrl.pathname.endsWith('.ico') ||
+     requestUrl.pathname.endsWith('.svg') ||
+     requestUrl.pathname.endsWith('.webmanifest') ||
+     requestUrl.pathname.includes('/assets/'))
+  ) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) {
+          return cached;
+        }
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
+            const responseToCache = response.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
+  // 2. Network-first strategy with cache fallback for HTML and all other resources
   event.respondWith(
     fetch(event.request)
       .then((response) => {
