@@ -893,12 +893,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 title={t('notifications.title', 'Notifications')}
               >
                 <Bell size={18} />
-                {(unreadNotifCount > 0 || notifications.length > 0) && (
+                {unreadNotifCount > 0 ? (
+                  <span className="notification-badge has-count">
+                    {unreadNotifCount > 9 ? '9+' : unreadNotifCount}
+                  </span>
+                ) : notifications.length > 0 ? (
                   <>
                     <span className="notification-badge-pulse"></span>
-                    <span className="notification-badge">{unreadNotifCount > 0 ? (unreadNotifCount > 9 ? '9+' : unreadNotifCount) : ''}</span>
+                    <span className="notification-badge is-dot"></span>
                   </>
-                )}
+                ) : null}
               </button>
 
               {isNotificationOpen && (
