@@ -56,6 +56,30 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Mukta:wght@300;400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="manifest" id="app-manifest" href="/manifest.webmanifest" />
+    <script>
+      (function() {
+        try {
+          var savedComp = localStorage.getItem('agribiz_current_company');
+          var compId = '';
+          if (savedComp) {
+            try { compId = JSON.parse(savedComp).id || ''; } catch (e) {}
+          }
+          var customName = (compId && localStorage.getItem('agribiz_pwa_custom_name_' + compId)) ||
+                           localStorage.getItem('agribiz_pwa_custom_name');
+          if (customName && customName.trim()) {
+            var trimmedName = customName.trim().slice(0, 45);
+            var manifestEl = document.getElementById('app-manifest');
+            if (manifestEl) {
+              manifestEl.href = '/manifest.webmanifest?name=' + encodeURIComponent(trimmedName);
+            }
+            var appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (appleTitle) {
+              appleTitle.content = trimmedName;
+            }
+          }
+        } catch (e) {}
+      })();
+    </script>
     <title>AgriBiz</title>
   </head>
   <body>

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../context/AppContext';
+import authService from '../auth/authService';
 import { Download, X, AlertCircle, Info, Sparkles, Smartphone } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -20,12 +21,18 @@ export const PWAInstallModal: React.FC = () => {
 
   useEffect(() => {
     if (isInstallModalOpen) {
-      const savedName = localStorage.getItem('agribiz_pwa_custom_name');
-      setAppNameInput(savedName && savedName.trim() ? savedName.trim() : 'AgriBiz');
+      const activeComp = authService.getCurrentCompany();
+      const compSpecific = activeComp?.id ? localStorage.getItem(`agribiz_pwa_custom_name_${activeComp.id}`) : null;
+      const savedGlobal = localStorage.getItem('agribiz_pwa_custom_name');
+      const activeName = (compSpecific && compSpecific.trim()) ||
+                         (savedGlobal && savedGlobal.trim()) ||
+                         (settings?.businessName && settings.businessName.trim()) ||
+                         'AgriBiz';
+      setAppNameInput(activeName);
       setErrorMsg('');
       setIsSubmitting(false);
     }
-  }, [isInstallModalOpen]);
+  }, [isInstallModalOpen, settings?.businessName]);
 
   if (!isInstallModalOpen) return null;
 
@@ -258,6 +265,27 @@ export const PWAInstallModal: React.FC = () => {
                 <strong>{t('pwa.iosTitle', 'iOS Safari Instructions:')}</strong> {t('pwa.iosBody', 'Tap the Share icon in Safari, scroll down, and select Add to Home Screen. You can customize the icon name directly on your device screen.')}
               </div>
             </div>
+          ) : isPwaInstalled ? (
+            <div
+              style={{
+                padding: '12px',
+                borderRadius: '10px',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                border: '1px solid rgba(59, 130, 246, 0.2)',
+                marginBottom: '20px',
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                display: 'flex',
+                gap: '10px',
+                alignItems: 'flex-start'
+              }}
+            >
+              <Info size={18} style={{ color: '#3b82f6', flexShrink: 0, marginTop: '2px' }} />
+              <div>
+                <strong>{t('pwa.reconfigureNoticeTitle', 'App Already Installed:')}</strong>{' '}
+                {t('pwa.reconfigureNoticeBody', 'Your browser will apply the new name to the manifest. However, operating systems cache installed app names. To display the new name on your home screen or app launcher, please uninstall the current app and reinstall it.')}
+              </div>
+            </div>
           ) : !deferredPrompt ? (
             <div
               style={{
@@ -275,9 +303,8 @@ export const PWAInstallModal: React.FC = () => {
             >
               <Info size={18} style={{ color: '#f59e0b', flexShrink: 0, marginTop: '2px' }} />
               <div>
-                {isPwaInstalled
-                  ? t('pwa.alreadyInstalled', 'AgriBiz is already installed on your device as a PWA.')
-                  : t('pwa.browserControlNotice', 'Your browser controls the native install prompt. Dynamic manifest title applied for installation.')}
+                <strong>{t('pwa.manualInstallTitle', 'Manual Installation:')}</strong>{' '}
+                {t('pwa.manualInstallBody', 'Your browser controls the native install prompt. Open your browser menu (⋮) and select "Install" or "Add to Home screen" to install with your configured name.')}
               </div>
             </div>
           ) : (
@@ -335,7 +362,7 @@ export const PWAInstallModal: React.FC = () => {
               }}
             >
               <Download size={16} />
-              <span>{isSubmitting ? t('pwa.installing', 'Installing...') : t('pwa.installApp', 'Install App')}</span>
+              <span>{isSubmitting ? t('pwa.installing', 'Installing...') : isPwaInstalled ? t('pwa.saveAndApply', 'Save & Apply Name') : t('pwa.installApp', 'Install App')}</span>
             </button>
           </div>
         </form>

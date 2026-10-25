@@ -338,8 +338,58 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isPwaInstalled, setIsPwaInstalled] = useState<boolean>(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState<boolean>(false);
+
+  const getStoredPwaName = (): string => {
+    if (typeof window === 'undefined') return 'AgriBiz';
+    try {
+      const activeComp = authService.getCurrentCompany();
+      if (activeComp?.id) {
+        const compSpecific = localStorage.getItem(`agribiz_pwa_custom_name_${activeComp.id}`);
+        if (compSpecific && compSpecific.trim()) return compSpecific.trim().slice(0, 45);
+      }
+      const globalName = localStorage.getItem('agribiz_pwa_custom_name');
+      if (globalName && globalName.trim()) return globalName.trim().slice(0, 45);
+    } catch (e) {}
+    return 'AgriBiz';
+  };
+
+  const applyPwaManifestName = (name: string) => {
+    const clean = name.trim().slice(0, 45) || 'AgriBiz';
+    if (typeof document === 'undefined') return;
+
+    try {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'SET_PWA_NAME',
+          name: clean
+        });
+      }
+
+      let manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) ||
+                         (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
+      const newHref = clean !== 'AgriBiz'
+        ? `/manifest.webmanifest?name=${encodeURIComponent(clean)}&t=${Date.now()}`
+        : `/manifest.webmanifest?t=${Date.now()}`;
+
+      if (!manifestLink) {
+        manifestLink = document.createElement('link');
+        manifestLink.id = 'app-manifest';
+        manifestLink.rel = 'manifest';
+        document.head.appendChild(manifestLink);
+      }
+      manifestLink.href = newHref;
+
+      const appleTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+      if (appleTitle) {
+        appleTitle.setAttribute('content', clean);
+      }
+    } catch (e) {
+      console.error('Error applying PWA manifest name:', e);
+    }
+  };
+
   const [customPwaName, setCustomPwaName] = useState<string>(() => {
-    return localStorage.getItem('agribiz_pwa_custom_name') || 'AgriBiz';
+    return getStoredPwaName();
   });
 
   useEffect(() => {
@@ -361,16 +411,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     // Sync saved custom name with Service Worker and manifest link on mount
-    const savedCustomName = localStorage.getItem('agribiz_pwa_custom_name');
-    if (savedCustomName && savedCustomName.trim()) {
-      const trimmed = savedCustomName.trim();
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: 'SET_PWA_NAME', name: trimmed });
-      }
-      const manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) || (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
-      if (manifestLink && manifestLink.href !== '/manifest.webmanifest') {
-        manifestLink.href = '/manifest.webmanifest';
-      }
+    const savedCustomName = getStoredPwaName();
+    if (savedCustomName) {
+      setCustomPwaName(savedCustomName);
+      applyPwaManifestName(savedCustomName);
     }
 
     return () => {
@@ -388,29 +432,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const handleInstallPWA = async (customName: string) => {
-    const trimmed = customName.trim() || 'AgriBiz';
+    const trimmed = customName.trim().slice(0, 45) || 'AgriBiz';
     setCustomPwaName(trimmed);
-    localStorage.setItem('agribiz_pwa_custom_name', trimmed);
 
-    // 1. Post message to active Service Worker so /manifest.webmanifest interceptor responds with dynamic custom name
-    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-      navigator.serviceWorker.controller.postMessage({
-        type: 'SET_PWA_NAME',
-        name: trimmed
-      });
-    }
-
-    // 2. Dynamically update manifest URL with query parameters & data URI for instant browser detection
     try {
-      const manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) || (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
-      if (manifestLink && manifestLink.href !== '/manifest.webmanifest') {
-        manifestLink.href = '/manifest.webmanifest';
+      const activeComp = authService.getCurrentCompany();
+      if (activeComp?.id) {
+        localStorage.setItem(`agribiz_pwa_custom_name_${activeComp.id}`, trimmed);
       }
-    } catch (e) {
-      console.error('Error updating PWA manifest URL:', e);
-    }
+      localStorage.setItem('agribiz_pwa_custom_name', trimmed);
+    } catch (e) {}
 
-    // 3. Temporarily set document.title to the custom name for desktop Chrome shortcut generator
+    applyPwaManifestName(trimmed);
+
     const originalTitle = document.title;
     try {
       document.title = trimmed;
@@ -418,13 +452,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (deferredPrompt) {
       try {
-        deferredPrompt.prompt();
+        await deferredPrompt.prompt();
         const choiceResult = await deferredPrompt.userChoice;
         if (choiceResult && choiceResult.outcome === 'accepted') {
           showToast(`App "${trimmed}" installation accepted!`, 'success');
+        } else {
+          showToast(`Installation cancelled. PWA name set to "${trimmed}".`, 'info');
         }
       } catch (err) {
         console.error('Prompt error:', err);
+        showToast(`App name "${trimmed}" saved for installation.`, 'success');
       } finally {
         setDeferredPrompt(null);
         try {
@@ -432,7 +469,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         } catch (e) {}
       }
     } else {
-      showToast(`Dynamic app name updated to "${trimmed}".`, 'info');
+      if (isPwaInstalled) {
+        showToast(
+          `Configured PWA app name updated to "${trimmed}". If already installed on your device, reinstall the PWA to update your device launcher icon.`,
+          'info'
+        );
+      } else {
+        showToast(
+          `Dynamic app name set to "${trimmed}". Please use your browser menu (⋮) to install.`,
+          'success'
+        );
+      }
       try {
         document.title = originalTitle;
       } catch (e) {}

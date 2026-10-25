@@ -1999,7 +1999,12 @@
     "installNoticeSuffix": "and trigger the browser installation prompt.",
     "installing": "Installing...",
     "installTitle": "Install Application",
-    "installSub": "Customize your app experience before installing"
+    "installSub": "Customize your app experience before installing",
+    "reconfigureNoticeTitle": "App Already Installed:",
+    "reconfigureNoticeBody": "Your browser will apply the new name to the manifest. However, operating systems cache installed app names. To display the new name on your home screen or app launcher, please uninstall the current app and reinstall it.",
+    "manualInstallTitle": "Manual Installation:",
+    "manualInstallBody": "Your browser controls the native install prompt. Open your browser menu (⋮) and select \"Install\" or \"Add to Home screen\" to install with your configured name.",
+    "saveAndApply": "Save & Apply Name"
   },
   "settings": {
     "title": "Application Settings",

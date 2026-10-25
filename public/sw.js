@@ -1,8 +1,10 @@
-const CACHE_NAME = 'agribiz-v11';
+/* eslint-disable no-control-regex */
+const CACHE_NAME = 'agribiz-v12';
+let currentCustomPwaName = '';
+
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
-  '/manifest.webmanifest',
   '/favicon.ico',
   '/favicon.png',
   '/favicon.svg',
@@ -13,6 +15,34 @@ const ASSETS_TO_CACHE = [
   '/badge-monochrome-96.png',
   '/badge-monochrome-72.png'
 ];
+
+self.addEventListener('message', (event) => {
+  if (!event.data) return;
+
+  if (event.data.type === 'SET_PWA_NAME') {
+    const newName = (event.data.name || '').trim();
+    currentCustomPwaName = newName;
+
+    // Invalidate any manifest entries across all caches
+    caches.keys().then((keys) => {
+      keys.forEach((key) => {
+        caches.open(key).then((cache) => {
+          cache.keys().then((requests) => {
+            requests.forEach((req) => {
+              if (req.url.includes('manifest.webmanifest') || req.url.includes('/api/manifest')) {
+                cache.delete(req);
+              }
+            });
+          });
+        });
+      });
+    });
+
+    if (event.ports && event.ports[0]) {
+      event.ports[0].postMessage({ success: true, name: newName });
+    }
+  }
+});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -46,8 +76,69 @@ self.addEventListener('fetch', (event) => {
 
   const requestUrl = new URL(event.request.url);
 
-  // Skip API backend requests and websockets, except for company branding logo images
-  if (requestUrl.pathname.startsWith('/api/') && !requestUrl.pathname.includes('/company-logo/')) return;
+  // Skip API backend requests and websockets, except for company branding logo images and dynamic PWA manifest
+  if (requestUrl.pathname.startsWith('/api/') && !requestUrl.pathname.includes('/company-logo/') && requestUrl.pathname !== '/api/manifest') return;
+
+  // Dedicated dynamic handler for Web App Manifest requests
+  if (
+    requestUrl.origin === self.location.origin &&
+    (requestUrl.pathname === '/manifest.webmanifest' ||
+     requestUrl.pathname === '/api/manifest' ||
+     requestUrl.pathname.endsWith('.webmanifest'))
+  ) {
+    event.respondWith((async () => {
+      const queryName = requestUrl.searchParams.get('name');
+      const rawName = (queryName || currentCustomPwaName || '').trim();
+      const cleanName = rawName.replace(/[\u0000-\u001F\u007F-\u009F]/g, '').slice(0, 45);
+      const appName = cleanName || 'AgriBiz';
+      const shortName = cleanName ? cleanName.slice(0, 30) : 'AgriBiz';
+
+      // Always attempt network fetch first (cache: 'no-store')
+      try {
+        const fetchUrl = new URL(event.request.url);
+        if (cleanName && !fetchUrl.searchParams.has('name')) {
+          fetchUrl.searchParams.set('name', cleanName);
+        }
+        const networkResponse = await fetch(fetchUrl.href, { cache: 'no-store' });
+        if (networkResponse && networkResponse.ok) {
+          return networkResponse;
+        }
+      } catch (err) {
+        // Network offline — generate offline dynamic manifest below
+      }
+
+      const dynamicManifest = {
+        id: '/',
+        name: appName,
+        short_name: shortName,
+        description: `${appName} — Enterprise Agriculture Business and Billing Suite`,
+        start_url: '/',
+        scope: '/',
+        display: 'standalone',
+        orientation: 'portrait-primary',
+        background_color: '#f8fafc',
+        theme_color: '#0b0f19',
+        icons: [
+          { src: '/logo-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+          { src: '/logo-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+          { src: '/logo-maskable-192.png', sizes: '192x192', type: 'image/png', purpose: 'maskable' },
+          { src: '/logo-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+          { src: '/badge-monochrome-96.png', sizes: '96x96', type: 'image/png', purpose: 'monochrome' },
+          { src: '/badge-monochrome-72.png', sizes: '72x72', type: 'image/png', purpose: 'monochrome' }
+        ]
+      };
+
+      return new Response(JSON.stringify(dynamicManifest, null, 2), {
+        headers: {
+          'Content-Type': 'application/manifest+json; charset=utf-8',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
+        }
+      });
+    })());
+    return;
+  }
 
   // 1. Static assets, icons, logos, badges: CACHE-FIRST strategy
   // Returning local cached assets in 0ms guarantees Blink's NotificationResourcesLoader
@@ -57,7 +148,6 @@ self.addEventListener('fetch', (event) => {
     (requestUrl.pathname.endsWith('.png') ||
      requestUrl.pathname.endsWith('.ico') ||
      requestUrl.pathname.endsWith('.svg') ||
-     requestUrl.pathname.endsWith('.webmanifest') ||
      requestUrl.pathname.includes('/assets/'))
   ) {
     event.respondWith(
