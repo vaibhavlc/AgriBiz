@@ -368,8 +368,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         navigator.serviceWorker.controller.postMessage({ type: 'SET_PWA_NAME', name: trimmed });
       }
       const manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) || (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
-      if (manifestLink) {
-        manifestLink.href = `/manifest.webmanifest?name=${encodeURIComponent(trimmed)}`;
+      if (manifestLink && manifestLink.href !== '/manifest.webmanifest') {
+        manifestLink.href = '/manifest.webmanifest';
       }
     }
 
@@ -403,8 +403,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // 2. Dynamically update manifest URL with query parameters & data URI for instant browser detection
     try {
       const manifestLink = (document.getElementById('app-manifest') as HTMLLinkElement) || (document.querySelector('link[rel="manifest"]') as HTMLLinkElement);
-      if (manifestLink) {
-        manifestLink.href = `/manifest.webmanifest?name=${encodeURIComponent(trimmed)}&t=${Date.now()}`;
+      if (manifestLink && manifestLink.href !== '/manifest.webmanifest') {
+        manifestLink.href = '/manifest.webmanifest';
       }
     } catch (e) {
       console.error('Error updating PWA manifest URL:', e);

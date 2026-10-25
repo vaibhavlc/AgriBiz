@@ -1,7 +1,8 @@
 {
-  "name": "AgriBiz Trader Suite",
+  "id": "/",
+  "name": "AgriBiz",
   "short_name": "AgriBiz",
-  "description": "Enterprise Agriculture Business and Trader Management Suite with Real-time Business Alerts",
+  "description": "AgriBiz — Enterprise Agriculture Business and Billing Suite",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

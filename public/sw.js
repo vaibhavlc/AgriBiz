@@ -1,23 +1,18 @@
-const CACHE_NAME = 'agribiz-v8';
+const CACHE_NAME = 'agribiz-v9';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
+  '/manifest.webmanifest',
+  '/favicon.ico',
+  '/favicon.png',
+  '/favicon.svg',
   '/logo-192.png',
   '/logo-512.png',
   '/logo-maskable-192.png',
   '/logo-maskable-512.png',
-  '/favicon.svg',
   '/badge-monochrome-96.png',
   '/badge-monochrome-72.png'
 ];
-
-let customPwaName = 'AgriBiz';
-
-self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SET_PWA_NAME') {
-    customPwaName = event.data.name || 'AgriBiz';
-  }
-});
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -54,72 +49,7 @@ self.addEventListener('fetch', (event) => {
   // Skip API backend requests and websockets so SW doesn't intercept or corrupt API calls
   if (requestUrl.pathname.startsWith('/api/')) return;
 
-  // Intercept Web App Manifest requests and return dynamic JSON with customized app name & full icon suite
-  if (requestUrl.pathname.includes('manifest.webmanifest')) {
-    const urlName = requestUrl.searchParams.get('name');
-    const nameToUse = urlName || customPwaName || 'AgriBiz';
-
-    const dynamicManifest = {
-      name: nameToUse,
-      short_name: nameToUse,
-      start_url: '/',
-      scope: '/',
-      display: 'standalone',
-      orientation: 'portrait-primary',
-      background_color: '#f8fafc',
-      theme_color: '#0b0f19',
-      icons: [
-        {
-          src: '/logo-192.png',
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any'
-        },
-        {
-          src: '/logo-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any'
-        },
-        {
-          src: '/logo-maskable-192.png',
-          sizes: '192x192',
-          type: 'image/png',
-          purpose: 'maskable'
-        },
-        {
-          src: '/logo-maskable-512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'maskable'
-        },
-        {
-          src: '/badge-monochrome-96.png',
-          sizes: '96x96',
-          type: 'image/png',
-          purpose: 'monochrome'
-        },
-        {
-          src: '/badge-monochrome-72.png',
-          sizes: '72x72',
-          type: 'image/png',
-          purpose: 'monochrome'
-        }
-      ]
-    };
-
-    event.respondWith(
-      new Response(JSON.stringify(dynamicManifest, null, 2), {
-        headers: {
-          'Content-Type': 'application/manifest+json',
-          'Cache-Control': 'no-cache, no-store, must-revalidate'
-        }
-      })
-    );
-    return;
-  }
-
-  // Network-first strategy with safe Response fallback for all other assets
+  // Network-first strategy with cache fallback for HTML, static assets, and manifest
   event.respondWith(
     fetch(event.request)
       .then((response) => {
@@ -159,7 +89,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   event.waitUntil((async () => {
     let notificationData = {
-      title: 'AgriBiz Alert',
+      title: 'AgriBiz',
       body: 'You have a new business notification.',
       icon: `${self.location.origin}/logo-192.png`,
       badge: `${self.location.origin}/badge-monochrome-96.png`,
@@ -176,9 +106,9 @@ self.addEventListener('push', (event) => {
       }
     }
 
-    const title = notificationData.title || 'AgriBiz Alert';
+    const title = notificationData.title || 'AgriBiz';
 
-    // Fast, guaranteed fallback assets on high-availability client origin
+    // Guaranteed fallback assets on high-availability Vercel CDN origin
     const fallbackIcon = `${self.location.origin}/logo-192.png`;
     const fallbackBadge = `${self.location.origin}/badge-monochrome-96.png`;
 
