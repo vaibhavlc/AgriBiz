@@ -1,4 +1,4 @@
-const CACHE_NAME = 'agribiz-v9';
+const CACHE_NAME = 'agribiz-v10';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -46,14 +46,14 @@ self.addEventListener('fetch', (event) => {
 
   const requestUrl = new URL(event.request.url);
 
-  // Skip API backend requests and websockets so SW doesn't intercept or corrupt API calls
-  if (requestUrl.pathname.startsWith('/api/')) return;
+  // Skip API backend requests and websockets, except for company branding logo images
+  if (requestUrl.pathname.startsWith('/api/') && !requestUrl.pathname.includes('/company-logo/')) return;
 
-  // Network-first strategy with cache fallback for HTML, static assets, and manifest
+  // Network-first strategy with cache fallback for HTML, static assets, manifest, and logos
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
+        if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseToCache);
@@ -137,7 +137,10 @@ self.addEventListener('push', (event) => {
         const timeoutId = setTimeout(() => controller.abort(), 2000);
         const checkRes = await fetch(iconUrl, { method: 'GET', signal: controller.signal });
         clearTimeout(timeoutId);
-        if (!checkRes.ok) {
+        if (checkRes.ok) {
+          const cacheCopy = checkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(iconUrl, cacheCopy)).catch(() => {});
+        } else {
           iconUrl = fallbackIcon;
         }
       } catch (err) {

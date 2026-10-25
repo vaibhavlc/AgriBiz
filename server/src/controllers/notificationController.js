@@ -37,13 +37,27 @@ class NotificationController {
    * Publicly accessible so browser and OS notification services can fetch the icon
    */
   async getCompanyLogo(req, res) {
+    const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
+    const fallbackUrl = `${clientUrl}/logo-192.png`;
+
+    const sendLocalFallback = () => {
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
+      const serverLogo = path.resolve(__dirname, '../public/logo-192.png');
+      const rootLogo = path.resolve(__dirname, '../../public/logo-192.png');
+      const target = fs.existsSync(serverLogo) ? serverLogo : (fs.existsSync(rootLogo) ? rootLogo : null);
+      if (target) {
+        res.setHeader('Content-Type', 'image/png');
+        return res.sendFile(target);
+      }
+      return res.redirect(302, fallbackUrl);
+    };
+
     try {
       const { companyId } = req.params;
-      const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
-      const fallbackUrl = `${clientUrl}/logo-192.png`;
 
       if (!companyId) {
-        return res.redirect(302, fallbackUrl);
+        return sendLocalFallback();
       }
 
       // 1. Look up business settings (source of truth for company customizations)
@@ -62,7 +76,7 @@ class NotificationController {
       res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400');
 
       if (!rawLogo) {
-        return res.redirect(302, fallbackUrl);
+        return sendLocalFallback();
       }
 
       // If stored as external HTTP/HTTPS URL
@@ -80,11 +94,10 @@ class NotificationController {
         return res.end(buffer);
       }
 
-      return res.redirect(302, fallbackUrl);
+      return sendLocalFallback();
     } catch (error) {
-      logger.warn('[NOTIFICATION] Error serving company logo for %s: %s', req.params.companyId, error.message);
-      const clientUrl = (process.env.CLIENT_URL || 'https://agri-biz-snowy.vercel.app').replace(/\/+$/, '');
-      return res.redirect(302, `${clientUrl}/logo-192.png`);
+      logger.warn('[NOTIFICATION] Error serving company logo for %s: %s', req.params?.companyId, error.message);
+      return sendLocalFallback();
     }
   }
 
