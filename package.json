@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@playwright/test": "^1.61.1",
+    "@simplewebauthn/browser": "^14.0.0",
     "axios": "^1.18.1",
     "bcryptjs": "^3.0.3",
     "html2canvas": "^1.4.1",

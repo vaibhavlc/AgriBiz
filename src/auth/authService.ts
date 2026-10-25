@@ -1,5 +1,6 @@
 import type { User, Company, AuthSession, UserRole } from '../types';
 import api from '../utils/api';
+import { performBiometricAuthentication, performBiometricRegistration } from '../utils/biometric';
 
 const STORAGE_KEYS = {
   SESSION: 'agribiz_auth_session',
@@ -331,6 +332,141 @@ class AuthService {
     } catch (error: any) {
       const message = error.response?.data?.message || 'Invalid PIN or connection error.';
       return { success: false, message };
+    }
+  }
+
+  public async checkBiometricStatus(
+    companyId: string,
+    userId: string
+  ): Promise<{ enrolled: boolean; count: number }> {
+    try {
+      const res = await api.get(
+        `/auth/biometric/status?companyId=${encodeURIComponent(companyId)}&userId=${encodeURIComponent(userId)}`
+      );
+      if (res.data && res.data.success) {
+        return { enrolled: Boolean(res.data.enrolled), count: res.data.count || 0 };
+      }
+      return { enrolled: false, count: 0 };
+    } catch {
+      return { enrolled: false, count: 0 };
+    }
+  }
+
+  public async biometricLogin(
+    companyId: string,
+    userId: string
+  ): Promise<{ success: boolean; message: string; user?: User; company?: Company; isCancelled?: boolean }> {
+    try {
+      // 1. Fetch challenge & options from server
+      const optRes = await api.post('/auth/biometric/login-options', { companyId, userId });
+      if (!optRes.data || !optRes.data.success || !optRes.data.options) {
+        return {
+          success: false,
+          message: optRes.data?.message || 'Failed to start biometric authentication.',
+        };
+      }
+
+      // 2. Invoke browser / native biometric prompt
+      const authResult = await performBiometricAuthentication(optRes.data.options);
+      if (!authResult.success) {
+        return {
+          success: false,
+          message: authResult.message,
+          isCancelled: authResult.isCancelled,
+        };
+      }
+
+      // 3. Verify assertion on server
+      const verifyRes = await api.post('/auth/biometric/login-verify', {
+        companyId,
+        userId,
+        response: authResult.response,
+      });
+
+      const { success, message, accessToken, refreshToken, user, company } = verifyRes.data;
+
+      if (success && accessToken && user && company) {
+        this.setAccessToken(accessToken);
+        if (refreshToken) {
+          this.saveDeviceSession(company, refreshToken);
+        }
+        // Staff session -> sessionStorage (strictly verified for current tab)
+        sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
+        sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
+
+        const session: AuthSession = {
+          currentUserId: user.id,
+          companyId: user.companyId,
+          token: accessToken,
+          rememberMe: true,
+        };
+        sessionStorage.setItem(STORAGE_KEYS.SESSION, JSON.stringify(session));
+
+        return { success: true, message, user, company };
+      }
+
+      return { success: false, message: message || 'Biometric authentication verification failed.' };
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || 'Biometric login failed.';
+      return { success: false, message };
+    }
+  }
+
+  public async registerBiometric(
+    deviceName?: string
+  ): Promise<{ success: boolean; message: string; isCancelled?: boolean }> {
+    try {
+      const optRes = await api.post('/auth/biometric/register-options');
+      if (!optRes.data || !optRes.data.success || !optRes.data.options) {
+        return { success: false, message: optRes.data?.message || 'Failed to initiate biometric enrollment.' };
+      }
+
+      const regResult = await performBiometricRegistration(optRes.data.options);
+      if (!regResult.success) {
+        return {
+          success: false,
+          message: regResult.message,
+          isCancelled: regResult.isCancelled,
+        };
+      }
+
+      const verifyRes = await api.post('/auth/biometric/register-verify', {
+        response: regResult.response,
+        deviceName: deviceName || (typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 40) : 'This Device'),
+      });
+
+      if (verifyRes.data && verifyRes.data.success) {
+        return {
+          success: true,
+          message: verifyRes.data.message || 'Fingerprint / Biometrics enabled successfully.',
+        };
+      }
+
+      return { success: false, message: verifyRes.data?.message || 'Failed to verify biometric registration.' };
+    } catch (error: any) {
+      const message = error.response?.data?.message || error.message || 'Biometric enrollment failed.';
+      return { success: false, message };
+    }
+  }
+
+  public async listBiometricCredentials(): Promise<{ success: boolean; credentials: any[]; message?: string }> {
+    try {
+      const res = await api.get('/auth/biometric/credentials');
+      if (res.data && res.data.success) {
+        return { success: true, credentials: res.data.credentials || [] };
+      }
+      return { success: false, credentials: [], message: res.data?.message };
+    } catch (error: any) {
+      return { success: false, credentials: [], message: error.response?.data?.message || error.message };
+    }
+  }
+
+  public async revokeBiometricCredential(credentialId: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const res = await api.delete(`/auth/biometric/credentials/${encodeURIComponent(credentialId)}`);
+      return { success: res.data?.success ?? true, message: res.data?.message || 'Credential revoked.' };
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || error.message || 'Failed to revoke credential.' };
     }
   }
 

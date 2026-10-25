@@ -138,6 +138,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: res.success, message: res.message, user: res.user };
   };
 
+  const biometricLogin = async (companyId: string, userId: string) => {
+    const res = await authService.biometricLogin(companyId, userId);
+    if (res.success && res.user && res.company) {
+      setCurrentUser(res.user);
+      setCurrentCompany(res.company);
+    }
+    return { success: res.success, message: res.message, user: res.user, isCancelled: res.isCancelled };
+  };
+
   const registerCompany = async (companyData: any, ownerPassword: string, ownerPin: string) => {
     const res = await authService.registerCompany(companyData, ownerPassword, ownerPin);
     if (res.success && res.company) {
@@ -212,6 +221,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         role,
         login,
         staffLogin,
+        biometricLogin,
         registerCompany,
         logout,
         logoutStaff,

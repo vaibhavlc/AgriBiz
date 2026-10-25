@@ -1,6 +1,8 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
 import authController from '../controllers/authController.js';
+import biometricController from '../controllers/biometricController.js';
+import { authenticate } from '../middlewares/authMiddleware.js';
 import { validate } from '../middlewares/validationMiddleware.js';
 import { registerSchema, loginSchema, resetPasswordSchema, verifyEmailSchema, resendVerificationSchema, forgotPasswordSchema } from '../validators/authValidator.js';
 
@@ -26,5 +28,16 @@ router.post('/forgot-password', validate(forgotPasswordSchema), authController.f
 router.post('/reset-password', validate(resetPasswordSchema), authController.resetPassword);
 router.post('/forgot-owner-pin', authController.forgotOwnerPin);
 router.post('/reset-owner-pin', authController.resetOwnerPin);
+
+// Biometric / WebAuthn Endpoints
+router.get('/biometric/status', biometricController.getStatus);
+router.post('/biometric/login-options', biometricController.getAuthOptions);
+router.post('/biometric/login-verify', biometricController.verifyAuth);
+
+// Authenticated Biometric Enrollment & Management
+router.post('/biometric/register-options', authenticate, biometricController.getRegisterOptions);
+router.post('/biometric/register-verify', authenticate, biometricController.verifyRegister);
+router.get('/biometric/credentials', authenticate, biometricController.listCredentials);
+router.delete('/biometric/credentials/:id', authenticate, biometricController.revokeCredential);
 
 export default router;
