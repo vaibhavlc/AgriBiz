@@ -8,6 +8,7 @@ export const getRawBaseHost = (): string => {
     else if (url.startsWith('ws://')) url = 'http://' + url.slice(5);
     if (url.endsWith('/')) url = url.slice(0, -1);
     if (url.endsWith('/api/v1')) url = url.slice(0, -7);
+    else if (url.endsWith('/api')) url = url.slice(0, -4);
     return url;
   }
   const envApi = import.meta.env.VITE_API_URL;
@@ -17,6 +18,7 @@ export const getRawBaseHost = (): string => {
     else if (url.startsWith('ws://')) url = 'http://' + url.slice(5);
     if (url.endsWith('/')) url = url.slice(0, -1);
     if (url.endsWith('/api/v1')) url = url.slice(0, -7);
+    else if (url.endsWith('/api')) url = url.slice(0, -4);
     return url;
   }
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {

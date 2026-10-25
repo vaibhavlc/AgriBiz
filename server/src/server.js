@@ -148,23 +148,37 @@ app.use('/api/', (req, res, next) => {
   next();
 });
 
-// Register routes
+// Register routes (Dual-mount both /api/v1 and /api prefixes for full reverse-proxy & client compatibility)
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api/v1/products', productRoutes);
+app.use('/api/products', productRoutes);
 app.use('/api/v1/customers', customerRoutes);
+app.use('/api/customers', customerRoutes);
 app.use('/api/v1/suppliers', supplierRoutes);
+app.use('/api/suppliers', supplierRoutes);
 app.use('/api/v1/invoices', invoiceRoutes);
+app.use('/api/invoices', invoiceRoutes);
 app.use('/api/v1/quotations', quotationRoutes);
+app.use('/api/quotations', quotationRoutes);
 app.use('/api/v1/purchases', purchaseRoutes);
+app.use('/api/purchases', purchaseRoutes);
 app.use('/api/v1/payments', paymentRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/v1/expenses', expenseRoutes);
+app.use('/api/expenses', expenseRoutes);
 app.use('/api/v1/settings/backup', backupRoutes);
+app.use('/api/settings/backup', backupRoutes);
 app.use('/api/v1/settings', settingsRoutes);
+app.use('/api/settings', settingsRoutes);
 app.use('/api/v1/recycle-bin', recycleBinRoutes);
+app.use('/api/recycle-bin', recycleBinRoutes);
 app.use('/api/v1/users', userRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/v1/dashboard', dashboardRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/v1/notifications', notificationRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
 import { cascadeDeleteByMobile } from './utils/cascadeDelete.js';
