@@ -9,7 +9,7 @@ export interface AuthContextType {
   role: UserRole | null;
   login: (mobile: string, password: string, role?: UserRole, rememberMe?: boolean) => Promise<{ success: boolean; message: string; company?: Company }>;
   staffLogin: (companyId: string, userId: string, pin: string) => Promise<{ success: boolean; message: string; user?: User }>;
-  biometricLogin: (companyId: string, userId: string) => Promise<{ success: boolean; message: string; user?: User; isCancelled?: boolean }>;
+  biometricLogin: (companyId: string, userId: string, businessName?: string) => Promise<{ success: boolean; message: string; user?: User; isCancelled?: boolean }>;
   registerCompany: (companyData: any, ownerPassword: string, ownerPin: string) => Promise<{ success: boolean; message: string }>;
   logout: () => Promise<void>;
   logoutStaff: () => void;

@@ -354,11 +354,12 @@ class AuthService {
 
   public async biometricLogin(
     companyId: string,
-    userId: string
+    userId: string,
+    businessName?: string
   ): Promise<{ success: boolean; message: string; user?: User; company?: Company; isCancelled?: boolean }> {
     try {
       // 1. Fetch challenge & options from server
-      const optRes = await api.post('/auth/biometric/login-options', { companyId, userId });
+      const optRes = await api.post('/auth/biometric/login-options', { companyId, userId, businessName });
       if (!optRes.data || !optRes.data.success || !optRes.data.options) {
         return {
           success: false,
@@ -413,10 +414,11 @@ class AuthService {
   }
 
   public async registerBiometric(
-    deviceName?: string
+    deviceName?: string,
+    businessName?: string
   ): Promise<{ success: boolean; message: string; isCancelled?: boolean }> {
     try {
-      const optRes = await api.post('/auth/biometric/register-options');
+      const optRes = await api.post('/auth/biometric/register-options', { businessName });
       if (!optRes.data || !optRes.data.success || !optRes.data.options) {
         return { success: false, message: optRes.data?.message || 'Failed to initiate biometric enrollment.' };
       }

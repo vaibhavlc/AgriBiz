@@ -25,6 +25,30 @@ const ROLE_CONFIG = {
   Cashier:  { emoji: '💵', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
 };
 
+const getBusinessDisplayName = (comp: any): string => {
+  let name = comp?.businessName;
+  if (!name && comp) {
+    try {
+      const savedSettings = typeof window !== 'undefined'
+        ? (sessionStorage.getItem('agribiz_settings') || localStorage.getItem('agribiz_settings'))
+        : null;
+      if (savedSettings) {
+        const parsed = JSON.parse(savedSettings);
+        if ((parsed.companyId === comp.id || parsed.id === comp.id) && parsed.businessName) {
+          name = parsed.businessName;
+        }
+      }
+    } catch (e) {}
+  }
+  return (name?.trim() || comp?.name?.trim() || 'Daivyayog');
+};
+
+const formatUnlockTitle = (businessName: string): string => {
+  const clean = (businessName || 'Daivyayog').replace(/^Unlock\s+/i, '').trim();
+  const truncated = clean.length > 35 ? clean.slice(0, 32).trim() + '…' : clean;
+  return `Unlock ${truncated}`;
+};
+
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwitchToForgot }) => {
   const { t } = useTranslation();
   const { login, staffLogin, biometricLogin, currentCompany, forgetDevice } = useAuth();
@@ -71,6 +95,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     const storedRefreshToken = authService.getRefreshToken();
     return Boolean(savedCompany || storedRefreshToken);
   });
+
+  useEffect(() => {
+    const activeComp = currentCompany || authService.getCurrentCompany();
+    if (!activeComp) return;
+    const bName = getBusinessDisplayName(activeComp);
+    if (stage === 'pin-entry' && selectedStaff && authMethod === 'biometric') {
+      document.title = formatUnlockTitle(bName);
+    } else if (stage === 'staff-selection') {
+      document.title = bName;
+    }
+  }, [stage, selectedStaff, authMethod, currentCompany]);
 
   // PIN entry
   const [pin, setPin] = useState('');
@@ -231,6 +266,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         if (enrolled && biometricAvailable) {
           setAuthMethod('biometric');
           setStage('pin-entry');
+          const bName = getBusinessDisplayName(company);
+          document.title = formatUnlockTitle(bName);
           // Automatically trigger the device biometric authentication prompt immediately
           hasAutoPromptedRef.current = promptKey;
           executeBiometricAuth(company.id, staff.id);
@@ -260,7 +297,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     setBiometricLoading(true);
 
     try {
-      const res = await biometricLogin(companyId, staffId);
+      const activeCompany = currentCompany || authService.getCurrentCompany();
+      const bName = getBusinessDisplayName(activeCompany);
+      const res = await biometricLogin(companyId, staffId, bName);
 
       // If user opted for PIN while biometric prompt was open, don't override their choice
       if (userChosePinRef.current) {
@@ -487,21 +526,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
       } catch (e) {}
     }
 
-    let businessName = company?.businessName;
-    if (!businessName && company) {
-      try {
-        const savedSettings = typeof window !== 'undefined'
-          ? (sessionStorage.getItem('agribiz_settings') || localStorage.getItem('agribiz_settings'))
-          : null;
-        if (savedSettings) {
-          const parsed = JSON.parse(savedSettings);
-          if ((parsed.companyId === company.id || parsed.id === company.id) && parsed.businessName) {
-            businessName = parsed.businessName;
-          }
-        }
-      } catch (e) {}
-    }
-    if (!businessName) businessName = 'AgriBiz Trader Suite';
+    const businessName = getBusinessDisplayName(company);
 
     return (
       <div style={{ textAlign: 'center', marginBottom: '12px' }}>
@@ -887,22 +912,20 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               style={{
                 marginTop: '12px',
                 fontWeight: 800,
-                fontSize: '14px',
+                fontSize: '15px',
                 color: 'var(--text-primary,#0f172a)',
               }}
             >
               {biometricSuccess
                 ? t('login.identityVerified', 'Identity Verified! Logging in...')
-                : biometricLoading
-                ? t('login.waitingSensor', 'Touch fingerprint sensor...')
                 : isBiometricEnrolled
-                ? t('login.touchFingerprint', 'Touch Fingerprint Sensor to Log In')
+                ? formatUnlockTitle(getBusinessDisplayName(currentCompany || authService.getCurrentCompany()))
                 : t('login.biometricNotSetup', 'Fingerprint Not Enrolled On This Device')}
             </div>
 
             <div
               style={{
-                fontSize: '11px',
+                fontSize: '12px',
                 color: 'var(--text-muted,#64748b)',
                 marginTop: '4px',
                 lineHeight: 1.35,
@@ -911,9 +934,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               {biometricSuccess
                 ? t('login.redirecting', 'Opening dashboard...')
                 : biometricLoading
-                ? t('login.systemPromptActive', 'Device biometric prompt is active')
+                ? t('login.systemPromptActive', 'Touch fingerprint sensor or verify screen lock...')
                 : isBiometricEnrolled
-                ? t('login.biometricSubtext', 'Uses device fingerprint, face unlock, or system passkey')
+                ? t('login.touchFingerprint', 'Touch fingerprint sensor to unlock')
                 : t('login.usePinToEnrollSubtext', 'Log in with your 4-digit PIN to enable fingerprint login')}
             </div>
 

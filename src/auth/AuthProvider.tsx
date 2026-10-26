@@ -138,8 +138,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { success: res.success, message: res.message, user: res.user };
   };
 
-  const biometricLogin = async (companyId: string, userId: string) => {
-    const res = await authService.biometricLogin(companyId, userId);
+  const biometricLogin = async (companyId: string, userId: string, businessName?: string) => {
+    const res = await authService.biometricLogin(companyId, userId, businessName);
     if (res.success && res.user && res.company) {
       setCurrentUser(res.user);
       setCurrentCompany(res.company);

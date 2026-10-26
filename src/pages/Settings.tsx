@@ -153,7 +153,7 @@ export const Settings: React.FC = () => {
             ? 'Windows PC'
             : 'Current Device'
           : 'Current Device';
-      const res = await authService.registerBiometric(devName);
+      const res = await authService.registerBiometric(devName, settings?.businessName || currentCompany?.businessName);
       if (res.success) {
         setBiometricMsg({ text: res.message, isError: false });
         await loadBiometrics();

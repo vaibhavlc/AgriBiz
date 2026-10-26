@@ -12,7 +12,16 @@ import refreshTokenRepository from '../repositories/refreshTokenRepository.js';
 import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
 import logger from '../config/logger.js';
 
-function getRpInfo(originHeader, hostHeader) {
+function formatBiometricPromptTitle(businessName) {
+  const raw = (businessName || '').trim() || 'Daivyayog';
+  const clean = raw.replace(/^Unlock\s+/i, '');
+  if (clean.length > 35) {
+    return `Unlock ${clean.slice(0, 32).trim()}…`;
+  }
+  return `Unlock ${clean}`;
+}
+
+function getRpInfo(originHeader, hostHeader, businessName) {
   let origin = originHeader || (hostHeader ? `http://${hostHeader}` : 'http://localhost:5173');
   let rpID = 'localhost';
   const expectedOrigins = [
@@ -43,13 +52,25 @@ function getRpInfo(originHeader, hostHeader) {
   return {
     rpID,
     expectedOrigins,
-    rpName: 'Daivyayog AgriBiz',
+    rpName: formatBiometricPromptTitle(businessName),
   };
 }
 
 class BiometricService {
-  async generateRegisterOptions(user, originHeader, hostHeader) {
-    const { rpID, rpName } = getRpInfo(originHeader, hostHeader);
+  async generateRegisterOptions(user, originHeader, hostHeader, customBusinessName) {
+    let businessName = customBusinessName;
+    if (!businessName && user.companyId) {
+      try {
+        const comp = await companyRepository.findById(user.companyId);
+        if (comp && comp.businessName) {
+          businessName = comp.businessName;
+        }
+      } catch (err) {
+        logger.warn('Could not lookup company for biometric rpName: %s', err?.message);
+      }
+    }
+
+    const { rpID, rpName } = getRpInfo(originHeader, hostHeader, businessName);
 
     // Find any existing active credentials to avoid duplicates
     const existingCreds = await BiometricCredential.find({
@@ -67,8 +88,8 @@ class BiometricService {
       rpName,
       rpID,
       userID: new Uint8Array(Buffer.from(user.userId, 'utf-8')),
-      userName: user.email || user.mobile || user.name,
-      userDisplayName: user.name,
+      userName: user.name ? `${user.name} (${user.role || 'Staff'})` : (user.email || user.mobile || user.userId),
+      userDisplayName: user.name || user.email || 'Staff Member',
       attestationType: 'none',
       excludeCredentials,
       authenticatorSelection: {
@@ -145,8 +166,20 @@ class BiometricService {
     };
   }
 
-  async generateAuthOptions(companyId, userId, originHeader, hostHeader) {
-    const { rpID } = getRpInfo(originHeader, hostHeader);
+  async generateAuthOptions(companyId, userId, originHeader, hostHeader, customBusinessName) {
+    let businessName = customBusinessName;
+    if (!businessName && companyId) {
+      try {
+        const comp = await companyRepository.findById(companyId);
+        if (comp && comp.businessName) {
+          businessName = comp.businessName;
+        }
+      } catch (err) {
+        logger.warn('Could not lookup company for biometric auth options: %s', err?.message);
+      }
+    }
+
+    const { rpID, rpName } = getRpInfo(originHeader, hostHeader, businessName);
 
     const activeCreds = await BiometricCredential.find({
       companyId,
@@ -170,6 +203,9 @@ class BiometricService {
       allowCredentials,
       userVerification: 'preferred',
     });
+
+    // Provide rpName metadata for client display & title synchronization
+    options.rpName = rpName;
 
     // Save challenge
     await BiometricChallenge.create({

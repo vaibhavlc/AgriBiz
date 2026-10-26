@@ -31,9 +31,10 @@ class BiometricController {
     try {
       const origin = req.headers.origin;
       const host = req.headers.host;
+      const businessName = req.body?.businessName || req.query?.businessName;
       logger.info('Generating biometric registration options for user: %s', req.user.userId);
 
-      const options = await biometricService.generateRegisterOptions(req.user, origin, host);
+      const options = await biometricService.generateRegisterOptions(req.user, origin, host, businessName);
       res.status(200).json({ success: true, options });
     } catch (error) {
       next(error);
@@ -65,7 +66,7 @@ class BiometricController {
 
   async getAuthOptions(req, res, next) {
     try {
-      const { companyId, userId } = req.body;
+      const { companyId, userId, businessName } = req.body;
       const origin = req.headers.origin;
       const host = req.headers.host;
 
@@ -74,7 +75,7 @@ class BiometricController {
       }
 
       logger.info('Generating biometric auth options for userId: %s in company: %s', userId, companyId);
-      const options = await biometricService.generateAuthOptions(companyId, userId, origin, host);
+      const options = await biometricService.generateAuthOptions(companyId, userId, origin, host, businessName);
 
       res.status(200).json({ success: true, options });
     } catch (error) {
