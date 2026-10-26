@@ -258,6 +258,7 @@ export type UserRole = 'Owner' | 'Accounts' | 'Cashier';
 export interface Company {
   id: string;
   businessName: string;
+  businessNameMr?: string;
   ownerName: string;
   mobile: string;
   email?: string;

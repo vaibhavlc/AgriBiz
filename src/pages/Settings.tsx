@@ -109,7 +109,7 @@ export const Settings: React.FC = () => {
   const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
   const { currentUser, currentCompany, forgetDevice } = useAuth();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'notifications' | 'users' | 'backup' | 'erase'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'notifications' | 'users' | 'backup' | 'erase' | 'biometrics'>('profile');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Erase Business Data module states
@@ -148,14 +148,20 @@ export const Settings: React.FC = () => {
       const devName =
         typeof navigator !== 'undefined'
           ? navigator.userAgent.includes('Android')
-            ? 'Android Device'
+            ? t('settings.deviceAndroid', 'Android Device')
             : navigator.userAgent.includes('Windows')
-            ? 'Windows PC'
-            : 'Current Device'
-          : 'Current Device';
-      const res = await authService.registerBiometric(devName, settings?.businessName || currentCompany?.businessName);
+            ? t('settings.deviceWindows', 'Windows PC')
+            : t('settings.deviceCurrent', 'This Device')
+          : t('settings.deviceCurrent', 'This Device');
+      const bName = (i18n.language?.startsWith('mr') && settings?.businessNameMr)
+        ? settings.businessNameMr
+        : (settings?.businessName || currentCompany?.businessName);
+      const res = await authService.registerBiometric(devName, bName);
       if (res.success) {
-        setBiometricMsg({ text: res.message, isError: false });
+        setBiometricMsg({
+          text: t('settings.biometricRegisteredSuccess', 'Fingerprint / Biometric authentication successfully enabled on this device.'),
+          isError: false,
+        });
         await loadBiometrics();
       } else {
         setBiometricMsg({ text: res.message, isError: !res.isCancelled });
@@ -181,7 +187,10 @@ export const Settings: React.FC = () => {
     try {
       const res = await authService.revokeBiometricCredential(id);
       if (res.success) {
-        setBiometricMsg({ text: res.message, isError: false });
+        setBiometricMsg({
+          text: t('settings.biometricRevokeSuccess', 'Biometric credential revoked successfully.'),
+          isError: false,
+        });
         await loadBiometrics();
       } else {
         setBiometricMsg({ text: res.message, isError: true });
@@ -1764,6 +1773,14 @@ export const Settings: React.FC = () => {
         </button>
         <button
           type="button"
+          onClick={() => setActiveTab('biometrics')}
+          className={`settings-tab-pill ${activeTab === 'biometrics' ? 'active' : ''}`}
+          data-active={activeTab === 'biometrics'}
+        >
+          <Fingerprint size={15} /> {t('settings.tabBiometrics', 'Fingerprint & Security')}
+        </button>
+        <button
+          type="button"
           onClick={() => setActiveTab('backup')}
           className={`settings-tab-pill ${activeTab === 'backup' ? 'active' : ''}`}
           data-active={activeTab === 'backup'}
@@ -2142,200 +2159,265 @@ export const Settings: React.FC = () => {
                   </small>
                 </div>
               </div>
+            </>
+          )}
 
-              {/* Biometric & Fingerprint Security Card */}
-              <div className="card" style={{ marginTop: '20px' }}>
+          {/* TAB: Biometric & Fingerprint Security */}
+          {activeTab === 'biometrics' && (
+            <div className="card animate-fade-in">
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  borderBottom: '1.5px solid var(--border-color)',
+                  paddingBottom: '14px',
+                  marginBottom: '16px',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      borderRadius: '10px',
+                      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                      color: 'var(--primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}
+                  >
+                    <Fingerprint size={22} />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                      {t('settings.biometricTitle', 'Biometric & Fingerprint Security')}
+                    </h3>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '3px 0 0 0' }}>
+                      {t(
+                        'settings.biometricDesc',
+                        'Register your device fingerprint sensor or passkey for 1-tap fast login on the Role & PIN screen.'
+                      )}
+                    </p>
+                  </div>
+                </div>
+
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: '8px',
+                    backgroundColor: biometricSupport ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    color: biometricSupport ? '#10b981' : '#f59e0b',
+                  }}
+                >
+                  {biometricSupport
+                    ? t('settings.deviceSupported', 'Hardware Supported')
+                    : t('settings.deviceUnsupported', 'Device / Browser Unsupported')}
+                </span>
+              </div>
+
+              {/* Status Message (Success / Error) */}
+              {biometricMsg && (
+                <div
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    marginBottom: '16px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    backgroundColor: biometricMsg.isError ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
+                    border: `1px solid ${biometricMsg.isError ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
+                    color: biometricMsg.isError ? '#ef4444' : '#10b981',
+                  }}
+                >
+                  {biometricMsg.text}
+                </div>
+              )}
+
+              {/* Active Device Status Banner when enrolled */}
+              {biometricCredentials.length > 0 && (
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    justifyContent: 'space-between',
-                    borderBottom: '1.5px solid var(--border-color)',
-                    paddingBottom: '14px',
-                    marginBottom: '16px',
+                    gap: '12px',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    border: '1.5px solid rgba(16, 185, 129, 0.25)',
+                    marginBottom: '18px',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div
-                      style={{
-                        width: '38px',
-                        height: '38px',
-                        borderRadius: '10px',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        color: 'var(--primary)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}
-                    >
-                      <Fingerprint size={20} />
-                    </div>
-                    <div>
-                      <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                        {t('settings.biometricTitle', 'Biometric & Fingerprint Security')}
-                      </h3>
-                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                        {t(
-                          'settings.biometricDesc',
-                          'Register your device fingerprint sensor or passkey for 1-tap fast login on the Role & PIN screen.'
-                        )}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span
-                    style={{
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '4px 10px',
-                      borderRadius: '8px',
-                      backgroundColor: biometricSupport ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)',
-                      color: biometricSupport ? '#10b981' : '#f59e0b',
-                    }}
-                  >
-                    {biometricSupport
-                      ? t('settings.deviceSupported', 'Hardware Supported')
-                      : t('settings.deviceUnsupported', 'Device / Browser Unsupported')}
-                  </span>
-                </div>
-
-                {biometricMsg && (
-                  <div
-                    style={{
-                      padding: '10px 14px',
-                      borderRadius: '10px',
-                      marginBottom: '14px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      backgroundColor: biometricMsg.isError ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-                      border: `1px solid ${biometricMsg.isError ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`,
-                      color: biometricMsg.isError ? '#ef4444' : '#10b981',
-                    }}
-                  >
-                    {biometricMsg.text}
-                  </div>
-                )}
-
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                  <CheckCircle2 size={22} style={{ color: '#10b981', flexShrink: 0 }} />
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      {t('settings.enrolledDevices', 'Enrolled Biometric Devices')} ({biometricCredentials.length})
+                    <div style={{ fontWeight: 800, fontSize: '13px', color: '#065f46' }}>
+                      {t('settings.thisDeviceActiveBadge', 'Active on This Device')}
                     </div>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
-                      {t('settings.enrolledDevicesHelp', 'Devices allowed to verify this profile using fingerprint/biometrics.')}
+                    <div style={{ fontSize: '11px', color: '#047857', marginTop: '2px', lineHeight: 1.4 }}>
+                      {t(
+                        'settings.deviceAlreadyEnrolledHelp',
+                        'Fingerprint unlock is active on this device. You can log in instantly without entering your 4-digit PIN.'
+                      )}
                     </div>
                   </div>
+                </div>
+              )}
 
-                  <button
-                    type="button"
-                    className="btn btn-primary"
-                    disabled={!biometricSupport || isRegisteringBiometric}
-                    onClick={handleRegisterBiometricDevice}
-                    style={{
-                      height: '36px',
-                      fontSize: '12px',
-                      fontWeight: 700,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                    }}
-                  >
-                    <Fingerprint size={16} />
-                    {isRegisteringBiometric
-                      ? t('settings.registeringDevice', 'Touch Sensor...')
-                      : t('settings.registerThisDevice', 'Enroll This Device')}
-                  </button>
+              {/* Enrolled Devices Header & Action Button */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '16px',
+                  flexWrap: 'wrap',
+                  gap: '10px',
+                }}
+              >
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)' }}>
+                    {t('settings.enrolledDevices', 'Enrolled Biometric Devices')} ({biometricCredentials.length})
+                  </div>
+                  <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                    {t('settings.enrolledDevicesHelp', 'Devices allowed to verify this profile using fingerprint/biometrics.')}
+                  </div>
                 </div>
 
-                {biometricCredentials.length === 0 ? (
-                  <div
-                    style={{
-                      padding: '24px',
-                      textAlign: 'center',
-                      background: 'var(--bg-input, rgba(0,0,0,0.02))',
-                      borderRadius: '12px',
-                      border: '1px dashed var(--border-color)',
-                      color: 'var(--text-muted)',
-                      fontSize: '12px',
-                    }}
-                  >
-                    <Fingerprint size={32} style={{ margin: '0 auto 8px', opacity: 0.4 }} />
-                    <p style={{ margin: 0, fontWeight: 600 }}>
-                      {t('settings.noBiometricsEnrolled', 'No biometric credentials registered yet for this account.')}
-                    </p>
-                    <p style={{ margin: '4px 0 0', fontSize: '11px' }}>
-                      {t('settings.clickToEnroll', 'Click "Enroll This Device" above to register your fingerprint for instant login.')}
-                    </p>
-                  </div>
-                ) : (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    {biometricCredentials.map((cred) => (
-                      <div
-                        key={cred.id || cred.credentialId}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '12px 14px',
-                          borderRadius: '12px',
-                          border: '1.5px solid var(--border-color)',
-                          background: 'var(--bg-input, var(--card-bg, #ffffff))',
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div
-                            style={{
-                              width: '34px',
-                              height: '34px',
-                              borderRadius: '8px',
-                              background: 'rgba(16, 185, 129, 0.1)',
-                              color: 'var(--primary)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Fingerprint size={18} />
-                          </div>
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '13px', color: 'var(--text-primary)' }}>
-                              {cred.deviceName || 'Fingerprint Device'}
-                            </div>
-                            <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '1px' }}>
-                              Registered: {new Date(cred.createdAt).toLocaleDateString()}
-                              {cred.lastUsedAt && ` • Last used: ${new Date(cred.lastUsedAt).toLocaleDateString()}`}
-                            </div>
-                          </div>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRevokeBiometricDevice(cred.credentialId || cred.id)}
-                          style={{
-                            background: 'none',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            color: '#ef4444',
-                            borderRadius: '8px',
-                            padding: '6px 10px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            cursor: 'pointer',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                          }}
-                          title="Revoke device access"
-                        >
-                          <Trash2 size={13} />
-                          {t('common.revoke', 'Revoke')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  disabled={!biometricSupport || isRegisteringBiometric}
+                  onClick={handleRegisterBiometricDevice}
+                  style={{
+                    height: '38px',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '0 14px',
+                  }}
+                >
+                  <Fingerprint size={16} />
+                  {isRegisteringBiometric
+                    ? t('settings.registeringDevice', 'Touch Sensor...')
+                    : biometricCredentials.length > 0
+                    ? t('settings.enrollAnotherDevice', '+ Enroll Another Device')
+                    : t('settings.registerThisDevice', 'Enroll This Device')}
+                </button>
               </div>
 
-            </>
+              {/* Credentials List or Empty State */}
+              {biometricCredentials.length === 0 ? (
+                <div
+                  style={{
+                    padding: '32px 20px',
+                    textAlign: 'center',
+                    background: 'var(--bg-input, rgba(0,0,0,0.02))',
+                    borderRadius: '12px',
+                    border: '1px dashed var(--border-color)',
+                    color: 'var(--text-muted)',
+                    fontSize: '13px',
+                  }}
+                >
+                  <Fingerprint size={36} style={{ margin: '0 auto 10px', opacity: 0.4 }} />
+                  <p style={{ margin: 0, fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {t('settings.noBiometricsEnrolled', 'No biometric credentials registered yet for this account.')}
+                  </p>
+                  <p style={{ margin: '6px 0 0', fontSize: '12px' }}>
+                    {t('settings.clickToEnroll', 'Click "Enroll This Device" above to register your fingerprint for instant login.')}
+                  </p>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                  {biometricCredentials.map((cred) => (
+                    <div
+                      key={cred.id || cred.credentialId}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        borderRadius: '12px',
+                        border: '1.5px solid var(--border-color)',
+                        background: 'var(--bg-input, var(--card-bg, #ffffff))',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <div
+                          style={{
+                            width: '36px',
+                            height: '36px',
+                            borderRadius: '9px',
+                            background: 'rgba(16, 185, 129, 0.1)',
+                            color: 'var(--primary)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}
+                        >
+                          <Fingerprint size={19} />
+                        </div>
+                        <div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontWeight: 800, fontSize: '13px', color: 'var(--text-primary)' }}>
+                              {cred.deviceName || t('settings.deviceCurrent', 'This Device')}
+                            </span>
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 800,
+                                backgroundColor: 'rgba(16, 185, 129, 0.12)',
+                                color: '#059669',
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                              }}
+                            >
+                              ✓ {t('settings.thisDeviceActiveBadge', 'Active on This Device')}
+                            </span>
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
+                            {t('settings.registeredOn', 'Registered: {{date}}', {
+                              date: new Date(cred.createdAt).toLocaleDateString(i18n.language?.startsWith('mr') ? 'mr-IN' : 'en-IN'),
+                            })}
+                            {cred.lastUsedAt &&
+                              ` • ${t('settings.lastUsedOn', 'Last used: {{date}}', {
+                                date: new Date(cred.lastUsedAt).toLocaleDateString(i18n.language?.startsWith('mr') ? 'mr-IN' : 'en-IN'),
+                              })}`}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRevokeBiometricDevice(cred.credentialId || cred.id)}
+                        style={{
+                          background: 'none',
+                          border: '1px solid rgba(239, 68, 68, 0.3)',
+                          color: '#ef4444',
+                          borderRadius: '8px',
+                          padding: '6px 12px',
+                          fontSize: '12px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '5px',
+                          transition: 'all 0.15s ease',
+                        }}
+                        title={t('settings.revoke', 'Revoke')}
+                      >
+                        <Trash2 size={13} />
+                        {t('settings.revoke', 'Revoke')}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {/* TAB 2: Bank Details */}
@@ -5107,7 +5189,7 @@ export const Settings: React.FC = () => {
           )}
 
           {/* Persistent Action Footer with Inline Success Banner (Only for form tabs) */}
-          {activeTab !== 'users' && activeTab !== 'backup' && activeTab !== 'erase' && (
+          {activeTab !== 'users' && activeTab !== 'backup' && activeTab !== 'erase' && activeTab !== 'biometrics' && (
             <div className="settings-footer-unified">
               <div style={{ flex: 1 }}>
                 {savedSuccess && (
