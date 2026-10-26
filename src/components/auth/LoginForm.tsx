@@ -25,7 +25,10 @@ const ROLE_CONFIG = {
   Cashier:  { emoji: '💵', color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
 };
 
-const getBusinessDisplayName = (comp: any): string => {
+const getBusinessDisplayName = (comp: any, isMarathi = false): string => {
+  if (isMarathi && comp?.businessNameMr && comp.businessNameMr.trim()) {
+    return comp.businessNameMr.trim();
+  }
   let name = comp?.businessName;
   if (!name && comp) {
     try {
@@ -34,23 +37,30 @@ const getBusinessDisplayName = (comp: any): string => {
         : null;
       if (savedSettings) {
         const parsed = JSON.parse(savedSettings);
+        if (isMarathi && (parsed.companyId === comp.id || parsed.id === comp.id) && parsed.businessNameMr?.trim()) {
+          return parsed.businessNameMr.trim();
+        }
         if ((parsed.companyId === comp.id || parsed.id === comp.id) && parsed.businessName) {
           name = parsed.businessName;
         }
       }
     } catch (e) {}
   }
-  return (name?.trim() || comp?.name?.trim() || 'Daivyayog');
+  return (name?.trim() || comp?.name?.trim() || (isMarathi ? 'दैवयोग' : 'Daivyayog'));
 };
 
-const formatUnlockTitle = (businessName: string): string => {
-  const clean = (businessName || 'Daivyayog').replace(/^Unlock\s+/i, '').trim();
+const formatUnlockTitle = (businessName: string, isMarathi = false): string => {
+  const clean = (businessName || (isMarathi ? 'दैवयोग' : 'Daivyayog')).replace(/^(Unlock|अनलॉक करा)\s*/i, '').trim();
   const truncated = clean.length > 35 ? clean.slice(0, 32).trim() + '…' : clean;
+  if (isMarathi) {
+    return `${truncated} अनलॉक करा`;
+  }
   return `Unlock ${truncated}`;
 };
 
 export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwitchToForgot }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const isMarathi = i18n.language?.startsWith('mr') ?? false;
   const { login, staffLogin, biometricLogin, currentCompany, forgetDevice } = useAuth();
 
   // Biometric authentication states
@@ -99,13 +109,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   useEffect(() => {
     const activeComp = currentCompany || authService.getCurrentCompany();
     if (!activeComp) return;
-    const bName = getBusinessDisplayName(activeComp);
+    const bName = getBusinessDisplayName(activeComp, isMarathi);
     if (stage === 'pin-entry' && selectedStaff && authMethod === 'biometric') {
-      document.title = formatUnlockTitle(bName);
+      document.title = formatUnlockTitle(bName, isMarathi);
     } else if (stage === 'staff-selection') {
       document.title = bName;
     }
-  }, [stage, selectedStaff, authMethod, currentCompany]);
+  }, [stage, selectedStaff, authMethod, currentCompany, isMarathi]);
 
   // PIN entry
   const [pin, setPin] = useState('');
@@ -266,8 +276,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         if (enrolled && biometricAvailable) {
           setAuthMethod('biometric');
           setStage('pin-entry');
-          const bName = getBusinessDisplayName(company);
-          document.title = formatUnlockTitle(bName);
+          const bName = getBusinessDisplayName(company, isMarathi);
+          document.title = formatUnlockTitle(bName, isMarathi);
           // Automatically trigger the device biometric authentication prompt immediately
           hasAutoPromptedRef.current = promptKey;
           executeBiometricAuth(company.id, staff.id);
@@ -298,8 +308,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
     try {
       const activeCompany = currentCompany || authService.getCurrentCompany();
-      const bName = getBusinessDisplayName(activeCompany);
-      const res = await biometricLogin(companyId, staffId, bName);
+      const bName = getBusinessDisplayName(activeCompany, isMarathi);
+      const unlockTitle = formatUnlockTitle(bName, isMarathi);
+      const res = await biometricLogin(companyId, staffId, unlockTitle);
 
       // If user opted for PIN while biometric prompt was open, don't override their choice
       if (userChosePinRef.current) {
@@ -526,7 +537,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
       } catch (e) {}
     }
 
-    const businessName = getBusinessDisplayName(company);
+    const businessName = getBusinessDisplayName(company, isMarathi);
 
     return (
       <div style={{ textAlign: 'center', marginBottom: '12px' }}>
@@ -809,7 +820,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 }}
               >
                 <ShieldCheck size={12} />
-                {translateRole(t, selectedStaff.role)} Profile
+                {t('login.roleProfile', '{{role}} Profile', { role: translateRole(t, selectedStaff.role) })}
               </div>
             </div>
           </div>
@@ -919,7 +930,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               {biometricSuccess
                 ? t('login.identityVerified', 'Identity Verified! Logging in...')
                 : isBiometricEnrolled
-                ? formatUnlockTitle(getBusinessDisplayName(currentCompany || authService.getCurrentCompany()))
+                ? formatUnlockTitle(getBusinessDisplayName(currentCompany || authService.getCurrentCompany(), isMarathi), isMarathi)
                 : t('login.biometricNotSetup', 'Fingerprint Not Enrolled On This Device')}
             </div>
 

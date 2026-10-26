@@ -14,6 +14,12 @@ import logger from '../config/logger.js';
 
 function formatBiometricPromptTitle(businessName) {
   const raw = (businessName || '').trim() || 'Daivyayog';
+  if (raw.includes('अनलॉक') || raw.startsWith('Unlock')) {
+    if (raw.length > 40) {
+      return `${raw.slice(0, 36).trim()}…`;
+    }
+    return raw;
+  }
   const clean = raw.replace(/^Unlock\s+/i, '');
   if (clean.length > 35) {
     return `Unlock ${clean.slice(0, 32).trim()}…`;
