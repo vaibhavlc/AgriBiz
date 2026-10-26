@@ -6,7 +6,7 @@ import {
   Smartphone, Lock, Eye, EyeOff, ArrowRight,
   ChevronLeft, KeyRound, Fingerprint, ShieldCheck, Check
 } from 'lucide-react';
-import { checkBiometricSupport } from '../../utils/biometric';
+import { checkBiometricSupport, cancelBiometricCeremony } from '../../utils/biometric';
 import { useTranslation } from 'react-i18next';
 import { translateRole } from '../../utils/statusTranslation';
 import type { User as UserType } from '../../types';
@@ -38,10 +38,17 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
   const [authMethod, setAuthMethod] = useState<'biometric' | 'pin'>('biometric');
   const [biometricNotice, setBiometricNotice] = useState<string | null>(null);
 
+  // Guard refs to prevent duplicate prompts and respect explicit choice of PIN
+  const hasAutoPromptedRef = React.useRef<string | null>(null);
+  const userChosePinRef = React.useRef<boolean>(false);
+
   useEffect(() => {
     checkBiometricSupport().then((res) => {
       setBiometricAvailable(res.isSupported);
     });
+    return () => {
+      cancelBiometricCeremony();
+    };
   }, []);
 
   const [stage, setStage] = useState<Stage>(() => {
@@ -200,73 +207,122 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
   // ── Stage 2: Select Staff ───────────────────────────────────────────────
   const handleSelectStaff = async (staff: UserType & { id: string }) => {
+    // Immediately cancel any leftover biometric prompt from previous selection
+    cancelBiometricCeremony();
+
     setSelectedStaff(staff);
     setPin('');
     setErrorMsg('');
     setBiometricNotice(null);
     setBiometricSuccess(false);
     setBiometricLoading(false);
+    userChosePinRef.current = false;
 
     const company = currentCompany || authService.getCurrentCompany();
+    const promptKey = `${company?.id || ''}:${staff.id}`;
+
     if (company) {
       setCheckingBiometric(true);
       try {
         const status = await authService.checkBiometricStatus(company.id, staff.id);
-        setIsBiometricEnrolled(status.enrolled);
-        if (status.enrolled) {
+        const enrolled = Boolean(status.enrolled);
+        setIsBiometricEnrolled(enrolled);
+
+        if (enrolled && biometricAvailable) {
           setAuthMethod('biometric');
+          setStage('pin-entry');
+          // Automatically trigger the device biometric authentication prompt immediately
+          hasAutoPromptedRef.current = promptKey;
+          executeBiometricAuth(company.id, staff.id);
         } else {
+          // Biometric disabled/not enrolled or device unsupported: show existing PIN-entry interface directly
           setAuthMethod('pin');
+          setStage('pin-entry');
         }
       } catch {
         setIsBiometricEnrolled(false);
         setAuthMethod('pin');
+        setStage('pin-entry');
       } finally {
         setCheckingBiometric(false);
       }
     } else {
       setAuthMethod('pin');
+      setStage('pin-entry');
     }
-
-    setStage('pin-entry');
   };
 
-  const handleBiometricLogin = async () => {
+  const executeBiometricAuth = async (companyId: string, staffId: string) => {
+    if (biometricLoading || userChosePinRef.current) return;
+
+    setErrorMsg('');
+    setBiometricNotice(null);
+    setBiometricLoading(true);
+
+    try {
+      const res = await biometricLogin(companyId, staffId);
+
+      // If user opted for PIN while biometric prompt was open, don't override their choice
+      if (userChosePinRef.current) {
+        setBiometricLoading(false);
+        return;
+      }
+
+      setBiometricLoading(false);
+
+      if (res.success) {
+        setBiometricSuccess(true);
+      } else {
+        if (res.isCancelled) {
+          // Keep user on the biometric screen with clear retry and PIN option
+          setBiometricNotice(
+            t(
+              'login.biometricCancelledNotice',
+              'Biometric prompt was cancelled. Tap the fingerprint sensor to retry or use PIN below.'
+            )
+          );
+        } else {
+          setErrorMsg(res.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
+          setAuthMethod('pin');
+        }
+      }
+    } catch (err: any) {
+      if (!userChosePinRef.current) {
+        setBiometricLoading(false);
+        setErrorMsg(err.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
+        setAuthMethod('pin');
+      }
+    }
+  };
+
+  const handleBiometricLogin = () => {
     if (!selectedStaff) return;
     const company = currentCompany || authService.getCurrentCompany();
     if (!company) {
       setErrorMsg(t('login.errorSessionNotFound', 'Business session not found. Please log in again.'));
       return;
     }
+    userChosePinRef.current = false;
+    executeBiometricAuth(company.id, selectedStaff.id);
+  };
 
-    if (!isBiometricEnrolled) {
-      setBiometricNotice(
-        t(
-          'login.biometricNotEnrolled',
-          'Biometric login is not enrolled yet for this profile on this device. Please log in with your 4-digit PIN.'
-        )
-      );
-      setAuthMethod('pin');
-      return;
-    }
-
-    setErrorMsg('');
-    setBiometricNotice(null);
-    setBiometricLoading(true);
-
-    const res = await biometricLogin(company.id, selectedStaff.id);
+  const handleSwitchToPin = () => {
+    // Stop/cancel active system biometric prompt immediately
+    cancelBiometricCeremony();
+    userChosePinRef.current = true;
     setBiometricLoading(false);
+    setAuthMethod('pin');
+    setBiometricNotice(null);
+  };
 
-    if (res.success) {
-      setBiometricSuccess(true);
-    } else {
-      if (res.isCancelled) {
-        setBiometricNotice(
-          t('login.biometricCancelledNotice', 'Biometric prompt was cancelled. Tap the fingerprint button to retry or use PIN below.')
-        );
-      } else {
-        setErrorMsg(res.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
-        setAuthMethod('pin');
+  const handleSwitchToBiometric = () => {
+    userChosePinRef.current = false;
+    setAuthMethod('biometric');
+    setBiometricNotice(null);
+    if (selectedStaff) {
+      const company = currentCompany || authService.getCurrentCompany();
+      if (company && isBiometricEnrolled) {
+        executeBiometricAuth(company.id, selectedStaff.id);
       }
     }
   };
@@ -791,8 +847,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               disabled={biometricLoading || checkingBiometric}
               onClick={handleBiometricLogin}
               style={{
-                width: '84px',
-                height: '84px',
+                width: '88px',
+                height: '88px',
                 borderRadius: '50%',
                 margin: '0 auto',
                 background: biometricSuccess
@@ -803,7 +859,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 border: `2.5px solid ${biometricSuccess ? '#10b981' : cfg.color}`,
                 boxShadow:
                   biometricLoading || biometricSuccess
-                    ? `0 0 24px ${cfg.color}66`
+                    ? `0 0 28px ${cfg.color}66`
                     : `0 6px 20px ${cfg.color}33`,
                 display: 'flex',
                 alignItems: 'center',
@@ -812,15 +868,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
                 transform: biometricLoading ? 'scale(1.06)' : 'scale(1)',
               }}
+              title={isBiometricEnrolled ? 'Tap to trigger biometric authentication' : undefined}
             >
               {biometricSuccess ? (
-                <Check size={42} style={{ color: '#fff', strokeWidth: 3 }} />
+                <Check size={44} style={{ color: '#fff', strokeWidth: 3 }} />
               ) : (
                 <Fingerprint
-                  size={44}
+                  size={46}
                   style={{
                     color: cfg.color,
-                    opacity: biometricLoading ? 0.7 : 1,
+                    opacity: biometricLoading ? 0.75 : 1,
                   }}
                 />
               )}
@@ -837,7 +894,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               {biometricSuccess
                 ? t('login.identityVerified', 'Identity Verified! Logging in...')
                 : biometricLoading
-                ? t('login.waitingSensor', 'Waiting for Fingerprint sensor...')
+                ? t('login.waitingSensor', 'Touch fingerprint sensor...')
                 : isBiometricEnrolled
                 ? t('login.touchFingerprint', 'Touch Fingerprint Sensor to Log In')
                 : t('login.biometricNotSetup', 'Fingerprint Not Enrolled On This Device')}
@@ -851,36 +908,38 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
                 lineHeight: 1.35,
               }}
             >
-              {isBiometricEnrolled
+              {biometricSuccess
+                ? t('login.redirecting', 'Opening dashboard...')
+                : biometricLoading
+                ? t('login.systemPromptActive', 'Device biometric prompt is active')
+                : isBiometricEnrolled
                 ? t('login.biometricSubtext', 'Uses device fingerprint, face unlock, or system passkey')
                 : t('login.usePinToEnrollSubtext', 'Log in with your 4-digit PIN to enable fingerprint login')}
             </div>
 
-            {/* Secondary Option: Use PIN instead */}
-            <div style={{ marginTop: '16px', marginBottom: '8px' }}>
+            {/* Clearly Visible Alternative: Use 4-Digit PIN Instead */}
+            <div style={{ marginTop: '18px', marginBottom: '8px' }}>
               <button
                 type="button"
-                onClick={() => {
-                  setAuthMethod('pin');
-                  setBiometricNotice(null);
-                }}
+                onClick={handleSwitchToPin}
                 style={{
                   background: 'var(--bg-input, var(--card-bg, #ffffff))',
                   border: '1.5px solid var(--border-color,#e2e8f0)',
-                  borderRadius: '10px',
-                  padding: '9px 18px',
-                  fontSize: '12px',
-                  fontWeight: 700,
+                  borderRadius: '12px',
+                  padding: '10px 20px',
+                  fontSize: '13px',
+                  fontWeight: 800,
                   color: 'var(--text-secondary,#475569)',
                   cursor: 'pointer',
                   display: 'inline-flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                  gap: '8px',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                  transition: 'all 0.15s ease',
                 }}
               >
-                <KeyRound size={15} />
-                {t('login.usePinInstead', 'Use 4-Digit PIN instead')}
+                <KeyRound size={16} />
+                {t('login.usePinInstead', 'Use 4-Digit PIN Instead')}
               </button>
             </div>
           </div>
@@ -1036,34 +1095,29 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               })}
             </div>
 
-            {/* Switch to Biometric option */}
-            {biometricAvailable && (
-              <div style={{ textAlign: 'center', marginBottom: '12px' }}>
+            {/* Return to Biometric option when biometric is enrolled and supported */}
+            {isBiometricEnrolled && biometricAvailable && (
+              <div style={{ textAlign: 'center', marginBottom: '14px' }}>
                 <button
                   type="button"
-                  onClick={() => {
-                    setAuthMethod('biometric');
-                    setBiometricNotice(null);
-                    if (isBiometricEnrolled) {
-                      handleBiometricLogin();
-                    }
-                  }}
+                  onClick={handleSwitchToBiometric}
                   style={{
-                    background: 'none',
-                    border: 'none',
+                    background: cfg.bg,
+                    border: `1.5px solid ${cfg.color}33`,
                     color: cfg.color,
+                    borderRadius: '10px',
+                    padding: '8px 16px',
                     fontSize: '12px',
                     fontWeight: 700,
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
+                    transition: 'all 0.15s ease',
                   }}
                 >
                   <Fingerprint size={16} />
-                  {isBiometricEnrolled
-                    ? t('login.useFingerprintInstead', 'Use Fingerprint / Biometrics instead')
-                    : t('login.checkFingerprint', 'Use Fingerprint Login')}
+                  {t('login.useFingerprintInstead', 'Use Fingerprint / Biometrics Instead')}
                 </button>
               </div>
             )}
@@ -1117,11 +1171,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         <button
           type="button"
           onClick={() => {
+            cancelBiometricCeremony();
+            userChosePinRef.current = false;
+            hasAutoPromptedRef.current = null;
             setStage('staff-selection');
             setPin('');
             setErrorMsg('');
             setForgotPinSuccessMsg('');
             setBiometricNotice(null);
+            setBiometricLoading(false);
           }}
           style={{
             display: 'flex',

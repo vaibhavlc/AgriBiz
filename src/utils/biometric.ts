@@ -3,6 +3,7 @@ import {
   platformAuthenticatorIsAvailable,
   startAuthentication,
   startRegistration,
+  WebAuthnAbortService,
 } from '@simplewebauthn/browser';
 
 export interface BiometricAvailability {
@@ -42,6 +43,17 @@ export async function checkBiometricSupport(): Promise<BiometricAvailability> {
 }
 
 /**
+ * Explicitly cancels any active/in-flight WebAuthn ceremony (e.g. when user clicks "Use PIN instead").
+ */
+export function cancelBiometricCeremony(): void {
+  try {
+    WebAuthnAbortService.cancelCeremony();
+  } catch (err) {
+    console.warn('Error cancelling WebAuthn ceremony:', err);
+  }
+}
+
+/**
  * Executes platform biometric authentication using WebAuthn.
  * Returns the authentication response or throws an error.
  */
@@ -55,7 +67,8 @@ export async function performBiometricAuthentication(optionsJSON: any) {
       error.name === 'AbortError' ||
       error.message?.includes('cancelled') ||
       error.message?.includes('canceled') ||
-      error.message?.includes('timed out');
+      error.message?.includes('timed out') ||
+      error.message?.includes('abort');
 
     return {
       success: false,
