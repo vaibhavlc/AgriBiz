@@ -334,11 +334,20 @@ class NotificationController {
       const companyId = req.user.companyId;
       const userId = req.user.userId;
 
+      const settings = (await Settings.findOne({ companyId }).lean()) || {};
+      const requestedLang = req.body?.language || settings.invoiceLanguage || 'en';
+      const isMr = requestedLang === 'mr';
+
+      const title = isMr ? 'AgriBiz चाचणी सूचना' : 'AgriBiz Alert';
+      const body = isMr
+        ? 'तुमच्या फोनवर मोबाइल पुश सूचना व्यवस्थित काम करत आहेत!'
+        : 'Mobile push notifications are working properly on your phone!';
+
       const result = await pushNotificationService.sendNotificationToCompany(
         companyId,
         {
-          title: 'AgriBiz Alert',
-          body: 'Mobile push notifications are working properly on your phone!',
+          title,
+          body,
           type: 'BUSINESS_ALERT',
           url: '/?tab=dashboard',
           tab: 'dashboard',
@@ -346,6 +355,7 @@ class NotificationController {
             url: '/?tab=dashboard',
             tab: 'dashboard',
             source: 'test_notification',
+            language: requestedLang,
           },
         },
         { userId }
@@ -355,8 +365,8 @@ class NotificationController {
         success: true,
         message:
           result.deliveredCount > 0
-            ? `Test alert dispatched to ${result.deliveredCount} registered device(s).`
-            : 'No active push device registered for your user. Please enable notifications on this device first.',
+            ? (isMr ? `${result.deliveredCount} नोंदणीकृत डिव्हाइसवर चाचणी सूचना पाठवली.` : `Test alert dispatched to ${result.deliveredCount} registered device(s).`)
+            : (isMr ? 'कोणतेही सक्रिय डिव्हाइस आढळले नाही. कृपया प्रथम या डिव्हाइसवर सूचना सुरू करा.' : 'No active push device registered for your user. Please enable notifications on this device first.'),
         details: result,
       });
     } catch (error) {

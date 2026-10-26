@@ -1,5 +1,5 @@
 /* eslint-disable no-control-regex */
-const CACHE_NAME = 'agribiz-v12';
+const CACHE_NAME = 'agribiz-v13';
 let currentCustomPwaName = '';
 
 const ASSETS_TO_CACHE = [
@@ -269,6 +269,19 @@ self.addEventListener('push', (event) => {
       }
     }
 
+    const hasDevanagari = /[\u0900-\u097F]/.test(title + ' ' + (notificationData.body || '')) ||
+      (notificationData.data && notificationData.data.language === 'mr');
+
+    const defaultActions = hasDevanagari
+      ? [
+          { action: 'open', title: 'उघडा' },
+          { action: 'dismiss', title: 'रद्द करा' }
+        ]
+      : [
+          { action: 'open', title: 'Open' },
+          { action: 'dismiss', title: 'Dismiss' }
+        ];
+
     const options = {
       body: notificationData.body,
       icon: iconUrl,
@@ -278,10 +291,7 @@ self.addEventListener('push', (event) => {
       vibrate: notificationData.vibrate || [150, 50, 150, 50, 200],
       renotify: true,
       requireInteraction: true,
-      actions: notificationData.actions || [
-        { action: 'open', title: 'Open' },
-        { action: 'dismiss', title: 'Dismiss' }
-      ]
+      actions: notificationData.actions || defaultActions
     };
 
     // If expanded image banner is provided, ensure it is an absolute URL

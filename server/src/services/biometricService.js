@@ -4,6 +4,7 @@ import {
   generateAuthenticationOptions,
   verifyAuthenticationResponse,
 } from '@simplewebauthn/server';
+import mongoose from 'mongoose';
 import BiometricCredential from '../models/BiometricCredential.js';
 import BiometricChallenge from '../models/BiometricChallenge.js';
 import userRepository from '../repositories/userRepository.js';
@@ -349,7 +350,7 @@ class BiometricService {
     }).sort({ createdAt: -1 });
 
     return creds.map((c) => ({
-      id: c._id,
+      id: c._id.toString(),
       credentialId: c.credentialId,
       deviceName: c.deviceName,
       deviceType: c.deviceType,
@@ -360,16 +361,27 @@ class BiometricService {
   }
 
   async revokeCredential(userId, companyId, credentialId) {
-    const result = await BiometricCredential.deleteOne({
-      $or: [{ _id: credentialId }, { credentialId }],
+    const filter = {
       userId,
       companyId,
-    });
+    };
+
+    if (mongoose.Types.ObjectId.isValid(credentialId)) {
+      filter.$or = [{ _id: credentialId }, { credentialId }];
+    } else {
+      filter.credentialId = credentialId;
+    }
+
+    const result = await BiometricCredential.deleteOne(filter);
 
     if (result.deletedCount === 0) {
-      const err = new Error('Credential not found or not authorized to revoke.');
-      err.statusCode = 404;
-      throw err;
+      // Fallback: match by credentialId and userId in case companyId format differs
+      const fallback = await BiometricCredential.deleteOne({ credentialId, userId });
+      if (fallback.deletedCount === 0) {
+        const err = new Error('Credential not found or not authorized to revoke.');
+        err.statusCode = 404;
+        throw err;
+      }
     }
 
     return { success: true, message: 'Biometric credential revoked successfully.' };

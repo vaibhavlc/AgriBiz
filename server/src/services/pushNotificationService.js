@@ -235,6 +235,11 @@ class PushNotificationService {
     const notificationBadge = payload.badge || `${clientOrigin}/badge-monochrome-96.png`;
 
     // 4. Save Notification DB Record with atomic duplicate key protection
+    const isMarathi = Boolean(settings && settings.invoiceLanguage === 'mr');
+    const resolvedTitle = (isMarathi && payload.titleMr) ? payload.titleMr : payload.title;
+    const resolvedBody = (isMarathi && payload.bodyMr) ? payload.bodyMr : payload.body;
+    const resolvedPrivacySafeBody = (isMarathi && payload.privacySafeBodyMr) ? payload.privacySafeBodyMr : payload.privacySafeBody;
+
     const notificationId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     let notificationDoc;
     try {
@@ -243,8 +248,8 @@ class PushNotificationService {
         companyId,
         userId: options.userId || null,
         targetRole: options.targetRole || null,
-        title: payload.title,
-        body: payload.body,
+        title: resolvedTitle,
+        body: resolvedBody,
         type: payload.type || 'BUSINESS_ALERT',
         icon: notificationIcon,
         image: notificationImage,
@@ -282,12 +287,26 @@ class PushNotificationService {
 
     // 6. Construct Push payload with privacy preservation, branding, and size limit safeguards
     const maskPrivacy = settings ? settings.maskSensitiveNotificationData !== false : true;
-    const pushBody = this.resolvePushBody(payload, maskPrivacy);
+    const basePushPayload = {
+      body: resolvedBody,
+      privacySafeBody: resolvedPrivacySafeBody,
+    };
+    const pushBody = this.resolvePushBody(basePushPayload, maskPrivacy);
     const safeBody = (pushBody || '').slice(0, 400);
+
+    const defaultActions = isMarathi
+      ? [
+          { action: 'open', title: 'उघडा' },
+          { action: 'dismiss', title: 'रद्द करा' },
+        ]
+      : [
+          { action: 'open', title: 'Open' },
+          { action: 'dismiss', title: 'Dismiss' },
+        ];
 
     const pushPayload = JSON.stringify({
       notificationId,
-      title: payload.title,
+      title: resolvedTitle,
       body: safeBody,
       type: payload.type || 'BUSINESS_ALERT',
       icon: notificationIcon,
@@ -299,14 +318,12 @@ class PushNotificationService {
         notificationId,
         companyId,
         companyLogo: hasCustomLogo ? companyLogoEndpoint : null,
+        language: isMarathi ? 'mr' : 'en',
         ...payload.data,
       },
       tag: payload.tag || `${payload.type || 'alert'}-${Date.now()}`,
       vibrate: [100, 50, 100],
-      actions: payload.actions || [
-        { action: 'open', title: 'Open' },
-        { action: 'dismiss', title: 'Dismiss' },
-      ],
+      actions: payload.actions || defaultActions,
       timestamp: Date.now(),
     });
 
@@ -397,8 +414,11 @@ class PushNotificationService {
       companyId,
       {
         title: 'Payment Due Soon',
+        titleMr: 'देयक देण्याची वेळ जवळ आली आहे',
         body: `${customerName} has an upcoming balance of ${formattedAmount} due on ${dueDate}.`,
+        bodyMr: `${customerName} यांची ${formattedAmount} ची थकबाकी देण्याची तारीख ${dueDate} आहे.`,
         privacySafeBody: `Invoice ${invoiceNumber} has an upcoming payment due on ${dueDate}. Tap to view details.`,
+        privacySafeBodyMr: `चलन ${invoiceNumber} चे देयक ${dueDate} रोजी देय आहे. तपशील पाहण्यासाठी टॅप करा.`,
         type: 'DUE_REMINDER',
         url: '/?tab=sales',
         tab: 'sales',
@@ -428,8 +448,11 @@ class PushNotificationService {
       companyId,
       {
         title: 'Payment Overdue',
+        titleMr: 'थकबाकी देयकाची मुदत संपली',
         body: `${customerName} has an overdue balance of ${formattedAmount} for invoice ${invoiceNumber}.`,
+        bodyMr: `${customerName} यांचे चलन ${invoiceNumber} साठीचे ${formattedAmount} देयक थकीत झाले आहे.`,
         privacySafeBody: `Invoice ${invoiceNumber} is past its payment due date. Tap to review customer dues.`,
+        privacySafeBodyMr: `चलन ${invoiceNumber} ची देय तारीख उलटून गेली आहे. थकबाकी पाहण्यासाठी टॅप करा.`,
         type: 'OVERDUE_PAYMENT',
         url: '/?tab=sales',
         tab: 'sales',
@@ -453,16 +476,22 @@ class PushNotificationService {
   async notifyPaymentReceived({ companyId, customerName, amount, paymentMethod, referenceNumber, invoiceNumber, paymentId, currencySymbol = '₹' }) {
     const formattedAmount = `${currencySymbol}${Number(amount).toLocaleString('en-IN')}`;
     let body = `Payment of ${formattedAmount} received from ${customerName || 'Customer'} via ${paymentMethod || 'UPI'}.`;
+    let bodyMr = `${customerName || 'ग्राहक'} यांच्याकडून ${paymentMethod || 'UPI'} द्वारे ${formattedAmount} रक्कम प्राप्त झाली.`;
     if (invoiceNumber) {
       body += ` (Invoice ${invoiceNumber})`;
+      bodyMr += ` (चलन ${invoiceNumber})`;
     }
     const privacySafeBody = `Customer payment received via ${paymentMethod || 'UPI'}. Tap to view ledger entry.`;
+    const privacySafeBodyMr = `${paymentMethod || 'UPI'} द्वारे रक्कम प्राप्त झाली. तपशील पाहण्यासाठी टॅप करा.`;
     const eventReference = paymentId ? `payment:${paymentId}` : (invoiceNumber ? `payment:inv:${invoiceNumber}` : null);
 
     return this.sendNotificationToCompany(companyId, {
       title: 'Payment Received',
+      titleMr: 'रक्कम प्राप्त झाली',
       body,
+      bodyMr,
       privacySafeBody,
+      privacySafeBodyMr,
       type: 'PAYMENT_RECEIVED',
       url: '/?tab=payments',
       tab: 'payments',
@@ -487,20 +516,30 @@ class PushNotificationService {
     const isOutOfStock = stock <= 0;
     const type = isOutOfStock ? 'OUT_OF_STOCK' : 'LOW_STOCK';
     const title = isOutOfStock ? 'Out of Stock Alert' : 'Low Stock Alert';
+    const titleMr = isOutOfStock ? 'स्टॉक संपला सूचना' : 'कमी साठा सूचना';
     const body = isOutOfStock
       ? `${productName} is completely out of stock (0 units remaining).`
       : `${productName} has reached low stock: only ${stock} units remaining (Minimum threshold: ${minStock}).`;
+    const bodyMr = isOutOfStock
+      ? `${productName} चा साठा पूर्णपणे संपला आहे (० नग शिल्लक).`
+      : `${productName} चा साठा कमी झाला आहे: फक्त ${stock} शिल्लक (किमान मर्यादा: ${minStock}).`;
     const privacySafeBody = isOutOfStock
       ? `${productName} is completely out of stock.`
       : `${productName} has fallen below safety limit (${stock} remaining).`;
+    const privacySafeBodyMr = isOutOfStock
+      ? `${productName} चा साठा पूर्णपणे संपला आहे.`
+      : `${productName} साठा सुरक्षा मर्यादेपेक्षा कमी झाला आहे (${stock} शिल्लक).`;
 
     const todayStr = this.getTodayIST();
     const eventReference = `stock:${productId}:${type}:${todayStr}`;
 
     return this.sendNotificationToCompany(companyId, {
       title,
+      titleMr,
       body,
+      bodyMr,
       privacySafeBody,
+      privacySafeBodyMr,
       type,
       url: '/?tab=inventory',
       tab: 'inventory',
@@ -525,8 +564,11 @@ class PushNotificationService {
 
     return this.sendNotificationToCompany(companyId, {
       title: 'New Order Created',
+      titleMr: 'नवीन ऑर्डर तयार केली',
       body: `Invoice ${invoiceNumber} issued to ${customerName} for ${formattedAmount}.`,
+      bodyMr: `${customerName} यांच्यासाठी ${formattedAmount} चे चलन ${invoiceNumber} तयार केले.`,
       privacySafeBody: `Invoice ${invoiceNumber} has been issued. Tap to view order details.`,
+      privacySafeBodyMr: `चलन ${invoiceNumber} जारी केले आहे. ऑर्डर पाहण्यासाठी टॅप करा.`,
       type: 'NEW_ORDER',
       url: '/?tab=sales',
       tab: 'sales',
@@ -549,8 +591,11 @@ class PushNotificationService {
 
     return this.sendNotificationToCompany(companyId, {
       title: 'Order Status Updated',
+      titleMr: 'ऑर्डर स्थिती अपडेट झाली',
       body: `Order ${invoiceNumber} for ${customerName} is now ${statusText || status}.`,
+      bodyMr: `${customerName} यांची ऑर्डर ${invoiceNumber} आता ${statusText || status} आहे.`,
       privacySafeBody: `Order ${invoiceNumber} status is now ${statusText || status}.`,
+      privacySafeBodyMr: `ऑर्डर ${invoiceNumber} ची स्थिती आता ${statusText || status} आहे.`,
       type: 'ORDER_STATUS',
       url: '/?tab=sales',
       tab: 'sales',

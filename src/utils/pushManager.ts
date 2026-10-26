@@ -217,7 +217,13 @@ export const sendTestPushNotification = async (): Promise<{
   message: string;
 }> => {
   try {
-    const res = await api.post('/notifications/test');
+    let language = 'en';
+    if (typeof window !== 'undefined') {
+      try {
+        language = localStorage.getItem('agribiz_language') || localStorage.getItem('agribiz_invoice_language') || 'en';
+      } catch {}
+    }
+    const res = await api.post('/notifications/test', { language });
     return {
       success: res.data?.success ?? true,
       message: res.data?.message || 'Test alert dispatched.',

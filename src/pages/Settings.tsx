@@ -3268,7 +3268,7 @@ export const Settings: React.FC = () => {
                         disabled={isTestingPush || !pushStatus.isSubscribed}
                         className="btn btn-secondary"
                         style={{ padding: '9px 18px', fontWeight: 700 }}
-                        title={!pushStatus.isSubscribed ? 'Enable notifications on this device first to test' : 'Send an immediate test alert to this device'}
+                        title={!pushStatus.isSubscribed ? t('settings.enableFirstToTest', 'Enable notifications on this device first to test') : t('settings.sendImmediateTestAlert', 'Send an immediate test alert to this device')}
                       >
                         <Send size={15} />
                         <span>{isTestingPush ? t('common.sending', 'Sending...') : t('settings.sendTestAlert', 'Send Test Notification')}</span>
@@ -3307,15 +3307,15 @@ export const Settings: React.FC = () => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', fontSize: '11.5px', color: 'var(--text-muted)' }}>
                   <div style={{ padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Smartphone size={14} style={{ color: 'var(--primary)' }} /> Android Installation
+                      <Smartphone size={14} style={{ color: 'var(--primary)' }} /> {t('settings.androidInstallTitle', 'Android Installation')}
                     </div>
-                    <div>Tap the browser menu (three dots) & choose <strong>"Add to Home Screen"</strong> or <strong>"Install App"</strong> for native lockscreen alerts.</div>
+                    <div>{t('settings.androidInstallDesc', 'Tap the browser menu (three dots) & choose "Add to Home Screen" or "Install App" for native lockscreen alerts.')}</div>
                   </div>
                   <div style={{ padding: '12px 14px', borderRadius: '10px', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-card)' }}>
                     <div style={{ fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Smartphone size={14} style={{ color: '#3b82f6' }} /> Apple iOS (iPhone/iPad)
+                      <Smartphone size={14} style={{ color: '#3b82f6' }} /> {t('settings.iosInstallTitle', 'Apple iOS (iPhone/iPad)')}
                     </div>
-                    <div>In Safari, tap <strong>Share</strong> (square with arrow up) and select <strong>"Add to Home Screen"</strong> to receive push alerts on iOS 16.4+.</div>
+                    <div>{t('settings.iosInstallDesc', 'In Safari, tap Share (square with arrow up) and select "Add to Home Screen" to receive push alerts on iOS 16.4+.')}</div>
                   </div>
                 </div>
               </div>
@@ -3363,11 +3363,11 @@ export const Settings: React.FC = () => {
                             value={dueReminderDaysBefore}
                             onChange={(e) => setDueReminderDaysBefore(parseInt(e.target.value) || 2)}
                           >
-                            <option value={1}>1 day before due date</option>
-                            <option value={2}>2 days before due date</option>
-                            <option value={3}>3 days before due date</option>
-                            <option value={5}>5 days before due date</option>
-                            <option value={7}>7 days before due date</option>
+                            <option value={1}>{t('settings.reminder1DayBefore', '1 day before due date')}</option>
+                            <option value={2}>{t('settings.reminder2DaysBefore', '2 days before due date')}</option>
+                            <option value={3}>{t('settings.reminder3DaysBefore', '3 days before due date')}</option>
+                            <option value={5}>{t('settings.reminder5DaysBefore', '5 days before due date')}</option>
+                            <option value={7}>{t('settings.reminder7DaysBefore', '7 days before due date')}</option>
                           </select>
                         </div>
                       )}
