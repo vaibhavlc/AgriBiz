@@ -324,13 +324,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         setBiometricSuccess(true);
       } else {
         if (res.isCancelled) {
-          // Keep user on the biometric screen with clear retry and PIN option
-          setBiometricNotice(
-            t(
-              'login.biometricCancelledNotice',
-              'Biometric prompt was cancelled. Tap the fingerprint sensor to retry or use PIN below.'
-            )
-          );
+          // User pressed back button or cancelled the biometric prompt:
+          // Like in Groww app, switch immediately to PIN view!
+          userChosePinRef.current = true;
+          setAuthMethod('pin');
+          setBiometricNotice(null);
         } else {
           setErrorMsg(res.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
           setAuthMethod('pin');
@@ -339,8 +337,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     } catch (err: any) {
       if (!userChosePinRef.current) {
         setBiometricLoading(false);
-        setErrorMsg(err.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
         setAuthMethod('pin');
+        if (err.name !== 'AbortError' && !err.message?.toLowerCase().includes('cancel')) {
+          setErrorMsg(err.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
+        }
       }
     }
   };
@@ -363,18 +363,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     setBiometricLoading(false);
     setAuthMethod('pin');
     setBiometricNotice(null);
-  };
-
-  const handleSwitchToBiometric = () => {
-    userChosePinRef.current = false;
-    setAuthMethod('biometric');
-    setBiometricNotice(null);
-    if (selectedStaff) {
-      const company = currentCompany || authService.getCurrentCompany();
-      if (company && isBiometricEnrolled) {
-        executeBiometricAuth(company.id, selectedStaff.id);
-      }
-    }
   };
 
   // ── Stage 3: PIN Entry ──────────────────────────────────────────────────
@@ -878,6 +866,61 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         {/* PRIMARY BIOMETRIC VIEW */}
         {authMethod === 'biometric' && (
           <div style={{ textAlign: 'center', margin: '14px 0 16px' }}>
+            {/* Top Back Navigation to PIN view */}
+            <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}>
+              <button
+                type="button"
+                onClick={handleSwitchToPin}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-secondary,#475569)',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  borderRadius: '8px',
+                }}
+              >
+                <ChevronLeft size={16} />
+                <span>{isMarathi ? 'पिन वापरा' : t('login.backToPin', 'Back to PIN')}</span>
+              </button>
+            </div>
+
+            {/* Skeleton / Progress Bar if Biometric is loading */}
+            {biometricLoading && (
+              <div
+                style={{
+                  width: '180px',
+                  margin: '0 auto 12px',
+                  padding: '6px 10px',
+                  borderRadius: '10px',
+                  background: 'rgba(16,185,129,0.08)',
+                  border: '1px solid rgba(16,185,129,0.2)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px',
+                  alignItems: 'center',
+                }}
+              >
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#065f46' }}>
+                  {isMarathi ? 'बायोमेट्रिक पडताळणी सुरू आहे...' : t('login.verifyingBiometric', 'Verifying biometric...')}
+                </span>
+                <div
+                  className="skeleton-box"
+                  style={{
+                    width: '100%',
+                    height: '4px',
+                    borderRadius: '2px',
+                    background: `linear-gradient(90deg, ${cfg.color}33 0%, ${cfg.color} 50%, ${cfg.color}33 100%)`,
+                  }}
+                />
+              </div>
+            )}
+
             <button
               type="button"
               disabled={biometricLoading || checkingBiometric}
@@ -982,17 +1025,107 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         {/* PIN KEYPAD VIEW */}
         {authMethod === 'pin' && (
           <div>
+            {/* Top Row: Back to Staff + Enter PIN Label */}
             <div
               style={{
-                fontSize: '12px',
-                fontWeight: 700,
-                color: 'var(--text-secondary,#475569)',
-                textAlign: 'center',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
                 marginBottom: '10px',
               }}
             >
-              {t('login.enter4DigitPin', 'Enter 4-Digit PIN')}
+              <button
+                type="button"
+                onClick={() => {
+                  cancelBiometricCeremony();
+                  setStage('staff-selection');
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-muted,#64748b)',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '2px 4px',
+                }}
+              >
+                <ChevronLeft size={16} />
+                {isMarathi ? 'कर्मचारी बदला' : 'Change Profile'}
+              </button>
+
+              <div
+                style={{
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--text-secondary,#475569)',
+                }}
+              >
+                {t('login.enter4DigitPin', 'Enter 4-Digit PIN')}
+              </div>
             </div>
+
+            {/* Skeleton / Progress Bar if Biometric Matching is in Progress */}
+            {biometricLoading && (
+              <div
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  padding: '8px 12px',
+                  marginBottom: '12px',
+                  borderRadius: '12px',
+                  background: 'rgba(16,185,129,0.08)',
+                  border: '1.5px solid rgba(16,185,129,0.25)',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div
+                      style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        background: '#10b981',
+                        boxShadow: '0 0 8px #10b981',
+                      }}
+                    />
+                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#065f46' }}>
+                      {isMarathi ? 'बायोमेट्रिक पडताळणी सुरू आहे...' : t('login.verifyingBiometric', 'Verifying biometric...')}
+                    </span>
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted,#64748b)' }}>
+                    {isMarathi ? 'कृपया वाट पहा' : 'Please wait'}
+                  </span>
+                </div>
+                <div
+                  style={{
+                    height: '4px',
+                    width: '100%',
+                    borderRadius: '2px',
+                    background: 'rgba(16,185,129,0.15)',
+                    overflow: 'hidden',
+                    position: 'relative',
+                  }}
+                >
+                  <div
+                    className="skeleton-box"
+                    style={{
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      height: '100%',
+                      width: '100%',
+                      background: 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%)',
+                      borderRadius: '2px',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Hidden Input for Mobile Virtual Keyboards */}
             <form
@@ -1129,29 +1262,70 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               })}
             </div>
 
-            {/* Return to Biometric option when biometric is enrolled and supported */}
+            {/* Groww-style Biometric Unlock Option below Numeric Keypad */}
             {isBiometricEnrolled && biometricAvailable && (
-              <div style={{ textAlign: 'center', marginBottom: '14px' }}>
+              <div style={{ textAlign: 'center', marginTop: '14px', marginBottom: '14px' }}>
                 <button
                   type="button"
-                  onClick={handleSwitchToBiometric}
+                  disabled={biometricLoading}
+                  onClick={handleBiometricLogin}
                   style={{
-                    background: cfg.bg,
-                    border: `1.5px solid ${cfg.color}33`,
-                    color: cfg.color,
-                    borderRadius: '10px',
-                    padding: '8px 16px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
+                    background: 'var(--bg-input, var(--card-bg, #ffffff))',
+                    border: `1.5px solid ${cfg.color}44`,
+                    borderRadius: '16px',
+                    padding: '8px 18px',
+                    cursor: biometricLoading ? 'wait' : 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px',
-                    transition: 'all 0.15s ease',
+                    justifyContent: 'center',
+                    gap: '10px',
+                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
+                    margin: '0 auto',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = cfg.color;
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = `0 4px 14px ${cfg.color}25`;
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = `${cfg.color}44`;
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.05)';
                   }}
                 >
-                  <Fingerprint size={16} />
-                  {t('login.useFingerprintInstead', 'Use Fingerprint / Biometrics Instead')}
+                  <div
+                    style={{
+                      width: '36px',
+                      height: '36px',
+                      borderRadius: '50%',
+                      background: cfg.bg,
+                      border: `1.5px solid ${cfg.color}55`,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      boxShadow: `0 2px 8px ${cfg.color}22`,
+                    }}
+                  >
+                    <Fingerprint
+                      size={20}
+                      style={{
+                        color: cfg.color,
+                        opacity: biometricLoading ? 0.7 : 1,
+                      }}
+                    />
+                  </div>
+                  <div style={{ textAlign: 'left' }}>
+                    <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary,#0f172a)', lineHeight: 1.2 }}>
+                      {isMarathi ? 'फिंगरप्रिंट वापरा' : t('login.useFingerprint', 'Use Fingerprint')}
+                    </div>
+                    <div style={{ fontSize: '10px', fontWeight: 600, color: 'var(--text-muted,#64748b)' }}>
+                      {biometricLoading
+                        ? (isMarathi ? 'पडताळणी सुरू आहे...' : 'Verifying...')
+                        : (isMarathi ? 'अनलॉक करण्यासाठी स्पर्श करा' : t('login.tapToUnlockWithBiometrics', 'Tap to unlock with biometrics'))}
+                    </div>
+                  </div>
                 </button>
               </div>
             )}
