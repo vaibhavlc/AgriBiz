@@ -880,65 +880,6 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               </div>
             </div>
 
-            {/* Skeleton / Progress Bar if Biometric Matching is in Progress */}
-            {biometricLoading && (
-              <div
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  padding: '8px 12px',
-                  marginBottom: '12px',
-                  borderRadius: '12px',
-                  background: 'rgba(16,185,129,0.08)',
-                  border: '1.5px solid rgba(16,185,129,0.25)',
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <div
-                      style={{
-                        width: '8px',
-                        height: '8px',
-                        borderRadius: '50%',
-                        background: '#10b981',
-                        boxShadow: '0 0 8px #10b981',
-                      }}
-                    />
-                    <span style={{ fontSize: '12px', fontWeight: 700, color: '#065f46' }}>
-                      {isMarathi ? 'बायोमेट्रिक पडताळणी सुरू आहे...' : t('login.verifyingBiometric', 'Verifying biometric...')}
-                    </span>
-                  </div>
-                  <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted,#64748b)' }}>
-                    {isMarathi ? 'कृपया वाट पहा' : 'Please wait'}
-                  </span>
-                </div>
-                <div
-                  style={{
-                    height: '4px',
-                    width: '100%',
-                    borderRadius: '2px',
-                    background: 'rgba(16,185,129,0.15)',
-                    overflow: 'hidden',
-                    position: 'relative',
-                  }}
-                >
-                  <div
-                    className="skeleton-box"
-                    style={{
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      height: '100%',
-                      width: '100%',
-                      background: 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #10b981 100%)',
-                      borderRadius: '2px',
-                    }}
-                  />
-                </div>
-              </div>
-            )}
-
             {/* Hidden Input for Mobile Virtual Keyboards */}
             <form
               onSubmit={(e) => {
