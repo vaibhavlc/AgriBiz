@@ -4,7 +4,7 @@ import companyRepository from '../repositories/companyRepository.js';
 import userRepository from '../repositories/userRepository.js';
 import refreshTokenRepository from '../repositories/refreshTokenRepository.js';
 import settingsRepository from '../repositories/settingsRepository.js';
-import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from '../utils/jwt.js';
+import { generateAccessToken, generateRefreshToken, verifyRefreshToken, REFRESH_TOKEN_MS } from '../utils/jwt.js';
 import logger from '../config/logger.js';
 import emailService from './emailService.js';
 import PendingVerification from '../models/PendingVerification.js';
@@ -114,7 +114,7 @@ class AuthService {
     const refreshToken = generateRefreshToken(user);
 
     // Store refresh token
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MS); // 20 days
     await refreshTokenRepository.create({
       token: refreshToken,
       userId: user.userId,
@@ -281,7 +281,7 @@ class AuthService {
     const refreshToken = generateRefreshToken(user);
 
     // Store refresh token
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MS); // 20 days
     await refreshTokenRepository.create({
       token: refreshToken,
       userId: user.userId,
@@ -347,7 +347,7 @@ class AuthService {
     const refreshToken = generateRefreshToken(user);
 
     // Store refresh token
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MS); // 20 days
     await refreshTokenRepository.create({
       token: refreshToken,
       userId: user.userId,

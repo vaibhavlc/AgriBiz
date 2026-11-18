@@ -10,7 +10,7 @@ import BiometricChallenge from '../models/BiometricChallenge.js';
 import userRepository from '../repositories/userRepository.js';
 import companyRepository from '../repositories/companyRepository.js';
 import refreshTokenRepository from '../repositories/refreshTokenRepository.js';
-import { generateAccessToken, generateRefreshToken } from '../utils/jwt.js';
+import { generateAccessToken, generateRefreshToken, REFRESH_TOKEN_MS } from '../utils/jwt.js';
 import logger from '../config/logger.js';
 
 function formatBiometricPromptTitle(businessName) {
@@ -320,7 +320,7 @@ class BiometricService {
     const accessToken = generateAccessToken(user);
     const refreshToken = generateRefreshToken(user);
 
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MS); // 20 days
     await refreshTokenRepository.create({
       token: refreshToken,
       userId: user.userId,

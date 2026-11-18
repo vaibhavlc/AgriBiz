@@ -1,6 +1,10 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 
+export const REFRESH_TOKEN_DAYS = 20;
+export const REFRESH_TOKEN_EXPIRES_IN = `${REFRESH_TOKEN_DAYS}d`;
+export const REFRESH_TOKEN_MS = REFRESH_TOKEN_DAYS * 24 * 60 * 60 * 1000; // 20 days in ms
+
 export const generateAccessToken = (user) => {
   return jwt.sign(
     {
@@ -19,7 +23,7 @@ export const generateRefreshToken = (user) => {
   return jwt.sign(
     { userId: user.userId, jti: crypto.randomUUID() },
     process.env.JWT_REFRESH_SECRET || 'agribiz_refresh_token_secret_key_67890',
-    { expiresIn: '7d' }
+    { expiresIn: REFRESH_TOKEN_EXPIRES_IN }
   );
 };
 

@@ -1,5 +1,6 @@
 import biometricService from '../services/biometricService.js';
 import logger from '../config/logger.js';
+import { REFRESH_TOKEN_MS } from '../utils/jwt.js';
 
 const COOKIE_NAME = 'agribiz_refresh_token';
 
@@ -8,7 +9,7 @@ const setRefreshTokenCookie = (res, token) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: REFRESH_TOKEN_MS, // 20 days
   });
 };
 
