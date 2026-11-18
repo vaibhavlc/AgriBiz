@@ -271,7 +271,11 @@
     "cleared": "सूचना हटवल्या",
     "noNotifications": "कोणतीही नवीन सूचना नाही",
     "viewReports": "अहवाल डॅशबोर्ड पहा",
-    "viewReportsDashboard": "रिपोर्ट्स डॅशबोर्ड पहा"
+    "viewReportsDashboard": "रिपोर्ट्स डॅशबोर्ड पहा",
+    "enablePhoneAlerts": "मोबाईल सूचना सुरू करा",
+    "getAlertsOnPhone": "थकबाकी, साठा व ऑर्डर्सचे फोनवर अलर्ट मिळवा",
+    "enable": "सुरू करा",
+    "enabling": "सुरू करत आहे..."
   },
   "dashboard": {
     "title": "डॅशबोर्ड",

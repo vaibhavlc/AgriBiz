@@ -27,9 +27,29 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    titleEn: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    titleMr: {
+      type: String,
+      default: null,
+      trim: true,
+    },
     body: {
       type: String,
       required: true,
+      trim: true,
+    },
+    bodyEn: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    bodyMr: {
+      type: String,
+      default: null,
       trim: true,
     },
     type: {

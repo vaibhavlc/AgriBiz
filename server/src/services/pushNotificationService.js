@@ -240,6 +240,11 @@ class PushNotificationService {
     const resolvedBody = (isMarathi && payload.bodyMr) ? payload.bodyMr : payload.body;
     const resolvedPrivacySafeBody = (isMarathi && payload.privacySafeBodyMr) ? payload.privacySafeBodyMr : payload.privacySafeBody;
 
+    const titleEn = payload.title || payload.titleEn || resolvedTitle;
+    const titleMr = payload.titleMr || payload.title || resolvedTitle;
+    const bodyEn = payload.body || payload.bodyEn || resolvedBody;
+    const bodyMr = payload.bodyMr || payload.body || resolvedBody;
+
     const notificationId = `NOTIF-${Date.now()}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
     let notificationDoc;
     try {
@@ -249,13 +254,21 @@ class PushNotificationService {
         userId: options.userId || null,
         targetRole: options.targetRole || null,
         title: resolvedTitle,
+        titleEn,
+        titleMr,
         body: resolvedBody,
+        bodyEn,
+        bodyMr,
         type: payload.type || 'BUSINESS_ALERT',
         icon: notificationIcon,
         image: notificationImage,
         data: {
           ...payload.data,
           companyLogo: hasCustomLogo ? companyLogoEndpoint : null,
+          titleEn,
+          titleMr,
+          bodyEn,
+          bodyMr,
         },
         eventReference: payload.eventReference || null,
       });

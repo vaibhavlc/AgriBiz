@@ -42,28 +42,14 @@ import { PWAInstallModal } from './PWAInstallModal';
 import api from '../utils/api';
 import { checkCurrentSubscription, subscribeToPush } from '../utils/pushManager';
 import type { AppNotification } from '../types';
+import { getLocalizedNotification, formatNotificationTime } from '../utils/notificationLocalization';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 
-const formatRelativeTime = (isoString?: string): string => {
-  if (!isoString) return 'Just now';
-  try {
-    const diff = Date.now() - new Date(isoString).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return 'Just now';
-    if (mins < 60) return `${mins}m ago`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return new Date(isoString).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' });
-  } catch {
-    return 'Recently';
-  }
-};
+
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { t, i18n } = useTranslation();
@@ -311,9 +297,10 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   });
   const [isSubscribingPush, setIsSubscribingPush] = useState<boolean>(false);
 
-  const fetchLiveNotifications = async () => {
+  const fetchLiveNotifications = async (lang?: string) => {
     try {
-      const res = await api.get('/notifications?limit=25');
+      const activeLang = lang || (i18n.language?.slice(0, 2) === 'mr' ? 'mr' : 'en');
+      const res = await api.get(`/notifications?limit=25&lang=${activeLang}`);
       if (res.data?.success && Array.isArray(res.data.data)) {
         setNotifications(res.data.data);
         setUnreadNotifCount(res.data.pagination?.unreadCount || 0);
@@ -350,6 +337,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
       window.removeEventListener('daivyayog_new_notification', handleNewNotif as EventListener);
     };
   }, []);
+
+  useEffect(() => {
+    const activeLang = (i18n.language?.slice(0, 2) === 'mr' ? 'mr' : 'en') as 'en' | 'mr';
+    if (selectedLanguage !== activeLang) {
+      setSelectedLanguage(activeLang);
+    }
+    fetchLiveNotifications(activeLang);
+  }, [i18n.language]);
 
   const handleEnablePush = async () => {
     setIsSubscribingPush(true);
@@ -868,6 +863,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         i18n.changeLanguage(code);
                         try { localStorage.setItem('agribiz_language', code); } catch {}
                         setIsLangDropdownOpen(false);
+                        fetchLiveNotifications(code);
                       }}
                     >
                       <span className="lang-indicator-dot" />
@@ -886,7 +882,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                 onClick={() => {
                   setIsNotificationOpen(!isNotificationOpen);
                   if (!isNotificationOpen) {
-                    fetchLiveNotifications();
+                    fetchLiveNotifications(selectedLanguage);
                     refreshPushStatus();
                   }
                 }}
@@ -942,8 +938,12 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         <Smartphone size={16} style={{ color: 'var(--primary)', flexShrink: 0 }} />
                         <div>
-                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>Enable Phone Alerts</div>
-                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>Get dues, stock & orders on phone</div>
+                          <div style={{ fontSize: '12px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                            {t('notifications.enablePhoneAlerts', 'Enable Phone Alerts')}
+                          </div>
+                          <div style={{ fontSize: '10.5px', color: 'var(--text-muted)' }}>
+                            {t('notifications.getAlertsOnPhone', 'Get dues, stock & orders on phone')}
+                          </div>
                         </div>
                       </div>
                       <button
@@ -953,7 +953,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                         className="btn btn-primary"
                         style={{ padding: '4px 10px', fontSize: '11px', fontWeight: 700, height: 'auto', minHeight: 'unset' }}
                       >
-                        {isSubscribingPush ? 'Enabling...' : 'Enable'}
+                        {isSubscribingPush ? t('notifications.enabling', 'Enabling...') : t('notifications.enable', 'Enable')}
                       </button>
                     </div>
                   )}
@@ -965,6 +965,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                       </div>
                     ) : (
                       notifications.map((notif) => {
+                        const localized = getLocalizedNotification(notif, selectedLanguage);
                         const dotColor =
                           notif.type === 'PAYMENT_RECEIVED'
                             ? '#10b981'
@@ -990,14 +991,14 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
                             <div className="notification-item-content" style={{ width: '100%' }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
                                 <span className="notification-item-title" style={{ fontWeight: notif.isRead ? 600 : 700 }}>
-                                  {notif.title}
+                                  {localized.title}
                                 </span>
                                 <span className="notification-item-time" style={{ fontSize: '10px', whiteSpace: 'nowrap' }}>
-                                  {formatRelativeTime(notif.createdAt)}
+                                  {formatNotificationTime(notif.createdAt, selectedLanguage)}
                                 </span>
                               </div>
                               <span className="notification-item-desc" style={{ fontSize: '12px', marginTop: '2px', display: 'block' }}>
-                                {notif.body}
+                                {localized.body}
                               </span>
                             </div>
                           </div>

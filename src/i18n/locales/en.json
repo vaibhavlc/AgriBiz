@@ -267,7 +267,11 @@
     "cleared": "Notifications cleared",
     "noNotifications": "No new notifications",
     "viewReports": "View Reports Dashboard",
-    "viewReportsDashboard": "View Reports Dashboard"
+    "viewReportsDashboard": "View Reports Dashboard",
+    "enablePhoneAlerts": "Enable Phone Alerts",
+    "getAlertsOnPhone": "Get dues, stock & orders on phone",
+    "enable": "Enable",
+    "enabling": "Enabling..."
   },
   "dashboard": {
     "title": "Dashboard",
