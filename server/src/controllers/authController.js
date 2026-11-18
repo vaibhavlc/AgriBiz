@@ -62,7 +62,7 @@ class AuthController {
     try {
       const { mobile, password, role } = req.body;
       logger.info('Login request received for mobile: %s, role: %s', mobile, role);
-      const { user, company, accessToken, refreshToken } = await authService.login(mobile, password, role);
+      const { user, company, accessToken, refreshToken, staff } = await authService.login(mobile, password, role);
 
       setRefreshTokenCookie(res, refreshToken);
 
@@ -71,6 +71,7 @@ class AuthController {
         message: `Welcome back, ${user.name}!`,
         accessToken,
         refreshToken,
+        users: staff || [],
         user: {
           id: user.userId,
           companyId: user.companyId,

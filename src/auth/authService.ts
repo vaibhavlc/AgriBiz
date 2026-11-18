@@ -272,10 +272,10 @@ class AuthService {
     password: string,
     role?: UserRole,
     _rememberMe: boolean = true
-  ): Promise<{ success: boolean; message: string; user?: User; company?: Company }> {
+  ): Promise<{ success: boolean; message: string; user?: User; company?: Company; users?: User[] }> {
     try {
       const response = await api.post('/auth/login', { mobile, password, role });
-      const { success, message, accessToken, refreshToken, user, company } = response.data;
+      const { success, message, accessToken, refreshToken, user, company, users } = response.data;
 
       if (success) {
         this.setAccessToken(accessToken);
@@ -289,7 +289,7 @@ class AuthService {
         sessionStorage.removeItem(STORAGE_KEYS.SESSION);
 
         window.dispatchEvent(new CustomEvent('agribiz_tab_auth_change'));
-        return { success: true, message, user, company };
+        return { success: true, message, user, company, users };
       }
 
       return { success: false, message: message || 'Login failed.' };

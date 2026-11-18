@@ -126,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         localStorage.setItem('agribiz_settings', JSON.stringify(companySettings));
       } catch (e) {}
     }
-    return { success: res.success, message: res.message, company: res.company };
+    return { success: res.success, message: res.message, company: res.company, users: res.users };
   };
 
   const staffLogin = async (companyId: string, userId: string, pin: string) => {

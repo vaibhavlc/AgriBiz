@@ -239,16 +239,27 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     const res = await login(mobile, password, 'Owner', true);
     setLoading(false);
     if (res.success) {
-      setStage('staff-selection');
-      setIsStaffLoading(true);
-      await loadStaffList();
+      if (res.users && res.users.length > 0) {
+        const companyId = res.company?.id;
+        const scopedStaff = companyId
+          ? (res.users as (UserType & { id: string })[]).filter((u) => u.companyId === companyId)
+          : (res.users as (UserType & { id: string })[]);
+        setStaffList(scopedStaff);
+        setStaffFetchError(null);
+        setIsStaffLoading(false);
+        setStage('staff-selection');
+      } else {
+        setStage('staff-selection');
+        setIsStaffLoading(true);
+        await loadStaffList();
+      }
     } else {
       setErrorMsg(res.message);
     }
   };
 
   // ── Stage 2: Select Staff ───────────────────────────────────────────────
-  const handleSelectStaff = async (staff: UserType & { id: string }) => {
+  const handleSelectStaff = (staff: UserType & { id: string }) => {
     // Immediately cancel any leftover biometric prompt from previous selection
     cancelBiometricCeremony();
 
@@ -259,30 +270,28 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     setBiometricLoading(false);
     userChosePinRef.current = false;
 
+    // Instant screen transition to PIN entry without blocking on network
+    setStage('pin-entry');
+
     const company = currentCompany || authService.getCurrentCompany();
     const promptKey = `${company?.id || ''}:${staff.id}`;
 
     if (company) {
-      try {
-        const status = await authService.checkBiometricStatus(company.id, staff.id);
+      const bName = getBusinessDisplayName(company, isMarathi);
+      document.title = formatUnlockTitle(bName, isMarathi);
+
+      authService.checkBiometricStatus(company.id, staff.id).then((status) => {
         const enrolled = Boolean(status.enrolled);
         setIsBiometricEnrolled(enrolled);
 
-        setStage('pin-entry');
-        const bName = getBusinessDisplayName(company, isMarathi);
-        document.title = formatUnlockTitle(bName, isMarathi);
-
-        if (enrolled && biometricAvailable) {
+        if (enrolled && biometricAvailable && !userChosePinRef.current) {
           // Automatically trigger the device biometric authentication prompt immediately over PIN pad
           hasAutoPromptedRef.current = promptKey;
           executeBiometricAuth(company.id, staff.id);
         }
-      } catch {
+      }).catch(() => {
         setIsBiometricEnrolled(false);
-        setStage('pin-entry');
-      }
-    } else {
-      setStage('pin-entry');
+      });
     }
   };
 
@@ -339,6 +348,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
   // ── Stage 3: PIN Entry ──────────────────────────────────────────────────
   const handlePinDigit = (digit: string) => {
+    userChosePinRef.current = true;
+    cancelBiometricCeremony();
     if (pin.length < 4) {
       const newPin = pin + digit;
       setPin(newPin);
@@ -394,6 +405,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
         });
       } else if (/^[0-9]$/.test(e.key)) {
         e.preventDefault();
+        userChosePinRef.current = true;
+        cancelBiometricCeremony();
         setPin(p => {
           if (p.length < 4) {
             const nextPin = p + e.key;

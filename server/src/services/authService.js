@@ -254,8 +254,24 @@ class AuthService {
       throw err;
     }
 
-    // Find Company
-    const company = await companyRepository.findById(user.companyId);
+    // Update lastLogin timestamp & generate tokens
+    user.lastLogin = new Date();
+    const accessToken = generateAccessToken(user);
+    const refreshToken = generateRefreshToken(user);
+    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MS); // 20 days
+
+    // Parallelize remote MongoDB Atlas operations
+    const [company, rawStaff] = await Promise.all([
+      companyRepository.findById(user.companyId),
+      userRepository.findByCompanyId(user.companyId),
+      user.save(),
+      refreshTokenRepository.create({
+        token: refreshToken,
+        userId: user.userId,
+        expiresAt,
+      }),
+    ]);
+
     if (!company || !company.isActive) {
       const err = new Error('Your business account is suspended or inactive.');
       err.statusCode = 403;
@@ -264,31 +280,32 @@ class AuthService {
 
     if (!company.logo) {
       try {
-        const Settings = (await import('../models/Settings.js')).default;
-        const settingsDoc = await Settings.findOne({ companyId: user.companyId }).select('logo');
+        const settingsDoc = await settingsRepository.findByCompanyId(user.companyId);
         if (settingsDoc && settingsDoc.logo) {
           company.logo = settingsDoc.logo;
         }
       } catch (e) {}
     }
 
-    // Update lastLogin timestamp
-    user.lastLogin = new Date();
-    await user.save();
+    const staff = (rawStaff || [])
+      .filter((u) => u.status === 'Active')
+      .map((u) => ({
+        id: u.userId,
+        companyId: u.companyId,
+        name: u.name,
+        mobile: u.mobile,
+        email: u.email,
+        role: u.role,
+        customPermissions: u.customPermissions,
+        status: u.status,
+        presenceStatus: u.presenceStatus || 'online',
+        avatar: u.avatar,
+        lastLogin: u.lastLogin,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+      }));
 
-    // Generate tokens
-    const accessToken = generateAccessToken(user);
-    const refreshToken = generateRefreshToken(user);
-
-    // Store refresh token
-    const expiresAt = new Date(Date.now() + REFRESH_TOKEN_MS); // 20 days
-    await refreshTokenRepository.create({
-      token: refreshToken,
-      userId: user.userId,
-      expiresAt,
-    });
-
-    return { user, company, accessToken, refreshToken };
+    return { user, company, accessToken, refreshToken, staff };
   }
 
   async staffLogin(companyId, userId, pin) {
