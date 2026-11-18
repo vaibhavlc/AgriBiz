@@ -1,0 +1,32 @@
+name: Keep Backend Alive
+
+on:
+  schedule:
+    # Runs every 12 minutes between 01:00 UTC (6:30 AM IST) and 17:59 UTC (11:29 PM IST)
+    # Covers active daytime hours (~7:00 AM to ~11:00 PM IST)
+    # Lets Render hibernate overnight (11:30 PM to 6:30 AM IST) to stay well within Render's 750 free hours
+    - cron: '*/12 1-17 * * *'
+  workflow_dispatch: # Allows manual run anytime from GitHub Actions tab
+
+jobs:
+  ping-backend:
+    name: Ping Render Health
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Ping Health Endpoint
+        run: |
+          # Use BACKEND_URL secret/var if set in repository, otherwise fallback to default
+          TARGET_URL="${{ secrets.BACKEND_URL || vars.BACKEND_URL || 'https://agribiz-backend.onrender.com' }}"
+          echo "Pinging health endpoint at: ${TARGET_URL}/health"
+          
+          # Query the health endpoint with 60s timeout to allow for cold-start wakeups
+          RESPONSE=$(curl -sS -w "\nHTTP_STATUS:%{http_code}\nTIME_TOTAL:%{time_total}s" --max-time 60 "${TARGET_URL}/health" || true)
+          echo "$RESPONSE"
+          
+          if echo "$RESPONSE" | grep -q "HTTP_STATUS:200"; then
+            echo "Backend is awake and healthy!"
+          else
+            echo "Warning: Health check did not return HTTP 200, check the response above."
+          fi
