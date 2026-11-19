@@ -834,6 +834,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
           <div className="header-right no-print">
             <button
+              type="button"
               className="theme-toggle-btn"
               onClick={toggleTheme}
               title={activeTheme === 'light' ? t('common.switchToDarkMode', 'Switch to Dark Mode') : t('common.switchToLightMode', 'Switch to Light Mode')}
@@ -878,6 +879,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <div className="notification-wrapper">
               <button
+                type="button"
                 className="notification-btn"
                 onClick={() => {
                   setIsNotificationOpen(!isNotificationOpen);
@@ -1025,6 +1027,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
             <div className="profile-wrapper">
               <button
+                type="button"
                 className="profile-trigger"
                 onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
                 title={t('common.userProfileOptions', 'User Profile options')}

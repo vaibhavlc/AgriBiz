@@ -150,10 +150,28 @@ body.dark-theme {
 }
 
 /* General Resets */
-* {
+*, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+*:focus:not(:focus-visible) {
+  outline: none !important;
+}
+
+button, a, input, select, textarea, [role="button"] {
+  -webkit-tap-highlight-color: transparent !important;
+  -webkit-touch-callout: none;
+}
+
+button {
+  outline: none;
+}
+
+button:focus:not(:focus-visible) {
+  outline: none !important;
 }
 
 body {
@@ -1026,19 +1044,29 @@ body.dark-theme .prem-live-dot {
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: 50% !important;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--text-secondary);
   transition: all 0.2s ease;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  overflow: hidden;
 }
 
 .theme-toggle-btn:hover {
   background-color: var(--bg-app);
   color: var(--text-primary);
   transform: rotate(15deg);
+  border-radius: 50% !important;
+}
+
+.theme-toggle-btn:focus,
+.theme-toggle-btn:active {
+  border-radius: 50% !important;
+  outline: none !important;
 }
 
 /* Notification Widget */
@@ -1051,7 +1079,7 @@ body.dark-theme .prem-live-dot {
   border: none;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: 50% !important;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -1059,6 +1087,8 @@ body.dark-theme .prem-live-dot {
   color: var(--text-secondary);
   position: relative;
   transition: all var(--transition-normal);
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .notification-btn:hover {
@@ -1066,6 +1096,13 @@ body.dark-theme .prem-live-dot {
   color: var(--text-primary);
   transform: translateY(-1px) scale(1.05);
   box-shadow: var(--shadow-sm);
+  border-radius: 50% !important;
+}
+
+.notification-btn:focus,
+.notification-btn:active {
+  border-radius: 50% !important;
+  outline: none !important;
 }
 
 .notification-badge-pulse {
@@ -1263,6 +1300,8 @@ body.dark-theme .prem-live-dot {
   border: 1px solid var(--border-color);
   transition: all var(--transition-normal);
   max-width: 220px;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .profile-trigger:hover {
@@ -1271,14 +1310,21 @@ body.dark-theme .prem-live-dot {
   transform: translateY(-1px);
 }
 
+.profile-trigger:focus,
+.profile-trigger:active {
+  outline: none !important;
+}
+
 .avatar-wrapper {
   position: relative;
+  border-radius: 50%;
+  overflow: visible;
 }
 
 .avatar-circle {
   width: 32px;
   height: 32px;
-  border-radius: 50%;
+  border-radius: 50% !important;
   background: linear-gradient(135deg, var(--primary) 0%, #059669 100%);
   color: #ffffff;
   display: flex;
@@ -1288,6 +1334,9 @@ body.dark-theme .prem-live-dot {
   font-weight: 800;
   box-shadow: 0 2px 6px rgba(16, 185, 129, 0.25);
   flex-shrink: 0;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  overflow: hidden;
 }
 
 .status-indicator {
@@ -1707,6 +1756,14 @@ body.dark-theme .prem-live-dot {
   box-sizing: border-box;
   overflow: hidden;
   gap: 12px;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+.stat-card-premium:focus,
+.stat-card-premium:active {
+  outline: none !important;
+  border-radius: 16px !important;
 }
 
 /* Subtle accent background glows for variants */
@@ -1896,6 +1953,8 @@ body.dark-theme .prem-live-dot {
   border: 1.5px solid transparent;
   transform: translateY(0) scale(1);
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .btn:hover {
@@ -1903,15 +1962,46 @@ body.dark-theme .prem-live-dot {
   box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 8px 8px -6px rgba(0, 0, 0, 0.05);
 }
 
+.btn:focus,
 .btn:active {
   transform: translateY(0.5px) scale(0.975);
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  outline: none !important;
 }
 
 .btn-sm {
   padding: 7px 14px;
   font-size: 12px;
   border-radius: 9px;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Circular Action and Menu Buttons (3-dots vertical, circular icon buttons) */
+.action-btn-circle,
+.btn-circle,
+button:has(> svg.lucide-more-vertical),
+button:has(> svg.lucide-more-horizontal),
+button[style*="borderRadius: '50%'"],
+button[style*="border-radius: 50%"],
+button[style*="borderRadius: 50%"] {
+  border-radius: 50% !important;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  overflow: hidden;
+}
+
+button:has(> svg.lucide-more-vertical):focus,
+button:has(> svg.lucide-more-vertical):active,
+button:has(> svg.lucide-more-horizontal):focus,
+button:has(> svg.lucide-more-horizontal):active,
+button[style*="borderRadius: '50%'"]:focus,
+button[style*="borderRadius: '50%'"]:active,
+button[style*="border-radius: 50%"]:focus,
+button[style*="border-radius: 50%"]:active {
+  border-radius: 50% !important;
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
 }
 
 .btn-sm:hover {
@@ -2658,26 +2748,38 @@ body.dark-theme select.form-control {
   justify-content: center;
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: 50% !important;
   border: none;
   background: transparent;
   color: var(--text-secondary);
   cursor: pointer;
   transition: all var(--transition-fast);
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+  overflow: hidden;
 }
 
 .lang-selector-btn:hover {
   background-color: var(--navbar-btn-bg);
   color: var(--text-primary);
+  border-radius: 50% !important;
 }
 
 body.dark-theme .lang-selector-btn:hover {
   background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 50% !important;
 }
 
 .lang-selector-btn.active {
   background-color: var(--navbar-btn-active-bg);
   color: var(--primary);
+  border-radius: 50% !important;
+}
+
+.lang-selector-btn:focus,
+.lang-selector-btn:active {
+  border-radius: 50% !important;
+  outline: none !important;
 }
 
 .lang-selector-globe {
@@ -3011,6 +3113,17 @@ body.dark-theme .lang-selector-btn:hover {
   .brand-name {
     max-width: 110px;
   }
+  .profile-trigger {
+    width: 40px !important;
+    height: 40px !important;
+    padding: 0 !important;
+    border-radius: 50% !important;
+    justify-content: center !important;
+    align-items: center !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    overflow: hidden !important;
+  }
   .profile-trigger .profile-details {
     display: none !important;
   }
@@ -3250,6 +3363,9 @@ body.dark-theme .lang-selector-btn:hover {
   .lang-selector-btn {
     width: 34px !important;
     height: 34px !important;
+    border-radius: 50% !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
   }
 
   .theme-toggle-btn svg,
@@ -3299,13 +3415,19 @@ body.dark-theme .lang-selector-btn:hover {
   }
 
   .profile-trigger {
-    padding: 4px !important;
+    padding: 0 !important;
     background: none !important;
     box-shadow: none !important;
-    height: 40px !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 50% !important;
+    border: none !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    outline: none !important;
+    -webkit-tap-highlight-color: transparent !important;
+    overflow: hidden !important;
   }
 
   .profile-trigger .profile-details {
