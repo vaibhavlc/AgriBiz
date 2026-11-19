@@ -1063,10 +1063,18 @@ body.dark-theme .prem-live-dot {
   border-radius: 50% !important;
 }
 
-.theme-toggle-btn:focus,
-.theme-toggle-btn:active {
+.theme-toggle-btn:focus {
   border-radius: 50% !important;
   outline: none !important;
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.88) !important;
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25) !important;
+  border-radius: 50% !important;
+  outline: none !important;
+  transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease !important;
 }
 
 /* Notification Widget */
@@ -1099,10 +1107,18 @@ body.dark-theme .prem-live-dot {
   border-radius: 50% !important;
 }
 
-.notification-btn:focus,
-.notification-btn:active {
+.notification-btn:focus {
   border-radius: 50% !important;
   outline: none !important;
+}
+
+.notification-btn:active {
+  transform: scale(0.88) !important;
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25) !important;
+  border-radius: 50% !important;
+  outline: none !important;
+  transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease !important;
 }
 
 .notification-badge-pulse {
@@ -1310,9 +1326,22 @@ body.dark-theme .prem-live-dot {
   transform: translateY(-1px);
 }
 
-.profile-trigger:focus,
-.profile-trigger:active {
+.profile-trigger:focus {
   outline: none !important;
+}
+
+.profile-trigger:active {
+  transform: scale(0.96) translateY(1px) !important;
+  background-color: rgba(16, 185, 129, 0.14) !important;
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2) !important;
+  outline: none !important;
+  transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease !important;
+}
+
+.profile-trigger:active .avatar-circle {
+  transform: scale(0.90) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3) !important;
 }
 
 .avatar-wrapper {
@@ -1760,10 +1789,17 @@ body.dark-theme .prem-live-dot {
   -webkit-tap-highlight-color: transparent !important;
 }
 
-.stat-card-premium:focus,
-.stat-card-premium:active {
+.stat-card-premium:focus {
   outline: none !important;
   border-radius: 16px !important;
+}
+
+.stat-card-premium:active,
+.stat-card-premium.clickable:active {
+  transform: scale(0.982) translateY(1px) !important;
+  border-color: var(--accent-glow, var(--primary)) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+  transition: transform 0.08s ease, border-color 0.08s ease, box-shadow 0.08s ease !important;
 }
 
 /* Subtle accent background glows for variants */
@@ -1962,11 +1998,16 @@ body.dark-theme .prem-live-dot {
   box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.08), 0 8px 8px -6px rgba(0, 0, 0, 0.05);
 }
 
-.btn:focus,
-.btn:active {
-  transform: translateY(0.5px) scale(0.975);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+.btn:focus {
   outline: none !important;
+}
+
+.btn:active {
+  transform: translateY(1px) scale(0.96) !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2), 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  filter: brightness(0.96);
+  outline: none !important;
+  transition: transform 0.08s ease, box-shadow 0.08s ease !important;
 }
 
 .btn-sm {
@@ -1992,16 +2033,25 @@ button[style*="borderRadius: 50%"] {
 }
 
 button:has(> svg.lucide-more-vertical):focus,
-button:has(> svg.lucide-more-vertical):active,
 button:has(> svg.lucide-more-horizontal):focus,
-button:has(> svg.lucide-more-horizontal):active,
 button[style*="borderRadius: '50%'"]:focus,
-button[style*="borderRadius: '50%'"]:active,
-button[style*="border-radius: 50%"]:focus,
-button[style*="border-radius: 50%"]:active {
+button[style*="border-radius: 50%"]:focus {
   border-radius: 50% !important;
   outline: none !important;
-  -webkit-tap-highlight-color: transparent !important;
+}
+
+button:has(> svg.lucide-more-vertical):active,
+button:has(> svg.lucide-more-horizontal):active,
+button[style*="borderRadius: '50%'"]:active,
+button[style*="border-radius: 50%"]:active,
+.action-btn-circle:active,
+.btn-circle:active {
+  transform: scale(0.88) !important;
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25) !important;
+  border-radius: 50% !important;
+  outline: none !important;
+  transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease !important;
 }
 
 .btn-sm:hover {
@@ -2776,10 +2826,18 @@ body.dark-theme .lang-selector-btn:hover {
   border-radius: 50% !important;
 }
 
-.lang-selector-btn:focus,
-.lang-selector-btn:active {
+.lang-selector-btn:focus {
   border-radius: 50% !important;
   outline: none !important;
+}
+
+.lang-selector-btn:active {
+  transform: scale(0.88) !important;
+  background-color: rgba(16, 185, 129, 0.22) !important;
+  box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.25) !important;
+  border-radius: 50% !important;
+  outline: none !important;
+  transition: transform 0.08s ease, background-color 0.08s ease, box-shadow 0.08s ease !important;
 }
 
 .lang-selector-globe {
@@ -3124,6 +3182,12 @@ body.dark-theme .lang-selector-btn:hover {
     -webkit-tap-highlight-color: transparent !important;
     overflow: hidden !important;
   }
+  .profile-trigger:active {
+    transform: scale(0.88) !important;
+    background-color: rgba(16, 185, 129, 0.22) !important;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.28) !important;
+    border-radius: 50% !important;
+  }
   .profile-trigger .profile-details {
     display: none !important;
   }
@@ -3428,6 +3492,12 @@ body.dark-theme .lang-selector-btn:hover {
     outline: none !important;
     -webkit-tap-highlight-color: transparent !important;
     overflow: hidden !important;
+  }
+  .profile-trigger:active {
+    transform: scale(0.88) !important;
+    background-color: rgba(16, 185, 129, 0.22) !important;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.28) !important;
+    border-radius: 50% !important;
   }
 
   .profile-trigger .profile-details {
@@ -7830,4 +7900,4 @@ body.dark-theme .skeleton-box {
   animation: skeletonShimmer 1.5s infinite ease-in-out !important;
 }
 
-
+
