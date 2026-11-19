@@ -6,7 +6,12 @@ import {
   Smartphone, Lock, Eye, EyeOff, ArrowRight,
   ChevronLeft, KeyRound, Fingerprint, ShieldCheck
 } from 'lucide-react';
-import { checkBiometricSupport, cancelBiometricCeremony } from '../../utils/biometric';
+import {
+  checkBiometricSupport,
+  cancelBiometricCeremony,
+  isLocalDeviceBiometricEnrolled,
+  setLocalDeviceBiometricEnrolled,
+} from '../../utils/biometric';
 import { useTranslation } from 'react-i18next';
 import { translateRole } from '../../utils/statusTranslation';
 import type { User as UserType } from '../../types';
@@ -281,10 +286,18 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
       document.title = formatUnlockTitle(bName, isMarathi);
 
       authService.checkBiometricStatus(company.id, staff.id).then((status) => {
-        const enrolled = Boolean(status.enrolled);
-        setIsBiometricEnrolled(enrolled);
+        const serverEnrolled = Boolean(status.enrolled);
+        if (!serverEnrolled) {
+          setLocalDeviceBiometricEnrolled(company.id, staff.id, false);
+          setIsBiometricEnrolled(false);
+          return;
+        }
 
-        if (enrolled && biometricAvailable && !userChosePinRef.current) {
+        // Only activate biometric sensor if this specific mobile / device has enrolled fingerprint
+        const isDeviceEnrolled = isLocalDeviceBiometricEnrolled(company.id, staff.id);
+        setIsBiometricEnrolled(isDeviceEnrolled);
+
+        if (isDeviceEnrolled && biometricAvailable && !userChosePinRef.current) {
           // Automatically trigger the device biometric authentication prompt immediately over PIN pad
           hasAutoPromptedRef.current = promptKey;
           executeBiometricAuth(company.id, staff.id);
@@ -316,9 +329,19 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
 
       setBiometricLoading(false);
 
-      if (!res.success) {
-        if (res.isCancelled) {
-          // User backed out / dismissed prompt: stay on PIN pad quietly
+      if (res.success) {
+        setLocalDeviceBiometricEnrolled(companyId, staffId, true);
+      } else {
+        const msg = (res.message || '').toLowerCase();
+        const isPasskeyUnavailable =
+          res.isCancelled ||
+          msg.includes('passkey') ||
+          msg.includes('no credential') ||
+          msg.includes('not allowed') ||
+          msg.includes('exclude');
+
+        if (isPasskeyUnavailable) {
+          // User backed out / dismissed prompt or no passkey on this device: stay on PIN pad quietly
           userChosePinRef.current = true;
           setBiometricNotice(null);
         } else {
@@ -328,7 +351,15 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     } catch (err: any) {
       if (!userChosePinRef.current) {
         setBiometricLoading(false);
-        if (err.name !== 'AbortError' && !err.message?.toLowerCase().includes('cancel')) {
+        const errStr = (err.message || '').toLowerCase();
+        const isPasskeyUnavailable =
+          err.name === 'AbortError' ||
+          err.name === 'NotAllowedError' ||
+          errStr.includes('cancel') ||
+          errStr.includes('passkey') ||
+          errStr.includes('not allowed');
+
+        if (!isPasskeyUnavailable) {
           setErrorMsg(err.message || t('login.biometricFailed', 'Biometric authentication failed. Please enter your PIN.'));
         }
       }
@@ -387,7 +418,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
     const handleKeyDown = (e: KeyboardEvent) => {
       // Allow normal typing if active element is an explicit form input outside pin entry
       const activeTag = document.activeElement?.tagName;
-      if (activeTag === 'INPUT' && (document.activeElement as HTMLElement)?.id !== 'hidden-pin-input') {
+      if (activeTag === 'INPUT' || activeTag === 'TEXTAREA') {
         return;
       }
 
@@ -893,46 +924,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister, onSwit
               </div>
             </div>
 
-            {/* Hidden Input for Mobile Virtual Keyboards */}
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                if (pin.length === 4) handlePinSubmit(pin);
-              }}
-            >
-              <input
-                id="hidden-pin-input"
-                name="pin"
-                type="password"
-                autoComplete="current-password"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                maxLength={4}
-                value={pin}
-                onChange={(e) => {
-                  const val = e.target.value.replace(/\D/g, '').slice(0, 4);
-                  setPin(val);
-                  if (val.length === 4) {
-                    setTimeout(() => handlePinSubmit(val), 120);
-                  }
-                }}
-                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 1, height: 1 }}
-                autoFocus
-              />
-            </form>
-
-            {/* 4 Distinct PIN Input Digit Boxes */}
+            {/* 4 Distinct PIN Input Digit Boxes (Uses built-in on-screen keypad; no mobile system keyboard popup) */}
             <div
               style={{
                 display: 'flex',
                 justifyContent: 'center',
                 gap: '10px',
                 marginBottom: '14px',
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                const el = document.getElementById('hidden-pin-input');
-                if (el) el.focus();
+                userSelect: 'none',
               }}
             >
               {[0, 1, 2, 3].map((i) => {

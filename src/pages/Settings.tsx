@@ -50,7 +50,7 @@ import {
   Fingerprint,
   Check,
 } from 'lucide-react';
-import { checkBiometricSupport } from '../utils/biometric';
+import { checkBiometricSupport, setLocalDeviceBiometricEnrolled } from '../utils/biometric';
 import { checkCurrentSubscription, subscribeToPush, unsubscribeFromPush, sendTestPushNotification } from '../utils/pushManager';
 import { getFullAddress, initialSettings, toTitleCase, getUserInitials } from '../utils/dummyData';
 
@@ -158,6 +158,9 @@ export const Settings: React.FC = () => {
         : (settings?.businessName || currentCompany?.businessName);
       const res = await authService.registerBiometric(devName, bName);
       if (res.success) {
+        if (currentUser && currentCompany) {
+          setLocalDeviceBiometricEnrolled(currentCompany.id, currentUser.id, true);
+        }
         setBiometricMsg({
           text: t('settings.biometricRegisteredSuccess', 'Fingerprint / Biometric authentication successfully enabled on this device.'),
           isError: false,
@@ -191,7 +194,13 @@ export const Settings: React.FC = () => {
           text: t('settings.biometricRevokeSuccess', 'Biometric credential revoked successfully.'),
           isError: false,
         });
-        await loadBiometrics();
+        const updated = await authService.listBiometricCredentials();
+        if (updated.success) {
+          setBiometricCredentials(updated.credentials);
+          if (updated.credentials.length === 0 && currentUser && currentCompany) {
+            setLocalDeviceBiometricEnrolled(currentCompany.id, currentUser.id, false);
+          }
+        }
       } else {
         setBiometricMsg({ text: res.message, isError: true });
       }

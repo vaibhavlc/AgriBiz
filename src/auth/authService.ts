@@ -1,6 +1,10 @@
 import type { User, Company, AuthSession, UserRole } from '../types';
 import api from '../utils/api';
-import { performBiometricAuthentication, performBiometricRegistration } from '../utils/biometric';
+import {
+  performBiometricAuthentication,
+  performBiometricRegistration,
+  setLocalDeviceBiometricEnrolled,
+} from '../utils/biometric';
 
 const STORAGE_KEYS = {
   SESSION: 'agribiz_auth_session',
@@ -394,6 +398,7 @@ class AuthService {
         // Staff session -> sessionStorage (strictly verified for current tab)
         sessionStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(user));
         sessionStorage.setItem(STORAGE_KEYS.STAFF_PIN_VERIFIED, 'true');
+        setLocalDeviceBiometricEnrolled(companyId, userId, true);
 
         const session: AuthSession = {
           currentUserId: user.id,
@@ -438,6 +443,12 @@ class AuthService {
       });
 
       if (verifyRes.data && verifyRes.data.success) {
+        const currentUser = this.getCurrentUser();
+        const currentCompany = this.getCurrentCompany();
+        if (currentUser && currentCompany) {
+          setLocalDeviceBiometricEnrolled(currentCompany.id, currentUser.id, true);
+        }
+
         return {
           success: true,
           message: verifyRes.data.message || 'Fingerprint / Biometrics enabled successfully.',

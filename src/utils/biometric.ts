@@ -105,3 +105,39 @@ export async function performBiometricRegistration(optionsJSON: any) {
     };
   }
 }
+
+const DEVICE_BIOMETRIC_PREFIX = 'agribiz_biometric_device_enrolled_';
+
+export function getDeviceBiometricKey(companyId: string, userId: string): string {
+  return `${DEVICE_BIOMETRIC_PREFIX}${companyId}_${userId}`;
+}
+
+/**
+ * Checks whether this specific physical device / browser has enrolled biometric credentials.
+ */
+export function isLocalDeviceBiometricEnrolled(companyId: string, userId: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return localStorage.getItem(getDeviceBiometricKey(companyId, userId)) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Marks this specific physical device / browser as having enrolled biometric credentials (or clears it).
+ */
+export function setLocalDeviceBiometricEnrolled(companyId: string, userId: string, enrolled: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    const key = getDeviceBiometricKey(companyId, userId);
+    if (enrolled) {
+      localStorage.setItem(key, 'true');
+    } else {
+      localStorage.removeItem(key);
+    }
+  } catch (err) {
+    console.warn('Failed to update local device biometric state:', err);
+  }
+}
+
