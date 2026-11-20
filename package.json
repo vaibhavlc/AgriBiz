@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
+    "test:e2e": "node qa_full_suite.cjs",
     "deploy:render": "node -e \"const u = process.env.RENDER_DEPLOY_HOOK_URL; if (!u) { console.error('Please set RENDER_DEPLOY_HOOK_URL environment variable'); process.exit(1); } fetch(u, { method: 'POST' }).then(r => console.log('Deploy triggered:', r.status));\""
   },
   "dependencies": {
