@@ -109,7 +109,19 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      callback(null, true);
+      // Allow requests with no origin (e.g. mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      const isAllowed =
+        allowedOrigins.includes(origin) ||
+        process.env.NODE_ENV !== 'production' ||
+        origin.endsWith('.vercel.app') ||
+        origin.endsWith('.onrender.com');
+
+      if (isAllowed) {
+        return callback(null, true);
+      }
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -183,7 +195,10 @@ app.use('/api/notifications', notificationRoutes);
 // ── Admin Utility: Cascade Delete Company by Mobile (protected by secret key) ──
 import { cascadeDeleteByMobile } from './utils/cascadeDelete.js';
 app.delete('/api/admin/company/:mobile', async (req, res) => {
-  const secret = process.env.ADMIN_SECRET || 'agribiz-admin-2024';
+  const secret = process.env.ADMIN_SECRET;
+  if (!secret) {
+    return res.status(503).json({ success: false, message: 'Admin operations disabled: ADMIN_SECRET not configured on server.' });
+  }
   if (req.headers['x-admin-key'] !== secret) {
     return res.status(403).json({ success: false, message: 'Forbidden: invalid admin key.' });
   }

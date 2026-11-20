@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "deploy:render": "curl -X POST https://api.render.com/deploy/srv-dar0v7flot8c73e22gjg?key=NZ_vV4YWwZE"
+    "deploy:render": "node -e \"const u = process.env.RENDER_DEPLOY_HOOK_URL; if (!u) { console.error('Please set RENDER_DEPLOY_HOOK_URL environment variable'); process.exit(1); } fetch(u, { method: 'POST' }).then(r => console.log('Deploy triggered:', r.status));\""
   },
   "dependencies": {
     "@playwright/test": "^1.61.1",
