@@ -45,6 +45,11 @@ const settingsSchema = new mongoose.Schema(
     ifscCode: { type: String, trim: true },
     branchName: { type: String, trim: true },
     upiId: { type: String, trim: true },
+
+    // Paytm Dynamic UPI QR Settings
+    enablePaytmQr: { type: Boolean, default: false },
+    paytmMid: { type: String, trim: true, default: '' },
+    paytmUpiId: { type: String, trim: true, default: '' },
     
     // Prefixes & Config
     invoicePrefix: { type: String, default: 'INV-' },

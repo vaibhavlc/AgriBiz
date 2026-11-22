@@ -7,6 +7,7 @@ import { useApp, useUnsavedChanges } from '../context/AppContext';
 import { CustomerModal } from '../components/CustomerModal';
 import { DeleteConfirmModal } from '../components/DeleteConfirmModal';
 import { InvoiceA5Skeleton, InvoiceThermalSkeleton, ensureFontsReady } from '../components/InvoiceSkeleton';
+import { PaytmQrModal } from '../components/PaytmQrModal';
 import { formatINR, formatDate, getFullAddress, getTodayISTDate, roundTo2 } from '../utils/dummyData';
 import { translatePaymentMethod, translateStatus } from '../utils/statusTranslation';
 import { KpiCard } from '../components/KpiCard';
@@ -16,6 +17,7 @@ import {
   Search,
   FileText,
   Printer,
+  QrCode,
   Download,
   Trash2,
   Eye,
@@ -250,6 +252,26 @@ export const Sales: React.FC = () => {
 
   // Print Template Selector (A5 standard vs Thermal receipt POS roll)
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
+  const [qrModalInvoice, setQrModalInvoice] = useState<Invoice | null>(null);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+
+  const handleQrPaymentSuccess = async (utr: string) => {
+    if (!qrModalInvoice) return;
+    const updated: Invoice = {
+      ...qrModalInvoice,
+      paymentStatus: 'Paid',
+      amountPaid: qrModalInvoice.grandTotal,
+      balanceDue: 0,
+      paymentMethod: 'UPI',
+      referenceNumber: utr,
+    };
+    await editInvoice(updated);
+    showToast(t('sales.paymentConfirmedToast', 'Payment verified and invoice marked Paid!'), 'success');
+    setIsQrModalOpen(false);
+    const targetId = qrModalInvoice.id;
+    setQrModalInvoice(null);
+    setViewInvoice(targetId, true);
+  };
 
   const [currentInvoiceLanguage, setCurrentInvoiceLanguage] = useState<'mr' | 'en'>(() => {
     return (
@@ -1672,6 +1694,26 @@ We have downloaded the PDF document to your device. Please attach it in the chat
           </div>,
           document.body
         )}
+        {isQrModalOpen && qrModalInvoice && (
+          <PaytmQrModal
+            isOpen={isQrModalOpen}
+            onClose={() => {
+              setIsQrModalOpen(false);
+              if (qrModalInvoice) {
+                setViewInvoice(qrModalInvoice.id, true);
+                setQrModalInvoice(null);
+              }
+            }}
+            invoice={{
+              id: qrModalInvoice.id,
+              invoiceNumber: qrModalInvoice.invoiceNumber,
+              grandTotal: qrModalInvoice.grandTotal,
+              customerName: qrModalInvoice.customerName,
+            }}
+            settings={settings}
+            onPaymentSuccess={handleQrPaymentSuccess}
+          />
+        )}
       </>
     );
   };
@@ -1750,6 +1792,19 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title={t("sales.shareWhatsAppTitle", "Share invoice details on WhatsApp")}>
               <Share2 size={16} /> {t("sales.shareWhatsApp", "Share on WhatsApp")}
             </button>
+            {settings.enablePaytmQr && (
+              <button
+                className="btn btn-secondary"
+                style={{ borderColor: "#0284c7", color: "#0284c7", fontWeight: 600 }}
+                onClick={() => {
+                  setQrModalInvoice(selectedInvoice);
+                  setIsQrModalOpen(true);
+                }}
+                title={t("sales.showQrCode", "Show Dynamic Payment QR")}
+              >
+                <QrCode size={16} /> {t("sales.payViaQr", "Pay via QR")}
+              </button>
+            )}
             <button className="btn btn-primary" onClick={handlePrint} title={t("sales.printPaperVoucherTitle", "Print paper voucher")}>
               <Printer size={16} /> {t("sales.printReceipt", "Print Receipt")}
             </button>

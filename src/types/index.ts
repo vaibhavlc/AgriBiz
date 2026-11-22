@@ -185,6 +185,9 @@ export interface BusinessSettings {
   ifscCode?: string;
   branchName?: string;
   upiId?: string;
+  enablePaytmQr?: boolean;
+  paytmMid?: string;
+  paytmUpiId?: string;
 
   // Invoice Configuration
   invoicePrefix: string;

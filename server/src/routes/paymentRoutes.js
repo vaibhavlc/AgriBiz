@@ -8,6 +8,8 @@ const router = express.Router();
 
 router.use(authenticate);
 
+router.post('/paytm/verify', paymentController.verifyPaytmPayment);
+
 router.get('/', authorizePermission('payments'), paymentController.getPayments);
 router.get('/:id', authorizePermission('payments'), paymentController.getPayment);
 router.get('/contact/:contactId', authorizePermission('payments'), paymentController.getPaymentsByContact);

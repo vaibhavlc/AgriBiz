@@ -653,7 +653,17 @@
     "discPct": "सवलत %",
     "searchInvoicePlaceholder": "बिल क्रमांक किंवा ग्राहक शोधा...",
     "searchQuotationPlaceholder": "कोटेशन क्रमांक किंवा ग्राहक शोधा...",
-    "customerName": "ग्राहकाचे नाव"
+    "customerName": "ग्राहकाचे नाव",
+    "payViaUpiTitle": "UPI QR द्वारे भरा",
+    "payViaQr": "QR द्वारे भरा",
+    "waitingForPayment": "ग्राहक स्कॅन करून पेमेंट करण्याची वाट पाहत आहे...",
+    "paymentSuccessMsg": "पेमेंट यशस्वीरित्या प्राप्त झाले!",
+    "paymentReceived": "पेमेंट प्राप्त झाले!",
+    "confirmManualPayment": "साउंडबॉक्स / रोख मिळाले (प्रतीक्षा वगळा)",
+    "invoiceAmountToCollect": "जमा करावयाची रक्कम",
+    "generatingQr": "QR कोड तयार करत आहे...",
+    "qrGenerateError": "QR तयार करण्यात अयशस्वी. कृपया सेटिंग्जमधील UPI ID तपासा.",
+    "paymentConfirmedToast": "पेमेंट सत्यापित झाले आणि बिल Paid झाले!"
   },
   "purchases": {
     "title": "खरेदी",
@@ -2678,7 +2688,13 @@
     "biometricRevokeSuccess": "बायोमेट्रिक डिव्हाइस यशस्वीरित्या काढून टाकले.",
     "deviceAndroid": "अँड्रॉइड डिव्हाइस",
     "deviceWindows": "विंडोज पीसी",
-    "deviceCurrent": "हे डिव्हाइस"
+    "deviceCurrent": "हे डिव्हाइस",
+    "paytmQrTitle": "Paytm डायनॅमिक UPI QR आणि ऑटो-व्हेरिफाय",
+    "paytmQrDesc": "विक्री बिलावर रकमेसह QR कोड तयार करा आणि ग्राहकाचे पेमेंट आपोआप तपासा.",
+    "paytmMidLabel": "Paytm मर्चंट आयडी (MID) *",
+    "paytmMidHelp": "Paytm for Business अॅपमध्ये Profile > Account / API Details मध्ये मिळेल",
+    "paytmUpiIdLabel": "मर्चंट UPI ID / VPA *",
+    "paytmUpiIdHelp": "My QR Code खाली किंवा तुमच्या दुकानातील physical QR वर लिहिलेला असतो"
   },
   "recycleBin": {
     "title": "रिसायकल बिन",

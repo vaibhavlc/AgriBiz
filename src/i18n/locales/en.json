@@ -649,7 +649,17 @@
     "discPct": "Disc %",
     "customerName": "Customer Name",
     "searchInvoicePlaceholder": "Search invoice or customer...",
-    "searchQuotationPlaceholder": "Search quotation or customer..."
+    "searchQuotationPlaceholder": "Search quotation or customer...",
+    "payViaUpiTitle": "Pay via UPI QR",
+    "payViaQr": "Pay via QR",
+    "waitingForPayment": "Waiting for customer to scan and pay...",
+    "paymentSuccessMsg": "Payment verified successfully!",
+    "paymentReceived": "Payment Received!",
+    "confirmManualPayment": "Received via Soundbox / Cash (Skip Waiting)",
+    "invoiceAmountToCollect": "Amount to Pay",
+    "generatingQr": "Generating QR Code...",
+    "qrGenerateError": "Failed to generate QR. Please check UPI ID in settings.",
+    "paymentConfirmedToast": "Payment verified and invoice marked Paid!"
   },
   "purchases": {
     "title": "Purchases",
@@ -2550,7 +2560,13 @@
     "biometricRevokeSuccess": "Biometric credential revoked successfully.",
     "deviceAndroid": "Android Device",
     "deviceWindows": "Windows PC",
-    "deviceCurrent": "This Device"
+    "deviceCurrent": "This Device",
+    "paytmQrTitle": "Paytm Dynamic UPI QR & Auto-Verify",
+    "paytmQrDesc": "Generate dynamic amount-locked QR code on sales invoices and automatically verify customer payments.",
+    "paytmMidLabel": "Paytm Merchant ID (MID) *",
+    "paytmMidHelp": "Found in Paytm for Business app under Profile > Account / API Details",
+    "paytmUpiIdLabel": "Merchant UPI ID / VPA *",
+    "paytmUpiIdHelp": "Found under My QR Code or printed on your physical counter QR"
   },
   "recycleBin": {
     "title": "Recycle Bin",

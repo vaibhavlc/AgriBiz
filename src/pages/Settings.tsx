@@ -49,6 +49,7 @@ import {
   Send,
   Fingerprint,
   Check,
+  QrCode,
 } from 'lucide-react';
 import { checkBiometricSupport, setLocalDeviceBiometricEnrolled } from '../utils/biometric';
 import { checkCurrentSubscription, subscribeToPush, unsubscribeFromPush, sendTestPushNotification } from '../utils/pushManager';
@@ -1080,6 +1081,9 @@ export const Settings: React.FC = () => {
   const [ifscCode, setIfscCode] = useState(settings.ifscCode || '');
   const [branchName, setBranchName] = useState(settings.branchName || '');
   const [upiId, setUpiId] = useState(settings.upiId || '');
+  const [enablePaytmQr, setEnablePaytmQr] = useState(settings.enablePaytmQr || false);
+  const [paytmMid, setPaytmMid] = useState(settings.paytmMid || '');
+  const [paytmUpiId, setPaytmUpiId] = useState(settings.paytmUpiId || settings.upiId || '');
 
   // Invoice Configuration
   const [invoicePrefix, setInvoicePrefix] = useState(settings.invoicePrefix || '');
@@ -1204,6 +1208,9 @@ export const Settings: React.FC = () => {
     ifscCode,
     branchName,
     upiId,
+    enablePaytmQr,
+    paytmMid,
+    paytmUpiId,
     invoicePrefix,
     purchasePrefix,
     quotationPrefix,
@@ -1258,6 +1265,9 @@ export const Settings: React.FC = () => {
     ifscCode: settings.ifscCode || '',
     branchName: settings.branchName || '',
     upiId: settings.upiId || '',
+    enablePaytmQr: settings.enablePaytmQr || false,
+    paytmMid: settings.paytmMid || '',
+    paytmUpiId: settings.paytmUpiId || settings.upiId || '',
     invoicePrefix: settings.invoicePrefix || '',
     purchasePrefix: settings.purchasePrefix || '',
     quotationPrefix: settings.quotationPrefix || '',
@@ -1340,6 +1350,9 @@ export const Settings: React.FC = () => {
       ifscCode: formattedIFSC,
       branchName,
       upiId,
+      enablePaytmQr,
+      paytmMid,
+      paytmUpiId,
       invoicePrefix,
       purchasePrefix,
       quotationPrefix,
@@ -2503,6 +2516,70 @@ export const Settings: React.FC = () => {
                   value={upiId}
                   onChange={(e) => setUpiId(e.target.value)}
                 />
+              </div>
+
+              {/* Paytm Dynamic UPI QR (Auto-Verify) Setting */}
+              <div style={{ marginTop: '20px', padding: '18px', borderRadius: '12px', border: '1.5px solid var(--border-color)', backgroundColor: 'var(--bg-app)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <QrCode size={20} />
+                    </div>
+                    <div>
+                      <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+                        {t('settings.paytmQrTitle', 'Paytm Dynamic UPI QR & Auto-Verify')}
+                      </h4>
+                      <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
+                        {t('settings.paytmQrDesc', 'Generate dynamic amount-locked QR code on sales invoices and automatically verify customer payments.')}
+                      </p>
+                    </div>
+                  </div>
+                  <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13px' }}>
+                    <input
+                      type="checkbox"
+                      checked={enablePaytmQr}
+                      onChange={(e) => setEnablePaytmQr(e.target.checked)}
+                      style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                    />
+                    <span>{enablePaytmQr ? t('common.enabled', 'Enabled') : t('common.disabled', 'Disabled')}</span>
+                  </label>
+                </div>
+
+                {enablePaytmQr && (
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        {t('settings.paytmMidLabel', 'Paytm Merchant ID (MID) *')}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 2168200000000012345"
+                        className="form-control"
+                        value={paytmMid}
+                        onChange={(e) => setPaytmMid(e.target.value)}
+                      />
+                      <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                        {t('settings.paytmMidHelp', 'Found in Paytm for Business app under Profile > Account / API Details')}
+                      </small>
+                    </div>
+
+                    <div className="form-group" style={{ margin: 0 }}>
+                      <label className="form-label" style={{ fontWeight: 600 }}>
+                        {t('settings.paytmUpiIdLabel', 'Merchant UPI ID / VPA *')}
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="e.g. paytm-12345678@paytm"
+                        className="form-control"
+                        value={paytmUpiId}
+                        onChange={(e) => setPaytmUpiId(e.target.value)}
+                      />
+                      <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
+                        {t('settings.paytmUpiIdHelp', 'Found under My QR Code or printed on your physical counter QR')}
+                      </small>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
