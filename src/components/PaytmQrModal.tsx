@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, CheckCircle2, Loader2, QrCode, Check } from 'lucide-react';
+import { X, CheckCircle2, Loader2, QrCode, Check, ArrowRight, AlertTriangle } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import QRCode from 'qrcode';
 import api from '../utils/api';
@@ -10,6 +10,7 @@ import type { BusinessSettings } from '../types';
 interface PaytmQrModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSkip?: () => void;
   invoice: {
     id?: string;
     invoiceNumber: string;
@@ -23,6 +24,7 @@ interface PaytmQrModalProps {
 export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
   isOpen,
   onClose,
+  onSkip,
   invoice,
   settings,
   onPaymentSuccess,
@@ -37,13 +39,14 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
   const isPollingRef = useRef(false);
   const pollTimerRef = useRef<any>(null);
 
-  const upiId = settings.paytmUpiId?.trim() || settings.upiId?.trim() || '';
+  const rawUpiId = settings.paytmUpiId?.trim() || settings.upiId?.trim() || '';
+  const upiId = rawUpiId || 'merchant@upi';
   const payeeName = settings.businessName || 'AgriBiz Merchant';
   const amount = Number(invoice.grandTotal) || 0;
 
   // Generate UPI QR Code Data URL
   useEffect(() => {
-    if (!isOpen || !upiId || amount <= 0) return;
+    if (!isOpen || amount <= 0) return;
 
     setIsGenerating(true);
     setPollStatus('polling');
@@ -107,18 +110,15 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
           setPollStatus('success');
           setStatusMessage(t('sales.paymentSuccessMsg', 'Payment verified successfully!'));
 
-          // Give 1.5s for cashier to see the success checkmark before proceeding
           setTimeout(() => {
             onPaymentSuccess(utr);
           }, 1500);
         }
       } catch (err: any) {
-        // Non-blocking error, keep polling until manual dismiss or timeout
         console.debug('Polling check error:', err?.message);
       }
     };
 
-    // Initial check after 2 seconds, then poll every 3 seconds
     const initialTimeout = setTimeout(checkStatus, 2000);
     pollTimerRef.current = setInterval(checkStatus, 3000);
 
@@ -130,6 +130,11 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
   }, [isOpen, invoice.invoiceNumber, invoice.id, amount, pollStatus, onPaymentSuccess, t]);
 
   if (!isOpen) return null;
+
+  const handleSkipOrClose = () => {
+    if (onSkip) onSkip();
+    else onClose();
+  };
 
   return createPortal(
     <div
@@ -143,7 +148,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
         backdropFilter: 'blur(4px)',
       }}
       onClick={(e) => {
-        if (e.target === e.currentTarget && pollStatus !== 'success') onClose();
+        if (e.target === e.currentTarget && pollStatus !== 'success') handleSkipOrClose();
       }}
     >
       <div
@@ -162,7 +167,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
         }}
       >
         {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <QrCode size={20} />
@@ -177,7 +182,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleSkipOrClose}
             style={{
               background: 'none',
               border: 'none',
@@ -198,7 +203,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             border: '1.5px solid var(--border-color, #e2e8f0)',
             borderRadius: '12px',
             padding: '12px 16px',
-            marginBottom: '16px',
+            marginBottom: '14px',
           }}
         >
           <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
@@ -238,7 +243,6 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
                   alignItems: 'center',
                   justifyContent: 'center',
                   margin: '0 auto 16px auto',
-                  animation: 'scaleIn 0.3s ease-out',
                 }}
               >
                 <Check size={40} strokeWidth={3} />
@@ -274,10 +278,16 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
                 <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#475569' }}>BHIM</span>
                 <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#ecfdf5', color: '#047857' }}>Any UPI</span>
               </div>
+              {!rawUpiId && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#d97706', marginTop: '8px' }}>
+                  <AlertTriangle size={12} />
+                  <span>{t('sales.defaultUpiNotice', 'Default UPI active. Add custom UPI ID in Settings.')}</span>
+                </div>
+              )}
             </>
           ) : (
             <div style={{ color: '#ef4444', fontSize: '12px', padding: '20px' }}>
-              {t('sales.qrGenerateError', 'Failed to generate QR. Please check UPI ID in settings.')}
+              {t('sales.qrGenerateError', 'Failed to generate QR.')}
             </div>
           )}
         </div>
@@ -290,8 +300,8 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
               alignItems: 'center',
               justifyContent: 'center',
               gap: '8px',
-              marginTop: '16px',
-              padding: '10px 14px',
+              marginTop: '14px',
+              padding: '9px 14px',
               backgroundColor: 'rgba(16, 185, 129, 0.08)',
               borderRadius: '8px',
               border: '1px solid rgba(16, 185, 129, 0.2)',
@@ -304,9 +314,9 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
           </div>
         )}
 
-        {/* Cashier Actions */}
+        {/* Cashier Actions: Confirm, Skip, Cancel */}
         {pollStatus !== 'success' && (
-          <div style={{ marginTop: '20px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
               type="button"
               className="btn btn-primary"
@@ -334,10 +344,23 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ width: '100%', padding: '9px 16px', fontSize: '12px', borderRadius: '8px' }}
-              onClick={onClose}
+              style={{
+                width: '100%',
+                padding: '9px 16px',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                backgroundColor: 'var(--bg-app)',
+                color: 'var(--text-primary)',
+              }}
+              onClick={handleSkipOrClose}
             >
-              {t('common.cancel', 'Cancel')}
+              <span>{t('sales.skipAndViewInvoice', 'Skip & View Invoice Anyway')}</span>
+              <ArrowRight size={14} />
             </button>
           </div>
         )}

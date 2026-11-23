@@ -1316,7 +1316,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setDueDate('');
       setNotes('');
       if (newInvoice) {
-        setViewInvoice(newInvoice.id, true);
+        if (paymentMethod === 'UPI') {
+          setQrModalInvoice(newInvoice);
+          setIsQrModalOpen(true);
+          setIsCreatingInvoice(false, true);
+        } else {
+          setViewInvoice(newInvoice.id, true);
+        }
       } else {
         setIsCreatingInvoice(false, true);
       }
@@ -1704,6 +1710,13 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 setQrModalInvoice(null);
               }
             }}
+            onSkip={() => {
+              setIsQrModalOpen(false);
+              if (qrModalInvoice) {
+                setViewInvoice(qrModalInvoice.id, true);
+                setQrModalInvoice(null);
+              }
+            }}
             invoice={{
               id: qrModalInvoice.id,
               invoiceNumber: qrModalInvoice.invoiceNumber,
@@ -1786,27 +1799,25 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             </div>
           </div>
           <div className="action-buttons-grid">
-            <button className="btn btn-secondary" onClick={handleDownload} title={t("sales.exportPdfTitle", "Export invoice as PDF")}>
-              <Download size={16} /> {t("sales.saveAsPdf", "Save as PDF")}
+            <button className="btn btn-secondary" style={{ padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }} onClick={handleDownload} title={t("sales.exportPdfTitle", "Export invoice as PDF")}>
+              <Download size={14} /> <span>PDF</span>
             </button>
-            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366" }} onClick={handleWhatsAppShare} title={t("sales.shareWhatsAppTitle", "Share invoice details on WhatsApp")}>
-              <Share2 size={16} /> {t("sales.shareWhatsApp", "Share on WhatsApp")}
+            <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366", padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }} onClick={handleWhatsAppShare} title={t("sales.shareWhatsAppTitle", "Share invoice details on WhatsApp")}>
+              <Share2 size={14} /> <span>WhatsApp</span>
             </button>
-            {settings.enablePaytmQr && (
-              <button
-                className="btn btn-secondary"
-                style={{ borderColor: "#0284c7", color: "#0284c7", fontWeight: 600 }}
-                onClick={() => {
-                  setQrModalInvoice(selectedInvoice);
-                  setIsQrModalOpen(true);
-                }}
-                title={t("sales.showQrCode", "Show Dynamic Payment QR")}
-              >
-                <QrCode size={16} /> {t("sales.payViaQr", "Pay via QR")}
-              </button>
-            )}
-            <button className="btn btn-primary" onClick={handlePrint} title={t("sales.printPaperVoucherTitle", "Print paper voucher")}>
-              <Printer size={16} /> {t("sales.printReceipt", "Print Receipt")}
+            <button
+              className="btn btn-secondary"
+              style={{ borderColor: "#0284c7", color: "#0284c7", fontWeight: 600, padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }}
+              onClick={() => {
+                setQrModalInvoice(selectedInvoice);
+                setIsQrModalOpen(true);
+              }}
+              title={t("sales.showQrCode", "Show Payment QR")}
+            >
+              <QrCode size={14} /> <span>UPI QR</span>
+            </button>
+            <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '12px', height: '34px', gap: '5px' }} onClick={handlePrint} title={t("sales.printPaperVoucherTitle", "Print paper voucher")}>
+              <Printer size={14} /> <span>Print</span>
             </button>
           </div>
         </div>
