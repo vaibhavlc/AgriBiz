@@ -2102,18 +2102,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       ownerName: toTitleCase(updatedSettings.ownerName),
     };
 
-    // Apply theme change instantly
-    if (formatted.theme) {
-      const isDark = formatted.theme === 'dark' || (formatted.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-      if (isDark) {
-        document.body.classList.add('dark-theme');
-        document.documentElement.setAttribute('data-theme', 'dark');
-      } else {
-        document.body.classList.remove('dark-theme');
-        document.documentElement.setAttribute('data-theme', 'light');
-      }
-      setActiveTheme(isDark ? 'dark' : 'light');
+    // Preserve and apply active theme without unexpected flips
+    const userStoredTheme = (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_user_theme') as 'light' | 'dark' | 'system') : null) || formatted.theme || 'light';
+    formatted.theme = userStoredTheme;
+    const isDark = userStoredTheme === 'dark' || (userStoredTheme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+    if (isDark) {
+      document.body.classList.add('dark-theme');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.body.classList.remove('dark-theme');
+      document.documentElement.setAttribute('data-theme', 'light');
     }
+    setActiveTheme(isDark ? 'dark' : 'light');
     
     try {
       await api.put('/settings', formatted);

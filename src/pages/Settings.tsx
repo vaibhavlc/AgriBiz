@@ -1382,7 +1382,7 @@ export const Settings: React.FC = () => {
       notifyNewOrders,
       notifyOrderStatus,
       maskSensitiveNotificationData,
-      theme: settings.theme,
+      theme: (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_user_theme') as any) : null) || settings.theme || 'light',
       address: legacyAddress,
       signature: savedSignature,
     });
@@ -2518,38 +2518,62 @@ export const Settings: React.FC = () => {
                 />
               </div>
 
-              {/* Paytm Dynamic UPI QR (Auto-Verify) Setting */}
+              {/* Online UPI QR Payments & Auto-Verification Setting */}
               <div style={{ marginTop: '20px', padding: '18px', borderRadius: '12px', border: '1.5px solid var(--border-color)', backgroundColor: 'var(--bg-app)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: '38px', height: '38px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       <QrCode size={20} />
                     </div>
                     <div>
                       <h4 style={{ fontSize: '14px', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
-                        {t('settings.paytmQrTitle', 'Paytm Dynamic UPI QR & Auto-Verify')}
+                        {t('settings.onlineUpiQrTitle', 'Online UPI QR Payments & Auto-Verification')}
                       </h4>
                       <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>
-                        {t('settings.paytmQrDesc', 'Generate dynamic amount-locked QR code on sales invoices and automatically verify customer payments.')}
+                        {t('settings.onlineUpiQrDesc', 'Generate dynamic amount-locked QR code on sales invoices to accept PhonePe, Google Pay, Paytm, etc. with automated verification.')}
                       </p>
                     </div>
                   </div>
-                  <label style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 600, fontSize: '13px' }}>
-                    <input
-                      type="checkbox"
-                      checked={enablePaytmQr}
-                      onChange={(e) => setEnablePaytmQr(e.target.checked)}
-                      style={{ width: '18px', height: '18px', accentColor: 'var(--primary)', cursor: 'pointer' }}
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={enablePaytmQr}
+                    onClick={() => setEnablePaytmQr(!enablePaytmQr)}
+                    style={{
+                      width: '48px',
+                      height: '26px',
+                      borderRadius: '13px',
+                      backgroundColor: enablePaytmQr ? 'var(--primary, #10b981)' : '#cbd5e1',
+                      border: 'none',
+                      cursor: 'pointer',
+                      position: 'relative',
+                      transition: 'background-color 0.2s ease',
+                      padding: 0,
+                      outline: 'none',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <span
+                      style={{
+                        position: 'absolute',
+                        top: '3px',
+                        left: enablePaytmQr ? '25px' : '3px',
+                        width: '20px',
+                        height: '20px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ffffff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                        transition: 'left 0.2s ease',
+                      }}
                     />
-                    <span>{enablePaytmQr ? t('common.enabled', 'Enabled') : t('common.disabled', 'Disabled')}</span>
-                  </label>
+                  </button>
                 </div>
 
                 {enablePaytmQr && (
-                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                  <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid var(--border-color)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
                     <div className="form-group" style={{ margin: 0 }}>
                       <label className="form-label" style={{ fontWeight: 600 }}>
-                        {t('settings.paytmMidLabel', 'Paytm Merchant ID (MID) *')}
+                        {t('settings.merchantMidLabel', 'Merchant ID (MID)')}
                       </label>
                       <input
                         type="text"
@@ -2559,23 +2583,23 @@ export const Settings: React.FC = () => {
                         onChange={(e) => setPaytmMid(e.target.value)}
                       />
                       <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                        {t('settings.paytmMidHelp', 'Found in Paytm for Business app under Profile > Account / API Details')}
+                        {t('settings.merchantMidHelp', 'Your Business Merchant ID used for automated payment verification')}
                       </small>
                     </div>
 
                     <div className="form-group" style={{ margin: 0 }}>
                       <label className="form-label" style={{ fontWeight: 600 }}>
-                        {t('settings.paytmUpiIdLabel', 'Merchant UPI ID / VPA *')}
+                        {t('settings.merchantUpiIdLabel', 'Merchant UPI ID / VPA *')}
                       </label>
                       <input
                         type="text"
-                        placeholder="e.g. paytm-12345678@paytm"
+                        placeholder="e.g. shopname@upi, merchant@ybl, paytm-12345@paytm"
                         className="form-control"
                         value={paytmUpiId}
                         onChange={(e) => setPaytmUpiId(e.target.value)}
                       />
                       <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
-                        {t('settings.paytmUpiIdHelp', 'Found under My QR Code or printed on your physical counter QR')}
+                        {t('settings.merchantUpiIdHelp', 'Receiving UPI ID where funds are deposited directly')}
                       </small>
                     </div>
                   </div>

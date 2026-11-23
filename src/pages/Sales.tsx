@@ -3226,19 +3226,125 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 </div>
 
                 {(Number(amountPaid) || 0) > 0 && (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>{t("sales.paymentMethodRequired", "Payment Method *")}</label>
-                    <select
-                      className="form-control"
-                      value={paymentMethod}
-                      onChange={(e) => { setPaymentMethod(e.target.value); setReferenceNumber(''); }}
-                      style={{ height: '42px', fontSize: '13px' }}
-                    >
-                      <option value="UPI">{t("paymentMethods.upi", "UPI / GPay / PhonePe")}</option>
-                      <option value="Cash">{translatePaymentMethod(t, "Cash")}</option>
-                      <option value="Bank Transfer">{t("paymentMethods.bankTransfer", "Bank Transfer (IMPS/NEFT)")}</option>
-                      <option value="Cheque">{translatePaymentMethod(t, "Cheque")}</option>
-                    </select>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
+                      {t("sales.transactionMethod", "Transaction Method *")}
+                    </label>
+
+                    {/* Segmented Button Group for Fast Counter Selection */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+                      <button
+                        type="button"
+                        onClick={() => { setPaymentMethod('UPI'); setReferenceNumber(''); }}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: paymentMethod === 'UPI' ? '2px solid var(--primary, #10b981)' : '1px solid var(--border-color)',
+                          backgroundColor: paymentMethod === 'UPI' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-app)',
+                          color: paymentMethod === 'UPI' ? 'var(--primary)' : 'var(--text-primary)',
+                          fontWeight: paymentMethod === 'UPI' ? 700 : 500,
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <QrCode size={15} />
+                        <span>{t('sales.onlineUpi', 'Online (UPI QR)')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => { setPaymentMethod('Cash'); setReferenceNumber(''); }}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: paymentMethod === 'Cash' ? '2px solid var(--primary, #10b981)' : '1px solid var(--border-color)',
+                          backgroundColor: paymentMethod === 'Cash' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-app)',
+                          color: paymentMethod === 'Cash' ? 'var(--primary)' : 'var(--text-primary)',
+                          fontWeight: paymentMethod === 'Cash' ? 700 : 500,
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>💵 {t('sales.cashOffline', 'Cash (Offline)')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => { setPaymentMethod('Bank Transfer'); setReferenceNumber(''); }}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: paymentMethod === 'Bank Transfer' ? '2px solid var(--primary, #10b981)' : '1px solid var(--border-color)',
+                          backgroundColor: paymentMethod === 'Bank Transfer' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-app)',
+                          color: paymentMethod === 'Bank Transfer' ? 'var(--primary)' : 'var(--text-primary)',
+                          fontWeight: paymentMethod === 'Bank Transfer' ? 700 : 500,
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>🏦 {t('paymentMethods.bankTransfer', 'Bank Transfer')}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => { setPaymentMethod('Cheque'); setReferenceNumber(''); }}
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          border: paymentMethod === 'Cheque' ? '2px solid var(--primary, #10b981)' : '1px solid var(--border-color)',
+                          backgroundColor: paymentMethod === 'Cheque' ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-app)',
+                          color: paymentMethod === 'Cheque' ? 'var(--primary)' : 'var(--text-primary)',
+                          fontWeight: paymentMethod === 'Cheque' ? 700 : 500,
+                          fontSize: '12.5px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: '6px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        <span>📝 {translatePaymentMethod(t, "Cheque")}</span>
+                      </button>
+                    </div>
+
+                    {paymentMethod === 'UPI' && (
+                      <div
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          padding: '8px 12px',
+                          borderRadius: '8px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          fontSize: '11.5px',
+                          color: 'var(--primary, #059669)',
+                          fontWeight: 500,
+                          marginTop: '2px',
+                        }}
+                      >
+                        <QrCode size={16} />
+                        <span>
+                          {t('sales.onlineQrSelectedNote', 'Online Payment: When you click Save, a dynamic QR will open for the customer to scan with PhonePe, GPay, Paytm, etc.')}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 

@@ -654,8 +654,8 @@
     "searchInvoicePlaceholder": "बिल क्रमांक किंवा ग्राहक शोधा...",
     "searchQuotationPlaceholder": "कोटेशन क्रमांक किंवा ग्राहक शोधा...",
     "customerName": "ग्राहकाचे नाव",
-    "payViaUpiTitle": "UPI QR द्वारे भरा",
-    "payViaQr": "QR द्वारे भरा",
+    "payViaUpiTitle": "ऑनलाइन UPI पेमेंट",
+    "payViaQr": "UPI QR द्वारे भरा",
     "waitingForPayment": "ग्राहक स्कॅन करून पेमेंट करण्याची वाट पाहत आहे...",
     "paymentSuccessMsg": "पेमेंट यशस्वीरित्या प्राप्त झाले!",
     "paymentReceived": "पेमेंट प्राप्त झाले!",
@@ -663,7 +663,11 @@
     "invoiceAmountToCollect": "जमा करावयाची रक्कम",
     "generatingQr": "QR कोड तयार करत आहे...",
     "qrGenerateError": "QR तयार करण्यात अयशस्वी. कृपया सेटिंग्जमधील UPI ID तपासा.",
-    "paymentConfirmedToast": "पेमेंट सत्यापित झाले आणि बिल Paid झाले!"
+    "paymentConfirmedToast": "पेमेंट सत्यापित झाले आणि बिल Paid झाले!",
+    "transactionMethod": "व्यवहार पद्धत (Transaction Method) *",
+    "onlineUpi": "ऑनलाइन (UPI QR)",
+    "cashOffline": "रोख (Offline)",
+    "onlineQrSelectedNote": "ऑनलाइन पेमेंट: सेव्ह केल्यावर ग्राहकासाठी PhonePe, GPay, Paytm इत्यादींद्वारे स्कॅन करण्यासाठी डायनॅमिक QR उघडेल."
   },
   "purchases": {
     "title": "खरेदी",
@@ -2694,7 +2698,13 @@
     "paytmMidLabel": "Paytm मर्चंट आयडी (MID) *",
     "paytmMidHelp": "Paytm for Business अॅपमध्ये Profile > Account / API Details मध्ये मिळेल",
     "paytmUpiIdLabel": "मर्चंट UPI ID / VPA *",
-    "paytmUpiIdHelp": "My QR Code खाली किंवा तुमच्या दुकानातील physical QR वर लिहिलेला असतो"
+    "paytmUpiIdHelp": "My QR Code खाली किंवा तुमच्या दुकानातील physical QR वर लिहिलेला असतो",
+    "onlineUpiQrTitle": "ऑनलाइन UPI QR पेमेंट्स आणि ऑटो-व्हेरिफाय",
+    "onlineUpiQrDesc": "विक्री बिलावर रकमेसह QR कोड तयार करा आणि PhonePe, Google Pay, Paytm इत्यादींद्वारे आलेले पेमेंट आपोआप तपासा.",
+    "merchantMidLabel": "मर्चंट आयडी (MID)",
+    "merchantMidHelp": "ऑटोमेटेड पेमेंट पडताळणीसाठी वापरला जाणारा मर्चंट आयडी",
+    "merchantUpiIdLabel": "मर्चंट UPI ID / VPA *",
+    "merchantUpiIdHelp": "ज्या UPI आयडीवर थेट रक्कम जमा होईल तो पत्ता"
   },
   "recycleBin": {
     "title": "रिसायकल बिन",

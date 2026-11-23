@@ -65,7 +65,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
       width: 260,
       margin: 1,
       color: {
-        dark: '#1e293b',
+        dark: '#0f172a',
         light: '#ffffff',
       },
     })
@@ -150,26 +150,28 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
         className="modal-content"
         style={{
           width: '90%',
-          maxWidth: '440px',
+          maxWidth: '430px',
           padding: '24px',
           borderRadius: '16px',
-          backgroundColor: '#ffffff',
+          backgroundColor: 'var(--bg-card, #ffffff)',
+          color: 'var(--text-primary, #0f172a)',
           boxShadow: '0 20px 40px -15px rgba(0, 0, 0, 0.3)',
           textAlign: 'center',
           position: 'relative',
+          border: '1px solid var(--border-color, #e2e8f0)',
         }}
       >
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: '#e0f2fe', color: '#0284c7', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <QrCode size={18} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div style={{ width: '36px', height: '36px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', color: 'var(--primary, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <QrCode size={20} />
             </div>
             <div style={{ textAlign: 'left' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: '#1e293b' }}>
-                {t('sales.payViaUpiTitle', 'Pay via UPI QR')}
+              <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
+                {t('sales.payViaUpiTitle', 'Online UPI Payment')}
               </h3>
-              <p style={{ fontSize: '11px', color: '#64748b', margin: 0 }}>
+              <p style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', margin: 0 }}>
                 {invoice.invoiceNumber} {invoice.customerName ? `• ${invoice.customerName}` : ''}
               </p>
             </div>
@@ -180,9 +182,9 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
               background: 'none',
               border: 'none',
               cursor: 'pointer',
-              color: '#94a3b8',
-              padding: '4px',
-              borderRadius: '6px',
+              color: 'var(--text-muted, #94a3b8)',
+              padding: '6px',
+              borderRadius: '8px',
             }}
           >
             <X size={20} />
@@ -192,17 +194,17 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
         {/* Amount Banner */}
         <div
           style={{
-            backgroundColor: '#f8fafc',
-            border: '1.5px solid #e2e8f0',
+            backgroundColor: 'var(--bg-app, #f8fafc)',
+            border: '1.5px solid var(--border-color, #e2e8f0)',
             borderRadius: '12px',
             padding: '12px 16px',
             marginBottom: '16px',
           }}
         >
-          <div style={{ fontSize: '12px', color: '#64748b', fontWeight: 500 }}>
+          <div style={{ fontSize: '12px', color: 'var(--text-muted, #64748b)', fontWeight: 500 }}>
             {t('sales.invoiceAmountToCollect', 'Amount to Pay')}
           </div>
-          <div style={{ fontSize: '28px', fontWeight: 800, color: '#059669', letterSpacing: '-0.5px', marginTop: '2px' }}>
+          <div style={{ fontSize: '28px', fontWeight: 800, color: '#10b981', letterSpacing: '-0.5px', marginTop: '2px' }}>
             {formatINR(amount)}
           </div>
         </div>
@@ -215,11 +217,11 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '12px',
+            padding: '14px',
             backgroundColor: '#ffffff',
             borderRadius: '14px',
             border: pollStatus === 'success' ? '2px solid #10b981' : '1.5px solid #e2e8f0',
-            boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
             position: 'relative',
           }}
         >
@@ -244,7 +246,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
               <h4 style={{ fontSize: '18px', fontWeight: 800, color: '#065f46', margin: '0 0 6px 0' }}>
                 {t('sales.paymentReceived', 'Payment Received!')}
               </h4>
-              <p style={{ fontSize: '13px', color: '#047857', margin: '0 0 8px 0', fontWeight: 600 }}>
+              <p style={{ fontSize: '14px', color: '#047857', margin: '0 0 8px 0', fontWeight: 700 }}>
                 {formatINR(amount)}
               </p>
               {verifiedUtr && (
@@ -255,7 +257,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             </div>
           ) : isGenerating ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <Loader2 className="animate-spin" size={32} color="#0284c7" />
+              <Loader2 className="animate-spin" size={32} color="#10b981" />
               <span style={{ fontSize: '12px', color: '#64748b' }}>{t('sales.generatingQr', 'Generating QR Code...')}</span>
             </div>
           ) : qrDataUrl ? (
@@ -265,11 +267,12 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
                 alt="UPI Payment QR Code"
                 style={{ width: '220px', height: '220px', display: 'block', margin: '0 auto' }}
               />
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#ede9fe', color: '#6d28d9' }}>PhonePe</span>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#e0f2fe', color: '#0284c7' }}>Google Pay</span>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#e0f2fe', color: '#00b9f1' }}>Paytm</span>
-                <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 6px', borderRadius: '4px', backgroundColor: '#f1f5f9', color: '#475569' }}>BHIM</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '10px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#f3e8ff', color: '#7e22ce' }}>PhonePe</span>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#e0f2fe', color: '#0284c7' }}>Google Pay</span>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#e0f2fe', color: '#00b9f1' }}>Paytm</span>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#475569' }}>BHIM</span>
+                <span style={{ fontSize: '10.5px', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', backgroundColor: '#ecfdf5', color: '#047857' }}>Any UPI</span>
               </div>
             </>
           ) : (
@@ -288,14 +291,14 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
               justifyContent: 'center',
               gap: '8px',
               marginTop: '16px',
-              padding: '8px 12px',
-              backgroundColor: '#f0fdf4',
+              padding: '10px 14px',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
               borderRadius: '8px',
-              border: '1px solid #bbf7d0',
+              border: '1px solid rgba(16, 185, 129, 0.2)',
             }}
           >
-            <Loader2 className="animate-spin" size={16} color="#16a34a" />
-            <span style={{ fontSize: '12px', color: '#15803d', fontWeight: 600 }}>
+            <Loader2 className="animate-spin" size={16} color="var(--primary, #10b981)" />
+            <span style={{ fontSize: '12px', color: 'var(--primary, #047857)', fontWeight: 600 }}>
               {statusMessage}
             </span>
           </div>
@@ -309,15 +312,16 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
               className="btn btn-primary"
               style={{
                 width: '100%',
-                backgroundColor: '#10b981',
-                borderColor: '#10b981',
+                backgroundColor: 'var(--primary, #10b981)',
+                borderColor: 'var(--primary, #10b981)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '8px',
-                padding: '10px 16px',
+                padding: '11px 16px',
                 fontSize: '13px',
                 fontWeight: 700,
+                borderRadius: '8px',
               }}
               onClick={() => {
                 onPaymentSuccess(`MANUAL-${Date.now()}`);
@@ -330,7 +334,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             <button
               type="button"
               className="btn btn-secondary"
-              style={{ width: '100%', padding: '8px 16px', fontSize: '12px' }}
+              style={{ width: '100%', padding: '9px 16px', fontSize: '12px', borderRadius: '8px' }}
               onClick={onClose}
             >
               {t('common.cancel', 'Cancel')}
