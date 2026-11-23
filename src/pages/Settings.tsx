@@ -1426,17 +1426,38 @@ export const Settings: React.FC = () => {
     }
   }, [settings.invoiceLanguage]);
 
+  const initialSettingsSyncedRef = useRef(false);
   useEffect(() => {
-    if (settings.enablePaytmQr !== undefined) {
+    if (!initialSettingsSyncedRef.current && settings?.enablePaytmQr !== undefined) {
       setEnablePaytmQr(Boolean(settings.enablePaytmQr));
+      if (settings.paytmMid) setPaytmMid(settings.paytmMid);
+      if (settings.paytmUpiId) setPaytmUpiId(settings.paytmUpiId);
+      initialSettingsSyncedRef.current = true;
     }
-    if (settings.paytmMid !== undefined) {
-      setPaytmMid(settings.paytmMid);
+  }, [settings]);
+
+  const handleToggleEnablePaytmQr = async (newVal: boolean) => {
+    setEnablePaytmQr(newVal);
+    const updated = {
+      ...settings,
+      enablePaytmQr: newVal,
+      paytmMid: paytmMid.trim() || settings.paytmMid || '',
+      paytmUpiId: paytmUpiId.trim() || settings.paytmUpiId || settings.upiId || '',
+    };
+    try {
+      await updateSettings(updated);
+      if (showToast) {
+        showToast(
+          newVal
+            ? t('settings.onlineUpiActivatedToast', 'Online UPI QR payments activated!')
+            : t('settings.onlineUpiDeactivatedToast', 'Online UPI QR payments deactivated.'),
+          'info'
+        );
+      }
+    } catch (err: any) {
+      console.error('Failed to auto-save UPI QR toggle:', err);
     }
-    if (settings.paytmUpiId !== undefined) {
-      setPaytmUpiId(settings.paytmUpiId);
-    }
-  }, [settings.enablePaytmQr, settings.paytmMid, settings.paytmUpiId]);
+  };
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -2550,7 +2571,7 @@ export const Settings: React.FC = () => {
                     type="button"
                     role="switch"
                     aria-checked={enablePaytmQr}
-                    onClick={() => setEnablePaytmQr(!enablePaytmQr)}
+                    onClick={() => handleToggleEnablePaytmQr(!enablePaytmQr)}
                     style={{
                       width: '48px',
                       height: '26px',
@@ -2593,6 +2614,17 @@ export const Settings: React.FC = () => {
                         className="form-control"
                         value={paytmMid}
                         onChange={(e) => setPaytmMid(e.target.value)}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (settings.paytmMid || '')) {
+                            updateSettings({
+                              ...settings,
+                              enablePaytmQr,
+                              paytmMid: val,
+                              paytmUpiId: paytmUpiId.trim() || settings.paytmUpiId || '',
+                            });
+                          }
+                        }}
                       />
                       <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
                         {t('settings.merchantMidHelp', 'Your Business Merchant ID used for automated payment verification')}
@@ -2609,6 +2641,17 @@ export const Settings: React.FC = () => {
                         className="form-control"
                         value={paytmUpiId}
                         onChange={(e) => setPaytmUpiId(e.target.value)}
+                        onBlur={(e) => {
+                          const val = e.target.value.trim();
+                          if (val !== (settings.paytmUpiId || '')) {
+                            updateSettings({
+                              ...settings,
+                              enablePaytmQr,
+                              paytmMid: paytmMid.trim() || settings.paytmMid || '',
+                              paytmUpiId: val,
+                            });
+                          }
+                        }}
                       />
                       <small style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '4px' }}>
                         {t('settings.merchantUpiIdHelp', 'Receiving UPI ID where funds are deposited directly')}

@@ -2123,6 +2123,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         localStorage.setItem('agribiz_invoice_language', formatted.invoiceLanguage);
       }
       sessionStorage.setItem('agribiz_settings', JSON.stringify(formatted));
+      localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
       setCachedBranding({
         logoUrl: formatted.logo || '',
         watermarkLogoUrl: formatted.watermarkLogo || '',

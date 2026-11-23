@@ -2588,7 +2588,9 @@
     "merchantMidLabel": "Merchant ID (MID)",
     "merchantMidHelp": "Business Merchant ID used for automated payment verification",
     "merchantUpiIdLabel": "Merchant UPI ID / VPA *",
-    "merchantUpiIdHelp": "Receiving UPI ID where funds are deposited directly"
+    "merchantUpiIdHelp": "Receiving UPI ID where funds are deposited directly",
+    "onlineUpiActivatedToast": "Online UPI QR payments activated!",
+    "onlineUpiDeactivatedToast": "Online UPI QR payments deactivated."
   },
   "recycleBin": {
     "title": "Recycle Bin",

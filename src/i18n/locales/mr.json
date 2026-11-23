@@ -2716,7 +2716,9 @@
     "merchantMidLabel": "मर्चंट आयडी (MID)",
     "merchantMidHelp": "ऑटोमेटेड पेमेंट पडताळणीसाठी वापरला जाणारा मर्चंट आयडी",
     "merchantUpiIdLabel": "मर्चंट UPI ID / VPA *",
-    "merchantUpiIdHelp": "ज्या UPI आयडीवर थेट रक्कम जमा होईल तो पत्ता"
+    "merchantUpiIdHelp": "ज्या UPI आयडीवर थेट रक्कम जमा होईल तो पत्ता",
+    "onlineUpiActivatedToast": "ऑनलाइन UPI QR पेमेंट्स सक्रिय केले!",
+    "onlineUpiDeactivatedToast": "ऑनलाइन UPI QR पेमेंट्स बंद केले."
   },
   "recycleBin": {
     "title": "रिसायकल बिन",

@@ -11,7 +11,7 @@ router.use(authenticate);
 router.get('/stream', authorizePermission('settings'), settingsController.streamRealtimeUpdates);
 router.get('/version', authorizePermission('settings'), settingsController.getDataVersion);
 router.get('/', authorizePermission('settings'), settingsController.getSettings);
-router.put('/', authorizeRoles('Owner'), validate(settingsSchema), settingsController.updateSettings);
+router.put('/', authorizePermission('settings'), validate(settingsSchema), settingsController.updateSettings);
 
 // DELETE Business Account (Owner only)
 router.delete('/company', authorizeRoles('Owner'), settingsController.deleteCompanyAccount);
