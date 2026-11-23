@@ -97,7 +97,8 @@ interface AppContextType {
   editPayment: (payment: Payment) => void;
   deletePayment: (id: string) => void;
 
-  updateSettings: (settings: BusinessSettings) => void;
+  isUpdatingSettings: boolean;
+  updateSettings: (settings: BusinessSettings, options?: { silent?: boolean; customToast?: string }) => Promise<void>;
   setTheme: (theme: 'light' | 'dark' | 'system') => void;
   resetToDefault: () => void;
 
@@ -225,6 +226,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [payments, setPayments] = useState<Payment[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [recycleBin, setRecycleBin] = useState<RecycleBinItem[]>([]);
+
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const toastTimeoutRef = useRef<any>(null);
 
   // Settings & branding managed in tab-isolated sessionStorage + Stale-While-Revalidate Branding Cache
   const [settings, setSettings] = useState<BusinessSettings>(() => {
@@ -1231,8 +1235,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   ]);
 
   const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
     setToast({ message, type });
-    setTimeout(() => {
+    toastTimeoutRef.current = setTimeout(() => {
       setToast((curr) => curr && curr.message === message ? null : curr);
     }, 3000);
   };
@@ -2091,11 +2096,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     } catch (e) {}
   };
 
-  const updateSettings = async (updatedSettings: BusinessSettings) => {
+  const updateSettings = async (
+    updatedSettings: BusinessSettings,
+    options?: { silent?: boolean; customToast?: string }
+  ) => {
     if (!navigator.onLine) {
       showToast('No internet connection. Cannot update settings while offline.', 'error');
       return;
     }
+    setIsUpdatingSettings(true);
     const formatted = {
       ...updatedSettings,
       businessName: toTitleCase(updatedSettings.businessName),
@@ -2131,9 +2140,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       notifyMutation();
       document.title = formatted.businessName || 'AgriBiz';
-      showToast(i18n.t('toast.settingsSaved', 'Settings saved successfully!'));
+
+      if (!options?.silent) {
+        if (options?.customToast) {
+          showToast(options.customToast);
+        } else {
+          showToast(i18n.t('toast.settingsSaved', 'Settings saved successfully!'));
+        }
+      }
     } catch (err: any) {
       showToast(err.response?.data?.message || 'Failed to save settings', 'error');
+      throw err;
+    } finally {
+      setIsUpdatingSettings(false);
     }
   };
 
@@ -2221,6 +2240,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addPayment,
         editPayment,
         deletePayment,
+        isUpdatingSettings,
         updateSettings,
         setTheme,
         resetToDefault,

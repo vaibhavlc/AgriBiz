@@ -50,6 +50,7 @@ import {
   Fingerprint,
   Check,
   QrCode,
+  Loader2,
 } from 'lucide-react';
 import { checkBiometricSupport, setLocalDeviceBiometricEnrolled } from '../utils/biometric';
 import { checkCurrentSubscription, subscribeToPush, unsubscribeFromPush, sendTestPushNotification } from '../utils/pushManager';
@@ -107,7 +108,9 @@ const STATE_DISTRICTS: Record<string, string[]> = {
 
 export const Settings: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { settings, updateSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
+  const { settings, updateSettings, isUpdatingSettings, setTheme, resetToDefault, showToast, openInstallModal, customPwaName, isPwaInstalled } = useApp();
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [isTogglingQr, setIsTogglingQr] = useState(false);
   const { currentUser, currentCompany, forgetDevice } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'profile' | 'banking' | 'branding' | 'prefixes' | 'system' | 'notifications' | 'users' | 'backup' | 'erase' | 'biometrics'>('profile');
@@ -1318,93 +1321,102 @@ export const Settings: React.FC = () => {
       pincode
     });
 
-    updateSettings({
-      businessName: formattedBusinessName,
-      ownerName: formattedOwnerName,
-      businessNameMr: businessNameMr.trim(),
-      ownerNameMr: ownerNameMr.trim(),
-      addressMr: addressMr.trim(),
-      invoiceHeader: invoiceHeader.trim() || 'TAX INVOICE',
-      invoiceHeaderMr: invoiceHeaderMr.trim() || 'कर चलन',
-      gstin: formattedGSTIN,
-      panNumber: formattedPAN,
-      businessType,
-      phone,
-      alternatePhone,
-      email,
-      website,
-      addressLine1,
-      addressLine2,
-      city,
-      taluka,
-      district,
-      state,
-      pincode,
-      logo,
-      watermarkLogo,
-      watermarkAsIs,
-      watermarkColorMode: watermarkAsIs ? 'as_is' : 'bw',
-      bankName,
-      accountHolderName,
-      accountNumber,
-      ifscCode: formattedIFSC,
-      branchName,
-      upiId,
-      enablePaytmQr,
-      paytmMid,
-      paytmUpiId,
-      invoicePrefix,
-      purchasePrefix,
-      quotationPrefix,
-      financialYear,
-      defaultTerms,
-      invoiceTerms,
-      quotationTerms,
-      purchaseTerms,
-      footerMessage,
-      invoiceLanguage,
-      showLogo,
-      showGstin,
-      showAddress,
-      showContact,
-      showBankDetails,
-      showTerms,
-      currencySymbol,
-      dateFormat,
-      showLowStockAlert,
-      showOutOfStockAlert,
-      notifyLowStock,
-      notifyOutOfStock,
-      notifyUpcomingDues,
-      notifyOverdueDues,
-      dueReminderDaysBefore,
-      notifyPaymentReceived,
-      notifyNewOrders,
-      notifyOrderStatus,
-      maskSensitiveNotificationData,
-      theme: (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_user_theme') as any) : null) || settings.theme || 'light',
-      address: legacyAddress,
-      signature: savedSignature,
-    });
+    setIsSavingSettings(true);
+    (async () => {
+      try {
+        await updateSettings({
+          businessName: formattedBusinessName,
+          ownerName: formattedOwnerName,
+          businessNameMr: businessNameMr.trim(),
+          ownerNameMr: ownerNameMr.trim(),
+          addressMr: addressMr.trim(),
+          invoiceHeader: invoiceHeader.trim() || 'TAX INVOICE',
+          invoiceHeaderMr: invoiceHeaderMr.trim() || 'कर चलन',
+          gstin: formattedGSTIN,
+          panNumber: formattedPAN,
+          businessType,
+          phone,
+          alternatePhone,
+          email,
+          website,
+          addressLine1,
+          addressLine2,
+          city,
+          taluka,
+          district,
+          state,
+          pincode,
+          logo,
+          watermarkLogo,
+          watermarkAsIs,
+          watermarkColorMode: watermarkAsIs ? 'as_is' : 'bw',
+          bankName,
+          accountHolderName,
+          accountNumber,
+          ifscCode: formattedIFSC,
+          branchName,
+          upiId,
+          enablePaytmQr,
+          paytmMid,
+          paytmUpiId,
+          invoicePrefix,
+          purchasePrefix,
+          quotationPrefix,
+          financialYear,
+          defaultTerms,
+          invoiceTerms,
+          quotationTerms,
+          purchaseTerms,
+          footerMessage,
+          invoiceLanguage,
+          showLogo,
+          showGstin,
+          showAddress,
+          showContact,
+          showBankDetails,
+          showTerms,
+          currencySymbol,
+          dateFormat,
+          showLowStockAlert,
+          showOutOfStockAlert,
+          notifyLowStock,
+          notifyOutOfStock,
+          notifyUpcomingDues,
+          notifyOverdueDues,
+          dueReminderDaysBefore,
+          notifyPaymentReceived,
+          notifyNewOrders,
+          notifyOrderStatus,
+          maskSensitiveNotificationData,
+          theme: (typeof window !== 'undefined' ? (localStorage.getItem('agribiz_user_theme') as any) : null) || settings.theme || 'light',
+          address: legacyAddress,
+          signature: savedSignature,
+        }, { silent: true });
 
-    api.put('/notifications/settings/preferences', {
-      notifyLowStock,
-      notifyOutOfStock,
-      notifyUpcomingDues,
-      notifyOverdueDues,
-      dueReminderDaysBefore,
-      notifyPaymentReceived,
-      notifyNewOrders,
-      notifyOrderStatus,
-      maskSensitiveNotificationData,
-    }).catch(() => {});
+        await api.put('/notifications/settings/preferences', {
+          notifyLowStock,
+          notifyOutOfStock,
+          notifyUpcomingDues,
+          notifyOverdueDues,
+          dueReminderDaysBefore,
+          notifyPaymentReceived,
+          notifyNewOrders,
+          notifyOrderStatus,
+          maskSensitiveNotificationData,
+        }).catch(() => {});
 
-    setSavedSuccess(true);
-    if (showToast) {
-      showToast(t('settings.preferencesSavedSuccess', 'Preferences saved successfully!'));
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    setTimeout(() => setSavedSuccess(false), 3000);
+        setSavedSuccess(true);
+        if (showToast) {
+          showToast(t('settings.preferencesSavedSuccess', 'Settings & preferences saved successfully!'));
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => setSavedSuccess(false), 3000);
+      } catch (err: any) {
+        if (showToast) showToast(err.message || 'Failed to save settings', 'error');
+      } finally {
+        setIsSavingSettings(false);
+      }
+    })();
   };
 
   const handleInvoiceLanguageChange = (lang: 'mr' | 'en') => {
@@ -1417,6 +1429,8 @@ export const Settings: React.FC = () => {
     updateSettings({
       ...settings,
       invoiceLanguage: lang,
+    }, {
+      customToast: lang === 'mr' ? 'चलन भाषा मराठी केली!' : 'Invoice language set to English!',
     });
   };
 
@@ -1437,6 +1451,8 @@ export const Settings: React.FC = () => {
   }, [settings]);
 
   const handleToggleEnablePaytmQr = async (newVal: boolean) => {
+    if (isTogglingQr || isUpdatingSettings) return;
+    setIsTogglingQr(true);
     setEnablePaytmQr(newVal);
     const updated = {
       ...settings,
@@ -1445,17 +1461,15 @@ export const Settings: React.FC = () => {
       paytmUpiId: paytmUpiId.trim() || settings.paytmUpiId || settings.upiId || '',
     };
     try {
-      await updateSettings(updated);
-      if (showToast) {
-        showToast(
-          newVal
-            ? t('settings.onlineUpiActivatedToast', 'Online UPI QR payments activated!')
-            : t('settings.onlineUpiDeactivatedToast', 'Online UPI QR payments deactivated.'),
-          'info'
-        );
-      }
+      await updateSettings(updated, {
+        customToast: newVal
+          ? t('settings.onlineUpiActivatedToast', 'Online UPI QR payments activated!')
+          : t('settings.onlineUpiDeactivatedToast', 'Online UPI QR payments deactivated.'),
+      });
     } catch (err: any) {
       console.error('Failed to auto-save UPI QR toggle:', err);
+    } finally {
+      setIsTogglingQr(false);
     }
   };
 
@@ -1699,10 +1713,9 @@ export const Settings: React.FC = () => {
     updateSettings({
       ...settings,
       signature: base64Data
+    }, {
+      customToast: t('settings.signatureSavedSuccess', 'Signature saved successfully!')
     });
-    if (showToast) {
-      showToast(t('settings.signatureSavedSuccess', 'Signature saved successfully!'));
-    }
   };
 
   const handleRemoveSignature = () => {
@@ -1711,10 +1724,9 @@ export const Settings: React.FC = () => {
     updateSettings({
       ...settings,
       signature: undefined
+    }, {
+      customToast: t('settings.signatureRemovedSuccess', 'Signature removed successfully!')
     });
-    if (showToast) {
-      showToast(t('settings.signatureRemovedSuccess', 'Signature removed successfully!'));
-    }
   };
 
   const handleSignatureFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1733,10 +1745,9 @@ export const Settings: React.FC = () => {
       updateSettings({
         ...settings,
         signature: base64Data
+      }, {
+        customToast: t('settings.signatureUploadedSuccess', 'Signature image uploaded successfully!')
       });
-      if (showToast) {
-        showToast(t('settings.signatureUploadedSuccess', 'Signature image uploaded successfully!'));
-      }
     };
     reader.readAsDataURL(file);
   };
@@ -2571,6 +2582,7 @@ export const Settings: React.FC = () => {
                     type="button"
                     role="switch"
                     aria-checked={enablePaytmQr}
+                    disabled={isTogglingQr || isUpdatingSettings}
                     onClick={() => handleToggleEnablePaytmQr(!enablePaytmQr)}
                     style={{
                       width: '48px',
@@ -5378,8 +5390,26 @@ export const Settings: React.FC = () => {
                   </div>
                 )}
               </div>
-              <button type="submit" className="btn btn-primary" style={{ padding: '12px 28px', fontWeight: 700 }}>
-                {t('settings.saveSettings', 'Save Settings')}
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSavingSettings || isUpdatingSettings}
+                style={{
+                  padding: '12px 28px',
+                  fontWeight: 700,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  opacity: (isSavingSettings || isUpdatingSettings) ? 0.75 : 1,
+                  cursor: (isSavingSettings || isUpdatingSettings) ? 'not-allowed' : 'pointer',
+                }}
+              >
+                {(isSavingSettings || isUpdatingSettings) && <Loader2 className="animate-spin" size={16} />}
+                <span>
+                  {(isSavingSettings || isUpdatingSettings)
+                    ? t('settings.savingAndApplying', 'Saving & Applying...')
+                    : t('settings.saveSettings', 'Save Settings')}
+                </span>
               </button>
             </div>
           )}

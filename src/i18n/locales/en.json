@@ -2067,7 +2067,7 @@
     "failedUpdateCredentials": "Failed to update credentials.",
     "pinResetSuccess": "Security PIN for {{name}} reset successfully!",
     "failedResetPin": "Failed to reset PIN.",
-    "preferencesSavedSuccess": "Preferences saved successfully!",
+    "preferencesSavedSuccess": "Settings & preferences saved successfully!",
     "logoSizeExceedsLimit": "Selected logo size exceeds 1.5MB limit. Please upload a smaller compressed image.",
     "watermarkSizeExceedsLimit": "Selected watermark logo size exceeds 1.5MB limit. Please upload a smaller compressed image.",
     "signatureSavedSuccess": "Signature saved successfully!",
@@ -2590,7 +2590,9 @@
     "merchantUpiIdLabel": "Merchant UPI ID / VPA *",
     "merchantUpiIdHelp": "Receiving UPI ID where funds are deposited directly",
     "onlineUpiActivatedToast": "Online UPI QR payments activated!",
-    "onlineUpiDeactivatedToast": "Online UPI QR payments deactivated."
+    "onlineUpiDeactivatedToast": "Online UPI QR payments deactivated.",
+    "applyingSettings": "Saving & applying changes...",
+    "savingAndApplying": "Saving & Applying..."
   },
   "recycleBin": {
     "title": "Recycle Bin",

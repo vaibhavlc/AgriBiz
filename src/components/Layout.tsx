@@ -38,6 +38,7 @@ import {
   Smartphone,
   Mail,
   QrCode,
+  Loader2,
 } from 'lucide-react';
 import { PWAInstallModal } from './PWAInstallModal';
 import { PaytmQrModal } from './PaytmQrModal';
@@ -59,6 +60,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const {
     currentTab,
     settings,
+    isUpdatingSettings,
     activeTheme,
     setTheme,
     searchQuery,
@@ -698,6 +700,49 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-container" style={{ position: 'relative' }}>
+      {/* Sleek Top Progress Bar & Applying Badge when saving settings/preferences */}
+      {isUpdatingSettings && (
+        <>
+          <div
+            className="global-top-progress-bar"
+            style={{
+              position: 'fixed',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '3px',
+              zIndex: 999999,
+              background: 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%)',
+              boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
+              animation: 'topBarPulse 1.2s infinite ease-in-out',
+            }}
+          />
+          <div
+            style={{
+              position: 'fixed',
+              top: '12px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 999999,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              backgroundColor: 'var(--bg-card, #ffffff)',
+              color: 'var(--text-primary, #0f172a)',
+              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
+              border: '1px solid var(--border-color, #e2e8f0)',
+              fontSize: '12px',
+              fontWeight: 600,
+              animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            }}
+          >
+            <Loader2 className="animate-spin" size={14} color="var(--primary, #10b981)" />
+            <span>{t('settings.applyingSettings', 'Saving & applying changes...')}</span>
+          </div>
+        </>
+      )}
       {/* Sidebar Backdrop Blur Overlay on Mobile */}
       {isMobileSidebarOpen && (
         <div 

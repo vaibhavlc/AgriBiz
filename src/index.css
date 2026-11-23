@@ -7898,3 +7898,10 @@ body.dark-theme .skeleton-box {
 }
 
 
+
+/* Global Top Progress Bar pulse */
+@keyframes topBarPulse {
+  0% { opacity: 0.6; transform: scaleX(0.2); transform-origin: left; }
+  50% { opacity: 1; transform: scaleX(0.85); transform-origin: center; }
+  100% { opacity: 0.6; transform: scaleX(1); transform-origin: right; }
+}

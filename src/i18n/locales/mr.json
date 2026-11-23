@@ -2104,7 +2104,7 @@
     "failedUpdateCredentials": "माहिती अद्यतनित करण्यात अयशस्वी.",
     "pinResetSuccess": "{{name}} साठी सुरक्षा पिन यशस्वीरित्या रीसेट केला!",
     "failedResetPin": "पिन रीसेट करण्यात अयशस्वी.",
-    "preferencesSavedSuccess": "प्राधान्ये यशस्वीरित्या जतन केली!",
+    "preferencesSavedSuccess": "सर्व सेटिंग्ज आणि प्राधान्ये यशस्वीरित्या जतन केली!",
     "logoSizeExceedsLimit": "निवडलेल्या लोगोचा आकार १.५ MB पेक्षा जास्त आहे. कृपया लहान इमेज अपलोड करा.",
     "watermarkSizeExceedsLimit": "निवडलेल्या वॉटरमार्क लोगोचा आकार १.५ MB पेक्षा जास्त आहे. कृपया लहान इमेज अपलोड करा.",
     "signatureSavedSuccess": "स्वाक्षरी यशस्वीरित्या जतन केली!",
@@ -2718,7 +2718,9 @@
     "merchantUpiIdLabel": "मर्चंट UPI ID / VPA *",
     "merchantUpiIdHelp": "ज्या UPI आयडीवर थेट रक्कम जमा होईल तो पत्ता",
     "onlineUpiActivatedToast": "ऑनलाइन UPI QR पेमेंट्स सक्रिय केले!",
-    "onlineUpiDeactivatedToast": "ऑनलाइन UPI QR पेमेंट्स बंद केले."
+    "onlineUpiDeactivatedToast": "ऑनलाइन UPI QR पेमेंट्स बंद केले.",
+    "applyingSettings": "बदल जतन आणि लागू करत आहे...",
+    "savingAndApplying": "जतन आणि लागू करत आहे..."
   },
   "recycleBin": {
     "title": "रिसायकल बिन",
