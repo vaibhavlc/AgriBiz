@@ -168,6 +168,8 @@ export const expenseSchema = z.object({
 });
 
 export const settingsSchema = z.object({
+  companyId: z.string().optional().nullable(),
+  settingsId: z.string().optional().nullable(),
   businessName: z.string().min(1, 'Business name is required'),
   ownerName: z.string().min(1, 'Owner name is required'),
   gstin: z.string().optional().nullable(),

@@ -17,8 +17,10 @@ class SettingsRepository {
   }
 
   async upsert(companyId, settingsData, session) {
-    const opts = session ? { session, new: true, upsert: true } : { new: true, upsert: true };
-    return Settings.findOneAndUpdate({ companyId }, settingsData, opts);
+    const opts = session
+      ? { session, new: true, upsert: true, setDefaultsOnInsert: true }
+      : { new: true, upsert: true, setDefaultsOnInsert: true };
+    return Settings.findOneAndUpdate({ companyId }, { $set: settingsData }, opts);
   }
 }
 

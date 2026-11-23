@@ -35,7 +35,8 @@ class SettingsService {
         console.warn('Failed to update company logo on Company model:', e);
       }
     }
-    return settingsRepository.upsert(companyId, settingsData);
+    const cleanData = { ...settingsData, companyId };
+    return settingsRepository.upsert(companyId, cleanData);
   }
 }
 

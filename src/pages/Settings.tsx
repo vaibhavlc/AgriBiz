@@ -1440,15 +1440,27 @@ export const Settings: React.FC = () => {
     }
   }, [settings.invoiceLanguage]);
 
-  const initialSettingsSyncedRef = useRef(false);
+  // Keep enablePaytmQr, paytmMid, and paytmUpiId synchronized whenever settings updates from the server/context
   useEffect(() => {
-    if (!initialSettingsSyncedRef.current && settings?.enablePaytmQr !== undefined) {
+    if (settings && settings.enablePaytmQr !== undefined) {
       setEnablePaytmQr(Boolean(settings.enablePaytmQr));
-      if (settings.paytmMid) setPaytmMid(settings.paytmMid);
-      if (settings.paytmUpiId) setPaytmUpiId(settings.paytmUpiId);
-      initialSettingsSyncedRef.current = true;
     }
-  }, [settings]);
+    if (settings && settings.paytmMid !== undefined) {
+      setPaytmMid(settings.paytmMid || '');
+    }
+    if (settings && (settings.paytmUpiId !== undefined || settings.upiId !== undefined)) {
+      setPaytmUpiId(settings.paytmUpiId || settings.upiId || '');
+    }
+  }, [settings?.enablePaytmQr, settings?.paytmMid, settings?.paytmUpiId, settings?.upiId]);
+
+  useEffect(() => {
+    if (settings?.bankName !== undefined && !bankName) setBankName(settings.bankName);
+    if (settings?.accountHolderName !== undefined && !accountHolderName) setAccountHolderName(settings.accountHolderName);
+    if (settings?.accountNumber !== undefined && !accountNumber) setAccountNumber(settings.accountNumber);
+    if (settings?.ifscCode !== undefined && !ifscCode) setIfscCode(settings.ifscCode);
+    if (settings?.branchName !== undefined && !branchName) setBranchName(settings.branchName);
+    if (settings?.upiId !== undefined && !upiId) setUpiId(settings.upiId);
+  }, [settings?.bankName, settings?.accountHolderName, settings?.accountNumber, settings?.ifscCode, settings?.branchName, settings?.upiId]);
 
   const handleToggleEnablePaytmQr = async (newVal: boolean) => {
     if (isTogglingQr || isUpdatingSettings) return;
@@ -1468,6 +1480,7 @@ export const Settings: React.FC = () => {
       });
     } catch (err: any) {
       console.error('Failed to auto-save UPI QR toggle:', err);
+      setEnablePaytmQr(!newVal);
     } finally {
       setIsTogglingQr(false);
     }

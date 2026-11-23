@@ -233,12 +233,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Settings & branding managed in tab-isolated sessionStorage + Stale-While-Revalidate Branding Cache
   const [settings, setSettings] = useState<BusinessSettings>(() => {
     const activeCompany = authService.getCurrentCompany();
-    const session = sessionStorage.getItem('agribiz_settings');
+    const session = sessionStorage.getItem('agribiz_settings') || (typeof window !== 'undefined' ? localStorage.getItem('agribiz_settings') : null);
     let raw = initialSettings;
     if (session) {
       try {
         const parsed = JSON.parse(session);
-        if (!activeCompany || parsed.companyId === activeCompany.id || parsed.id === activeCompany.id) {
+        if (!activeCompany || !parsed.companyId || parsed.companyId === activeCompany.id || parsed.id === activeCompany.id) {
           raw = { ...initialSettings, ...parsed };
         }
       } catch (e) {}
@@ -248,7 +248,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Strict business-scoped logo resolution:
     // Uses current business logo or empty string (which renders default general app logo).
     let logo = activeCompany?.logo || '';
-    if (!logo && raw.logo && (raw.companyId === activeCompany?.id || raw.id === activeCompany?.id)) {
+    if (!logo && raw.logo && (!activeCompany || !raw.companyId || raw.companyId === activeCompany?.id || raw.id === activeCompany?.id)) {
       logo = raw.logo;
     }
     if (!logo && cachedBranding?.logoUrl && cachedBranding?.businessId === activeCompany?.id) {
@@ -808,12 +808,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (settingsRes.status === 'fulfilled' && settingsRes.value.data?.settings) {
         const remoteSettings: BusinessSettings = settingsRes.value.data.settings;
         setSettings((prev) => {
-          const updatedLogo = remoteSettings.logo || '';
-          const updatedWatermark = remoteSettings.watermarkLogo || '';
+          const updatedLogo = remoteSettings.logo || prev.logo || '';
+          const updatedWatermark = remoteSettings.watermarkLogo || prev.watermarkLogo || '';
           const updatedName = toTitleCase(remoteSettings.businessName || prev.businessName);
 
           const activeInvoiceLang = (typeof window !== 'undefined' && (localStorage.getItem('agribiz_invoice_language') as ('mr' | 'en'))) || remoteSettings.invoiceLanguage || 'mr';
           const updatedSettings = {
+            ...prev,
             ...remoteSettings,
             invoiceLanguage: activeInvoiceLang,
             logo: updatedLogo,
@@ -821,8 +822,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             businessName: updatedName,
           };
 
-          // Save to sessionStorage for tab isolation (never pollute global localStorage)
+          // Save to sessionStorage and localStorage for offline/refresh persistence
           sessionStorage.setItem('agribiz_settings', JSON.stringify(updatedSettings));
+          localStorage.setItem('agribiz_settings', JSON.stringify(updatedSettings));
           setCachedBranding({
             logoUrl: updatedLogo,
             watermarkLogoUrl: updatedWatermark,
@@ -2105,8 +2107,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     setIsUpdatingSettings(true);
+    const activeCompany = authService.getCurrentCompany();
+    const companyId = activeCompany?.id || (updatedSettings as any).companyId || (settings as any).companyId;
     const formatted = {
       ...updatedSettings,
+      companyId,
       businessName: toTitleCase(updatedSettings.businessName),
       ownerName: toTitleCase(updatedSettings.ownerName),
     };
@@ -2125,21 +2130,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setActiveTheme(isDark ? 'dark' : 'light');
     
     try {
-      await api.put('/settings', formatted);
-      setSettings(formatted);
+      const res = await api.put('/settings', formatted);
+      const serverSettings = res?.data?.settings ? { ...formatted, ...res.data.settings } : formatted;
+      setSettings(serverSettings);
       clearAllDirtyForms();
-      if (formatted.invoiceLanguage) {
-        localStorage.setItem('agribiz_invoice_language', formatted.invoiceLanguage);
+      if (serverSettings.invoiceLanguage) {
+        localStorage.setItem('agribiz_invoice_language', serverSettings.invoiceLanguage);
       }
-      sessionStorage.setItem('agribiz_settings', JSON.stringify(formatted));
-      localStorage.setItem('agribiz_settings', JSON.stringify(formatted));
+      sessionStorage.setItem('agribiz_settings', JSON.stringify(serverSettings));
+      localStorage.setItem('agribiz_settings', JSON.stringify(serverSettings));
       setCachedBranding({
-        logoUrl: formatted.logo || '',
-        watermarkLogoUrl: formatted.watermarkLogo || '',
-        businessName: formatted.businessName,
+        logoUrl: serverSettings.logo || '',
+        watermarkLogoUrl: serverSettings.watermarkLogo || '',
+        businessName: serverSettings.businessName,
+        businessId: companyId,
       });
       notifyMutation();
-      document.title = formatted.businessName || 'AgriBiz';
+      document.title = serverSettings.businessName || 'AgriBiz';
 
       if (!options?.silent) {
         if (options?.customToast) {
