@@ -665,7 +665,10 @@
     "cashOffline": "Cash (Offline)",
     "onlineQrSelectedNote": "Online Payment: When you click Save, a dynamic QR will open for the customer to scan with PhonePe, GPay, Paytm, etc.",
     "skipAndViewInvoice": "Skip & View Invoice Anyway",
-    "defaultUpiNotice": "Default UPI active. Add custom UPI ID in Settings."
+    "defaultUpiNotice": "Default UPI active. Add custom UPI ID in Settings.",
+    "onlinePayment": "Online (UPI)",
+    "onlineManualNote": "Online Payment: QR generation is disabled in Settings. Record the online payment or enter reference number below.",
+    "savingInvoice": "Saving Invoice..."
   },
   "purchases": {
     "title": "Purchases",

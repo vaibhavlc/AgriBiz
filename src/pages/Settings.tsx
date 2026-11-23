@@ -1426,6 +1426,18 @@ export const Settings: React.FC = () => {
     }
   }, [settings.invoiceLanguage]);
 
+  useEffect(() => {
+    if (settings.enablePaytmQr !== undefined) {
+      setEnablePaytmQr(Boolean(settings.enablePaytmQr));
+    }
+    if (settings.paytmMid !== undefined) {
+      setPaytmMid(settings.paytmMid);
+    }
+    if (settings.paytmUpiId !== undefined) {
+      setPaytmUpiId(settings.paytmUpiId);
+    }
+  }, [settings.enablePaytmQr, settings.paytmMid, settings.paytmUpiId]);
+
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;

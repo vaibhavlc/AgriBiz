@@ -699,6 +699,9 @@ export const initialSettings: BusinessSettings = {
   ifscCode: 'SBIN0000452',
   branchName: 'Pipariya Main Branch',
   upiId: 'agribiz@sbi',
+  enablePaytmQr: false,
+  paytmMid: '',
+  paytmUpiId: '',
 
   // Invoice Configuration
   invoicePrefix: 'AB-2026-',

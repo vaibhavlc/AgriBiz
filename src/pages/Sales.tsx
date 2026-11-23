@@ -34,6 +34,8 @@ import {
   Calendar,
   TrendingUp,
   Languages,
+  Loader2,
+  Smartphone,
 } from 'lucide-react';
 
 interface InvoiceItemLocal {
@@ -254,6 +256,8 @@ export const Sales: React.FC = () => {
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
   const [qrModalInvoice, setQrModalInvoice] = useState<Invoice | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isSavingInvoice, setIsSavingInvoice] = useState(false);
+  const isDynamicQrActive = Boolean(settings.enablePaytmQr && (settings.paytmUpiId?.trim() || settings.upiId?.trim()));
 
   const handleQrPaymentSuccess = async (utr: string) => {
     if (!qrModalInvoice) return;
@@ -1185,6 +1189,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
   const handleSaveInvoice = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (isSavingInvoice) return;
+
     if (!selectedCustomerId) {
       showToast(t('sales.selectCustomerError', 'Please select a customer to generate billing invoice.'), 'error');
       return;
@@ -1221,6 +1227,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
 
     const customer = customers.find((c) => c.id === selectedCustomerId);
     if (!customer) return;
+
+    setIsSavingInvoice(true);
+    try {
 
     const invoiceItems = items.map((item) => {
       const product = products.find((p) => p.id === item.productId)!;
@@ -1316,7 +1325,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setDueDate('');
       setNotes('');
       if (newInvoice) {
-        if (paymentMethod === 'UPI') {
+        if (paymentMethod === 'UPI' && isDynamicQrActive) {
           setQrModalInvoice(newInvoice);
           setIsQrModalOpen(true);
           setIsCreatingInvoice(false, true);
@@ -1326,6 +1335,12 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       } else {
         setIsCreatingInvoice(false, true);
       }
+    }
+    } catch (err: any) {
+      console.error('Save invoice error:', err);
+      showToast(err?.message || t('sales.failedToSaveInvoice', 'Failed to save invoice'), 'error');
+    } finally {
+      setIsSavingInvoice(false);
     }
   };
 
@@ -1805,17 +1820,19 @@ We have downloaded the PDF document to your device. Please attach it in the chat
             <button className="btn btn-secondary" style={{ borderColor: "#25D366", color: "#25D366", padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }} onClick={handleWhatsAppShare} title={t("sales.shareWhatsAppTitle", "Share invoice details on WhatsApp")}>
               <Share2 size={14} /> <span>WhatsApp</span>
             </button>
-            <button
-              className="btn btn-secondary"
-              style={{ borderColor: "#0284c7", color: "#0284c7", fontWeight: 600, padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }}
-              onClick={() => {
-                setQrModalInvoice(selectedInvoice);
-                setIsQrModalOpen(true);
-              }}
-              title={t("sales.showQrCode", "Show Payment QR")}
-            >
-              <QrCode size={14} /> <span>UPI QR</span>
-            </button>
+            {isDynamicQrActive && (
+              <button
+                className="btn btn-secondary"
+                style={{ borderColor: "#0284c7", color: "#0284c7", fontWeight: 600, padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }}
+                onClick={() => {
+                  setQrModalInvoice(selectedInvoice);
+                  setIsQrModalOpen(true);
+                }}
+                title={t("sales.showQrCode", "Show Payment QR")}
+              >
+                <QrCode size={14} /> <span>UPI QR</span>
+              </button>
+            )}
             <button className="btn btn-primary" style={{ padding: '6px 14px', fontSize: '12px', height: '34px', gap: '5px' }} onClick={handlePrint} title={t("sales.printPaperVoucherTitle", "Print paper voucher")}>
               <Printer size={14} /> <span>Print</span>
             </button>
@@ -3263,8 +3280,8 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           transition: 'all 0.15s ease',
                         }}
                       >
-                        <QrCode size={15} />
-                        <span>{t('sales.onlineUpi', 'Online (UPI QR)')}</span>
+                        {isDynamicQrActive ? <QrCode size={15} /> : <Smartphone size={15} />}
+                        <span>{isDynamicQrActive ? t('sales.onlineUpi', 'Online (UPI QR)') : t('sales.onlinePayment', 'Online (UPI)')}</span>
                       </button>
 
                       <button
@@ -3342,17 +3359,19 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                           gap: '8px',
                           padding: '8px 12px',
                           borderRadius: '8px',
-                          backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                          border: '1px solid rgba(16, 185, 129, 0.25)',
+                          backgroundColor: isDynamicQrActive ? 'rgba(16, 185, 129, 0.08)' : 'var(--bg-app)',
+                          border: isDynamicQrActive ? '1px solid rgba(16, 185, 129, 0.25)' : '1px solid var(--border-color)',
                           fontSize: '11.5px',
-                          color: 'var(--primary, #059669)',
+                          color: isDynamicQrActive ? 'var(--primary, #059669)' : 'var(--text-secondary)',
                           fontWeight: 500,
                           marginTop: '2px',
                         }}
                       >
-                        <QrCode size={16} />
+                        {isDynamicQrActive ? <QrCode size={16} /> : <Smartphone size={16} />}
                         <span>
-                          {t('sales.onlineQrSelectedNote', 'Online Payment: When you click Save, a dynamic QR will open for the customer to scan with PhonePe, GPay, Paytm, etc.')}
+                          {isDynamicQrActive
+                            ? t('sales.onlineQrSelectedNote', 'Online Payment: When you click Save, a dynamic QR will open for the customer to scan with PhonePe, GPay, Paytm, etc.')
+                            : t('sales.onlineManualNote', 'Online Payment: QR generation is disabled in Settings. Record the online payment or enter reference number below.')}
                         </span>
                       </div>
                     )}
@@ -3538,6 +3557,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 <button
                   type="submit"
                   className="btn btn-primary"
+                  disabled={items.length === 0 || !items[0].productId || isSavingInvoice}
                   style={{
                     width: '100%',
                     height: '46px',
@@ -3548,11 +3568,23 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '8px'
+                    gap: '8px',
+                    opacity: isSavingInvoice ? 0.75 : 1,
+                    cursor: isSavingInvoice ? 'not-allowed' : 'pointer',
                   }}
-                  disabled={items.length === 0 || !items[0].productId}
                 >
-                  {editingInvoiceId ? t("sales.updateInvoiceBtn", "✓ Update Invoice") : t("sales.savePrintInvoiceBtn", "✓ Save & Print Invoice")}
+                  {isSavingInvoice ? (
+                    <>
+                      <Loader2 className="animate-spin" size={18} />
+                      <span>
+                        {isDynamicQrActive && paymentMethod === 'UPI'
+                          ? t('sales.generatingQr', 'Generating QR Code...')
+                          : t('sales.savingInvoice', 'Saving Invoice...')}
+                      </span>
+                    </>
+                  ) : (
+                    editingInvoiceId ? t("sales.updateInvoiceBtn", "✓ Update Invoice") : t("sales.savePrintInvoiceBtn", "✓ Save & Print Invoice")
+                  )}
                 </button>
                 <button
                   type="button"
