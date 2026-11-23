@@ -2720,7 +2720,8 @@
     "onlineUpiActivatedToast": "ऑनलाइन UPI QR पेमेंट्स सक्रिय केले!",
     "onlineUpiDeactivatedToast": "ऑनलाइन UPI QR पेमेंट्स बंद केले.",
     "applyingSettings": "बदल जतन आणि लागू करत आहे...",
-    "savingAndApplying": "जतन आणि लागू करत आहे..."
+    "savingAndApplying": "जतन आणि लागू करत आहे...",
+    "applyingSettingsHelp": "कृपया प्रतीक्षा करा, तुमचे बदल जतन आणि लागू केले जात आहेत..."
   },
   "recycleBin": {
     "title": "रिसायकल बिन",

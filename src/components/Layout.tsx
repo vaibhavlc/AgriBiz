@@ -700,9 +700,25 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   return (
     <div className="app-container" style={{ position: 'relative' }}>
-      {/* Sleek Top Progress Bar & Applying Badge when saving settings/preferences */}
+      {/* Centered Circulating Loading Bar Overlay when saving & applying settings */}
       {isUpdatingSettings && (
-        <>
+        <div
+          className="settings-applying-backdrop no-print"
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999999,
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(4px)',
+            WebkitBackdropFilter: 'blur(4px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+            cursor: 'wait',
+          }}
+        >
+          {/* Top pulse track */}
           <div
             className="global-top-progress-bar"
             style={{
@@ -710,38 +726,63 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               top: 0,
               left: 0,
               width: '100%',
-              height: '3px',
-              zIndex: 999999,
+              height: '4px',
+              zIndex: 10000000,
               background: 'linear-gradient(90deg, #10b981 0%, #34d399 50%, #059669 100%)',
-              boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
+              boxShadow: '0 0 10px rgba(16, 185, 129, 0.8)',
               animation: 'topBarPulse 1.2s infinite ease-in-out',
             }}
           />
+
           <div
+            className="settings-applying-modal"
             style={{
-              position: 'fixed',
-              top: '12px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              zIndex: 999999,
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 16px',
-              borderRadius: '20px',
               backgroundColor: 'var(--bg-card, #ffffff)',
               color: 'var(--text-primary, #0f172a)',
-              boxShadow: '0 4px 20px rgba(0, 0, 0, 0.15)',
-              border: '1px solid var(--border-color, #e2e8f0)',
-              fontSize: '12px',
-              fontWeight: 600,
-              animation: 'fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+              borderRadius: '20px',
+              padding: '32px 40px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '18px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--border-color, rgba(226, 232, 240, 0.8))',
+              maxWidth: '380px',
+              width: '90%',
+              textAlign: 'center',
+              animation: 'scaleIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
           >
-            <Loader2 className="animate-spin" size={14} color="var(--primary, #10b981)" />
-            <span>{t('settings.applyingSettings', 'Saving & applying changes...')}</span>
+            {/* Prominent Circulating Loading Ring / Circular Spinner */}
+            <div style={{ position: 'relative', width: '60px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div
+                style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '50%',
+                  border: '4px solid rgba(16, 185, 129, 0.15)',
+                  borderTopColor: 'var(--primary, #10b981)',
+                  borderRightColor: 'var(--primary, #10b981)',
+                  animation: 'spin 0.8s linear infinite',
+                }}
+              />
+              <Loader2
+                className="animate-spin"
+                size={26}
+                color="var(--primary, #10b981)"
+                style={{ position: 'absolute' }}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-primary, #0f172a)', marginBottom: '6px' }}>
+                {t('settings.savingAndApplying', 'Saving & Applying...')}
+              </div>
+              <div style={{ fontSize: '13px', color: 'var(--text-muted, #64748b)', lineHeight: 1.45 }}>
+                {t('settings.applyingSettingsHelp', 'Please wait while your settings are being saved and applied...')}
+              </div>
+            </div>
           </div>
-        </>
+        </div>
       )}
       {/* Sidebar Backdrop Blur Overlay on Mobile */}
       {isMobileSidebarOpen && (

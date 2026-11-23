@@ -2592,7 +2592,8 @@
     "onlineUpiActivatedToast": "Online UPI QR payments activated!",
     "onlineUpiDeactivatedToast": "Online UPI QR payments deactivated.",
     "applyingSettings": "Saving & applying changes...",
-    "savingAndApplying": "Saving & Applying..."
+    "savingAndApplying": "Saving & Applying...",
+    "applyingSettingsHelp": "Please wait while your settings are being saved and applied..."
   },
   "recycleBin": {
     "title": "Recycle Bin",

@@ -2107,6 +2107,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return;
     }
     setIsUpdatingSettings(true);
+    const startTime = Date.now();
     const activeCompany = authService.getCurrentCompany();
     const companyId = activeCompany?.id || (updatedSettings as any).companyId || (settings as any).companyId;
     const formatted = {
@@ -2159,6 +2160,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showToast(err.response?.data?.message || 'Failed to save settings', 'error');
       throw err;
     } finally {
+      const elapsed = Date.now() - startTime;
+      const minDisplayDuration = 600;
+      if (elapsed < minDisplayDuration) {
+        await new Promise((resolve) => setTimeout(resolve, minDisplayDuration - elapsed));
+      }
       setIsUpdatingSettings(false);
     }
   };
