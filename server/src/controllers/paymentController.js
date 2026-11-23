@@ -144,42 +144,55 @@ class PaymentController {
         const utr = data.BANKTXNID || data.TXNID || `PAYTM-${Date.now()}`;
         const txnId = data.TXNID || utr;
 
-        // Automatically update invoice to PAID in database if invoice exists
+        // Automatically update invoice in database if invoice exists
         const targetId = invoiceId || invoiceNo;
         const invoice = await invoiceRepository.findById(targetId, companyId);
-        if (invoice && invoice.paymentStatus !== 'Paid') {
-          const oldBalanceDue = invoice.balanceDue || 0;
-          invoice.paymentStatus = 'Paid';
-          invoice.amountPaid = invoice.grandTotal;
-          invoice.balanceDue = 0;
-          invoice.paymentMethod = 'UPI';
-          invoice.referenceNumber = utr;
-          invoice.updatedBy = req.user.name || 'Paytm Auto-Verify';
-          await invoice.save();
+        if (invoice) {
+          if (invoice.referenceNumber !== utr) {
+            invoice.referenceNumber = utr;
+            invoice.paymentMethod = 'UPI';
 
-          // Adjust customer balance
-          if (invoice.customerId && oldBalanceDue > 0) {
-            await customerRepository.adjustOutstanding(invoice.customerId, companyId, -oldBalanceDue);
+            // Only update amounts if paying remaining balance on an existing invoice
+            if (invoice.paymentStatus !== 'Paid') {
+              if (txnAmount >= (invoice.balanceDue || 0) && (invoice.balanceDue || 0) > 0) {
+                const oldBalanceDue = invoice.balanceDue;
+                invoice.paymentStatus = 'Paid';
+                invoice.amountPaid = invoice.grandTotal;
+                invoice.balanceDue = 0;
+                if (invoice.customerId && oldBalanceDue > 0) {
+                  await customerRepository.adjustOutstanding(invoice.customerId, companyId, -oldBalanceDue);
+                }
+              } else if (txnAmount < (invoice.balanceDue || 0) && (invoice.balanceDue || 0) > 0 && invoice.amountPaid !== txnAmount) {
+                invoice.amountPaid = (invoice.amountPaid || 0) + txnAmount;
+                invoice.balanceDue = Math.max(0, invoice.grandTotal - invoice.amountPaid);
+                invoice.paymentStatus = invoice.balanceDue === 0 ? 'Paid' : 'Partial';
+                if (invoice.customerId) {
+                  await customerRepository.adjustOutstanding(invoice.customerId, companyId, -txnAmount);
+                }
+              }
+            }
+            invoice.updatedBy = req.user.name || 'UPI QR Auto-Verify';
+            await invoice.save();
+
+            // Create payment receipt record for actual transaction amount
+            const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            await paymentRepository.create({
+              paymentId,
+              companyId,
+              date: new Date().toISOString().split('T')[0],
+              type: 'CustomerReceipt',
+              contactId: invoice.customerId,
+              contactName: invoice.customerName,
+              amount: txnAmount,
+              paymentMethod: 'UPI',
+              referenceNumber: utr,
+              notes: `Auto-verified via UPI QR against ${invoice.invoiceNumber}`,
+              createdBy: 'UPI QR Auto-Verify',
+              updatedBy: 'UPI QR Auto-Verify',
+            });
+
+            await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'UPDATE', invoice.invoiceId || invoice._id, invoice);
           }
-
-          // Create payment record
-          const paymentId = `PAY-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-          await paymentRepository.create({
-            paymentId,
-            companyId,
-            date: new Date().toISOString().split('T')[0],
-            type: 'CustomerReceipt',
-            contactId: invoice.customerId,
-            contactName: invoice.customerName,
-            amount: invoice.grandTotal,
-            paymentMethod: 'UPI',
-            referenceNumber: utr,
-            notes: `Auto-verified via Paytm QR against ${invoice.invoiceNumber}`,
-            createdBy: 'Paytm Auto-Verify',
-            updatedBy: 'Paytm Auto-Verify',
-          });
-
-          await touchCompanyData(companyId, req.headers['x-socket-id'], 'Invoices', 'UPDATE', invoice.invoiceId || invoice._id, invoice);
         }
 
         return res.status(200).json({

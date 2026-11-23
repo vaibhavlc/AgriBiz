@@ -1416,7 +1416,13 @@
     "recordPayout": "पेमेंट नोंदवा",
     "refPlaceholder": "उदा. UPI82012019",
     "notesPlaceholder": "उदा. प्रलंबित बिल भरणा तोडगा",
-    "recordReceipt": "जमा पावती नोंदवा"
+    "recordReceipt": "जमा पावती नोंदवा",
+    "dynamicUpiQr": "त्वरित UPI QR (PhonePe / GPay / Paytm)",
+    "scanQrDesc": "ग्राहकाला स्कॅन करून पैसे भरण्यासाठी ₹{{amount}} चा QR कोड दाखवा",
+    "enterAmountFirstDesc": "पेमेंट QR कोड तयार करण्यासाठी वरील रक्कम प्रविष्ट करा",
+    "showPaymentQr": "पेमेंट QR दाखवा",
+    "customerPaymentQr": "ग्राहक UPI पेमेंट",
+    "paymentVerifiedAndSaved": "{{amount}} चे पेमेंट UPI द्वारे सत्यापित झाले आणि नोंदवले गेले!"
   },
   "reports": {
     "title": "अहवाल आणि विश्लेषण",

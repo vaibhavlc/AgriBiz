@@ -37,8 +37,10 @@ import {
   Globe,
   Smartphone,
   Mail,
+  QrCode,
 } from 'lucide-react';
 import { PWAInstallModal } from './PWAInstallModal';
+import { PaytmQrModal } from './PaytmQrModal';
 import api from '../utils/api';
 import { checkCurrentSubscription, subscribeToPush } from '../utils/pushManager';
 import type { AppNotification } from '../types';
@@ -93,12 +95,18 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     editingPaymentId,
     handleSavePayment,
     isSubmittingPayment,
+    addPayment,
     customers,
     suppliers,
   } = useApp();
 
   const { currentUser, currentCompany, hasPermission, logout, logoutStaff } = useAuth();
 
+  const [isPaymentQrOpen, setIsPaymentQrOpen] = useState(false);
+  const [pendingPaymentVoucherNo, setPendingPaymentVoucherNo] = useState('');
+  const isDynamicQrActive = Boolean(
+    settings.enablePaytmQr && (settings.paytmUpiId?.trim() || settings.upiId?.trim())
+  );
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const handleGlowMove = (e: React.MouseEvent<HTMLDivElement>) => {
     const card = e.currentTarget;
@@ -1467,6 +1475,69 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
             </div>
           </div>
 
+          {paymentType === 'CustomerReceipt' && paymentMethod === 'UPI' && isDynamicQrActive && (
+            <div style={{
+              margin: '12px 0 6px 0',
+              padding: '12px 14px',
+              borderRadius: '10px',
+              backgroundColor: 'rgba(16, 185, 129, 0.08)',
+              border: '1.5px solid rgba(16, 185, 129, 0.25)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+              flexWrap: 'wrap',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--primary, #10b981)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <QrCode size={20} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    {t('payments.dynamicUpiQr', 'Instant UPI QR (PhonePe / GPay / Paytm)')}
+                  </div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-secondary)' }}>
+                    {amount > 0
+                      ? t('payments.scanQrDesc', 'Generate amount-locked QR for ₹{{amount}} for customer to scan & pay', { amount: amount.toFixed(2) })
+                      : t('payments.enterAmountFirstDesc', 'Enter amount above to generate payment QR code')}
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="btn btn-primary"
+                disabled={amount <= 0 || !contactId}
+                onClick={() => {
+                  const voucherNo = `REC-${Date.now().toString().slice(-6)}`;
+                  setPendingPaymentVoucherNo(voucherNo);
+                  setIsPaymentQrOpen(true);
+                }}
+                style={{
+                  padding: '7px 14px',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  borderRadius: '8px',
+                  gap: '6px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                <QrCode size={15} />
+                <span>{t('payments.showPaymentQr', 'Show Payment QR')}</span>
+              </button>
+            </div>
+          )}
+
           <div className="form-group">
             <label className="form-label">{t('common.notes', 'Remarks / Description')}</label>
             <textarea
@@ -1500,6 +1571,43 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
         </form>
       </Modal>
+
+      {isPaymentQrOpen && (
+        <PaytmQrModal
+          isOpen={isPaymentQrOpen}
+          onClose={() => setIsPaymentQrOpen(false)}
+          onSkip={() => setIsPaymentQrOpen(false)}
+          invoice={{
+            invoiceNumber: pendingPaymentVoucherNo || `REC-${Date.now().toString().slice(-6)}`,
+            grandTotal: amount,
+            amountToPay: amount,
+            customerName: customers.find(c => c.id === contactId)?.name || 'Customer',
+            title: t('payments.customerPaymentQr', 'Customer UPI Payment'),
+          }}
+          settings={settings}
+          onPaymentSuccess={async (utr: string) => {
+            setReferenceNumber(utr);
+            setIsPaymentQrOpen(false);
+            try {
+              const customerObj = customers.find(c => c.id === contactId);
+              await addPayment({
+                date: paymentDate,
+                type: 'CustomerReceipt',
+                contactId,
+                contactName: customerObj?.name || 'Customer',
+                amount,
+                paymentMethod: 'UPI',
+                referenceNumber: utr,
+                notes: notes.trim() ? `${notes.trim()} (Auto-verified UPI)` : 'Auto-verified UPI payment',
+              });
+              setIsPaymentFormOpen(false);
+              showToast(t('payments.paymentVerifiedAndSaved', 'Payment of {{amount}} verified via UPI & recorded!', { amount: formatINR(amount) }), 'success');
+            } catch (err: any) {
+              showToast(err.message || 'Error saving payment', 'error');
+            }
+          }}
+        />
+      )}
 
       <PWAInstallModal />
     </div>

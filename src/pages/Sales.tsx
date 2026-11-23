@@ -256,16 +256,24 @@ export const Sales: React.FC = () => {
   const [printTemplate, setPrintTemplate] = useState<'A5' | 'Thermal'>('A5');
   const [qrModalInvoice, setQrModalInvoice] = useState<Invoice | null>(null);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [qrModalAmount, setQrModalAmount] = useState<number>(0);
   const [isSavingInvoice, setIsSavingInvoice] = useState(false);
   const isDynamicQrActive = Boolean(settings.enablePaytmQr && (settings.paytmUpiId?.trim() || settings.upiId?.trim()));
 
   const handleQrPaymentSuccess = async (utr: string) => {
     if (!qrModalInvoice) return;
+    const isInitialPartialSave = qrModalInvoice.amountPaid === qrModalAmount;
+    const finalAmountPaid = isInitialPartialSave
+      ? qrModalInvoice.amountPaid
+      : Math.min(qrModalInvoice.grandTotal, (qrModalInvoice.amountPaid || 0) + qrModalAmount);
+    const finalBalanceDue = Math.max(0, qrModalInvoice.grandTotal - finalAmountPaid);
+    const finalPaymentStatus = finalBalanceDue === 0 ? 'Paid' : finalAmountPaid > 0 ? 'Partial' : 'Unpaid';
+
     const updated: Invoice = {
       ...qrModalInvoice,
-      paymentStatus: 'Paid',
-      amountPaid: qrModalInvoice.grandTotal,
-      balanceDue: 0,
+      paymentStatus: finalPaymentStatus,
+      amountPaid: finalAmountPaid,
+      balanceDue: finalBalanceDue,
       paymentMethod: 'UPI',
       referenceNumber: utr,
     };
@@ -1326,7 +1334,9 @@ We have downloaded the PDF document to your device. Please attach it in the chat
       setNotes('');
       if (newInvoice) {
         if (paymentMethod === 'UPI' && isDynamicQrActive) {
+          const initialCollection = (Number(amountPaid) || 0) > 0 ? Number(amountPaid) : newInvoice.grandTotal;
           setQrModalInvoice(newInvoice);
+          setQrModalAmount(initialCollection);
           setIsQrModalOpen(true);
           setIsCreatingInvoice(false, true);
         } else {
@@ -1736,6 +1746,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
               id: qrModalInvoice.id,
               invoiceNumber: qrModalInvoice.invoiceNumber,
               grandTotal: qrModalInvoice.grandTotal,
+              amountToPay: qrModalAmount > 0 ? qrModalAmount : undefined,
               customerName: qrModalInvoice.customerName,
             }}
             settings={settings}
@@ -1826,6 +1837,10 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                 style={{ borderColor: "#0284c7", color: "#0284c7", fontWeight: 600, padding: '6px 12px', fontSize: '12px', height: '34px', gap: '5px' }}
                 onClick={() => {
                   setQrModalInvoice(selectedInvoice);
+                  const collectAmount = (selectedInvoice.balanceDue && selectedInvoice.balanceDue > 0)
+                    ? selectedInvoice.balanceDue
+                    : selectedInvoice.grandTotal;
+                  setQrModalAmount(collectAmount);
                   setIsQrModalOpen(true);
                 }}
                 title={t("sales.showQrCode", "Show Payment QR")}

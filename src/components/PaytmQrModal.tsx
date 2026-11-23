@@ -15,7 +15,9 @@ interface PaytmQrModalProps {
     id?: string;
     invoiceNumber: string;
     grandTotal: number;
+    amountToPay?: number;
     customerName?: string;
+    title?: string;
   };
   settings: BusinessSettings;
   onPaymentSuccess: (utr: string) => void;
@@ -42,7 +44,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
   const rawUpiId = settings.paytmUpiId?.trim() || settings.upiId?.trim() || '';
   const upiId = rawUpiId || 'merchant@upi';
   const payeeName = settings.businessName || 'AgriBiz Merchant';
-  const amount = Number(invoice.grandTotal) || 0;
+  const amount = Number(invoice.amountToPay !== undefined ? invoice.amountToPay : invoice.grandTotal) || 0;
 
   // Generate UPI QR Code Data URL
   useEffect(() => {
@@ -59,7 +61,9 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
       am: amount.toFixed(2),
       cu: 'INR',
       tr: invoice.invoiceNumber,
-      tn: `Invoice ${invoice.invoiceNumber}`,
+      tn: invoice.invoiceNumber.startsWith('REC-') || invoice.invoiceNumber.startsWith('PAY-')
+        ? `Payment ${invoice.invoiceNumber}`
+        : `Invoice ${invoice.invoiceNumber}`,
     });
 
     const upiUrl = `upi://pay?${upiParams.toString()}`;
@@ -174,7 +178,7 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
             </div>
             <div style={{ textAlign: 'left' }}>
               <h3 style={{ fontSize: '16px', fontWeight: 700, margin: 0, color: 'var(--text-primary, #0f172a)' }}>
-                {t('sales.payViaUpiTitle', 'Online UPI Payment')}
+                {invoice.title || t('sales.payViaUpiTitle', 'Online UPI Payment')}
               </h3>
               <p style={{ fontSize: '11px', color: 'var(--text-muted, #64748b)', margin: 0 }}>
                 {invoice.invoiceNumber} {invoice.customerName ? `• ${invoice.customerName}` : ''}

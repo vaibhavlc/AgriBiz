@@ -1412,7 +1412,13 @@
     "recordPayout": "Record Payout",
     "refPlaceholder": "e.g. UPI82012019",
     "notesPlaceholder": "e.g. Settle outstanding bill payment",
-    "recordReceipt": "Record Receipt"
+    "recordReceipt": "Record Receipt",
+    "dynamicUpiQr": "Instant UPI QR (PhonePe / GPay / Paytm)",
+    "scanQrDesc": "Generate amount-locked QR for ₹{{amount}} for customer to scan & pay",
+    "enterAmountFirstDesc": "Enter amount above to generate payment QR code",
+    "showPaymentQr": "Show Payment QR",
+    "customerPaymentQr": "Customer UPI Payment",
+    "paymentVerifiedAndSaved": "Payment of {{amount}} verified via UPI & recorded!"
   },
   "reports": {
     "title": "Reports & Analytics",
