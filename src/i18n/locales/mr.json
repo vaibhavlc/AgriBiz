@@ -667,7 +667,7 @@
     "transactionMethod": "व्यवहार पद्धत (Transaction Method) *",
     "onlineUpi": "ऑनलाइन (UPI QR)",
     "cashOffline": "रोख (Offline)",
-    "onlineQrSelectedNote": "ऑनलाइन पेमेंट: सेव्ह केल्यावर ग्राहकासाठी PhonePe, GPay, Paytm इत्यादींद्वारे स्कॅन करण्यासाठी डायनॅमिक QR उघडेल.",
+    "onlineQrSelectedNote": "ऑनलाइन पेमेंट: सेव्ह केल्यावर ग्राहकासाठी PhonePe, GPay, Paytm इत्यादींद्वारे स्कॅन करण्यासाठी डायनॅमिक QR उघडेल आणि बँक UTR आपोआप तपासला जाईल.",
     "skipAndViewInvoice": "वगळा आणि बिल पहा",
     "defaultUpiNotice": "डीफॉल्ट UPI सक्रिय. कृपया सेटिंग्जमध्ये तुमचा UPI आयडी जोडा.",
     "onlinePayment": "ऑनलाइन (UPI)",
@@ -1422,7 +1422,8 @@
     "enterAmountFirstDesc": "पेमेंट QR कोड तयार करण्यासाठी वरील रक्कम प्रविष्ट करा",
     "showPaymentQr": "पेमेंट QR दाखवा",
     "customerPaymentQr": "ग्राहक UPI पेमेंट",
-    "paymentVerifiedAndSaved": "{{amount}} चे पेमेंट UPI द्वारे सत्यापित झाले आणि नोंदवले गेले!"
+    "paymentVerifiedAndSaved": "{{amount}} चे पेमेंट UPI द्वारे सत्यापित झाले आणि नोंदवले गेले!",
+    "autoFetchedUtr": "QR पेमेंटवर आपोआप प्राप्त होईल (किंवा मॅन्युअल UTR प्रविष्ट करा)"
   },
   "reports": {
     "title": "अहवाल आणि विश्लेषण",

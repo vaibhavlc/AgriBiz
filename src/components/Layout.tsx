@@ -1311,7 +1311,16 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
         onClose={() => requestNavigation(() => setIsPaymentFormOpen(false))} 
         title={editingPaymentId ? t('payments.editTransaction', 'Edit Transaction Record') : t('payments.recordTransaction', 'Record New Transaction')}
       >
-        <form onSubmit={handleSavePayment}>
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (paymentType === 'CustomerReceipt' && paymentMethod === 'UPI' && isDynamicQrActive && amount > 0 && !referenceNumber.trim()) {
+            const voucherNo = `REC-${Date.now().toString().slice(-6)}`;
+            setPendingPaymentVoucherNo(voucherNo);
+            setIsPaymentQrOpen(true);
+            return;
+          }
+          handleSavePayment(e);
+        }}>
           <div className="form-group">
             <label className="form-label">{t('payments.type', 'Transaction Type')} *</label>
             <div className="payment-type-toggle">
@@ -1468,7 +1477,11 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
               <input
                 type="text"
                 className="form-control"
-                placeholder={t('payments.refPlaceholder', 'e.g. UPI82012019')}
+                placeholder={
+                  paymentType === 'CustomerReceipt' && paymentMethod === 'UPI' && isDynamicQrActive
+                    ? t('payments.autoFetchedUtr', 'Auto-fetched on QR payment (or enter manual UTR)')
+                    : t('payments.refPlaceholder', 'e.g. UPI82012019')
+                }
                 value={referenceNumber}
                 onChange={(e) => setReferenceNumber(e.target.value)}
               />

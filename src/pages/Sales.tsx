@@ -3393,7 +3393,7 @@ We have downloaded the PDF document to your device. Please attach it in the chat
                   </div>
                 )}
 
-                {(Number(amountPaid) || 0) > 0 && paymentMethod !== 'Cash' && (
+                {(Number(amountPaid) || 0) > 0 && paymentMethod !== 'Cash' && !(paymentMethod === 'UPI' && isDynamicQrActive) && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     <label className="form-label" style={{ margin: 0, fontWeight: 600, fontSize: '13px' }}>
                       {paymentMethod === 'Cheque' ? t('sales.chequeNo', 'Cheque No.') : paymentMethod === 'UPI' ? t('sales.txnUtrNo', 'Transaction / UTR No.') : t('sales.transferRefNo', 'Transfer Reference No.')}
