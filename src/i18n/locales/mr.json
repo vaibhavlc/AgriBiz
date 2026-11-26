@@ -672,7 +672,11 @@
     "defaultUpiNotice": "डीफॉल्ट UPI सक्रिय. कृपया सेटिंग्जमध्ये तुमचा UPI आयडी जोडा.",
     "onlinePayment": "ऑनलाइन (UPI)",
     "onlineManualNote": "ऑनलाइन पेमेंट: सेटिंग्जमध्ये QR कोड निर्मिती बंद आहे. ऑनलाइन पेमेंट नोंदवा किंवा खाली संदर्भ क्रमांक प्रविष्ट करा.",
-    "savingInvoice": "चलन जतन करत आहे..."
+    "savingInvoice": "चलन जतन करत आहे...",
+    "utrInputLabel": "१२-अंकी UTR / UPI संदर्भ क्रमांक (पर्यायी)",
+    "utrPlaceholder": "उदा. 432109876543",
+    "confirmPaymentButton": "पेमेंट पुष्टी करा आणि पुढे जा",
+    "directUpiReady": "थेट UPI पेमेंट सक्रिय. साउंडबॉक्स / SMS तपासा आणि खाली पुष्टी करा."
   },
   "purchases": {
     "title": "खरेदी",

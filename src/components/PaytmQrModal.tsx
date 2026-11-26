@@ -37,6 +37,8 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
   const [pollStatus, setPollStatus] = useState<'polling' | 'success' | 'failed'>('polling');
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [verifiedUtr, setVerifiedUtr] = useState<string>('');
+  const [manualUtr, setManualUtr] = useState<string>('');
+  const [pollCount, setPollCount] = useState<number>(0);
 
   const isPollingRef = useRef(false);
   const pollTimerRef = useRef<any>(null);
@@ -117,6 +119,14 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
           setTimeout(() => {
             onPaymentSuccess(utr);
           }, 1500);
+        } else {
+          setPollCount((prev) => {
+            const next = prev + 1;
+            if (next >= 2) {
+              setStatusMessage(t('sales.directUpiReady', 'Direct UPI active. Verify on Soundbox / SMS & confirm below.'));
+            }
+            return next;
+          });
         }
       } catch (err: any) {
         console.debug('Polling check error:', err?.message);
@@ -318,9 +328,27 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
           </div>
         )}
 
+        {/* Optional UTR Input Field */}
+        {pollStatus !== 'success' && (
+          <div style={{ marginTop: '12px', textAlign: 'left' }}>
+            <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted, #64748b)', display: 'block', marginBottom: '4px' }}>
+              {t('sales.utrInputLabel', '12-digit UTR / UPI Ref No. (Optional)')}
+            </label>
+            <input
+              type="text"
+              maxLength={24}
+              className="form-control"
+              placeholder={t('sales.utrPlaceholder', 'e.g. 432109876543')}
+              value={manualUtr}
+              onChange={(e) => setManualUtr(e.target.value.replace(/[^a-zA-Z0-9_-]/g, ''))}
+              style={{ fontSize: '13px', padding: '8px 12px', height: '36px', width: '100%' }}
+            />
+          </div>
+        )}
+
         {/* Cashier Actions: Confirm, Skip, Cancel */}
         {pollStatus !== 'success' && (
-          <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
             <button
               type="button"
               className="btn btn-primary"
@@ -333,16 +361,17 @@ export const PaytmQrModal: React.FC<PaytmQrModalProps> = ({
                 justifyContent: 'center',
                 gap: '8px',
                 padding: '11px 16px',
-                fontSize: '13px',
+                fontSize: '13.5px',
                 fontWeight: 700,
                 borderRadius: '8px',
               }}
               onClick={() => {
-                onPaymentSuccess(`MANUAL-${Date.now()}`);
+                const finalUtr = manualUtr.trim() || `UPI-${Date.now().toString().slice(-6)}`;
+                onPaymentSuccess(finalUtr);
               }}
             >
               <CheckCircle2 size={16} />
-              {t('sales.confirmManualPayment', 'Received via Soundbox / Cash (Skip Waiting)')}
+              {t('sales.confirmPaymentButton', 'Confirm Payment & Proceed')}
             </button>
 
             <button

@@ -668,7 +668,11 @@
     "defaultUpiNotice": "Default UPI active. Add custom UPI ID in Settings.",
     "onlinePayment": "Online (UPI)",
     "onlineManualNote": "Online Payment: QR generation is disabled in Settings. Record the online payment or enter reference number below.",
-    "savingInvoice": "Saving Invoice..."
+    "savingInvoice": "Saving Invoice...",
+    "utrInputLabel": "12-digit UTR / UPI Ref No. (Optional)",
+    "utrPlaceholder": "e.g. 432109876543",
+    "confirmPaymentButton": "Confirm Payment & Proceed",
+    "directUpiReady": "Direct UPI active. Verify on Soundbox / SMS & confirm below."
   },
   "purchases": {
     "title": "Purchases",
